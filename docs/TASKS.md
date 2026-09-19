@@ -48,7 +48,7 @@ specification gates pass.
 | T38 | Implemented, tested and deployed locally | Docker setup links, protected signup updates and one current Compose deployment; evidence below. |
 | T39 | Implemented, tested and deployed locally | Browser setup permission survives link expiry, reloads and API restarts; the local administrator account now exists. |
 | T40 | Implemented, tested and deployed locally | Settings loads after signup; rechecking the same session preserves pending requests and account changes still discard stale responses. |
-| T41 | Implemented; local gates passed; hosted/live/device acceptance pending | Tutor and provider saves recover without duplicate work, account/setup transitions are explicit, conversation space is usable on desktop/mobile, Docker host-model routing is consistent, and dependency audits pass. |
+| T41 | Implemented; automated gates passed; live/device acceptance pending | Tutor and provider saves recover without duplicate work, account/setup transitions are explicit, conversation space is usable on desktop/mobile, Docker host-model routing is consistent, and dependency audits pass. |
 
 ### T41 — Journey reliability and flow review (2026-09-19)
 
@@ -118,10 +118,13 @@ Validation:
 - Frozen pnpm and uv lock checks passed. Both Python and pnpm audits reported no
   known vulnerabilities. A locked PyYAML parse asserted the host-gateway mapping
   on both Compose services, and `git diff --check` passed.
+- [Hosted CI run 35451988068](https://github.com/tylermowll/shepherd-academy-universe/actions/runs/35451988068)
+  passed both jobs: Compose validation, container build/smoke/scan/SBOM, complete
+  project gates, SQLite integration, browser smoke, synthetic evaluation, and
+  locked dependency audits.
 
-Docker is not installed in this workspace, so the added `docker compose config`
-step, container smoke, image scanning, and SBOM generation remain hosted-CI gates
-for this commit after the push.
+Docker is not installed in this workspace; the hosted run supplies the Compose
+and release-container evidence that could not be produced locally.
 No live/paid provider inference, model download, deployment, private setting,
 real learner data, or private log was used. Actual phone/accessibility checks,
 live model quality, and the private-host release rehearsal remain the existing
