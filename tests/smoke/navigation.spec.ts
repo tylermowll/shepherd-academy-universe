@@ -184,6 +184,13 @@ test("Help and History preserve unsent work and saved sessions reopen through Hi
     .getByRole("button", { name: "Phone setup help", exact: true })
     .click();
   await expect(page).toHaveURL(/page=help&help=phone/);
+  await expect(
+    page.getByRole("heading", {
+      level: 2,
+      name: "Phone setup",
+      exact: true,
+    }),
+  ).toBeFocused();
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await expect(
     page.getByRole("heading", { level: 1, name: "Help", exact: true }),

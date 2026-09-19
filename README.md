@@ -61,8 +61,10 @@ wait until signup finishes before offering a refresh. Keep setup links private.
 Localhost passwords need **6 characters**; phone/HTTPS passwords need **12**.
 There are no uppercase/symbol rules. Short local passwords trade strength for
 convenience and cannot be used unchanged after enabling network access. If you
-later enable HTTPS, startup explains how to replace a local-only password with
-`make admin`. That recovery command is not needed for browser-first setup.
+later enable HTTPS, stop the app and worker first. A native installation uses
+`make admin`; a Docker installation uses the container reset command in the
+[runbook](docs/RUNBOOK.md#container-package). That recovery command is not needed
+for browser-first setup.
 
 The native launcher loads `.env` without executing it as a shell script and validates
 setup before building. Existing settings, accounts and data are preserved.
@@ -73,7 +75,8 @@ gateway; `make dev` restricts the same persistent workflow to loopback HTTP.
 `make demo` is a separate disposable preview. If a retained database
 needs an upgrade, startup stops with instructions. Stop all app/worker writes,
 back up retained data, then run `make migrate start`. `make admin` is an explicit
-password-reset tool, not a routine restart step; resetting revokes sessions.
+native password-reset tool, not a routine restart step; resetting revokes
+sessions. Use the runbook's container command for Docker.
 
 Sign in as administrator and open **Settings**. Choose a section:
 **Connections** saves a model/server/key, **Data & privacy** controls the

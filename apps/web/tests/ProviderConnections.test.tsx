@@ -336,6 +336,44 @@ describe("adult connection setup", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 
+  it("keeps a visible recovery action when a saved connection cannot refresh", async () => {
+    const onChanged = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValueOnce(new TypeError("Synthetic refresh loss"))
+      .mockResolvedValueOnce();
+    const onSectionChange = vi.fn();
+    render(
+      <ProviderConnections
+        configuration={configuration}
+        section="connections"
+        onChanged={onChanged}
+        onNavigate={vi.fn()}
+        onSectionChange={onSectionChange}
+        act={run}
+      />,
+    );
+    fillNew();
+    fireEvent.click(terms());
+    fireEvent.click(screen.getByRole("button", { name: "Save connection" }));
+
+    expect(
+      await screen.findByText(
+        "The connection was saved, but the list could not refresh. Refresh connections to continue.",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByLabelText("Model name")).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Refresh connections" }),
+    );
+
+    await screen.findByText(
+      "The saved connection list is current. Test the connection next.",
+    );
+    expect(onChanged).toHaveBeenCalledTimes(2);
+    expect(onSectionChange).toHaveBeenCalledWith("tests", true);
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
   it("keeps the terms review while technical settings change", () => {
     show();
     fillNew();

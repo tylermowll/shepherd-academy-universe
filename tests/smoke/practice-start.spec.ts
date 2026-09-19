@@ -38,7 +38,7 @@ test("starting with reference text creates exactly one activity without a second
   );
 });
 
-test("composer menus close each other and dismiss on Escape, outside click and action", async ({
+test("composer menus stay in bounds, close each other and dismiss predictably", async ({
   page,
 }) => {
   await startTutor(page, "Synthetic menu interaction");
@@ -64,6 +64,34 @@ test("composer menus close each other and dismiss on Escape, outside click and a
     .getByRole("heading", { level: 1, name: "Practice", exact: true })
     .click();
   await expect(menus).toHaveCount(0);
+  const assertOpenMenuFits = async () => {
+    const optionsBounds = await page
+      .locator(".composer-menu[open] .composer-options")
+      .boundingBox();
+    const composerBounds = await page.locator(".tutor-response").boundingBox();
+    const chatBounds = await page.locator(".chat-column").boundingBox();
+    expect(optionsBounds).not.toBeNull();
+    expect(composerBounds).not.toBeNull();
+    expect(chatBounds).not.toBeNull();
+    expect(optionsBounds!.x).toBeGreaterThanOrEqual(composerBounds!.x);
+    expect(optionsBounds!.x + optionsBounds!.width).toBeLessThanOrEqual(
+      composerBounds!.x + composerBounds!.width,
+    );
+    expect(optionsBounds!.y).toBeGreaterThanOrEqual(chatBounds!.y);
+    expect(optionsBounds!.y + optionsBounds!.height).toBeLessThanOrEqual(
+      chatBounds!.y + chatBounds!.height,
+    );
+  };
+  for (const width of [320, 375, 412]) {
+    await page.setViewportSize({ width, height: 700 });
+    for (const toggle of [helpToggle, nextToggle]) {
+      await toggle.click();
+      await expect(menus).toHaveCount(1);
+      await assertOpenMenuFits();
+      await page.keyboard.press("Escape");
+      await expect(menus).toHaveCount(0);
+    }
+  }
   await helpToggle.click();
   await page
     .getByRole("button", { name: "Give me a hint", exact: true })

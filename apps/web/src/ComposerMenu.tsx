@@ -5,10 +5,14 @@ export function ComposerMenu({
   title,
   children,
   className = "",
+  onOpen,
+  disabled = false,
 }: {
   title: string;
   children: ReactNode;
   className?: string;
+  onOpen?: () => void;
+  disabled?: boolean;
 }) {
   const menu = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
@@ -38,7 +42,18 @@ export function ComposerMenu({
       ref={menu}
       name="tutor-composer"
       className={`composer-menu ${className}`}
+      onToggle={(event) => {
+        if (event.currentTarget.open) onOpen?.();
+      }}
       onClick={(event) => {
+        if (
+          disabled &&
+          event.target instanceof Element &&
+          event.target.closest("summary")
+        ) {
+          event.preventDefault();
+          return;
+        }
         if (
           event.target instanceof Element &&
           event.target.closest("button:not(:disabled)")
@@ -48,7 +63,7 @@ export function ComposerMenu({
         }
       }}
     >
-      <summary>{title}</summary>
+      <summary aria-disabled={disabled || undefined}>{title}</summary>
       {children}
     </details>
   );

@@ -10,7 +10,7 @@ specification gates pass.
 | T00  | Complete                                                       | Local gates and original hosted CI verified; review validation below.                                                                                                                                                            |
 | T01  | Reviewed; complete                                             | Explicit transactional SQLite, stable/private storage, real rollback/migration/drift gates. Review commit ae3f135 passes local and hosted CI.                                                                                    |
 | T02  | Reviewed; complete                                             | Startup/setup, strict origins, expiring CSRF, reset/rotation/revocation, bounded login limits, and session constraints in migration 0002. D005 removes the review's development-schema upgrade bridge; cutover evidence below.   |
-| T03  | Implemented; automated gates passed                            | Browser-bound pairing, expiry/revoke and two-learner ownership.                                                                                                                                                                  |
+| T03  | Historical implementation; account access superseded by D013/T37 | Ownership isolation remains; browser pairing and its expiry/revoke workflow were retired in favor of administrator-managed learner sign-ins.                                                                                  |
 | T04  | Implemented; automated gates passed                            | Exact parser/generators; Fraction/property and hostile-input tests.                                                                                                                                                              |
 | T05  | Implemented; automated gates passed                            | Persisted practice, answers/steps/help/history and browser completion.                                                                                                                                                           |
 | T06  | Implemented; automated gates passed                            | Durable leases, six-call budget, idempotency, crash/deletion recovery.                                                                                                                                                           |
@@ -31,9 +31,9 @@ specification gates pass.
 | T21  | Implemented; automated gates passed                            | Public offline pack, exact local answers, no sync or grading authority.                                                                                                                                                          |
 | T22  | Implemented; automated gates passed                            | Opt-in external-photo question confirmation; four fixtures remain unverifiable.                                                                                                                                                  |
 | T23  | Implemented experiment; device measurement pending             | Pinned text-only WebLLM research with consent/hash validation/cancel/delete; no weights downloaded.                                                                                                                              |
-| T24  | Implemented; physical phone/live provider verification pending | Expiring QR upload, computer confirmation, HTTPS launch/runbook; automated migration, authorization, retry and two-browser gates passed.                                                                                         |
+| T24  | Historical photo-approval detail superseded; physical phone/live provider verification pending | Expiring QR upload, computer display and automatic clear-reading guidance, HTTPS launch/runbook; automated migration, authorization, retry and two-browser gates passed.                                              |
 | T25  | Implemented; automated gates passed; live quality unverified   | AI-only multi-subject tutoring, reference-only homework intake, contextual guidance, adjustable initiative and automatic clear photo reading; 125 unit, 33 component, 128 integration and 28 browser tests passed.               |
-| T26  | Implemented; automated gates passed                            | Purposeful tabs, plain wording, in-context Help, parent-as-student profiles and guided phone setup; 125 unit, 51 component, 146 integration and 36 browser tests passed.                                                         |
+| T26  | Historical implementation; account access superseded by D013/T37 | Purposeful pages, plain wording and guided phone setup remain; parent-as-student profiles and learner pairing were replaced by distinct learner accounts.                                                                      |
 | T27  | Implemented; automated gates passed                            | Browser-managed AI connections/keys, current-schema tests, persistent startup and safe backup settings; 145 unit, 80 component, 188 integration and 42 browser tests passed.                                                     |
 | T28  | Implemented; automated gates passed                            | Browser-first owner setup, inline recovery, six-character loopback passwords with network safeguards; 159 unit, 103 component, 215 integration and 46 browser tests passed.                                                      |
 | T29  | Implemented; automated gates passed                            | Shepherd Academy Universe branding; fixed Meta cloud location, editable audience and disclaimer; project hooks/check, 216 integration and 4 affected browser tests passed.                                                        |
@@ -48,6 +48,86 @@ specification gates pass.
 | T38 | Implemented, tested and deployed locally | Docker setup links, protected signup updates and one current Compose deployment; evidence below. |
 | T39 | Implemented, tested and deployed locally | Browser setup permission survives link expiry, reloads and API restarts; the local administrator account now exists. |
 | T40 | Implemented, tested and deployed locally | Settings loads after signup; rechecking the same session preserves pending requests and account changes still discard stale responses. |
+| T41 | Implemented; local gates passed; hosted/live/device acceptance pending | Tutor and provider saves recover without duplicate work, account/setup transitions are explicit, conversation space is usable on desktop/mobile, Docker host-model routing is consistent, and dependency audits pass. |
+
+### T41 — Journey reliability and flow review (2026-09-19)
+
+A role-by-role review covered first setup, administrator Settings and Learners,
+learner Practice and History, Help, phone capture, native startup, and Docker
+startup. The overall role split and Settings sequence were sound, but several
+transition failures could make saved work look lost or lead to a duplicate
+session. The tutor conversation also left only a small nested viewport at common
+laptop and phone sizes. Operator instructions mixed native and Docker launch
+paths and gave containers a host-model address they could not reach.
+
+Changes and affected contracts:
+
+- A successful session POST now commits the returned session, URL, and history
+  before its follow-up refresh. A failed refresh keeps the acknowledged session
+  open instead of returning to an enabled Start form. Session selection changes
+  commit only after a successful load, so a failed History navigation cannot
+  redirect later polling to the wrong session, and an explicit History choice
+  finishes before background polling can supersede it. Reference text blocks
+  navigation only while that source is selected; switching sources preserves but
+  no longer hides a blocking draft.
+- A successful connection save followed by a failed list refresh now leaves a
+  persistent, named refresh action after the editor closes. Ordinary save
+  failures remain beside the open form and preserve its entries. Active-model
+  completion links directly to Learners.
+- The header identifies the signed-in username and role. Help-topic navigation
+  focuses the selected article, setup guidance continues through learner
+  creation, and privacy wording now matches the actual learner History plus
+  administrator JSON export/delete controls.
+- The conversation follows the start of the newest exchange instead of hiding
+  its learner message above the scrollport. Stable desktop/mobile heights expose
+  more than 240 pixels of conversation in the browser regression. Compact
+  composer menus remain inside narrow viewports, and a completed phone reading
+  or any remote operation update dismisses the attachment panel when no saved
+  upload retry is pending. Opening Help or Next also hides that panel without
+  discarding a prepared photo, so it cannot cover the next learning action.
+- Compose maps `host.docker.internal:host-gateway` for both API probes and worker
+  inference. Phone/provider guidance distinguishes native loopback addresses
+  from Docker host addresses, separates Docker and native launch/reset paths,
+  orders phone setup so the app is running before its Settings steps, and
+  describes administrator sign-out, separate learner sign-in, and atomic Start
+  session behavior. Current user and operator guidance no longer presents
+  retired pairing or old Settings labels as active workflows. Hosted CI now
+  parses the Compose deployment before building its container.
+- The lockfile advances `@redocly/openapi-core` to 1.34.20 and `js-yaml` to 4.3.2,
+  closing GHSA-2883-xcg3-v3hh. The Playwright login helper also waits for the
+  asynchronous logout redirect, removing a reproduced navigation race without
+  adding retries or weakening an assertion.
+
+Validation:
+
+- `pytest apps/api/tests/unit`: **194 passed**. `pytest
+  apps/api/tests/integration`: **267 passed** with the existing Starlette
+  deprecation warning.
+- `pnpm test`: **162 passed** across 10 frontend files. The Tutor
+  recovery regressions, provider refresh recovery, account identity, and setup
+  handoff/topic-focus tests passed. Ruff, ESLint, Prettier, strict mypy (**70 source files**),
+  both TypeScript checks, generated-contract drift, secret scanning, IaC lint,
+  the synthetic evaluation, and the production web/PWA build passed. The
+  existing Vite chunk-size warning remains.
+- `pnpm smoke`: **66 passed** across desktop and mobile Chromium with pinned
+  Node 24.20.0 and pnpm 12.3.4. The browser suite asserts that the newest exchange
+  starts inside the conversation viewport, its usable height exceeds 240 pixels,
+  both composer menus stay inside the chat at 320, 375 and 412 pixels, the chosen
+  Help topic receives focus, and the page has no horizontal overflow. Synthetic
+  screenshots were inspected at desktop and phone widths.
+- Frozen pnpm and uv lock checks passed. Both Python and pnpm audits reported no
+  known vulnerabilities. A locked PyYAML parse asserted the host-gateway mapping
+  on both Compose services, and `git diff --check` passed.
+
+Docker is not installed in this workspace, so the added `docker compose config`
+step, container smoke, image scanning, and SBOM generation remain hosted-CI gates
+for this commit after the push.
+No live/paid provider inference, model download, deployment, private setting,
+real learner data, or private log was used. Actual phone/accessibility checks,
+live model quality, and the private-host release rehearsal remain the existing
+maintainer acceptance work. A readable administrator session-history view is a
+separate product decision; T41 makes Help accurately describe the current JSON
+export/delete boundary rather than silently expanding D013.
 
 ### T40 — Load Settings after account creation (2026-09-08)
 

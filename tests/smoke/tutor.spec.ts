@@ -69,6 +69,9 @@ test("the tutor continues from a phone photo through guidance, revision, discuss
       "Photo sent to your computer.",
     );
     await expect(page.locator(".tutor-feedback")).toHaveCount(1);
+    await expect(
+      page.getByText("Upload a photo", { exact: true }),
+    ).not.toBeVisible();
     await expect(page.locator(".tutor-feedback").first()).toContainText(
       /Synthetic/i,
     );

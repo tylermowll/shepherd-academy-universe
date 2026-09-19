@@ -65,7 +65,7 @@ Paths below are relative to the repository. `workflows` means
 | A11 text-only vision rejected         | Provider modality tests and effective-photo-feature policy                                                                                    |
 | A12 no local-to-cloud fallback        | Explicit route dispatch, typed local failure; `test_policy_change_never_replays_to_new_route`                                                 |
 | A13 hostile text has no authority     | Unsafe-parser cases; strict provider extra-field rejection; profile/solution-policy test; adversarial external fixture                        |
-| A14 two-learner isolation             | `test_pairing_is_bound_single_use_revocable_and_isolated`; adult/learner browser pairing/revocation                                           |
+| A14 two-learner isolation             | `test_learner_sign_in_is_revocable_and_isolated`; learner password sign-in browser isolation/revocation                                      |
 | A15 hidden answer exclusion           | `test_public_schemas.py`, persisted problem API payload assertions                                                                            |
 | A16 immutable profile snapshot        | `test_profile_version_is_snapshotted_and_solution_policy_enforced`                                                                            |
 | A17 deletion during inference/restore | `test_deletion_during_work_prevents_resurrection_and_restore`                                                                                 |
@@ -73,7 +73,7 @@ Paths below are relative to the repository. `workflows` means
 | A19 reconnect same operation          | Persisted-practice browser test disconnects after accepted submission, reloads and recovers one verdict; physical phone backgrounding pending |
 | A20 selected provider audience        | Mixed Meta route accepts mixed eligibility; a restricted route blocks learners outside its selection; explicit-cloud policy tests             |
 | A21 protected help uses authored text | Profile/solution-policy test; models never provide protected hints; actual pedagogy/disclosure evaluation pending                             |
-| A22 no previous learner UI/cache      | Browser logout and paired-device revocation; offline cache asserts public assets only                                                         |
+| A22 no previous learner UI/cache      | Browser learner switch, logout and sign-in revocation; offline cache asserts public assets only                                               |
 | A23 stale photo revision              | `test_photo_confirmation_is_explicit_immutable_and_stale_safe`                                                                                |
 | A24 controlled update                 | Browser update waits for user, preserves unsent entry before refresh, and refreshes only after acknowledgment                                 |
 
@@ -87,9 +87,9 @@ removed to hide a defect. See TASKS for the bugs found and fixed.
 
 1. **Actual phones (T11/T17).** Use a private HTTPS deployment and synthetic work
    on iPhone Safari and Android Chrome. Record device/OS/browser versions, trusted
-   certificate, pairing, denied camera access, JPEG/HEIC capture, preview/crop/
-   rotation, clear reading proceeding without approval, unclear reading retake
-   advice, 200% zoom, keyboard/screen-reader
+   certificate, learner sign-in/re-sign-in, denied camera access, JPEG/HEIC
+   capture, preview/crop/rotation, clear reading proceeding without approval,
+   unclear reading retake advice, 200% zoom, keyboard/screen-reader
    behavior, app installation, update prompt, and background/reconnect after
    submit. Confirm the same operation returns and logout/revocation clears content.
    Expected: no direct homework/active-task answers, no sensitive browser
@@ -110,9 +110,10 @@ removed to hide a defect. See TASKS for the bugs found and fixed.
    engine. No model was downloaded during coding.
 4. **Private-host release rehearsal (T19).** Recover settings from your secret
    manager, rehearse encrypted restore into a fresh directory with the current
-   deletion ledger, verify worker readiness, re-pair devices, and confirm backup
-   retention and provider/data policy for the actual host. Native synthetic and
-   CI container checks do not validate your private deployment configuration.
+   deletion ledger, verify worker readiness, sign the administrator and learners
+   in again, and confirm backup retention and provider/data policy for the actual
+   host. Native synthetic and CI container checks do not validate your private
+   deployment configuration.
 
 AWS provisioning is optional and was not performed. If selected, review the
 specific AMI, network/certificate/SSM access, retained EBS mount, secret ARN,

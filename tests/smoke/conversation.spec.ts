@@ -73,6 +73,18 @@ test("one composer keeps photo problems, follow-ups and subsequent activities in
   expect(
     await log.evaluate((node) => node.scrollHeight > node.clientHeight),
   ).toBe(true);
+  const latestExchangeOffset = () =>
+    log.evaluate((node) => {
+      const exchanges = node.querySelectorAll<HTMLElement>(".tutor-operation");
+      const latest = exchanges.item(exchanges.length - 1);
+      if (!latest) return Number.POSITIVE_INFINITY;
+      return (
+        latest.getBoundingClientRect().top - node.getBoundingClientRect().top
+      );
+    });
+  await expect.poll(latestExchangeOffset).toBeGreaterThanOrEqual(0);
+  await expect.poll(latestExchangeOffset).toBeLessThan(48);
+  expect(await log.evaluate((node) => node.clientHeight)).toBeGreaterThan(240);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth + 1,

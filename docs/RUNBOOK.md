@@ -30,11 +30,13 @@ No public API issues owner links, and setup cannot reset an existing account.
 
 Passwords of 6–11 characters are accepted only with an HTTP loopback origin;
 the administrator is then flagged local-only. HTTPS needs at least twelve
-characters, with no composition rules. Before enabling the gateway, use the
-existing login name with `make admin` to replace a short password. Startup and
-backend session/login checks reject local-only credentials in network mode,
-even if a service bypasses the native launcher. Recovery never requires deleting
-the database or changing the session secret.
+characters, with no composition rules. Before enabling the gateway, stop the app
+and worker. For a native installation, use the existing login name with
+`make admin` to replace a short password. For Docker, use the reset command in
+the [container package](#container-package). Startup and backend session/login
+checks reject local-only credentials in network mode, even if a service bypasses
+the native launcher. Recovery never requires deleting the database or changing
+the session secret.
 
 Migration `0013_local_password_policy` preserves existing accounts and marks newly
 accepted short passwords. Downgrade refuses while any local-only password remains;
@@ -135,11 +137,14 @@ Compose reads operator `.env` itself. Browser-managed AI connections are stored
 in the shared private database and configured through adult Settings. For optional
 file-managed connections, set an absolute container path for `PROVIDER_CONFIG`
 and add an explicit **read-only** mount of the reviewed private provider YAML to
-both services. For host-local Ollama/vLLM, localhost inside the
-container is not the host: use a private reachable interface or a reviewed Linux
-host-gateway mapping, and block public model ports. No provider config or secrets
-are baked into the image. Supply cloud credentials through workload identity or
-an explicitly managed short-lived mechanism, not committed static keys.
+both services. For host-local Ollama/vLLM, localhost inside the container is not
+the host. This Compose file maps `host.docker.internal` to the Linux host gateway
+for both the API and worker; use that name in browser-managed endpoints. The
+model server must listen on a private host interface reachable from the Docker
+bridge. Block its port from untrusted networks and never publish it to the
+Internet. No provider config or secrets are baked into the image. Supply cloud
+credentials through workload identity or an explicitly managed short-lived
+mechanism, not committed static keys.
 
 `scripts/container-smoke.sh` migrates a disposable database and checks the
 non-root API, worker readiness and built UI. It creates a synthetic administrator
@@ -206,9 +211,10 @@ learner was ever deleted, explicitly create an empty private ledger. Never repla
 a missing current ledger with an old empty one to bypass deletion preservation.
 The restore authenticates before extraction, rejects unsafe archive paths, checks
 hashes and SQLite integrity/foreign keys, reapplies all known deletions, checkpoints
-the restored WAL, revokes sessions/pairings, and cancels pending jobs. Test a new
-isolated restore directory before changing production paths. Re-pair devices after
-cutover. Retention sweeps resume with the worker.
+the restored WAL, revokes all signed-in browser sessions, and cancels pending
+jobs. Test a new isolated restore directory before changing production paths.
+Sign the administrator and learners in again after cutover. Retention sweeps
+resume with the worker.
 
 Browser-managed connections and their encrypted API-key values are included in
 the database archive. Operator environment/YAML, certificates, and the deployment

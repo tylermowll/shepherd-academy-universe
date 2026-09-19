@@ -16,7 +16,16 @@ export async function login(
   username = "demo",
   password = "synthetic-demo-password-only",
 ) {
-  await page.goto("/");
+  const signInButton = page.getByRole("button", {
+    name: "Sign in",
+    exact: true,
+  });
+  if (page.url() !== "about:blank")
+    await signInButton
+      .waitFor({ state: "visible", timeout: 2_000 })
+      .catch(() => {});
+  if (!(await signInButton.isVisible().catch(() => false)))
+    await page.goto("/");
   await page.getByLabel("Username", { exact: true }).fill(username);
   await page.getByLabel("Password", { exact: true }).fill(password);
   const signIn = async () => {
@@ -25,7 +34,7 @@ export async function login(
         result.url().endsWith("/auth/login") &&
         result.request().method() === "POST",
     );
-    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await signInButton.click();
     return response;
   };
   let response = await signIn();

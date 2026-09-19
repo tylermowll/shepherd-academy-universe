@@ -97,6 +97,7 @@ export function Tutor({
   const [photoPending, setPhotoPending] = useState(false);
   const [photoDraft, setPhotoDraft] = useState(false);
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
+  const [attachmentsOpenedAt, setAttachmentsOpenedAt] = useState("");
   const [newSession, setNewSession] = useState(false);
   const [connectionError, setConnectionError] = useState("");
   const [navigationNotice, setNavigationNotice] = useState("");
@@ -105,12 +106,36 @@ export function Tutor({
   const selectedSession = useRef("");
   const loadSequence = useRef(0);
   const polling = useRef(false);
+  const selectingSession = useRef(0);
   const blocked = working || pending !== null || photoPending;
+
+  const commitSession = useCallback(
+    (loaded: Schema<"TutoringSessionPublic">) => {
+      if (loaded.learner_id !== learner) {
+        selectedSession.current = "";
+        setSession(null);
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}${window.location.search}`,
+        );
+        return false;
+      }
+      selectedSession.current = loaded.id;
+      setSession(loaded);
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${window.location.search}#tutor=${loaded.id}`,
+      );
+      return true;
+    },
+    [learner],
+  );
 
   const load = useCallback(
     async (id?: string) => {
       const sequence = ++loadSequence.current;
-      if (id) selectedSession.current = id;
       const [sessions, capabilities, loaded] = await Promise.all([
         api<Schema<"TutoringSessionPublic">[]>("/tutor/sessions"),
         api<Schema<"Features">>(`/learners/${learner}/features`),
@@ -122,26 +147,29 @@ export function Tutor({
       setHistory(sessions.filter((item) => item.learner_id === learner));
       setFeatures(capabilities);
       setConnectionError("");
-      if (loaded) {
-        if (loaded.learner_id !== learner) {
-          selectedSession.current = "";
-          setSession(null);
-          window.history.replaceState(
-            null,
-            "",
-            `${window.location.pathname}${window.location.search}`,
-          );
-          return;
-        }
-        setSession(loaded);
+      if (loaded) commitSession(loaded);
+    },
+    [commitSession, learner],
+  );
+
+  const selectSession = useCallback(
+    async (id: string) => {
+      selectingSession.current += 1;
+      try {
+        await load(id);
+        return selectedSession.current === id;
+      } catch (cause) {
         window.history.replaceState(
           null,
           "",
-          `${window.location.pathname}${window.location.search}#tutor=${loaded.id}`,
+          `${window.location.pathname}${window.location.search}${selectedSession.current ? `#tutor=${selectedSession.current}` : ""}`,
         );
+        throw cause;
+      } finally {
+        selectingSession.current -= 1;
       }
     },
-    [learner],
+    [load],
   );
 
   useEffect(() => {
@@ -155,7 +183,7 @@ export function Tutor({
   }, [learner]);
 
   useEffect(() => {
-    if (pageActive && !offline)
+    if (pageActive && !offline && selectingSession.current === 0)
       void act(() => load(selectedSession.current || undefined));
   }, [act, load, offline, page, pageActive, settingsVersion]);
 
@@ -165,6 +193,7 @@ export function Tutor({
     const refresh = () => {
       if (
         polling.current ||
+        selectingSession.current > 0 ||
         !navigator.onLine ||
         document.visibilityState !== "visible"
       )
@@ -200,6 +229,10 @@ export function Tutor({
   const activeOperation = problem?.operations.find((operation) =>
     activeStatuses.includes(operation.status),
   );
+  const photoOperationRevision =
+    problem?.operations
+      .map((operation) => `${operation.id}:${operation.status}`)
+      .join("|") ?? "";
   const active = Boolean(activeOperation);
   const disabled =
     blocked ||
@@ -207,11 +240,16 @@ export function Tutor({
     offline ||
     Boolean(session && session.status !== "open");
   const hasResponseDraft = Boolean(
-    text.trim() || reference.trim() || photoDraft,
+    text.trim() ||
+    (source === "reference_text" && reference.trim()) ||
+    photoDraft,
   );
   const hasDraft =
     hasResponseDraft || Boolean((newSession || !session) && topic.trim());
   const changingSessionDisabled = blocked || active || offline || hasDraft;
+  const attachmentsVisible =
+    photoPending ||
+    (attachmentsOpen && photoOperationRevision === attachmentsOpenedAt);
   useEffect(() => {
     const restoreSession = () => {
       const requested = new URLSearchParams(window.location.hash.slice(1)).get(
@@ -239,7 +277,10 @@ export function Tutor({
       }
       setNavigationNotice("");
       setNewSession(false);
-      if (target) void act(() => load(target));
+      if (target)
+        void act(async () => {
+          await selectSession(target);
+        });
       else {
         loadSequence.current += 1;
         selectedSession.current = "";
@@ -248,7 +289,7 @@ export function Tutor({
     };
     window.addEventListener("popstate", restoreSession);
     return () => window.removeEventListener("popstate", restoreSession);
-  }, [act, blocked, changingSessionDisabled, hasDraft, load, offline]);
+  }, [act, blocked, changingSessionDisabled, hasDraft, offline, selectSession]);
   useEffect(() => {
     onBusyChange?.(blocked);
   }, [blocked, onBusyChange]);
@@ -304,10 +345,27 @@ export function Tutor({
       )
         setReference("");
       if (created) {
-        await load(created.id);
         setNewSession(false);
         setTopic("");
         setReference("");
+        if (!commitSession(created)) {
+          setConnectionError(
+            "The saved session could not be opened for this learner. Reconnect to refresh your sessions.",
+          );
+          return;
+        }
+        setHistory((current) => [
+          created,
+          ...current.filter((item) => item.id !== created.id),
+        ]);
+        try {
+          await load(created.id);
+        } catch {
+          if (mounted.current && selectedSession.current === created.id)
+            setConnectionError(
+              "Your session was saved, but its latest state could not be refreshed. Reconnect to continue.",
+            );
+        }
       } else if (selectedSession.current === request.sessionId) await refresh();
     } finally {
       if (mounted.current) setWorking(false);
@@ -546,7 +604,11 @@ export function Tutor({
                 }
                 onClick={() =>
                   void act(async () => {
-                    if (item.id !== session?.id) await load(item.id);
+                    if (
+                      item.id !== session?.id &&
+                      !(await selectSession(item.id))
+                    )
+                      return;
                     setNewSession(false);
                     onNavigate?.("practice");
                   })
@@ -822,14 +884,23 @@ export function Tutor({
                       <div className="composer-actions">
                         <button
                           type="button"
-                          aria-expanded={attachmentsOpen}
+                          aria-expanded={attachmentsVisible}
                           aria-controls="tutor-attachments"
                           disabled={blocked}
-                          onClick={() => setAttachmentsOpen(!attachmentsOpen)}
+                          onClick={() => {
+                            const next = !attachmentsVisible;
+                            setAttachmentsOpen(next);
+                            if (next)
+                              setAttachmentsOpenedAt(photoOperationRevision);
+                          }}
                         >
                           Attach photo
                         </button>
-                        <ComposerMenu title="Help">
+                        <ComposerMenu
+                          title="Help"
+                          disabled={blocked}
+                          onOpen={() => setAttachmentsOpen(false)}
+                        >
                           <div className="composer-options">
                             <button
                               type="button"
@@ -857,6 +928,8 @@ export function Tutor({
                         <ComposerMenu
                           title="Next activity options"
                           className="next-menu"
+                          disabled={blocked}
+                          onOpen={() => setAttachmentsOpen(false)}
                         >
                           <div className="composer-options">
                             <button
@@ -902,10 +975,8 @@ export function Tutor({
                       id="tutor-attachments"
                       className="tutor-attachments"
                       hidden={
-                        !attachmentsOpen &&
-                        problem.activity_state !== "reference_capture" &&
-                        !photoPending &&
-                        !photoDraft
+                        !attachmentsVisible &&
+                        problem.activity_state !== "reference_capture"
                       }
                     >
                       <p className="fine">{features?.photo_status}</p>

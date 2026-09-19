@@ -438,7 +438,8 @@ describe("AI settings page", () => {
         ),
       ),
     );
-    render(<AdultPanel {...props()} page="settings" />);
+    const handlers = props();
+    render(<AdultPanel {...handlers} page="settings" />);
     fireEvent.click(await screen.findByRole("tab", { name: /Active models/ }));
     const tutor = screen.getByRole("combobox", { name: "Tutor connection" });
     expect(
@@ -458,6 +459,8 @@ describe("AI settings page", () => {
     );
     const status = screen.getByRole("status");
     expect(status).toHaveClass("settings-toast");
+    fireEvent.click(screen.getByRole("button", { name: "Open Learners" }));
+    expect(handlers.onNavigate).toHaveBeenCalledWith("learners");
     fireEvent.click(screen.getByRole("tab", { name: /Connections/ }));
     expect(screen.queryByRole("status")).toBeNull();
     expect(fetch).toHaveBeenCalledWith(

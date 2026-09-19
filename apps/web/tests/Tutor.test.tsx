@@ -119,8 +119,10 @@ describe("AI learning conversation", () => {
       reply.compareDocumentPosition(screen.getByText("Upload a photo")) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Attach photo" }));
     fireEvent.click(screen.getByText("Next activity options"));
+    await vi.waitFor(() =>
+      expect(screen.getByText("Upload a photo")).not.toBeVisible(),
+    );
     const easier = screen.getByRole("button", { name: "Easier next activity" });
     expect(easier).toBeVisible();
     fireEvent.click(easier);
@@ -134,6 +136,85 @@ describe("AI learning conversation", () => {
         difficulty: "introductory",
       });
     });
+  });
+
+  it("preserves a photo draft when menus or remote operation changes dismiss attachments", async () => {
+    let current = session([activity()]);
+    let currentLoads = 0;
+    const NativeUrl = URL;
+    vi.stubGlobal(
+      "URL",
+      Object.assign(class extends NativeUrl {}, {
+        createObjectURL: vi.fn(() => "blob:photo-preview"),
+        revokeObjectURL: vi.fn(),
+      }),
+    );
+    window.location.hash = `tutor=${sessionId}`;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.endsWith("/features")) return response(capabilities);
+        if (url.endsWith(`/tutor/sessions/${sessionId}`)) {
+          currentLoads += 1;
+          return response(current);
+        }
+        if (url.endsWith("/tutor/sessions")) return response([current]);
+        if (url.endsWith("/images/preview"))
+          return Promise.resolve(
+            new Response(new Blob(["preview"], { type: "image/png" })),
+          );
+        throw new Error(url);
+      }),
+    );
+    render(<Tutor learner={learner} offline={false} act={run} />);
+    await screen.findByLabelText("Your work or question");
+    fireEvent.click(screen.getByRole("button", { name: "Attach photo" }));
+    fireEvent.change(screen.getByLabelText("Take or choose a photo"), {
+      target: {
+        files: [new File(["photo"], "work.png", { type: "image/png" })],
+      },
+    });
+    expect(
+      await screen.findByAltText("Your photograph before submission"),
+    ).toBeVisible();
+
+    fireEvent.click(screen.getByText("Help"));
+    await vi.waitFor(() =>
+      expect(screen.getByText("Upload a photo")).not.toBeVisible(),
+    );
+    expect(
+      screen.getByRole("button", { name: "Give me a hint" }),
+    ).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Attach photo" }));
+    expect(
+      screen.getByAltText("Your photograph before submission"),
+    ).toBeVisible();
+    current = session([
+      activity([
+        operation({
+          status: "failed",
+          interpretation: null,
+          interpretation_version: null,
+          reading: null,
+          feedback: null,
+          safe_error: "The photograph could not be read.",
+        }),
+      ]),
+    ]);
+    fireEvent(window, new Event("online"));
+    await vi.waitFor(() => expect(currentLoads).toBeGreaterThanOrEqual(2));
+    await vi.waitFor(() =>
+      expect(screen.getByText("Upload a photo")).not.toBeVisible(),
+    );
+    expect(
+      screen.getByAltText("Your photograph before submission"),
+    ).not.toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Attach photo" }));
+    expect(
+      screen.getByAltText("Your photograph before submission"),
+    ).toBeVisible();
   });
 
   it("starts a non-math topic with no level, templates, or solution controls", async () => {
@@ -232,6 +313,90 @@ describe("AI learning conversation", () => {
     );
     expect(screen.queryByRole("combobox", { name: "Purpose" })).toBeNull();
     expect(screen.queryByLabelText("Your work or question")).toBeNull();
+  });
+
+  it("keeps a lost reference-photo receipt reachable after capture completes", async () => {
+    let current = session([activity([], "reference_capture")]);
+    let currentLoads = 0;
+    const errors: unknown[] = [];
+    const NativeUrl = URL;
+    vi.stubGlobal(
+      "URL",
+      Object.assign(class extends NativeUrl {}, {
+        createObjectURL: vi.fn(() => "blob:reference-preview"),
+        revokeObjectURL: vi.fn(),
+      }),
+    );
+    window.location.hash = `tutor=${sessionId}`;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.endsWith("/features")) return response(capabilities);
+        if (url.endsWith(`/tutor/sessions/${sessionId}`)) {
+          currentLoads += 1;
+          return response(current);
+        }
+        if (url.endsWith("/tutor/sessions")) return response([current]);
+        if (url.endsWith("/images/preview"))
+          return Promise.resolve(
+            new Response(new Blob(["preview"], { type: "image/png" })),
+          );
+        if (url.includes(`/problems/${problemId}/photos?`))
+          return Promise.reject(new TypeError("Synthetic lost receipt"));
+        throw new Error(url);
+      }),
+    );
+    render(
+      <Tutor
+        learner={learner}
+        offline={false}
+        act={async (action) => {
+          try {
+            await action();
+          } catch (cause) {
+            errors.push(cause);
+          }
+        }}
+      />,
+    );
+    fireEvent.change(await screen.findByLabelText("Take or choose a photo"), {
+      target: {
+        files: [new File(["photo"], "reference.png", { type: "image/png" })],
+      },
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Submit this photograph" }),
+    );
+    expect(
+      await screen.findByRole("button", { name: "Retry saved photograph" }),
+    ).toBeVisible();
+    expect(errors).toHaveLength(1);
+
+    current = session([
+      activity(
+        [
+          operation({
+            status: "failed",
+            interpretation: null,
+            interpretation_version: null,
+            reading: null,
+            feedback: null,
+            safe_error: "The reference photograph could not be read.",
+          }),
+        ],
+        "ready",
+      ),
+    ]);
+    fireEvent(window, new Event("online"));
+    await vi.waitFor(() => expect(currentLoads).toBeGreaterThanOrEqual(2));
+    await screen.findByLabelText("Your work or question");
+    expect(
+      screen.getByRole("button", { name: "Retry saved photograph" }),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Attach photo" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Attach photo" }),
+    ).toHaveAttribute("aria-expanded", "true");
   });
 
   it("shows the reading before specific guidance with no approval request or button", async () => {
@@ -477,6 +642,66 @@ describe("AI learning conversation", () => {
     expect(errors).toHaveLength(1);
   });
 
+  it("keeps a created session open when its follow-up refresh fails", async () => {
+    const created = session([activity()]);
+    const errors: unknown[] = [];
+    let saved = false;
+    const fetcher = vi.fn((url: string, options: RequestInit) => {
+      if (url.endsWith("/features")) return response(capabilities);
+      if (url.endsWith(`/tutor/sessions/${sessionId}`))
+        return Promise.reject(new TypeError("Synthetic refresh loss"));
+      if (url.endsWith("/tutor/sessions") && options.method === "POST") {
+        saved = true;
+        return response(created, 201);
+      }
+      if (url.endsWith("/tutor/sessions"))
+        return response(saved ? [created] : []);
+      throw new Error(url);
+    });
+    vi.stubGlobal("fetch", fetcher);
+    render(
+      <Tutor
+        learner={learner}
+        offline={false}
+        act={async (action) => {
+          try {
+            await action();
+          } catch (cause) {
+            errors.push(cause);
+          }
+        }}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
+      target: { value: "Persuasive writing" },
+    });
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Start session" }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Start session" }));
+
+    expect(
+      await screen.findByText(
+        "Your session was saved, but its latest state could not be refreshed. Reconnect to continue.",
+      ),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Your work or question")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Start session" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Retry saved request" }),
+    ).toBeNull();
+    expect(window.location.hash).toBe(`#tutor=${sessionId}`);
+    expect(
+      fetcher.mock.calls.filter(
+        ([url, options]) =>
+          url.endsWith("/tutor/sessions") && options.method === "POST",
+      ),
+    ).toHaveLength(1);
+    expect(errors).toHaveLength(0);
+  });
+
   it("makes AI tutoring the only private practice interface", async () => {
     vi.stubGlobal(
       "fetch",
@@ -551,6 +776,41 @@ describe("AI learning conversation", () => {
     expect(input).toBeVisible();
   });
 
+  it("does not let hidden reference text block the current session", async () => {
+    installSession(session([activity()]));
+    const draftChanged = vi.fn();
+    render(
+      <Tutor
+        learner={learner}
+        offline={false}
+        act={run}
+        onDraftChange={draftChanged}
+      />,
+    );
+    await screen.findByLabelText("Your work or question");
+    fireEvent.click(screen.getByText("Session & material"));
+    fireEvent.click(screen.getByText("Use different practice material"));
+    const source = screen.getByLabelText("Practice source");
+    fireEvent.change(source, { target: { value: "reference_text" } });
+    fireEvent.change(screen.getByLabelText("Reference material"), {
+      target: { value: "A reference draft to preserve." },
+    });
+    expect(screen.getByRole("button", { name: "New session" })).toBeDisabled();
+    expect(draftChanged).toHaveBeenLastCalledWith(true);
+
+    fireEvent.change(source, { target: { value: "topic" } });
+    expect(screen.queryByLabelText("Reference material")).toBeNull();
+    expect(screen.getByRole("button", { name: "New session" })).toBeEnabled();
+    await vi.waitFor(() =>
+      expect(draftChanged).toHaveBeenLastCalledWith(false),
+    );
+
+    fireEvent.change(source, { target: { value: "reference_text" } });
+    expect(screen.getByLabelText("Reference material")).toHaveValue(
+      "A reference draft to preserve.",
+    );
+  });
+
   it("opens an owned history session and preserves page query parameters", async () => {
     const navigate = vi.fn();
     const own = session([activity()]);
@@ -586,6 +846,173 @@ describe("AI learning conversation", () => {
     expect(window.location.search).toBe("?page=history");
     expect(window.location.hash).toBe(`#tutor=${sessionId}`);
     expect(screen.queryByText(other.topic)).toBeNull();
+  });
+
+  it("keeps polling the current session after another session fails to load", async () => {
+    const secondId = "911c9abc-4e8e-424d-a914-4338187ba00e";
+    const current = session([activity()]);
+    const other = { ...current, id: secondId, topic: "Photosynthesis" };
+    const errors: unknown[] = [];
+    let currentLoads = 0;
+    let otherLoads = 0;
+    window.history.replaceState(null, "", `/?page=history#tutor=${sessionId}`);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.endsWith("/features")) return response(capabilities);
+        if (url.endsWith(`/tutor/sessions/${sessionId}`)) {
+          currentLoads += 1;
+          return response(current);
+        }
+        if (url.endsWith(`/tutor/sessions/${secondId}`)) {
+          otherLoads += 1;
+          return Promise.reject(new TypeError("Synthetic session load loss"));
+        }
+        if (url.endsWith("/tutor/sessions")) return response([current, other]);
+        throw new Error(url);
+      }),
+    );
+    render(
+      <Tutor
+        learner={learner}
+        offline={false}
+        page="history"
+        act={async (action) => {
+          try {
+            await action();
+          } catch (cause) {
+            errors.push(cause);
+          }
+        }}
+      />,
+    );
+    const otherHeading = await screen.findByRole("heading", {
+      name: "Photosynthesis",
+    });
+    fireEvent.click(
+      within(otherHeading.closest("article")!).getByRole("button", {
+        name: "Continue session",
+      }),
+    );
+    await vi.waitFor(() => expect(errors).toHaveLength(1));
+    expect(window.location.hash).toBe(`#tutor=${sessionId}`);
+
+    fireEvent(window, new Event("online"));
+    await vi.waitFor(() => expect(currentLoads).toBeGreaterThanOrEqual(2));
+    expect(otherLoads).toBe(1);
+    expect(window.location.hash).toBe(`#tutor=${sessionId}`);
+  });
+
+  it("lets an explicit History selection finish before background polling", async () => {
+    const secondId = "911c9abc-4e8e-424d-a914-4338187ba00e";
+    const current = session([activity()]);
+    const other = { ...current, id: secondId, topic: "Photosynthesis" };
+    const hashesAtNavigate: string[] = [];
+    const navigate = vi.fn(() => hashesAtNavigate.push(window.location.hash));
+    let currentLoads = 0;
+    let otherLoads = 0;
+    let resolveOther!: (response: Response) => void;
+    const otherRequest = new Promise<Response>((resolve) => {
+      resolveOther = resolve;
+    });
+    window.history.replaceState(null, "", `/?page=history#tutor=${sessionId}`);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.endsWith("/features")) return response(capabilities);
+        if (url.endsWith(`/tutor/sessions/${sessionId}`)) {
+          currentLoads += 1;
+          return response(current);
+        }
+        if (url.endsWith(`/tutor/sessions/${secondId}`)) {
+          otherLoads += 1;
+          return otherRequest;
+        }
+        if (url.endsWith("/tutor/sessions")) return response([current, other]);
+        throw new Error(url);
+      }),
+    );
+    render(
+      <Tutor
+        learner={learner}
+        offline={false}
+        page="history"
+        act={run}
+        onNavigate={navigate}
+      />,
+    );
+    const otherHeading = await screen.findByRole("heading", {
+      name: "Photosynthesis",
+    });
+    fireEvent.click(
+      within(otherHeading.closest("article")!).getByRole("button", {
+        name: "Continue session",
+      }),
+    );
+    await vi.waitFor(() => expect(otherLoads).toBe(1));
+
+    const loadsBeforeOnline = currentLoads;
+    fireEvent(window, new Event("online"));
+    expect(currentLoads).toBe(loadsBeforeOnline);
+    resolveOther(new Response(JSON.stringify(other)));
+
+    await vi.waitFor(() =>
+      expect(hashesAtNavigate).toEqual([`#tutor=${secondId}`]),
+    );
+    expect(navigate).toHaveBeenCalledOnce();
+    expect(navigate).toHaveBeenCalledWith("practice");
+    expect(window.location.hash).toBe(`#tutor=${secondId}`);
+  });
+
+  it("lets a browser History selection finish before its page refresh", async () => {
+    const secondId = "911c9abc-4e8e-424d-a914-4338187ba00e";
+    const current = session([activity()]);
+    const other = { ...current, id: secondId, topic: "Photosynthesis" };
+    let currentLoads = 0;
+    let otherLoads = 0;
+    let resolveOther!: (response: Response) => void;
+    const otherRequest = new Promise<Response>((resolve) => {
+      resolveOther = resolve;
+    });
+    window.history.replaceState(null, "", `/?page=history#tutor=${sessionId}`);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.endsWith("/features")) return response(capabilities);
+        if (url.endsWith(`/tutor/sessions/${sessionId}`)) {
+          currentLoads += 1;
+          return response(current);
+        }
+        if (url.endsWith(`/tutor/sessions/${secondId}`)) {
+          otherLoads += 1;
+          return otherRequest;
+        }
+        if (url.endsWith("/tutor/sessions")) return response([current, other]);
+        throw new Error(url);
+      }),
+    );
+    const view = render(
+      <Tutor learner={learner} offline={false} page="history" act={run} />,
+    );
+    await screen.findByRole("heading", { name: "Photosynthesis" });
+
+    window.history.replaceState(null, "", `/?page=practice#tutor=${secondId}`);
+    fireEvent(window, new PopStateEvent("popstate"));
+    await vi.waitFor(() => expect(otherLoads).toBe(1));
+    const loadsBeforePageChange = currentLoads;
+    view.rerender(
+      <Tutor learner={learner} offline={false} page="practice" act={run} />,
+    );
+    expect(currentLoads).toBe(loadsBeforePageChange);
+    resolveOther(new Response(JSON.stringify(other)));
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Photosynthesis",
+        level: 2,
+      }),
+    ).toBeVisible();
+    expect(window.location.hash).toBe(`#tutor=${secondId}`);
   });
 
   it("keeps an unsent response when asking for a hint", async () => {

@@ -265,6 +265,17 @@ h4 {
   font-size: 1.1rem;
   margin-right: auto;
 }
+.account-summary {
+  display: grid;
+  max-width: 100%;
+  min-width: 0;
+  line-height: 1.2;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.account-summary small {
+  color: #536456;
+}
 .pill {
   display: inline-block;
   border-radius: 24px;
@@ -788,7 +799,7 @@ main:has(.tutor-workspace) {
   display: flex;
   flex-direction: column;
   height: 74dvh;
-  min-height: 460px;
+  min-height: 640px;
   min-width: 0;
   border: 1px solid #c4cdc1;
   border-radius: 16px;
@@ -946,7 +957,7 @@ main:has(.tutor-workspace) {
   z-index: 5;
   bottom: calc(100% + 8px);
   left: 0;
-  width: 230px;
+  width: min(230px, calc(100vw - 64px));
   padding: 10px;
   background: #fffef8;
   border: 1px solid #c4cdc1;
@@ -1059,12 +1070,19 @@ main:has(.tutor-workspace) {
   .next-menu {
     order: 4;
   }
+  .composer-menu {
+    position: static;
+  }
+  .composer-options,
   .next-menu .composer-options {
-    left: 0;
-    right: auto;
+    left: 8px;
+    right: 8px;
+    width: auto;
   }
   .chat-column {
-    min-height: 440px;
+    height: calc(100dvh - 24px);
+    min-height: 560px;
+    max-height: 820px;
   }
 }
 

@@ -994,6 +994,28 @@ Use one implementation agent at a time initially. An independent review pass can
 | T22  | T19                 | Optional external-problem photo mode                                                   | Problem transcription confirmation; unverifiable-answer handling; new evaluation set                                                                    |
 | T23  | T21                 | Browser-only small-model research                                                      | One exact device/runtime/model tested; explicit capability/quality limitations                                                                          |
 
+T24–T40 are maintainer-directed increments whose governing product changes are
+recorded in Decisions D009–D014 and whose bounded contracts and evidence are in
+`TASKS.md`. They do not revive requirements superseded by those decisions.
+
+### T41 maintenance contract
+
+T41 depends on the current T25 tutor, D013/T37 account model, and T38–T40 startup
+and setup behavior. Its deliverable is a role-by-role reliability review and a
+bounded repair of broken transitions: acknowledged tutor/provider saves remain
+recoverable without duplicate work, page focus and account handoffs are explicit,
+the conversation and its controls remain usable at supported desktop/mobile
+widths, native and Docker instructions form executable sequences, Docker API and
+worker service definitions carry the same host-model routing configuration, and
+locked dependencies have no known vulnerability at review time.
+
+Exit evidence requires focused component regressions, the complete backend,
+frontend, integration and desktop/mobile browser gates, locked dependency audits,
+and a hosted `docker compose config` check before the container build/smoke/scan
+job. Real phone/accessibility checks, live provider quality, and the private-host
+release rehearsal remain explicit external acceptance work; their absence must
+not be reported as automated completion.
+
 The maintainer initially deferred hosted CI execution during local development,
 then authorized the first commit and push. T00's
 configured CI workflow plus passing local gates suffice for starting T01; retain

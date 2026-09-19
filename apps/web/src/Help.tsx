@@ -65,7 +65,9 @@ export function HelpPage({
           ))}
         </nav>
         <article className="help-article card" key={selected[0]}>
-          <h2>{selected[1]}</h2>
+          <h2 tabIndex={-1} data-page-focus>
+            {selected[1]}
+          </h2>
           {selected[0] === "practice" && (
             <>
               <ol className="steps">
@@ -327,7 +329,10 @@ export function HelpPage({
                 <li>
                   Open <strong>Active models</strong>. Choose the tutor and
                   photo reader for future learner work, authorize the
-                  destinations, and save. Learners can then sign in to practice.
+                  destinations, and save. Then open{" "}
+                  {link("learners", "Learners")}
+                  and create a learner account. That learner signs in separately
+                  to practice.
                 </li>
               </ol>
               <p>
@@ -357,18 +362,23 @@ export function HelpPage({
               </ContextHelp>
               <ContextHelp topic="What server URL and model name do I use?">
                 <p>
-                  For Ollama on this computer, the server URL is normally{" "}
-                  <code>http://127.0.0.1:11434</code>. Use the exact installed
-                  model name shown by <code>ollama list</code>. For vLLM, use
-                  your serving address ending in <code>/v1</code> and the model
-                  name it serves. Use a different port from this app, which
-                  normally uses port 8000.
+                  When the app runs directly on this computer, the Ollama server
+                  URL is normally <code>http://127.0.0.1:11434</code>. When the
+                  app runs with Docker Compose, use{" "}
+                  <code>http://host.docker.internal:11434</code> instead. Use
+                  the exact installed model name shown by{" "}
+                  <code>ollama list</code>. For vLLM, use the corresponding
+                  reachable address ending in <code>/v1</code> and the model
+                  name it serves.
                 </p>
                 <p>
                   These addresses are reached from the app server, not from your
-                  phone. If the model runs elsewhere, use its reachable private
-                  address. A text-only model cannot read photos; enable photo
-                  support only for an image-capable model and test it.
+                  phone. A host model used from Docker must listen on an
+                  interface Docker can reach; keep it behind the computer
+                  firewall and do not expose it to the public Internet. If the
+                  model runs elsewhere, use its reachable private address. A
+                  text-only model cannot read photos; enable photo support only
+                  for an image-capable model and test it.
                 </p>
               </ContextHelp>
               <ContextHelp topic="Can children use a Meta or Llama model?">
@@ -484,9 +494,10 @@ export function HelpPage({
           {selected[0] === "privacy" && (
             <>
               <p>
-                Submitted work is saved to the computer running the app. The
-                adult who manages a learner can review their sessions, export
-                them, or delete them in Learners.
+                Submitted work is saved to the computer running the app. A
+                learner reviews their own sessions in History. The administrator
+                can download that learner&apos;s saved practice as JSON or
+                delete the learner and saved work in Learners.
               </p>
               <p>
                 Photos are removed after processing. Failed or unprocessed

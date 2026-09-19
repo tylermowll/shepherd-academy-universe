@@ -26,12 +26,13 @@ endpoint/model from the disabled example.
 
 ## Activate one reviewed route
 
-1. In adult **Settings → Connections**, select Ollama, vLLM, a compatible
-   API, or Meta. Enter the exact installed/approved model ID and endpoint, and an
-   API key if required. Review model/provider terms, intended audience and data
+1. In the administrator app, open **Settings → Connections** and select
+   Ollama, vLLM, a compatible API, or Meta. Enter the exact installed/approved
+   model ID and endpoint, and an API key if required. Review model/provider terms,
+   intended audience and data
    handling. Declare image capability and context limits honestly; a text-only
    route cannot receive images. Save sends no model request and changes no route.
-2. Open **App permissions** in Settings. This installation-wide ceiling is
+2. Open **Data & privacy** in Settings. This installation-wide ceiling is
    separate from any one connection. Enable cloud processing only
    deliberately. Adult-only routes require an adults-only app audience and an
    adult learner; mixed routes use the operator's separate terms attestation.
@@ -47,7 +48,7 @@ endpoint/model from the disabled example.
    return the known synthetic `1/2` transcription as a clear, unambiguous reading;
    mere HTTP success is insufficient. A matching probe lasts seven days and is
    invalidated by capability/configuration/key changes.
-4. Open **Assign active connections** and select the tested tutor and photo
+4. Open **Active models** and select the tested tutor and photo
    reader with the displayed data-boundary acknowledgment. This app-wide choice,
    not saving a connection, changes future learner routing. Record exact runtime,
    model, configuration and prompt versions, date, sample counts, failures,

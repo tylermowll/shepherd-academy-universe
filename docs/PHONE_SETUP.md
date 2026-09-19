@@ -45,11 +45,19 @@ The computer must stay awake. `localhost` on an iPhone means the iPhone itself.
 Both desktop and phone must open the **same configured HTTPS address**.
 
 HTTP localhost permits passwords of six characters; HTTPS requires twelve. If
-you chose a shorter local password, after setting the HTTPS origin and stopping
-the app, run `make admin` with your **existing login name** and a password of at
-least twelve characters. This explicit reset signs out old adult sessions; it
-does not delete learners or work. `make serve` refuses to start with a local-only
-password, rather than silently making that account network-accessible.
+you chose a shorter local password, set the HTTPS origin and stop both app
+processes before resetting it. For a native app, run `make admin`. For Docker,
+run:
+
+```bash
+docker compose -f infra/docker/compose.yaml stop
+docker compose -f infra/docker/compose.yaml run --rm api python -m math_tutor.cli admin
+```
+
+Use your **existing login name** and a password of at least twelve characters.
+This explicit reset signs out old administrator sessions; it does not delete
+learners or work. Section 3 starts the selected deployment again. Network startup
+refuses a local-only password rather than silently exposing that account.
 
 ### Convenient private access: Tailscale
 
@@ -83,21 +91,67 @@ purchase, AWS, Cloudflare, or router port forwarding is required. Guests on an
 isolated Wi-Fi network may not be able to reach the computer. Open the HTTPS app
 successfully in Safari before trying its QR links; do not bypass certificate errors.
 
-## 3. Configure actual tutoring and handwriting models
+## 3. Launch with phone access
 
-In the signed-in adult app, open **Settings**:
+After configuring the private HTTPS gateway and setting `APP_PUBLIC_ORIGIN`
+as in section 2, continue with the matching launch method below.
+
+### Docker app
+
+Recreate the containers so they load the changed `.env`, then use `make start`
+to print or renew the private setup/sign-in address:
+
+```bash
+docker compose -f infra/docker/compose.yaml up -d --force-recreate
+make start
+```
+
+`make start` detects and attaches to the standard running Docker app; it does
+not start a second API or worker. Leave the containers running behind the HTTPS
+gateway. Do not run `make serve` while Docker owns port 8000.
+
+### Native app
+
+If the native terminal run from section 1 is still active, stop it with Ctrl+C.
+Then run:
+
+```bash
+make serve
+```
+
+This loads your existing private settings, builds the app and supervises one API
+on `127.0.0.1:8000` and one worker behind the gateway. Ctrl+C stops the app/worker
+and preserves data; it does not stop Tailscale Serve or Caddy. For computer-only
+HTTP use `make start`.
+
+Open your configured HTTPS address on the computer and sign in as the
+administrator before continuing.
+
+## 4. Configure actual tutoring and handwriting models
+
+In the signed-in administrator app, open **Settings**:
 
 1. Under **Connections**, select **Ollama**, **vLLM**, or your API type.
 2. Enter the model server address and exact installed/approved model name.
-   For Ollama on the same computer, use `http://127.0.0.1:11434` and the name
-   from `ollama list`. For vLLM, use its serving address ending in `/v1`.
-   It needs a different port from this app's default port 8000.
+   For a native app with Ollama on the same computer, use
+   `http://127.0.0.1:11434` and the name from `ollama list`. For a native app
+   with vLLM, use its serving address ending in `/v1`; for example,
+   `http://127.0.0.1:8081/v1`. It needs a different port from this app's default
+   port 8000.
+   For the Docker app with a model server on the host, use
+   `http://host.docker.internal:11434` for Ollama or, for example,
+   `http://host.docker.internal:8081/v1` for vLLM. Compose maps that name for
+   both the API connection test and worker inference on Linux. The alias does
+   not make a loopback-only model server reachable: bind the model server to a
+   private host interface that the Docker bridge can reach, and use the host
+   firewall to block model ports from untrusted networks. Never expose them to
+   the public Internet.
 3. Enter the API key if the endpoint requires one. Saved keys are encrypted on
    the app server, never displayed again, and can be replaced or removed later.
 4. Choose the correct processing boundary and allowed users. Enable photo input
    only if the installed model actually supports images; a checkbox cannot add
    that capability. Review the model/provider terms and save the connection.
-5. Under **App permissions**, explicitly enable cloud processing if needed.
+5. Under **Data & privacy**, explicitly enable cloud processing if needed.
    A Meta-hosted connection is always cloud processing, but its allowed audience
    is selected by the adult operator. Read its provider-specific age/data notice
    and confirm the terms applying to your account. The app records that choice;
@@ -108,7 +162,7 @@ In the signed-in adult app, open **Settings**:
    may charge. The tutor test
    uses two calls (activity generation and feedback); the photo test uses one and
    must correctly read the known synthetic fraction.
-7. Under **Assign active connections**, choose the tested **Tutor connection**
+7. Under **Active models**, choose the tested **Tutor connection**
    and **Photo reader connection**, acknowledge where work will go, and save.
 
 Saving a connection alone makes no inference call and changes no active route.
@@ -127,30 +181,18 @@ read-only in Settings; see [the public example](../config/providers.example.yaml
 Bedrock uses that path and workload credentials. Never expose a model server
 publicly as a phone-access shortcut.
 
-## 4. Launch with phone access and start practice
+## 5. Create a learner account and start practice
 
-After configuring the private HTTPS gateway and setting `APP_PUBLIC_ORIGIN`
-as in section 2, stop the local app with Ctrl+C and run:
-
-```bash
-make serve
-```
-
-This loads your existing private settings, builds the app and supervises one API
-on `127.0.0.1:8000` and one worker behind the gateway. Ctrl+C stops the app/worker
-and preserves data; it does not stop Tailscale Serve or Caddy. For computer-only
-HTTP use `make start`.
-
-Open your configured HTTPS address on the computer and sign in. Create a learner account
-under **Learners**, then open **Practice**, select the
-learner and enter a topic. **Tutor options** controls how much the tutor leads.
-Choose **Start session**, then **Create practice activity**. No grade level or
-skill catalog is required.
+Create a learner account under **Learners**, record its username and password
+securely, then sign out. Sign in with that learner account and open **Practice**.
+Enter a topic; **Tutor options** controls how much the tutor leads. Choose
+**Start session** to create both the session and its first practice activity. No
+grade level or skill catalog is required.
 
 To study from homework, paste it or use the reference-photo option. The tutor
 creates distinct practice rather than answering the original.
 
-## 5. Use your iPhone
+## 6. Use your iPhone
 
 On the computer, choose **Attach photo → Take photo with phone**. Scan the QR with the iPhone's
 Camera app, tap the link, and choose **Take or choose a photo**. Preview, crop or

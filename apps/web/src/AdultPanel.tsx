@@ -458,6 +458,9 @@ export function AdultPanel({
           aria-live="polite"
         >
           <p>{message}</p>
+          <button type="button" onClick={() => onNavigate("learners")}>
+            Open Learners
+          </button>
           <button type="button" onClick={() => setMessage("")}>
             Dismiss
           </button>

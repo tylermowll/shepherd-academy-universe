@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { api, onAuthenticationLost, setIdentity, type Schema } from "./client";
 import { AdultPanel } from "./AdultPanel";
 import { Tutor } from "./Tutor";
@@ -86,11 +92,12 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
       window.removeEventListener("hashchange", changed);
     };
   }, [authenticated, identity]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.title = `${authenticated || page === "help" ? pageNames[page] : setupRequired || checkingSetup ? "Create administrator account" : "Sign in"} · Shepherd Academy Universe`;
-    workspace.current
-      ?.querySelector<HTMLElement>("h1")
-      ?.focus({ preventScroll: true });
+    const focusTarget =
+      workspace.current?.querySelector<HTMLElement>("[data-page-focus]") ??
+      workspace.current?.querySelector<HTMLElement>("h1");
+    focusTarget?.focus({ preventScroll: true });
     if (scrollToTop.current) {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
       scrollToTop.current = false;
@@ -239,17 +246,25 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
           Shepherd Academy Universe
         </a>
         {identity?.authenticated && (
-          <button
-            onClick={() =>
-              void act(async () => {
-                await api("/auth/logout", "POST");
-                setIdentity("");
-                window.location.replace("/");
-              })
-            }
-          >
-            Sign out
-          </button>
+          <>
+            <span className="account-summary" aria-label="Signed in account">
+              <strong>{identity.login_name || "Signed-in account"}</strong>
+              <small>
+                {identity.role === "adult" ? "Administrator" : "Learner"}
+              </small>
+            </span>
+            <button
+              onClick={() =>
+                void act(async () => {
+                  await api("/auth/logout", "POST");
+                  setIdentity("");
+                  window.location.replace("/");
+                })
+              }
+            >
+              Sign out
+            </button>
+          </>
         )}
       </header>
       <nav className="page-tabs" aria-label="Main navigation">

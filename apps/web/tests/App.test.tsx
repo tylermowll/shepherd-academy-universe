@@ -50,6 +50,51 @@ describe("entry and offline practice", () => {
       screen.queryByRole("button", { name: "Pair this device" }),
     ).toBeNull();
   });
+  it("shows the signed-in account and role in the header", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : input.url;
+        return Promise.resolve(
+          new Response(
+            JSON.stringify(
+              url.endsWith("/auth/session")
+                ? {
+                    authenticated: true,
+                    csrf_token: "synthetic-csrf",
+                    login_name: "home-admin",
+                    role: "adult",
+                    setup_required: false,
+                  }
+                : [],
+            ),
+            { headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }),
+    );
+    render(<App />);
+
+    const account = await screen.findByLabelText("Signed in account");
+    expect(account).toHaveTextContent("home-admin");
+    expect(account).toHaveTextContent("Administrator");
+  });
+  it("focuses a Help topic selected inside the app", async () => {
+    window.history.replaceState(null, "", "/?page=help");
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("link", { name: "Phone setup" }));
+    const topic = await screen.findByRole("heading", {
+      level: 2,
+      name: "Phone setup",
+    });
+    await vi.waitFor(() => expect(topic).toHaveFocus());
+  });
   it("retains bounded arithmetic utilities without exposing a template practice UI", () => {
     expect(checkOffline("10/12", 5n, 6n)).toMatch("Correct value");
     expect(checkOffline("1/0", 5n, 6n)).toMatch("cannot be zero");

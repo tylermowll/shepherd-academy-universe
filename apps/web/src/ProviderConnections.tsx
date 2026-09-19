@@ -406,6 +406,32 @@ export function ProviderConnections({
                 server, or a hosted API connection.
               </p>
             )}
+          {saveFailure && !draft && (
+            <div role="alert" className="error">
+              <p>{saveFailure}</p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() =>
+                  void act(async () => {
+                    setBusy(true);
+                    try {
+                      await onChanged();
+                      setSaveFailure("");
+                      setMessage(
+                        "The saved connection list is current. Test the connection next.",
+                      );
+                      openSection("tests");
+                    } finally {
+                      setBusy(false);
+                    }
+                  })
+                }
+              >
+                Refresh connections
+              </button>
+            </div>
+          )}
           {draft && (
             <form
               className="card connection-editor"
@@ -554,9 +580,12 @@ export function ProviderConnections({
                   />
                 </label>
                 <p className="fine" id="server-address-help">
-                  This address is reached by the app server. For Ollama on the
-                  same computer, use http://127.0.0.1:11434. For vLLM, use the
-                  address and port where you started its server.
+                  This address is reached by the app server. If the app runs
+                  directly, Ollama on this computer normally uses
+                  http://127.0.0.1:11434. With Docker Compose, use
+                  http://host.docker.internal:11434 and make sure the model
+                  server listens on an interface Docker can reach. Keep local
+                  model servers behind your firewall.
                 </p>
                 <label>
                   Model name

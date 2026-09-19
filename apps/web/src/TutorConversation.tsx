@@ -15,6 +15,7 @@ export function TutorConversation(props: Props) {
   const { session, active } = props;
   const viewport = useRef<HTMLDivElement>(null);
   const follow = useRef(true);
+  const positioning = useRef(false);
   const previousSession = useRef("");
   const [atBottom, setAtBottom] = useState(true);
   const revision = session.problems
@@ -24,8 +25,22 @@ export function TutorConversation(props: Props) {
     .join("|");
   useEffect(() => {
     if (!active || !viewport.current) return;
-    if (follow.current || previousSession.current !== session.id)
-      viewport.current.scrollTop = viewport.current.scrollHeight;
+    if (follow.current || previousSession.current !== session.id) {
+      const messages =
+        viewport.current.querySelectorAll<HTMLElement>(".tutor-operation");
+      const latest = messages.item(messages.length - 1);
+      positioning.current = true;
+      if (latest) {
+        const viewportTop = viewport.current.getBoundingClientRect().top;
+        const messageTop = latest.getBoundingClientRect().top;
+        viewport.current.scrollTop += messageTop - viewportTop - 8;
+      } else {
+        viewport.current.scrollTop = viewport.current.scrollHeight;
+      }
+      window.requestAnimationFrame(() => {
+        positioning.current = false;
+      });
+    }
     previousSession.current = session.id;
   }, [active, revision, session.id]);
 
@@ -41,9 +56,10 @@ export function TutorConversation(props: Props) {
         tabIndex={0}
         onScroll={(event) => {
           const node = event.currentTarget;
-          follow.current =
+          const bottom =
             node.scrollHeight - node.scrollTop - node.clientHeight < 72;
-          setAtBottom(follow.current);
+          if (!positioning.current) follow.current = bottom;
+          setAtBottom(bottom);
         }}
       >
         {session.problems.map((problem, index) => (
