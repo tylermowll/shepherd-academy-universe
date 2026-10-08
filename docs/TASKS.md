@@ -49,7 +49,7 @@ specification gates pass.
 | T39 | Implemented, tested and deployed locally | Browser setup permission survives link expiry, reloads and API restarts; the local administrator account now exists. |
 | T40 | Implemented, tested and deployed locally | Settings loads after signup; rechecking the same session preserves pending requests and account changes still discard stale responses. |
 | T41 | Implemented; automated gates passed; live/device acceptance pending | Tutor and provider saves recover without duplicate work, account/setup transitions are explicit, conversation space is usable on desktop/mobile, Docker host-model routing is consistent, and dependency audits pass. |
-| T42 | Implemented; automated gates passed; live/device acceptance pending | Persisted pasted/photo/AI-written/published passages, grounded guidance and same-passage questions, attributed bounded imports, and original reading evaluation; evidence below. |
+| T42 | Implemented, reviewed, pushed and deployed locally; live/device acceptance pending | Persisted reading passages and grounded practice; 72 browser checks, fixed dependency/runtime findings, clean image scan and retained-data migration; evidence below. |
 
 ### T42 release review and local update (2026-10-08)
 
@@ -117,9 +117,28 @@ mounted. Its CycloneDX SBOM contains 52 components (`/tmp/shepherd-t42-sbom.json
 The final image ID is
 `sha256:2d122fccc6047fd6376eb5bd6d3ca057e13a90cbb4cedf76328fff9fe1c2a1e3`.
 `make hooks-check` passed all repository hooks, including the full project check.
-Push and retained-data installation update are next. Live tutor/vision quality
-and physical-device acceptance remain unverified; mock fixtures do not establish
-teaching quality.
+Release commit `1800536` was pushed to `origin/main`. For the local update:
+
+- `docker compose -f infra/docker/compose.yaml stop --timeout 100 api worker`
+  stopped both writers. An early archive made before the worker finished exiting
+  was discarded; the retained archive was recreated only after Docker confirmed
+  both services stopped. The opaque archive is
+  `backups/pre-t42-20261008.tar.gz`, mode 0600, outside Git. The former image is
+  retained as `math-practice-tutor:pre-t42-20261008`. Private settings were preserved.
+- Tagged the tested image `math-practice-tutor:local`, ran
+  `docker compose -f infra/docker/compose.yaml run --rm api alembic upgrade head`,
+  then `docker compose -f infra/docker/compose.yaml up -d --no-build api worker`.
+  Both services run the recorded final image ID. `exec -T api alembic current`
+  reports **0018_reading_passages (head)**.
+- Read-only HTTPS verification passed at the configured app origin: API/worker
+  readiness, the current reading UI bundle matching the local production build,
+  noncached HTML, and a 401 for anonymous access to the new reading-source API.
+  The final patched image also imported the public Aesop and NASA sources.
+
+Live tutor/vision quality and physical-device acceptance remain unverified;
+mock fixtures do not establish teaching quality. No live inference, model
+download, private-data inspection or account reset was performed. Hosted CI
+is triggered by the push; its outcome is separate from the passed local evidence.
 
 ### T42 — Reading passages and grounded practice (2026-10-08)
 

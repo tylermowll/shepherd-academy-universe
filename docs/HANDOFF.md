@@ -9,8 +9,11 @@ original AI writing and selected published story/news imports. Guidance and
 Next/Easier/Harder retain the passage across reload and History. Published text
 has attributed previews and bounded fetching; homework remains reference-only.
 The original reading evaluation exercises production guidance and generation
-contracts and leaves teaching quality to human review. Current changes are in
-the checkout; the running installation has not been updated by this task.
+contracts and leaves teaching quality to human review. Release commit `1800536`
+is on `main`, and the existing local installation has been updated to migration
+`0018_reading_passages` with its data and settings retained. The reviewed image
+passed the container smoke test and a clean HIGH/CRITICAL security scan; HTTPS
+readiness and the served reading UI were verified after deployment.
 Exact validation and remaining gates are in [TASKS](TASKS.md).
 
 T41 is the preceding tested increment, covering recoverable tutor/provider saves,
