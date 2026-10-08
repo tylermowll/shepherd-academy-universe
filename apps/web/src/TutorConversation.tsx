@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api, type Schema } from "./client";
 import { SafeText } from "./SafeText";
 import { ReadingPassage } from "./ReadingPassage";
+import { ActivityPurpose } from "./ActivityPurpose";
 
 type Props = {
   session: Schema<"TutoringSessionPublic">;
@@ -72,9 +73,13 @@ export function TutorConversation(props: Props) {
               <details className="conversation-activity">
                 <summary>Earlier activity {index + 1}</summary>
                 {problem.passage && (
-                  <ReadingPassage passage={problem.passage} />
+                  <ReadingPassage
+                    passage={problem.passage}
+                    focus={problem.material_focus}
+                  />
                 )}
                 <SafeText text={problem.problem_text} />
+                <ActivityPurpose problem={problem} />
               </details>
             )}
             {problem.operations.map((operation) => (

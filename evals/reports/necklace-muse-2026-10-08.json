@@ -1,0 +1,345 @@
+{
+  "suite": "published-reading-v1",
+  "provenance": "Public-domain continuous excerpt from Guy de Maupassant, The Necklace, Project Gutenberg eBook 12758 (https://www.gutenberg.org/ebooks/12758), downloaded 2026-10-08. Source-file SHA256: b00ca96aa7e9c1aa44fe703db3248a71d09c9870ff05159a7202f24de65d56e3. Whitespace normalized only. Questions, learner answers, follow-ups and review criteria are original synthetic evaluation material; no real learner data.",
+  "authored_at": "2026-10-08",
+  "fixture_sha256": "de6d9c6a87458db8a16cfdfcdecf2ad5250f58d3df7a8823877b69255f596112",
+  "recorded_at": "2026-10-08T16:11:39.580080+00:00",
+  "python": "3.14.7",
+  "provider_adapter": "muse_code_cli",
+  "model": "muse-spark-1.3",
+  "prompt_versions": ["guidance-v2", "activity-v2"],
+  "total_cases": 3,
+  "sample_size": 3,
+  "call_budget": 9,
+  "calls_attempted": 9,
+  "reported_token_usage": null,
+  "latency_ms": {
+    "p50": 25940,
+    "p95": 33650
+  },
+  "cost_estimate": "Unavailable: CLI does not provide a verified per-request billing total in this report. Nine one-step requests maximum; no retries.",
+  "contracts_passed": true,
+  "model_quality": "Live model responses are available for qualitative review; no blinded or independent human score yet.",
+  "photo_quality": "Not measured here; use the physical photo rehearsal.",
+  "outputs": [
+    {
+      "fixture_id": "necklace-literal-correct",
+      "skill": "literal",
+      "response_kind": "correct",
+      "review_notes": [
+        "Accept ten years and the correctly paraphrased work detail without false correction.",
+        "Respond directly to the request about sufficient evidence; do not require polished prose.",
+        "Next question must be new and answerable from this excerpt alone."
+      ],
+      "stages": [
+        {
+          "stage": "feedback",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "You tied the repayment time to a specific detail from the text rather than answering generally.",
+                "You picked out the husband's extra evening and night copying work as evidence of effort."
+              ],
+              "guidance": [
+                "That move from a broad claim to a concrete detail is what this question is looking for.",
+                "To round it out, look again at the section about how their household and daily routine changed — what one detail about Mathilde's day shows the effort was shared, and how would you put that detail in your own words?"
+              ],
+              "next_step": "If you want, add one sentence in your own words about a household change that shows both of them felt the cost.",
+              "concepts": ["using text evidence to support a claim"],
+              "uncertainty_note": null
+            },
+            "provider_request_id": null,
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 29957,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "follow_up",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "You paired the time span with one concrete effort detail instead of answering generally."
+              ],
+              "guidance": [
+                "Yes — one specific example is enough here. This prompt asks for two things: how long and one detail showing effort, not an essay or a full list. You already have both parts, so you can keep it concise in your own words without adding the household change."
+              ],
+              "next_step": "",
+              "concepts": [
+                "matching one piece of evidence to what the question asks"
+              ],
+              "uncertainty_note": null
+            },
+            "provider_request_id": null,
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 16461,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "next_question",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "problem_text": "Based only on the supplied excerpt from \"The Necklace — replacement, repayment, and ending,\" answer concisely in your own words in 1-2 sentences: What does Mme. Forestier tell Mathilde about the original necklace when they meet at the end, and what one specific detail from her words shows what it was worth? Give the point plus one detail; no extra list or essay is needed.",
+              "concept_focus": "literal understanding with textual evidence: identifying an explicitly stated revelation and one supporting value detail",
+              "passage": null
+            },
+            "provider_request_id": null,
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 19943,
+            "finish_reason": "stop"
+          }
+        }
+      ],
+      "human_review": {
+        "false_correction": "pending",
+        "unsupported_claim": "pending",
+        "answer_leakage": "pending",
+        "follow_up_context": "pending",
+        "next_question_relevance": "pending"
+      }
+    },
+    {
+      "fixture_id": "necklace-value-mistaken",
+      "skill": "evidence",
+      "response_kind": "mistaken",
+      "review_notes": [
+        "Distinguish the original borrowed necklace from the replacement; do not endorse the false value.",
+        "Initial help should point to the final dialogue without giving a submission-ready correction.",
+        "Recognize the corrected follow-up without treating it as a fresh misconception.",
+        "Do not invent that Forestier deliberately tricked Mathilde or knew about the replacement."
+      ],
+      "stages": [
+        {
+          "stage": "feedback",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "You kept track of the 36,000 francs figure from the search for the replacement."
+              ],
+              "guidance": [
+                "You're remembering an important number from the middle of the passage, when they find the shop necklace.",
+                "Take another close look at Mme. Forestier's last reply — what words does she use for what her own necklace was, and what value does she name there?",
+                "How does that value compare to the 36,000 francs, and what would that difference suggest about those ten years of paying?"
+              ],
+              "next_step": "Re-read just that final exchange and jot down the two values in your own words, then note what stands out to you.",
+              "concepts": [
+                "using dialogue as evidence",
+                "comparing values in a text"
+              ],
+              "uncertainty_note": null
+            },
+            "provider_request_id": null,
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 23034,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "follow_up",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "You caught the earlier mix-up and separated the two necklaces clearly"
+              ],
+              "guidance": [
+                "You've got it sorted now — the shop necklace cost them 36,000 francs, while Forestier's own words for hers point to paste worth at most five hundred francs.",
+                "That gap is what reframes the replacement: they paid far more and spent ten years on it without knowing the original was worth so little."
+              ],
+              "next_step": "If you want to take it one step further, put into your own words what Mathilde did not know when she handed over the replacement.",
+              "concepts": ["value contrast", "irony of the replacement"],
+              "uncertainty_note": null
+            },
+            "provider_request_id": null,
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 27072,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "next_question",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "problem_text": "Use only this short excerpt from the passage:\n\n\"You say that you bought a necklace of diamonds to replace mine?\" / \"Yes. You never noticed it, then! They were very like.\" / \"Oh, my poor Mathilde! Why, my necklace was paste. It was worth at most five hundred francs!\"\n\nQuestion separate from the excerpt: What does this exchange suggest Mathilde did not know when she handed over the replacement necklace? In your response, point to specific words in the excerpt that support your inference and explain how they support it.",
+              "concept_focus": "Using textual evidence to support an inference about what Mathilde did not know when replacing the necklace",
+              "passage": null
+            },
+            "provider_request_id": null,
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 18918,
+            "finish_reason": "stop"
+          }
+        }
+      ],
+      "human_review": {
+        "false_correction": "pending",
+        "unsupported_claim": "pending",
+        "answer_leakage": "pending",
+        "follow_up_context": "pending",
+        "next_question_relevance": "pending"
+      }
+    },
+    {
+      "fixture_id": "necklace-interpretation-alternative",
+      "skill": "inference",
+      "response_kind": "alternative",
+      "review_notes": [
+        "Accept the supported admiration instead of enforcing a single moral about vanity.",
+        "Accept tragic persistence as a compatible interpretation and distinguish interpretation from established fact.",
+        "The hypothetical outcome of telling Forestier sooner is not narrated; do not invent her response.",
+        "Avoid summarizing the entire story or importing omitted opening scenes."
+      ],
+      "stages": [
+        {
+          "stage": "feedback",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "Grounds admiration in the narrator's heroism language plus ten years of payment",
+                "Acknowledges the costly choice to hide the loss and replace without asking"
+              ],
+              "guidance": [
+                "That combination is exactly what this prompt needs — you support an interpretation and name a complication instead of only praising persistence.",
+                "To sharpen it in your own words: which one specific work or debt detail makes heroism feel earned or strained to you, and how does the paste-necklace ending affect that admiration? Keep the example you discuss tied to this excerpt."
+              ],
+              "next_step": "If you revise, keep your claim and add one brief quoted detail for endurance and one sentence on how the ending complicates it.",
+              "concepts": ["narrator evaluation", "evidence with complication"],
+              "uncertainty_note": null
+            },
+            "provider_request_id": null,
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 30261,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "follow_up",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "You spot that persistence can look admirable and wasteful at once",
+                "You ask whether the same evidence can support two readings, which fits this complication prompt"
+              ],
+              "guidance": [
+                "Yes — admiration and tragedy can fit the same evidence here, they are not either-or.",
+                "Admiration in this excerpt points to how she meets the debt once taken on — the narrator's heroism language and ten years of grinding repayment. Tragedy points to the cost and avoidability — hiding the loss, borrowing ruinously, then learning the original was paste worth at most five hundred francs.",
+                "A different parallel may help: you can admire a neighbor's discipline for training every dawn for a charity hike, and still call it tragic when the hike is cancelled for reasons that were knowable earlier — same effort, two judgments, one about character and one about outcome."
+              ],
+              "next_step": "If you revise, keep your own claim and test in two sentences how one repayment detail can carry both admiration and tragic cost.",
+              "concepts": ["admiration alongside tragedy", "tragic irony"],
+              "uncertainty_note": null
+            },
+            "provider_request_id": null,
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 33650,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "next_question",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "problem_text": "Building on your work on admiration and tragic cost fitting the same evidence: Infer from this excerpt why paying for the replacement necklace required ten years of hardship. Point to one borrowing or repayment detail and explain what it suggests about the cost, then explain how Mme. Forestier's closing disclosure complicates that inference. Support your interpretation with one brief quotation from the excerpt, and keep your answer tied only to details stated in the excerpt.",
+              "concept_focus": "Inference about cause and ironic outcome using textual evidence",
+              "passage": null
+            },
+            "provider_request_id": null,
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 25940,
+            "finish_reason": "stop"
+          }
+        }
+      ],
+      "human_review": {
+        "false_correction": "pending",
+        "unsupported_claim": "pending",
+        "answer_leakage": "pending",
+        "follow_up_context": "pending",
+        "next_question_relevance": "pending"
+      }
+    }
+  ],
+  "evaluation_transport": {
+    "cli_version": "Muse Code 1.0.3 (1.0.3-R2198.1)",
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "reasoning_effort": "medium",
+    "max_model_steps_per_request": 1,
+    "retries": 0,
+    "verification": [
+      {
+        "call": 1,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 2,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 3,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 4,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 5,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 6,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 7,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 8,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 9,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      }
+    ]
+  },
+  "scope": "Production make_request/finish_model with isolated synthetic SQLite; prompts embedded in a Muse Code request and output checked against application Pydantic schemas. Muse adds its own system context. This does not exercise the app HTTP provider adapter, native structured-output API mode, live worker/browser loop, or configured app tutor. Active web tutor was mock at preflight. No real learner data or private application configuration sent."
+}

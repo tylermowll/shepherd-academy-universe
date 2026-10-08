@@ -53,6 +53,7 @@ async function modelFixture() {
               problem_text:
                 "Synthetic connected-model activity: Describe two observations you could make when comparing plants grown in light and shade.",
               concept_focus: "Synthetic comparison of observations",
+              success_criteria: ["Describe two observable differences."],
             }
           : "strengths" in properties
             ? {
@@ -61,6 +62,13 @@ async function modelFixture() {
                 next_step: "Describe another observation.",
                 concepts: ["Observations"],
                 uncertainty_note: null,
+                teaching_action: "coach",
+                learning_observation: {
+                  assessment: "developing",
+                  evidence: "The learner shared observations for comparison.",
+                  resolved_points: [],
+                  open_points: ["Compare observations from both groups."],
+                },
               }
             : "quality" in properties
               ? {

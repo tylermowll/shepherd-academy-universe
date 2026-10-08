@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Literal, cast
+from typing import Any, Literal, cast
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request
@@ -29,7 +29,15 @@ from math_tutor.api.practice import (
     request_key,
 )
 from math_tutor.providers import authorize_route, effective_configuration
-from math_tutor.reading import ActivitySource, ReadingPassage
+from math_tutor.reading import (
+    MAX_PASSAGE_LENGTH,
+    ActivitySource,
+    MaterialMode,
+    ReadingPassage,
+    SectionSize,
+    material_focus,
+    section_offsets,
+)
 
 router = APIRouter(prefix="/api/v1/tutor", tags=["AI tutoring"])
 Initiative = Literal["tutor_led", "balanced", "learner_led"]
@@ -53,9 +61,12 @@ class TutorActivityInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     difficulty: Difficulty | None = None
     source: ActivitySource = "topic"
-    reference_text: str | None = Field(default=None, max_length=8000)
+    reference_text: str | None = Field(default=None, max_length=MAX_PASSAGE_LENGTH)
     passage_title: str | None = Field(default=None, min_length=1, max_length=200)
-    source_token: str | None = Field(default=None, max_length=50000)
+    source_token: str | None = Field(default=None, max_length=410000)
+    reading_mode: MaterialMode | None = None
+    section_size: SectionSize | None = None
+    section_index: int | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def validate_reference(self) -> TutorActivityInput:
@@ -75,7 +86,31 @@ class TutorActivityInput(BaseModel):
             raise ValueError("A passage title belongs to a pasted or photographed passage.")
         if (self.source == "published") != bool(self.source_token):
             raise ValueError("A published passage requires its imported source token.")
+        if self.source == "reference_text" and len(self.reference_text or "") > 8000:
+            raise ValueError("Assignment reference text must be at most 8,000 characters.")
+        if self.source not in {
+            "reading_text",
+            "reading_photo",
+            "reading_generated",
+            "same_passage",
+            "published",
+        } and any(
+            value is not None
+            for value in (self.reading_mode, self.section_size, self.section_index)
+        ):
+            raise ValueError("Section controls require reading or study material.")
+        if self.section_index is not None and self.source != "same_passage":
+            raise ValueError("Choose a saved passage before navigating its sections.")
         return self
+
+
+def activity_request_payload(body: TutorActivityInput) -> dict[str, Any]:
+    """Keep saved request identities stable when optional controls are absent."""
+    return {
+        key: value
+        for key, value in body.model_dump().items()
+        if key not in {"reading_mode", "section_size", "section_index"} or value is not None
+    }
 
 
 class TutoringSessionInput(BaseModel):
@@ -141,7 +176,10 @@ def create_session(
         raise HTTPException(422, "Choose a topic or describe what you want to practice.")
     if body.initial_activity and body.initial_activity.source == "same_passage":
         raise HTTPException(422, "Choose a passage before starting questions about it.")
-    key, payload = request_key(request), digest(body.model_dump())
+    request_payload = body.model_dump()
+    if body.initial_activity is not None:
+        request_payload["initial_activity"] = activity_request_payload(body.initial_activity)
+    key, payload = request_key(request), digest(request_payload)
     old = db.scalar(
         select(PracticeSession).where(
             PracticeSession.learner_id == body.learner_id, PracticeSession.request_key == key
@@ -207,7 +245,7 @@ def activity(
 ) -> ProblemPublic:
     private_tutoring()
     session = owned_tutoring_session(db, actor, session_id)
-    key, payload = request_key(request), digest(body.model_dump())
+    key, payload = request_key(request), digest(activity_request_payload(body))
     problems = list(
         db.scalars(
             select(ProblemInstance)
@@ -220,7 +258,7 @@ def activity(
             if old.parameters.get("request_digest") != payload:
                 raise HTTPException(409, "Request key already used with different input.")
             return problem_public(db, old)
-    if session.status != "open" or len(problems) >= 100:
+    if session.status != "open":
         raise HTTPException(409, "Start another session to continue.")
     for old in problems:
         if old.status == "assigned":
@@ -256,6 +294,36 @@ def activity(
         from math_tutor.reading_sources import verify_source_token
 
         passage = verify_source_token(body.source_token or "", session.learner_id)
+    previous_parameters = problems[-1].parameters if body.source == "same_passage" else {}
+    mode = body.reading_mode or previous_parameters.get(
+        "material_mode", "whole" if body.source == "same_passage" else "guided"
+    )
+    size = body.section_size or previous_parameters.get("section_size", "standard")
+    index = body.section_index
+    if index is None:
+        index = 0
+        if passage and body.source == "same_passage" and mode == "guided":
+            previous_focus = material_focus(passage, previous_parameters)
+            index = next(
+                i
+                for i, (start, end) in enumerate(section_offsets(passage.text, size))
+                if start <= previous_focus.start < end
+            )
+    material_parameters = {"material_mode": mode, "section_size": size, "section_index": index}
+    if passage:
+        try:
+            material_focus(passage, material_parameters)
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from None
+    # Leave room to read every section and revisit questions in a long source.
+    # The bound depends on saved material, not the selected difficulty or mode.
+    activity_limit = (
+        max(100, min(500, 3 * len(section_offsets(passage.text, "short")))) if passage else 100
+    )
+    if len(problems) >= activity_limit:
+        raise HTTPException(
+            409, "This session reached its activity limit. Start another session to continue."
+        )
     if body.difficulty is not None:
         session.profile_settings = {**session.profile_settings, "difficulty": body.difficulty}
     session.updated_at = utcnow()
@@ -267,6 +335,7 @@ def activity(
         seed=0,
         position=len(problems),
         parameters={
+            **material_parameters,
             "activity_state": "reference_capture" if photo else "generating",
             "reference_source": body.source,
             "reference": (body.reference_text or "") if body.source == "reference_text" else "",

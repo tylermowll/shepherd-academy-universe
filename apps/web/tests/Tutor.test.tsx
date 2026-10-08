@@ -1413,10 +1413,304 @@ it("starts published reading only after a selected preview supplies its source t
     expect(
       (JSON.parse(sent![1].body as string) as Schema<"TutoringSessionInput">)
         .initial_activity,
-    ).toEqual({ source: "published", source_token: "owned-synthetic-preview" });
+    ).toEqual({
+      source: "published",
+      source_token: "owned-synthetic-preview",
+      reading_mode: "guided",
+      section_size: "standard",
+    });
   });
   await screen.findByLabelText("Your work or question");
   expect(
     screen.queryByRole("button", { name: "Load published text" }),
   ).toBeNull();
+});
+
+const studyMaterial = {
+  title: "Original history source",
+  text: "The town built a canal to move grain.\n\nLater, railways changed the route.",
+  origin: "pasted",
+  uncertainties: [],
+};
+const materialFocus = {
+  mode: "guided",
+  section_size: "short",
+  section_index: 0,
+  section_count: 2,
+  start: 0,
+  end: 36,
+  text: "The town built a canal to move grain.",
+};
+const studyActivity = () => ({
+  ...activity(),
+  passage: studyMaterial,
+  material_focus: materialFocus,
+  learning_goal: "Explain a historical cause using source evidence.",
+  success_criteria: [
+    "Identify one reason for the canal and a supporting detail.",
+  ],
+});
+
+it("shows bounded criteria and current history section, with learner-controlled continuation and draft protection", async () => {
+  const fetcher = installSession(session([studyActivity()]));
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  const reply = await screen.findByLabelText("Your work or question");
+  expect(screen.getByLabelText("Reading passage")).toHaveTextContent(
+    materialFocus.text,
+  );
+  expect(screen.getByLabelText("Reading passage")).not.toHaveTextContent(
+    "railways",
+  );
+  expect(screen.getByText("Section 1 of 2")).toBeVisible();
+  expect(
+    screen.getByRole("region", { name: "Activity goal" }),
+  ).toHaveTextContent(studyActivity().success_criteria[0]!);
+  const next = screen.getByRole("button", { name: "Next section" });
+  expect(next).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Previous section" }),
+  ).toBeDisabled();
+  fireEvent.change(reply, { target: { value: "An unfinished answer" } });
+  expect(next).toBeDisabled();
+  fireEvent.change(reply, { target: { value: "" } });
+  fireEvent.click(next);
+  await vi.waitFor(() => {
+    const sent = fetcher.mock.calls.find(([url]) =>
+      url.endsWith("/activities"),
+    );
+    expect(JSON.parse(sent![1].body as string)).toEqual({
+      source: "same_passage",
+      section_index: 1,
+    });
+  });
+});
+
+it("changes material amount without changing question difficulty", async () => {
+  const fetcher = installSession(session([studyActivity()]));
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  await screen.findByLabelText("Your work or question");
+  fireEvent.click(screen.getByText("Reading pace"));
+  const navigation = screen.getByRole("region", {
+    name: "Material navigation",
+  });
+  fireEvent.change(within(navigation).getByLabelText("Section length"), {
+    target: { value: "long" },
+  });
+  expect(fetcher.mock.calls.some(([url]) => url.endsWith("/activities"))).toBe(
+    false,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Apply reading pace" }));
+  await vi.waitFor(() => {
+    const sent = fetcher.mock.calls.find(([url]) =>
+      url.endsWith("/activities"),
+    );
+    expect(JSON.parse(sent![1].body as string)).toEqual({
+      source: "same_passage",
+      reading_mode: "guided",
+      section_size: "long",
+    });
+  });
+});
+
+it("can recover a failed whole-text activity by choosing guided sections", async () => {
+  const failed = {
+    ...studyActivity(),
+    activity_state: "generating",
+    material_focus: {
+      ...materialFocus,
+      mode: "whole",
+      section_index: 0,
+      section_count: 1,
+      text: studyMaterial.text,
+    },
+    operations: [
+      operation({
+        kind: "generation",
+        status: "failed",
+        reading: null,
+        feedback: null,
+        interpretation: null,
+        safe_error:
+          "This material is too large for this model. Choose guided sections.",
+        error_code: "context_limit",
+        retryable: false,
+      }),
+    ],
+  };
+  const fetcher = installSession(session([failed]));
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  await screen.findByText(/This material is too large/);
+  fireEvent.click(screen.getByText("Reading pace"));
+  const navigation = screen.getByRole("region", {
+    name: "Material navigation",
+  });
+  const mode = within(navigation).getByRole("combobox", {
+    name: "Reading mode",
+  });
+  expect(mode).toBeEnabled();
+  fireEvent.change(mode, { target: { value: "guided" } });
+  fireEvent.click(
+    within(navigation).getByRole("button", { name: "Apply reading pace" }),
+  );
+  await vi.waitFor(() => {
+    const sent = fetcher.mock.calls.find(([url]) =>
+      url.endsWith("/activities"),
+    );
+    expect(JSON.parse(sent![1].body as string)).toEqual({
+      source: "same_passage",
+      reading_mode: "guided",
+      section_size: "short",
+    });
+  });
+});
+
+it("retries section navigation with the original payload and idempotency key", async () => {
+  const current = session([studyActivity()]);
+  window.location.hash = `tutor=${sessionId}`;
+  let attempts = 0;
+  const fetcher = vi.fn((url: string, options: RequestInit) => {
+    if (url.endsWith("/features")) return response(capabilities);
+    if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(current);
+    if (url.endsWith("/tutor/sessions")) return response([current]);
+    if (url.endsWith("/activities")) {
+      attempts += 1;
+      if (attempts === 1)
+        return Promise.reject(new TypeError("Lost acknowledgement"));
+      return response({});
+    }
+    throw new Error(`${url}: ${options.method}`);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  render(
+    <Tutor
+      learner={learner}
+      offline={false}
+      act={async (action) => {
+        try {
+          await action();
+        } catch {
+          /* App displays the connection error. */
+        }
+      }}
+    />,
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "Next section" }));
+  const retry = await screen.findByRole("button", {
+    name: "Retry saved request",
+  });
+  expect(screen.getByRole("button", { name: "Next section" })).toBeDisabled();
+  fireEvent.click(retry);
+  await vi.waitFor(() => expect(attempts).toBe(2));
+  const sent = fetcher.mock.calls.filter(([url]) =>
+    url.endsWith("/activities"),
+  );
+  expect(sent[1]![1].body).toBe(sent[0]![1].body);
+  expect(
+    (sent[1]![1].headers as Record<string, string>)["Idempotency-Key"],
+  ).toBe((sent[0]![1].headers as Record<string, string>)["Idempotency-Key"]);
+});
+
+it("allows long science material while retaining the assignment-reference limit", async () => {
+  const fetcher = vi.fn((url: string, options: RequestInit) => {
+    if (url.endsWith("/features")) return response(capabilities);
+    if (url.endsWith(`/tutor/sessions/${sessionId}`))
+      return response(session([activity()]));
+    if (url.endsWith("/tutor/sessions"))
+      return response(options.method === "POST" ? session([activity()]) : []);
+    throw new Error(url);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  await screen.findByLabelText("Practice source");
+  fireEvent.change(screen.getByLabelText("Practice source"), {
+    target: { value: "reference_text" },
+  });
+  expect(screen.getByLabelText("Reference material")).toHaveAttribute(
+    "maxlength",
+    "8000",
+  );
+  fireEvent.change(screen.getByLabelText("Practice source"), {
+    target: { value: "reading_text" },
+  });
+  expect(screen.getByLabelText("Reading passage")).toHaveAttribute(
+    "maxlength",
+    "50000",
+  );
+  fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
+    target: { value: "Science: understand energy transfer" },
+  });
+  const material =
+    "Original science note: heat flows between objects.\n\n".repeat(200);
+  fireEvent.change(screen.getByLabelText("Reading passage"), {
+    target: { value: material },
+  });
+  fireEvent.change(screen.getByLabelText("Reading mode"), {
+    target: { value: "whole" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Start session" }));
+  await vi.waitFor(() => {
+    const sent = fetcher.mock.calls.find(
+      ([url, options]) =>
+        url.endsWith("/tutor/sessions") && options.method === "POST",
+    );
+    expect(
+      (JSON.parse(sent![1].body as string) as Schema<"TutoringSessionInput">)
+        .initial_activity,
+    ).toMatchObject({
+      source: "reading_text",
+      reference_text: material,
+      reading_mode: "whole",
+    });
+  });
+});
+
+it("stages sentence help in the existing composer without sending or discarding a draft", async () => {
+  const fetcher = installSession(session([studyActivity()]));
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  const reply = await screen.findByLabelText("Your work or question");
+  const range = document.createRange();
+  range.selectNodeContents(screen.getByLabelText("Reading passage"));
+  window.getSelection()!.removeAllRanges();
+  window.getSelection()!.addRange(range);
+  fireEvent(document, new Event("selectionchange"));
+  const ask = screen.getByRole("button", { name: "Ask about selected text" });
+  expect(ask).toBeEnabled();
+  fireEvent.change(reply, { target: { value: "Keep my draft" } });
+  expect(ask).toBeDisabled();
+  fireEvent.change(reply, { target: { value: "" } });
+  fireEvent.click(ask);
+  expect(reply).toHaveValue(
+    `Help me understand this part of the material:\n\n${materialFocus.text}`,
+  );
+  expect(reply).toHaveFocus();
+  expect(
+    fetcher.mock.calls.some(([, options]) => options.method === "POST"),
+  ).toBe(false);
+});
+
+it("clearly labels a selected mock tutor in private installations", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string) =>
+      url.endsWith("/features")
+        ? response({ ...capabilities, text_processing: "mock" })
+        : response([]),
+    ),
+  );
+  const navigate = vi.fn();
+  render(
+    <Tutor
+      learner={learner}
+      offline={false}
+      act={run}
+      isAdult
+      onNavigate={navigate}
+    />,
+  );
+  await screen.findByText("Demo tutor — sample responses only");
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "Demo tutor — sample responses only",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Open model settings" }));
+  expect(navigate).toHaveBeenCalledWith("settings");
 });

@@ -529,9 +529,20 @@ async def test_photo_pass_survives_incomplete_tutor_with_safe_step_diagnostics(
                     },
                 )
             payload = (
-                {"problem_text": "Compare observations of two plants.", "concept_focus": "Evidence"}
+                {
+                    "problem_text": "Compare observations of two plants.",
+                    "concept_focus": "Evidence",
+                    "success_criteria": ["Name one useful observation."],
+                }
                 if "problem_text" in properties
                 else {
+                    "teaching_action": "coach",
+                    "learning_observation": {
+                        "assessment": "developing",
+                        "evidence": "A connection to evidence is not yet stated.",
+                        "resolved_points": [],
+                        "open_points": ["Explain the connection."],
+                    },
                     "strengths": [],
                     "guidance": ["Explain your observation."],
                     "next_step": "Name one observation.",

@@ -15,6 +15,7 @@ from math_tutor.adapters.providers.contracts import (
     ActivityPayload,
     Capabilities,
     FeedbackPayload,
+    LearningObservation,
     Message,
     ModelRequest,
     ProviderError,
@@ -28,6 +29,18 @@ from math_tutor.adapters.providers.transports import (
     validate_payload,
 )
 from math_tutor.tutoring import bounded_messages, can_read, copied_reference
+
+
+def observation(**changes: object) -> LearningObservation:
+    return LearningObservation.model_validate(
+        {
+            "assessment": "developing",
+            "evidence": "The response names an observation but not its connection to the claim.",
+            "resolved_points": ["Identifies an observation"],
+            "open_points": ["Connect the observation to the claim"],
+            **changes,
+        }
+    )
 
 
 def reading(**changes: object) -> ReadingPayload:
@@ -83,12 +96,78 @@ def test_readability_is_independent_of_correctness_and_incidental_uncertainty(
 
 def test_direct_reply_does_not_require_praise_or_an_extra_exercise() -> None:
     payload = FeedbackPayload(
+        teaching_action="clarify",
+        learning_observation=observation(assessment="uncertain", resolved_points=[]),
         strengths=[],
         guidance=["The reader could not identify the first numerator."],
         next_step="",
         concepts=[],
     )
     assert payload.next_step == "" and not payload.strengths
+
+
+def test_sufficient_response_is_acknowledged_without_moving_the_finish_line() -> None:
+    payload = FeedbackPayload(
+        teaching_action="acknowledge",
+        learning_observation=observation(assessment="sufficient", open_points=[]),
+        strengths=[],
+        guidance=["Your detail and explanation answer the question. You may continue."],
+        next_step="",
+        concepts=[],
+    )
+    for changes in (
+        {"teaching_action": "coach"},
+        {"next_step": "Now supply another example."},
+        {"learning_observation": observation(assessment="sufficient").model_dump()},
+        {"evidence_link": {"submission_id": str(uuid4())}},
+    ):
+        with pytest.raises(ValidationError):
+            FeedbackPayload.model_validate({**payload.model_dump(), **changes})
+
+
+@pytest.mark.parametrize("field", ["teaching_action", "learning_observation"])
+def test_structured_teaching_fields_are_required(field: str) -> None:
+    data = {
+        "teaching_action": "coach",
+        "learning_observation": observation().model_dump(),
+        "strengths": [],
+        "guidance": ["Explain the connection."],
+        "next_step": "",
+        "concepts": [],
+    }
+    for missing in (None, "omit"):
+        changed = {**data, field: missing}
+        if missing == "omit":
+            del changed[field]
+        with pytest.raises(ValidationError):
+            FeedbackPayload.model_validate(changed)
+
+
+@pytest.mark.parametrize("criteria", [None, [], [""], ["x" * 301], ["a"] * 4])
+def test_success_criteria_are_bounded_and_required(criteria: object) -> None:
+    with pytest.raises(ValidationError):
+        ActivityPayload.model_validate(
+            {
+                "problem_text": "Compare two observations and explain one difference.",
+                "concept_focus": "Evidence",
+                "success_criteria": criteria,
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"evidence": "x" * 601},
+        {"open_points": ["x"] * 4},
+        {"resolved_points": ["x" * 201]},
+        {"submission_id": str(uuid4())},
+        {"mastery": 1.0},
+    ],
+)
+def test_observations_are_bounded_without_model_owned_identity(changes: dict[str, object]) -> None:
+    with pytest.raises(ValidationError):
+        observation(**changes)
 
 
 def test_reading_quality_confidence_required_and_no_verdict_fields() -> None:
@@ -102,6 +181,7 @@ def test_reading_quality_confidence_required_and_no_verdict_fields() -> None:
             {
                 "problem_text": "A new writing practice activity.",
                 "concept_focus": "Clear claims",
+                "success_criteria": ["State a claim and support it with one detail."],
                 "expected_result": "Hidden answer",
             }
         )
@@ -109,6 +189,8 @@ def test_reading_quality_confidence_required_and_no_verdict_fields() -> None:
         FeedbackPayload.model_validate(
             {
                 "strengths": [],
+                "teaching_action": "coach",
+                "learning_observation": observation().model_dump(),
                 "guidance": ["Explain the evidence."],
                 "next_step": "Revise one sentence.",
                 "concepts": [],
@@ -125,10 +207,14 @@ def test_new_task_schemas_use_all_http_transports(
 ) -> None:
     payload = {
         "generate": ActivityPayload(
-            problem_text="Explain how you would compare two observations.", concept_focus="Evidence"
+            problem_text="Explain how you would compare two observations.",
+            concept_focus="Evidence",
+            success_criteria=["Describe one useful comparison."],
         ),
         "read": reading(),
         "review": FeedbackPayload(
+            teaching_action="coach",
+            learning_observation=observation(),
             strengths=[],
             guidance=["Connect the observation to your claim."],
             next_step="Revise that connection.",

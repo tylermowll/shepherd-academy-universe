@@ -1,0 +1,390 @@
+{
+  "suite": "cross-subject-teaching-v1",
+  "provenance": "T43 bounded live pilot: one public-domain Necklace excerpt (source and permission in passage metadata) and two original synthetic math/writing scenarios. No real learner data. Reading case matches the earlier v2 rehearsal with an explicit minimum-response criterion added for v3. This is a small qualitative sample, not a controlled experiment.",
+  "authored_at": "2026-10-08",
+  "fixture_sha256": "67d99f117dd8edd98f13b1197e0fe179f69dfe5268a961b04ecd20739394f0fe",
+  "recorded_at": "2026-10-08T17:00:09.852276+00:00",
+  "python": "3.14.7",
+  "provider_adapter": "muse_code_cli",
+  "model": "muse-spark-1.3",
+  "prompt_versions": [
+    "guidance-v3",
+    "activity-v3"
+  ],
+  "total_cases": 3,
+  "sample_size": 3,
+  "call_budget": 9,
+  "calls_attempted": 9,
+  "reported_token_usage": null,
+  "latency_ms": {
+    "p50": 18610,
+    "p95": 26044
+  },
+  "cost_estimate": "Unavailable: CLI does not provide a verified per-request billing total in this report. Nine one-step requests maximum; no retries.",
+  "contracts_passed": true,
+  "model_quality": "Live model responses are available for qualitative review; no blinded or independent human score yet.",
+  "photo_quality": "Not measured here; use the physical photo rehearsal.",
+  "outputs": [
+    {
+      "fixture_id": "necklace-literal-correct",
+      "subject": "Reading comprehension",
+      "skill": "literal",
+      "response_kind": "correct",
+      "review_notes": [
+        "Accept ten years and the correctly paraphrased work detail without false correction.",
+        "Respond directly to the request about sufficient evidence; do not require polished prose.",
+        "Next question must be new and answerable from this excerpt alone."
+      ],
+      "stages": [
+        {
+          "stage": "feedback",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [],
+              "guidance": [
+                "That's answered — you named the ten years and pointed to his evening accounts work and late-night copying to show the effort. You may continue on."
+              ],
+              "next_step": "",
+              "concepts": [],
+              "uncertainty_note": null,
+              "teaching_action": "acknowledge",
+              "learning_observation": {
+                "assessment": "sufficient",
+                "evidence": "Learner stated ten-year repayment and cited husband's evening accounts and late-night manuscript copying.",
+                "resolved_points": [
+                  "Stated ten-year repayment duration",
+                  "Gave concrete effort detail about husband's extra work"
+                ],
+                "open_points": []
+              }
+            },
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 17670,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "follow_up",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [],
+              "guidance": [
+                "Yes — one specific example is enough here. You stated the ten years and gave his evening accounts work and late-night copying as the effort detail, so that question has been answered and you may continue."
+              ],
+              "next_step": "",
+              "concepts": [],
+              "uncertainty_note": null,
+              "teaching_action": "acknowledge",
+              "learning_observation": {
+                "assessment": "sufficient",
+                "evidence": "Learner restated ten-year repayment with husband's evening and late-night copying work and asked if one example suffices for concise answer.",
+                "resolved_points": [
+                  "Stated ten-year repayment duration",
+                  "Gave concrete effort detail about husband's extra work"
+                ],
+                "open_points": []
+              }
+            },
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 16962,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "next_question",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "problem_text": "According to the final conversation between Mathilde and Mme. Forestier, what does Mme. Forestier reveal about the original necklace Mathilde borrowed?",
+              "concept_focus": "Literal understanding of the ending revelation in the passage",
+              "success_criteria": [
+                "State in your own words what Mme. Forestier says the original necklace was, using only the final conversation.",
+                "Include the value detail she gives for the original necklace."
+              ],
+              "passage": null
+            },
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 25869,
+            "finish_reason": "stop"
+          }
+        }
+      ],
+      "human_review": {
+        "false_correction": "pending",
+        "unsupported_claim": "pending",
+        "answer_leakage": "pending",
+        "follow_up_context": "pending",
+        "next_question_relevance": "pending",
+        "unnecessary_demands": "pending",
+        "recognizes_revision": "pending",
+        "appropriate_teaching_action": "pending"
+      }
+    },
+    {
+      "fixture_id": "math-sufficient",
+      "subject": "Mathematics",
+      "skill": "Equivalent fractions",
+      "response_kind": "correct",
+      "review_notes": [
+        "A correct complete answer needs acknowledgment, not another representation or method.",
+        "Confirm that a diagram is optional; next practice must advance beyond this resolved comparison."
+      ],
+      "stages": [
+        {
+          "stage": "feedback",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [],
+              "guidance": [
+                "That's right — you've answered the question. You stated they are equivalent and gave a valid reason about multiplying numerator and denominator by 2, so you may continue."
+              ],
+              "next_step": "",
+              "concepts": [],
+              "uncertainty_note": null,
+              "teaching_action": "acknowledge",
+              "learning_observation": {
+                "assessment": "sufficient",
+                "evidence": "Learner stated yes they are equivalent and explained multiplying 2/3 numerator and denominator by two gives 4/6.",
+                "resolved_points": [
+                  "Stated fractions are equivalent",
+                  "Gave valid scaling reason"
+                ],
+                "open_points": []
+              }
+            },
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 18610,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "follow_up",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [],
+              "guidance": [
+                "That was enough — you stated they are equivalent and gave one valid reason about multiplying by 2, so you've answered the question and you may continue; no diagram is needed."
+              ],
+              "next_step": "",
+              "concepts": [],
+              "uncertainty_note": null,
+              "teaching_action": "acknowledge",
+              "learning_observation": {
+                "assessment": "sufficient",
+                "evidence": "Learner asked if prior explanation was enough; prior work stated fractions are equivalent with valid scaling reason.",
+                "resolved_points": [
+                  "Stated fractions are equivalent",
+                  "Gave valid scaling reason"
+                ],
+                "open_points": []
+              }
+            },
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 16580,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "next_question",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "problem_text": "Are 3/4 and 6/8 equivalent? Explain with one reason.",
+              "concept_focus": "Equivalent fractions",
+              "success_criteria": [
+                "States whether the fractions are equivalent",
+                "Gives one reason that connects the two fractions"
+              ],
+              "passage": null
+            },
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 21239,
+            "finish_reason": "stop"
+          }
+        }
+      ],
+      "human_review": {
+        "false_correction": "pending",
+        "unsupported_claim": "pending",
+        "answer_leakage": "pending",
+        "follow_up_context": "pending",
+        "next_question_relevance": "pending",
+        "unnecessary_demands": "pending",
+        "recognizes_revision": "pending",
+        "appropriate_teaching_action": "pending"
+      }
+    },
+    {
+      "fixture_id": "writing-explanation",
+      "subject": "Writing",
+      "skill": "Evidence and reasoning",
+      "response_kind": "partial",
+      "review_notes": [
+        "Answer the concept question directly with a distinct example rather than repeated Socratic questions.",
+        "Recognize the learner paraphrase; do not infer low ability from a short answer."
+      ],
+      "stages": [
+        {
+          "stage": "feedback",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [],
+              "guidance": [
+                "That distinction is tricky — think of it as two separate jobs. The observation is just what was noticed, and the explanation is why it matters for the claim. For a different example: if the claim is that mulch helps garden soil hold water, the observation could be that mulched soil still felt damp the afternoon after watering while unmulched soil felt dry. The explanation would then be that slower drying suggests less evaporation, which is why that dampness supports the claim about holding water."
+              ],
+              "next_step": "",
+              "concepts": [],
+              "uncertainty_note": null,
+              "teaching_action": "explain",
+              "learning_observation": {
+                "assessment": "not_assessed",
+                "evidence": "Learner asked for help distinguishing evidence from explanation of evidence; no example provided yet.",
+                "resolved_points": [],
+                "open_points": [
+                  "Distinguish an observation from explanation of how it supports a claim"
+                ]
+              }
+            },
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 26044,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "follow_up",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [],
+              "guidance": [
+                "Yes — that's exactly it: the observation is what was noticed, and the explanation says why it matters for the claim. That question is answered, so you may continue."
+              ],
+              "next_step": "",
+              "concepts": [],
+              "uncertainty_note": null,
+              "teaching_action": "acknowledge",
+              "learning_observation": {
+                "assessment": "sufficient",
+                "evidence": "Learner restated that observation is the evidence and explanation connects it to the claim.",
+                "resolved_points": [
+                  "Distinguished observation from explanation linking it to claim"
+                ],
+                "open_points": []
+              }
+            },
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 24167,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "next_question",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "problem_text": "Try using the same skill with a new situation. Claim: A school's morning study hall helps students start first period ready to learn. Observation: In weeks with study hall, teachers noted fewer students asking to finish homework during first period than in weeks without it. Explain why this observation supports the claim.",
+              "concept_focus": "Using reasoning to connect an observation to a claim",
+              "success_criteria": [
+                "Restate what was observed in this new example in your own words.",
+                "Explain why that observation supports the claim about starting class ready to learn."
+              ],
+              "passage": null
+            },
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 11821,
+            "finish_reason": "stop"
+          }
+        }
+      ],
+      "human_review": {
+        "false_correction": "pending",
+        "unsupported_claim": "pending",
+        "answer_leakage": "pending",
+        "follow_up_context": "pending",
+        "next_question_relevance": "pending",
+        "unnecessary_demands": "pending",
+        "recognizes_revision": "pending",
+        "appropriate_teaching_action": "pending"
+      }
+    }
+  ],
+  "evaluation_transport": {
+    "cli_version": "Muse Code 1.0.3 (1.0.3-R2198.1)",
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "reasoning_effort": "medium",
+    "max_model_steps_per_request": 1,
+    "retries": 0,
+    "verification": [
+      {
+        "call": 1,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 2,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 3,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 4,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 5,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 6,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 7,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 8,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 9,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      }
+    ]
+  },
+  "scope": "Production make_request/finish_model with isolated synthetic SQLite; prompts embedded in a Muse Code request and output checked against application Pydantic schemas. Muse adds its own system context. This does not exercise the app HTTP provider adapter, native structured-output API mode, live worker/browser loop, or configured app tutor. Active web tutor was mock at preflight. No real learner data or private application configuration sent."
+}

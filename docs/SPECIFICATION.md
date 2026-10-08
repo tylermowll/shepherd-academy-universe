@@ -227,9 +227,11 @@ supplied; ask for an excerpt when necessary.
 Reading practice stores a typed passage snapshot separately from its question.
 The learner can paste or photograph a passage, request an original AI-written
 passage, or explicitly import an offered published source. Preserve the full
-snapshot for guidance, subsequent questions, History and administrator export;
-ownership, retention and deletion follow the activity. Next/Easier/Harder reuse
-that passage until different material is selected. Distinguish original generated
+snapshot for reuse, History and administrator export; guidance and subsequent
+questions use the selected section and bounded earlier evidence in guided mode,
+or the full text in whole-material mode. Ownership, retention and deletion follow
+the activity. Next/Easier/Harder reuse the current section until the learner
+changes sections or selects different material. Distinguish original generated
 text, photo uncertainties, and published title/author/URL/date/permission metadata.
 Models may generate original text only when requested; they cannot replace supplied
 passages or invent published attribution. Homework references remain separate
@@ -1050,6 +1052,37 @@ failure regressions. Exit evidence includes `make check`, `make test-integration
 `make smoke`, and `make eval-mock` with the original reading suite. Live model
 quality and physical photo/device/accessibility acceptance remain separately
 recorded human gates; mock contracts cannot close them.
+
+### T43 shared teaching and material progression contract
+
+T43 builds on T42 across all subjects. Generated activities persist their concept
+goal and bounded sufficient-response criteria. Feedback selects a typed teaching
+action and records fallible, evidence-linked observations without changing grades,
+permissions, completion or learner-controlled progression. Subsequent requests
+retain resolved and open points, distinguish supported from independent work,
+acknowledge sufficient responses, and avoid repeatedly assigning resolved work.
+Explanation requests receive focused explanations; optional extensions are explicit.
+
+Store pasted or imported reading/study text up to 50,000 characters with its exact
+source and attribution. Photo transcriptions, AI-written passages and homework
+references retain their 8,000-character ceilings; newly generated guided passages
+must fit the selected section length. Whole-material and guided-section modes keep
+material amount separate from activity difficulty. Guided sections preserve source offsets and
+provide explicit learner navigation, persistence and restart recovery. Saved
+material remains navigable after generation failure, including changing an
+oversized whole-text request to guided sections. Tutor context contains the
+selected section and appropriate previously read evidence,
+with later sections excluded in guided mode. Text from any subject is supported;
+homework remains reference for distinct practice. No new external tools, model
+autonomy, service or database engine is introduced.
+
+Display activity purpose/criteria and honest demo/provider readiness without
+exposing private connection settings. Regenerate public contracts. Regression
+coverage spans multiple subjects and multi-turn sufficiency, explanation,
+revision, uncertainty and progression. Mock/schema success is not teaching-quality
+acceptance. Required gates: targeted unit/integration/component/browser tests,
+`make check`, `make test-integration`, `make smoke`, and bounded mock evaluation.
+Live-provider and physical-device evidence are recorded separately.
 
 ## 16. Development and release commands
 

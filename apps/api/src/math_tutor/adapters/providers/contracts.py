@@ -1,10 +1,10 @@
 """Provider-neutral, bounded requests; no model-controlled permissions or verdicts."""
 
 from dataclasses import dataclass
-from typing import Any, Literal, Protocol
+from typing import Annotated, Any, Literal, Protocol, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from math_tutor.adapters.images import NORMALIZED_IMAGE_MIME_TYPE
 from math_tutor.reading import OriginalPassage
@@ -64,6 +64,9 @@ class ActivityPayload(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     problem_text: str = Field(min_length=12, max_length=4000)
     concept_focus: str = Field(min_length=1, max_length=500)
+    success_criteria: list[Annotated[str, Field(min_length=1, max_length=300)]] = Field(
+        min_length=1, max_length=3
+    )
     passage: OriginalPassage | None = None
 
 
@@ -79,15 +82,50 @@ class ReadingPayload(BaseModel):
     rejection_reason: str | None = Field(max_length=1000)
 
 
-class FeedbackPayload(BaseModel):
-    """Teaching observations are not grades, tools, or completion commands."""
+class LearningObservation(BaseModel):
+    """Fallible evidence about this response, never a mastery score or a grade."""
 
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    assessment: Literal["sufficient", "developing", "uncertain", "not_assessed"]
+    evidence: str = Field(min_length=1, max_length=600)
+    resolved_points: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(max_length=3)
+    open_points: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(max_length=3)
+
+
+class FeedbackContent(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     strengths: list[str] = Field(max_length=5)
     guidance: list[str] = Field(min_length=1, max_length=5)
     next_step: str = Field(max_length=1000)
     concepts: list[str] = Field(max_length=5)
     uncertainty_note: str | None = Field(default=None, max_length=500)
+
+
+TeachingAction = Literal["acknowledge", "clarify", "explain", "coach", "extend"]
+
+
+class FeedbackPublic(FeedbackContent):
+    """Historical feedback records absent structured observations as unknown."""
+
+    teaching_action: TeachingAction | None
+    learning_observation: LearningObservation | None
+
+
+class FeedbackPayload(FeedbackContent):
+    """Teaching observations are not grades, tools, or completion commands."""
+
+    teaching_action: TeachingAction
+    learning_observation: LearningObservation
+
+    @model_validator(mode="after")
+    def sufficient_work_has_no_extra_assignment(self) -> Self:
+        if self.learning_observation.assessment == "sufficient" and (
+            self.teaching_action != "acknowledge"
+            or self.next_step.strip()
+            or self.learning_observation.open_points
+        ):
+            raise ValueError("Sufficient work must be acknowledged without a required next step.")
+        return self
 
 
 class ModelRequest(BaseModel):

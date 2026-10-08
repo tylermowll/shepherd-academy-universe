@@ -50,6 +50,199 @@ specification gates pass.
 | T40 | Implemented, tested and deployed locally | Settings loads after signup; rechecking the same session preserves pending requests and account changes still discard stale responses. |
 | T41 | Implemented; automated gates passed; live/device acceptance pending | Tutor and provider saves recover without duplicate work, account/setup transitions are explicit, conversation space is usable on desktop/mobile, Docker host-model routing is consistent, and dependency audits pass. |
 | T42 | Implemented, reviewed, pushed and deployed locally; live/device acceptance pending | Persisted reading passages and grounded practice; 72 browser checks, fixed dependency/runtime findings, clean image scan and retained-data migration; evidence below. |
+| T43 | Implemented, reviewed and deployed locally; live/device acceptance pending | Shared teaching criteria and evidence, 50k material and guided progression; 255 unit, 180 component, 310 integration and 74 browser checks, plus bounded Muse samples below. |
+
+### T43 — Shared teaching and material progression (2026-10-08)
+
+Authorized by the maintainer's request to apply the system-wide recommendations
+to other material and subjects. Scope and acceptance are in the T43 specification
+contract. The earlier authorization to push `main` and update the existing private
+installation remains in scope. The T42 Necklace fixture and raw report are retained.
+
+Contracts and implementation:
+
+- Provider contracts require 1–3 sufficient-response criteria per generated
+  activity, one teaching action, and bounded observations of current resolved/open
+  points. Sufficient work must use acknowledgment, with no required next step or
+  open point. Criteria appear beside the activity goal. These remain fallible AI
+  guidance; no verified verdict, permission, grade or completion state is delegated.
+- `tutoring.py` uses v3 guidance/generation prompts and bounded, owned,
+  source-scoped evidence memory. The latest assessed response replaces older
+  misconceptions for that activity. The server attaches submission/activity links
+  and qualifies independent, assisted or uncertain evidence. Explanation requests
+  receive direct explanation, and generated criteria must match the question.
+- Migration `0019_teaching_observations` explicitly leaves old observations
+  unknown, preserving historical feedback. Its downgrade preserves prior fields.
+  Public feedback excludes internal evidence links; OpenAPI and TypeScript
+  contracts were regenerated. Tutor probes use a new fingerprint, so saved live
+  tutors need a fresh tutor connection test; photo-reader probes are unchanged.
+- `reading.py`, intake, source imports and request limits support 50,000-character
+  supplied texts. Photo/AI and homework-reference ceilings remain 8,000. Guided
+  sections preserve exact source offsets, prefer natural boundaries and keep
+  future text out of the supplied tutor context. Generated guided passages must
+  fit one chosen section. Navigation and pacing are independent of difficulty.
+- The UI supports whole text, short/standard/long sections, explicit previous/next
+  section controls, saved History focus, goal/criteria display and selected-text
+  help that stages an editable question. A visible notice identifies mock tutoring.
+  Full source rendering no longer silently truncates at 6,000 characters.
+  Failed whole-text generation can recover through saved section controls.
+- Final review fixed two upgrade regressions: absent optional controls preserve
+  pending request hashes, and existing whole-text sessions retain their mode on
+  Next/Easier/Harder. No legacy database bridge or account reset was added.
+- `reading_evaluation.py` now supports an original 12-case cross-subject suite
+  (math, writing, science, history and reading; 36 stages). The opt-in
+  `eval-teaching-live` resolves the actual saved tutor internally and rejects mock
+  or stale probes before inference. Reports omit private connection settings.
+
+Automated evidence:
+
+- Final `make check test-integration` passed: **255 backend unit, 180 frontend
+  component and 310 integration tests**, plus locks, lint, formatting, types,
+  builds, generated contracts, credential checks and infrastructure validation.
+  Integration tests emitted one existing Starlette/AnyIO deprecation warning.
+  Source preservation, Unicode, limits, future-context exclusion, revisions,
+  all three initiative settings, retained retries and migration rollback are covered.
+- Focused long-science desktop/mobile checks passed, including a 17,773-character
+  source, section navigation, draft protection, difficulty independence,
+  reload/History, complete whole-text rendering and mobile width.
+- `make smoke` passed all **74 desktop/mobile browser tests**. The combined
+  `make check test-integration smoke eval-mock audit` run passed; the final small
+  prompt/upgrade corrections also passed the separate check/integration run above.
+  `eval-mock` includes the original math/vision checks plus 12 reading cases/36
+  stages and 12 cross-subject cases/36 stages. Both dependency audits report no
+  known vulnerabilities. `make hooks-check secret-check` passed, including the
+  staged synthetic fixtures and model reports.
+- The final image passed `sh scripts/container-smoke.sh
+  math-practice-tutor:t43-review`: restricted provider subprocess, HEIF,
+  cryptography, SQLite migrations/settings, nonroot API/worker/UI readiness and
+  setup/account protection, using disposable synthetic data.
+- Trivy 0.75.0 scanned the final public image archive with
+  `--scanners vuln --severity HIGH,CRITICAL --exit-code 1`: **zero findings**,
+  including unfixed findings, with no suppressions. A CycloneDX SBOM was generated
+  at `/tmp/shepherd-t43-sbom.json` with 52 components. Final image ID:
+  `sha256:1abafa0262c72d379a81a365a7215a58ccfe1f328b44961783e97d5ecf9c695a`.
+
+Live teaching evidence is deliberately narrower than the automated contracts.
+The [readable Muse report](../evals/reports/teaching-muse-2026-10-08.md) records
+nine fresh responses across reading, math and writing, followed by two fresh
+generation checks after a general prompt correction. All eleven passed schemas.
+The first sample accepts sufficient work and explains directly; it also exposed
+cosmetic math repetition, an extra writing criterion and inaccurate attribution
+of an earlier answer to a follow-up. The final generation sample changes math
+from recognition to construction and aligns writing criteria with its question,
+but still adds an arguably unnecessary sentence-count constraint. The final
+feedback attribution instruction was not measured again. These observations are
+assistant review, not independent acceptance or evidence of learning gains.
+
+Muse Code 1.0.3 used `meta` / `muse-spark-1.3`, medium reasoning, one model step
+per request and no retries. The nine-call pilot used isolated synthetic SQLite
+and production request/result handlers. The two-call follow-up reconstructed
+earlier context by replaying seven recorded results locally; those replays were
+not fresh inference. Raw reports identify the fixture, transport and scope.
+Muse supplies additional system context; neither rehearsal exercises the actual
+app HTTP provider adapter or live browser/worker loop. No real learner data or
+private application configuration was sent. Verified billing totals are unavailable.
+
+Local update and verification:
+
+- Retained the previous image as `math-practice-tutor:pre-t43-20261008`.
+  `docker compose -f infra/docker/compose.yaml stop --timeout 100 api worker`
+  completed, and Docker reported **both writers stopped** before creating the
+  opaque `backups/pre-t43-20261008.tar.gz` archive (mode 0600, outside Git).
+- Tagged the tested image `math-practice-tutor:local`, ran Compose
+  `run --rm api alembic upgrade head`, then `up -d --no-build api worker`.
+  `exec -T api alembic current` reports **0019_teaching_observations (head)**.
+  Both running services use the final image ID recorded above. Accounts, settings
+  and source data were retained; no private contents were opened or printed.
+- `python3 /tmp/shepherd_t43_verify.py` passed private HTTPS readiness, exact
+  served/local UI bundle match (`/assets/index-5N-_ej6C.js`), HTML cache policy
+  and anonymous reading-source API rejection. The app remains available at
+  <https://zoopa-a-boop.taile8325e.ts.net> on its Tailscale network.
+- A post-update internal route check printed only **Active tutor: mock**.
+  It made no inference call and exposed no private settings. No automatic
+  provider selection, account reset, model download or public deployment occurred.
+
+Remaining limits: the installed route remains mock. An administrator must test
+and select a live tutor for
+meaningful browser feedback. Independent learner review, broader live subject
+coverage, actual installed-provider quality and physical-device acceptance remain
+open. Long session responses repeat source snapshots; payload growth is a future
+optimization. Guided context exclusion cannot establish that a model with prior
+knowledge will never mention later events.
+
+### T42 — The Necklace reading rehearsal (2026-10-08)
+
+The maintainer requested web access verification and a reading evaluation using
+Guy de Maupassant's _The Necklace_, which they have read and can independently
+judge. The private HTTPS app passed readiness, current-bundle, cache-policy and
+reading-API authentication checks (`python3 /tmp/shepherd_t42_verify.py`). Use
+<https://zoopa-a-boop.taile8325e.ts.net> from the installation's Tailscale network.
+
+The active tutor preflight returned **mock**. It used the app's internal policy,
+route and probe functions without exposing credentials or private settings and
+without querying learner work. No live application-provider call was made.
+Meaningful browser feedback still requires an administrator to test and select
+a live tutor in Settings. The earlier deployment checks did not certify this.
+
+The authorized evaluation was bounded to nine requests. Following disclosure of
+the mock route and the Muse CLI alternative, the rehearsal used the already
+verified Muse Spark CLI with public application prompts, the public-domain story
+excerpt and synthetic answers. It did not change the installed tutor or settings.
+`UV_NO_ENV_FILE=1 UV_CACHE_DIR=/tmp/shepherd-review-uv uv run --project apps/api
+--locked --no-env-file python /tmp/shepherd_necklace_muse.py` completed **9/9
+responses**, all validated through production schemas and `finish_model`, in a
+temporary synthetic SQLite database. Muse Code 1.0.3 selected `meta` /
+`muse-spark-1.3`, medium reasoning, one model step per request, no retries; all
+terminal states and model identities were checked. Shell, writes, web tools,
+foreign personal context and persistent session logging were disabled; the prompt
+prohibited other tool use.
+
+This is a **CLI prompt rehearsal**, not a live app HTTP adapter or browser/worker
+evaluation. Muse adds its own system context around the production prompt.
+Median total CLI request time was 25.940 seconds; p95/maximum was 33.650 seconds.
+No reliable token or billing total was collected. No real learner data was sent.
+The [readable report](../evals/reports/necklace-muse-2026-10-08.md) includes the
+questions, synthetic learner answers and every response; the adjacent JSON keeps
+raw validated payloads, provenance, fixture hash and human-review fields pending.
+
+Assistant review found grounded handling of the mistaken necklace value and
+acceptance of two supported interpretations. It also found unnecessary requests
+for more evidence after sufficient answers, and a next question repeating a point
+just resolved. These observations are not independent human acceptance or a
+measured error rate. The next bounded teaching improvement is proportional
+feedback and progression past resolved questions, followed by a fresh comparison.
+The maintainer can now judge the recorded exchanges themselves.
+
+Changed contracts/files: the evaluation-only `ReadingSuite.suite` admits the
+explicit `published-reading-v1` label; no learner API, database schema or app
+prompt changed. `reading-necklace-v1.json` adds three attributed cases (correct,
+mistaken, alternative), and `the-necklace-excerpt.txt` plus its README provide
+paste-ready source material and provenance. The continuous excerpt is 5,347
+characters. The full edition's story is 16,119 characters, beyond the current
+8,000-character passage limit; full-story practice still needs separate passages.
+The built-in published-source catalog does not include this story.
+
+Validation:
+
+- `uv run --project apps/api --locked --no-env-file pytest
+apps/api/tests/unit/test_reading_evaluation.py`: **3 passed**, including excerpt
+  fidelity, source attribution, all nine prompt contexts and evaluator-note
+  exclusion. Existing authorization-before-config validation still passes.
+- `python -m math_tutor.reading_evaluation --fixtures
+evals/fixtures/reading-necklace-v1.json --output
+/tmp/shepherd-necklace-mock.json`: **3 cases/9 calls passed**; the original
+  fixture rerun to `/tmp/shepherd-original-reading-mock.json` also passed
+  **12 cases/36 calls**. Both used locked uv with `--no-env-file`.
+- `PATH=/home/mowll/.nvm/versions/node/v24.20.0/bin:$PATH UV_NO_ENV_FILE=1
+UV_CACHE_DIR=/tmp/shepherd-review-uv make check`: **219 backend unit and 171
+  frontend tests passed**, plus lint, format, types, builds, contracts, secret and
+  infrastructure checks. The initial sandboxed attempt had seven loopback-socket
+  permission errors; the authorized rerun with socket access passed every check.
+- The existing integration/browser/release gates were not repeated for this
+  evaluation-only change. Physical phone/photo quality, direct application live
+  provider behavior, initial live activity creation, and independent human
+  acceptance remain unverified. No deployment, account reset, model download or
+  additional application inference was performed.
 
 ### T42 release review and local update (2026-10-08)
 

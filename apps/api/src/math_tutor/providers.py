@@ -82,7 +82,9 @@ def probe_fingerprint(provider: ProviderConfig, stage: str) -> str:
     # tested connection for learner data. Credentials retain their random revision.
     return hashlib.sha256(
         (
-            provider.model_dump_json(exclude={"requires_approval"}) + stage + ":ai-tutor-probe-v2"
+            provider.model_dump_json(exclude={"requires_approval"})
+            + stage
+            + (":ai-tutor-probe-v3" if stage == "tutor" else ":ai-tutor-probe-v2")
         ).encode()
     ).hexdigest()
 

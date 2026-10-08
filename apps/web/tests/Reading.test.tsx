@@ -36,6 +36,36 @@ it("shows source, excerpt and permission beside safely rendered passage text", (
   expect(screen.getByText(passage.permission!)).toBeVisible();
 });
 
+it("keeps later photo uncertainty notes out of an earlier guided section", () => {
+  render(
+    <ReadingPassage
+      passage={{
+        ...passage,
+        origin: "photo",
+        text: "A clear opening.\n\nLater surprising result.",
+        uncertainties: ["The later surprising result may say revised."],
+      }}
+      focus={{
+        mode: "guided",
+        section_size: "short",
+        section_index: 0,
+        section_count: 2,
+        start: 0,
+        end: 16,
+        text: "A clear opening.",
+      }}
+    />,
+  );
+  expect(screen.getByText(/photo reader reported uncertainty/)).toBeVisible();
+  expect(screen.queryByText(/later surprising result/i)).toBeNull();
+});
+
+it("renders the complete allowed study text including Unicode and its final sentence", () => {
+  const text = "🌱".repeat(49_980) + " The final finding.";
+  render(<ReadingPassage passage={{ ...passage, text }} />);
+  expect(screen.getByLabelText("Reading passage").textContent).toBe(text);
+});
+
 it("loads public text only on request and lets the learner choose a news passage", async () => {
   const change = vi.fn();
   const second = {

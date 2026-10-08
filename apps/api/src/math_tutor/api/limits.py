@@ -1,5 +1,7 @@
 """Count request bytes even when Content-Length is absent or forged."""
 
+import re
+
 from fastapi import HTTPException
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -17,6 +19,12 @@ class BoundedBodies:
             or path in {"/api/v1/images/preview", "/api/v1/phone-upload/preview"}
             else 16384
         )
+        if scope.get("method") == "POST" and re.fullmatch(
+            r"/api/v1/tutor/sessions(?:/[0-9a-fA-F-]{36}/activities)?", path
+        ):
+            # Material can contain 50,000 Unicode characters, JSON escapes, or
+            # an attributed source token. Other request bodies stay bounded.
+            limit = 1024 * 1024
 
         async def bounded_receive() -> Message:
             nonlocal total

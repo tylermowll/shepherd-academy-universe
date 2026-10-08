@@ -32,10 +32,16 @@ from math_tutor.adapters.db.engine import (
     create_engine_for_url,
     verify_connection_settings,
 )
-from math_tutor.adapters.db.models import Learner, PracticeSession, ProblemInstance
+from math_tutor.adapters.db.models import (
+    Learner,
+    PracticeSession,
+    ProblemInstance,
+    Submission,
+    TutorTurn,
+)
 
 MIGRATIONS_DIR = Path(__file__).resolve().parents[2] / "migrations"
-HEAD_REVISION = "0018_reading_passages"
+HEAD_REVISION = "0019_teaching_observations"
 
 
 @pytest.fixture
@@ -153,6 +159,63 @@ def test_empty_file_migration_reaches_head(engine: Engine, db_url: str) -> None:
     with engine.connect() as connection:
         version = connection.exec_driver_sql("SELECT version_num FROM alembic_version").scalar()
     assert version == HEAD_REVISION
+
+
+def test_teaching_migration_preserves_history_without_inventing_assessments(
+    engine: Engine, db_url: str
+) -> None:
+    upgrade(db_url, "0018_reading_passages")
+    old_feedback: dict[str, Any] = {
+        "strengths": [],
+        "guidance": ["Consider the connection between the observation and the claim."],
+        "next_step": "Explain that connection.",
+        "concepts": ["Evidence"],
+        "uncertainty_note": None,
+    }
+    with Session(engine) as db:
+        session = make_session()
+        db.add(session)
+        db.flush()
+        problem = make_problem(session.id)
+        db.add(problem)
+        db.flush()
+        submission = Submission(
+            learner_id=session.learner_id,
+            problem_id=problem.id,
+            request_key="synthetic-old-feedback",
+            payload_hash="a" * 64,
+            kind="answer",
+            text="One synthetic observation.",
+            status="completed",
+        )
+        db.add(submission)
+        db.flush()
+        turn = TutorTurn(
+            submission_id=submission.id,
+            message=old_feedback["guidance"][0],
+            source="synthetic",
+            assistance_level=1,
+            prompt_version="guidance-v2",
+            feedback=old_feedback,
+        )
+        db.add(turn)
+        db.commit()
+        turn_id = turn.id
+    upgrade(db_url)
+    with Session(engine) as db:
+        saved = db.get(TutorTurn, turn_id)
+        assert saved is not None
+        assert saved.feedback == {
+            **old_feedback,
+            "teaching_action": None,
+            "learning_observation": None,
+        }
+        assert saved.message == old_feedback["guidance"][0]
+    command.downgrade(alembic_config(db_url), "0018_reading_passages")
+    with Session(engine) as db:
+        saved = db.get(TutorTurn, turn_id)
+        assert saved is not None and saved.feedback == old_feedback
+    upgrade(db_url)
 
 
 @pytest.mark.parametrize("key", ["", "../private", "a" * 63, "A" * 64, "g" * 64])

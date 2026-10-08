@@ -4,22 +4,38 @@ The local administrator account exists. Open the app address and sign in;
 first-account setup is finished. The `shepherd-academy-universe` Compose project
 runs one API and one worker against the retained database in this checkout.
 
-T42 adds reading passages separate from questions: pasted text, photographs,
-original AI writing and selected published story/news imports. Guidance and
-Next/Easier/Harder retain the passage across reload and History. Published text
-has attributed previews and bounded fetching; homework remains reference-only.
-The original reading evaluation exercises production guidance and generation
-contracts and leaves teaching quality to human review. Release commit `1800536`
-is on `main`, and the existing local installation has been updated to migration
-`0018_reading_passages` with its data and settings retained. The reviewed image
-passed the container smoke test and a clean HIGH/CRITICAL security scan; HTTPS
-readiness and the served reading UI were verified after deployment.
-Exact validation and remaining gates are in [TASKS](TASKS.md).
+T43 adds shared teaching criteria and evidence-linked observations across subjects,
+plus guided sections and whole-text study for supplied material up to 50,000
+characters. Reading pace, activity difficulty and help are separate controls.
+Goals and sufficient-response criteria are visible; selected text can prepare a
+question without sending it. Source text and section focus survive History and
+reloads. T42's pasted/photo/AI-written/published sources remain supported;
+homework remains reference for distinct analogous practice.
 
-T41 is the preceding tested increment, covering recoverable tutor/provider saves,
-usable conversation space, account handoffs and Docker host-model routing.
-Its local evidence includes 194 backend unit, 162 frontend, 267 integration and
-66 desktop/mobile browser checks. T40's signup/Settings fix remains covered.
+The retained installation is now at migration `0019_teaching_observations`.
+API and worker run image
+`sha256:1abafa0262c72d379a81a365a7215a58ccfe1f328b44961783e97d5ecf9c695a`.
+The previous image and a stopped-writer recovery archive are retained outside Git.
+Local gates passed: 255 backend unit, 180 frontend, 310 integration and 74
+desktop/mobile browser checks, mock evaluations, hooks, dependency audits,
+container smoke and a clean HIGH/CRITICAL image scan. HTTPS readiness and the
+exact served section-navigation UI bundle were verified after the update.
+Exact commands, recovery paths and remaining gates are in [TASKS](TASKS.md).
+
+Open [the private app](https://zoopa-a-boop.taile8325e.ts.net) from its Tailscale
+network. The post-update active tutor is **mock**. An administrator must run a
+fresh tutor test under **Settings → Connection tests**, then select that
+connection under **Active models**, for meaningful learner feedback. T43's new
+response contract invalidates older tutor tests; photo-reader tests are unchanged.
+No private setting or selected provider was changed during this update.
+
+Eleven fresh Muse Spark CLI responses provide a small qualitative teaching pilot,
+with clearer sufficiency handling and direct explanations, plus remaining
+progression and unnecessary-demand concerns. Read the
+[recorded exchanges and limitations](../evals/reports/teaching-muse-2026-10-08.md).
+The CLI rehearsal is separate from the app's HTTP provider and browser/worker
+path. Independent learning outcomes and actual installed-provider quality are
+unmeasured; structured observations do not establish mastery or verified grades.
 
 For a fresh installation, the private owner link exchanges once for an eight-hour
 HttpOnly setup cookie. Setup survives refreshes and API restarts with the same
@@ -41,7 +57,7 @@ not test or activate it. Synthetic connection tests and active-model selection
 require separate actions in Settings. Provider routing, audience and ownership
 remain enforced by the backend.
 
-Live model quality, physical phone camera/install/update behavior, manual
+Broader live model quality, physical phone camera/install/update behavior, manual
 accessibility checks and browser-model device measurements remain unverified.
 Use [ACCEPTANCE](ACCEPTANCE.md) for these gates,
 [PROVIDER_STATUS](PROVIDER_STATUS.md) for provider evidence, and

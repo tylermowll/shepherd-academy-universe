@@ -2,11 +2,18 @@ import katex from "katex";
 import "katex/dist/katex.min.css";
 
 /** Restricted formatting only: text, bold, code and bounded inline math. */
-export function SafeText({ text }: { text: string }) {
+export function SafeText({
+  text,
+  maxCharacters = 6000,
+}: {
+  text: string;
+  maxCharacters?: 6000 | 50000;
+}) {
   return (
     <div className="explanation">
-      {text
-        .slice(0, 6000)
+      {Array.from(text)
+        .slice(0, maxCharacters)
+        .join("")
         .split(/(\*\*[^*\n]{1,500}\*\*|`[^`\n]{1,500}`|\$[^$\n]{1,1000}\$)/g)
         .map((part, i) => {
           if (part.startsWith("**") && part.endsWith("**"))

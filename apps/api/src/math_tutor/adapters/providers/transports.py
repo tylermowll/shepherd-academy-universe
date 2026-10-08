@@ -28,6 +28,7 @@ from math_tutor.adapters.providers.contracts import (
     ActivityPayload,
     FeedbackPayload,
     InterpretationPayload,
+    LearningObservation,
     ModelRequest,
     ModelResult,
     ProviderError,
@@ -227,11 +228,15 @@ class MockProvider:
             payload = ActivityPayload(
                 problem_text="Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",
                 concept_focus="Synthetic example: observations and evidence",
+                success_criteria=[
+                    "Name one observation and explain how it supports the comparison."
+                ],
             )
             if "This is READING COMPREHENSION." in request.system_instruction:
                 payload = ActivityPayload(
                     problem_text="Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
                     concept_focus="Synthetic example: textual evidence",
+                    success_criteria=["Choose one detail and explain what it suggests."],
                     passage=OriginalPassage(
                         title="Synthetic passage: The Garden Window",
                         text="Mira moved the seedling from a shaded corner toward the window each morning. After a week she asked her brother to build a sunny shelf. Together they measured the plant every day and wrote their observations in a notebook.",
@@ -262,6 +267,13 @@ class MockProvider:
             )
         elif request.purpose == "review":
             payload = FeedbackPayload(
+                teaching_action="coach",
+                learning_observation=LearningObservation(
+                    assessment="not_assessed",
+                    evidence="Synthetic mock responses do not assess learner understanding.",
+                    resolved_points=[],
+                    open_points=[],
+                ),
                 strengths=["Synthetic feedback: you submitted work for discussion."],
                 guidance=[
                     "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."

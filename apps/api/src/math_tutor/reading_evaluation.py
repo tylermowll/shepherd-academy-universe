@@ -1,4 +1,4 @@
-"""Reading rehearsal through production prompts; mocks measure contracts only."""
+"""Reading and cross-subject rehearsals; mocks measure contracts, not learning."""
 
 import argparse
 import hashlib
@@ -14,7 +14,7 @@ from uuid import uuid4
 
 from alembic import command
 from alembic.config import Config
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy.orm import Session
 
 from math_tutor.adapters.db.engine import create_engine_for_url
@@ -29,9 +29,11 @@ from math_tutor.tutoring import finish_model, make_request
 class ReadingCase(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str
-    skill: Literal["literal", "inference", "main_idea", "vocabulary", "evidence", "source_boundary"]
+    subject: str = Field(default="Reading comprehension", min_length=1, max_length=100)
+    skill: str = Field(min_length=1, max_length=100)
     response_kind: Literal["correct", "mistaken", "partial", "alternative", "adversarial"]
-    passage: ReadingPassage
+    passage: ReadingPassage | None = None
+    success_criteria: list[str] = Field(default_factory=list, max_length=3)
     question: str
     response: str
     follow_up: str
@@ -40,10 +42,19 @@ class ReadingCase(BaseModel):
 
 class ReadingSuite(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    suite: Literal["original-reading-v1"]
+    suite: Literal["original-reading-v1", "published-reading-v1", "cross-subject-teaching-v1"]
     provenance: str
     authored_at: str
     cases: list[ReadingCase] = Field(min_length=1, max_length=30)
+
+    @model_validator(mode="after")
+    def explicit_cross_subject_criteria(self) -> ReadingSuite:
+        if self.suite == "cross-subject-teaching-v1" and any(
+            not case.success_criteria or any(not item.strip() for item in case.success_criteria)
+            for case in self.cases
+        ):
+            raise ValueError("Cross-subject cases need explicit sufficient-response criteria.")
+        return self
 
 
 def attempt(
@@ -80,10 +91,12 @@ def problem_for(
         position=int(next_question),
         parameters={
             "activity_state": "generating" if next_question else "ready",
-            "reading_mode": True,
+            "reading_mode": case.passage is not None,
+            "concept_focus": case.skill,
+            "success_criteria": case.success_criteria,
         },
-        passage=case.passage.model_dump(mode="json"),
-        problem_text="Preparing a new reading question." if next_question else case.question,
+        passage=case.passage.model_dump(mode="json") if case.passage else None,
+        problem_text="Preparing a new practice question." if next_question else case.question,
         expected_result={},
         format_constraints={},
         status="assigned",
@@ -121,7 +134,7 @@ def run(
                     lesson = PracticeSession(
                         learner_id=learner.id,
                         mode="ai_tutor",
-                        topic=f"Reading comprehension: {case.skill}",
+                        topic=f"{case.subject}: {case.skill}",
                         initiative="balanced",
                         profile_settings={"difficulty": "standard"},
                     )
@@ -151,7 +164,10 @@ def run(
                             finish_model(db, job, row, problem, result, chosen.adapter)
                             db.commit()
                             entry.update(
-                                contracts_passed=True, result=result.model_dump(mode="json")
+                                contracts_passed=True,
+                                result=result.model_dump(
+                                    mode="json", exclude={"provider_request_id"}
+                                ),
                             )
                             latencies.append(result.latency_ms)
                             for name, count in result.reported_usage.items():
@@ -166,6 +182,7 @@ def run(
                     outputs.append(
                         {
                             "fixture_id": case.id,
+                            "subject": case.subject,
                             "skill": case.skill,
                             "response_kind": case.response_kind,
                             "review_notes": case.review_notes,
@@ -178,6 +195,9 @@ def run(
                                     "answer_leakage",
                                     "follow_up_context",
                                     "next_question_relevance",
+                                    "unnecessary_demands",
+                                    "recognizes_revision",
+                                    "appropriate_teaching_action",
                                 ]
                             },
                         }
@@ -194,8 +214,8 @@ def run(
         "python": platform.python_version(),
         "provider_adapter": chosen.adapter,
         "model": chosen.model,
-        "provider_settings": chosen.model_dump(mode="json", exclude={"base_url", "api_key_env"}),
-        "prompt_versions": ["guidance-v2", "activity-v2"],
+        "provider_settings": {"capabilities": chosen.capabilities.model_dump(mode="json")},
+        "prompt_versions": ["guidance-v3", "activity-v3"],
         "total_cases": len(suite.cases),
         "sample_size": len(outputs),
         "call_budget": limit,
@@ -215,16 +235,42 @@ def run(
     }
 
 
+def active_tutor() -> ProviderConfig:
+    """Resolve the actual saved route internally; export neither settings nor credentials."""
+    from math_tutor.adapters.db.engine import create_default_engine
+    from math_tutor.adapters.providers.config import route
+    from math_tutor.providers import effective_configuration, probe_is_current
+    from math_tutor.settings import database_path
+
+    if not database_path().is_file():
+        raise SystemExit("No installed database found. Run inside the configured installation.")
+    engine = create_default_engine()
+    try:
+        with Session(engine) as db:
+            _, provider = route(effective_configuration(db), "tutor", "adult")
+            if provider.adapter == "mock":
+                raise SystemExit(
+                    "The active tutor is a mock. Select a tested live tutor in Settings."
+                )
+            if not probe_is_current(db, provider, "tutor"):
+                raise SystemExit("The active tutor needs a current connection test in Settings.")
+            return provider
+    finally:
+        engine.dispose()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fixtures", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--live-provider")
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--live-provider")
+    selection.add_argument("--live-active-tutor", action="store_true")
     parser.add_argument("--authorize-synthetic-calls", action="store_true")
     parser.add_argument("--max-calls", type=int, default=3)
     args = parser.parse_args()
     provider = None
-    if args.live_provider:
+    if args.live_provider or args.live_active_tutor:
         if (
             not args.authorize_synthetic_calls
             or not 3 <= args.max_calls <= 90
@@ -233,12 +279,17 @@ def main() -> None:
             raise SystemExit(
                 "Live reading evaluation requires explicit authorization and a 3–90 call budget divisible by three."
             )
-        from math_tutor.adapters.providers.config import Routes, load_configuration, route
+        if args.live_active_tutor:
+            provider = active_tutor()
+        else:
+            from math_tutor.adapters.providers.config import Routes, load_configuration, route
 
-        config = load_configuration()
-        _, provider = route(
-            config.model_copy(update={"routes": Routes(tutor=args.live_provider)}), "tutor", "adult"
-        )
+            config = load_configuration()
+            _, provider = route(
+                config.model_copy(update={"routes": Routes(tutor=args.live_provider)}),
+                "tutor",
+                "adult",
+            )
     report = run(args.fixtures, provider, max_calls=args.max_calls if provider else None)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n")

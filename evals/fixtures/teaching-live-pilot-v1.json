@@ -1,0 +1,65 @@
+{
+  "suite": "cross-subject-teaching-v1",
+  "provenance": "T43 bounded live pilot: one public-domain Necklace excerpt (source and permission in passage metadata) and two original synthetic math/writing scenarios. No real learner data. Reading case matches the earlier v2 rehearsal with an explicit minimum-response criterion added for v3. This is a small qualitative sample, not a controlled experiment.",
+  "authored_at": "2026-10-08",
+  "cases": [
+    {
+      "id": "necklace-literal-correct",
+      "skill": "literal",
+      "response_kind": "correct",
+      "question": "How long do the Loisels spend paying their debts, and what detail shows the effort involved?",
+      "response": "They spend ten years paying. Her husband works evenings on accounts and late at night copying manuscripts.",
+      "follow_up": "Is one specific example enough evidence here? I want a concise answer, not a full essay.",
+      "review_notes": [
+        "Accept ten years and the correctly paraphrased work detail without false correction.",
+        "Respond directly to the request about sufficient evidence; do not require polished prose.",
+        "Next question must be new and answerable from this excerpt alone."
+      ],
+      "passage": {
+        "title": "The Necklace — replacement, repayment, and ending (excerpt)",
+        "text": "At the end of a week they had lost all hope.\n\nAnd Loisel, who had aged five years, declared:\n\n\"We must consider how to replace that ornament.\"\n\nThe next day they took the box which had contained it, and they went to the jeweler whose name was found within. He consulted his books.\n\n\"It was not I, madame, who sold that necklace; I must simply have furnished the case.\"\n\nThen they went from jeweler to jeweler, searching for a necklace like the other, consulting their memories, sick both of them with chagrin and with anguish.\n\nThey found, in a shop at the Palais Royal, a string of diamonds which seemed to them exactly like the one they looked for. It was worth forty thousand francs. They could have it for thirty-six.\n\nSo they begged the jeweler not to sell it for three days yet. And they made a bargain that he should buy it back for thirty-four thousand francs in case they found the other one before the end of February.\n\nLoisel possessed eighteen thousand francs which his father had left him. He would borrow the rest.\n\nHe did borrow, asking a thousand francs of one, five hundred of another, five louis here, three louis there. He gave notes, took up ruinous obligations, dealt with usurers, and all the race of lenders. He compromised all the rest of his life, risked his signature without even knowing if he could meet it; and, frightened by the pains yet to come, by the black misery which was about to fall upon him, by the prospect of all the physical privations and of all the moral tortures which he was to suffer, he went to get the new necklace, putting down upon the merchant's counter thirty-six thousand francs.\n\nWhen Mme. Loisel took back the necklace, Mme. Forestier said to her, with a chilly manner:\n\n\"You should have returned it sooner, I might have needed it.\"\n\nShe did not open the case, as her friend had so much feared. If she had detected the substitution, what would she have thought, what would she have said? Would she not have taken Mme. Loisel for a thief?\n\nMme. Loisel now knew the horrible existence of the needy. She took her part, moreover, all on a sudden, with heroism. That dreadful debt must be paid. She would pay it. They dismissed their servant; they changed their lodgings; they rented a garret under the roof.\n\nShe came to know what heavy housework meant and the odious cares of the kitchen. She washed the dishes, using her rosy nails on the greasy pots and pans. She washed the dirty linen, the shirts, and the dish-cloths, which she dried upon a line; she carried the slops down to the street every morning, and carried up the water, stopping for breath at every landing. And, dressed like a woman of the people, she went to the fruiterer, the grocer, the butcher, her basket on her arm, bargaining, insulted, defending her miserable money sou by sou.\n\nEach month they had to meet some notes, renew others, obtain more time.\n\nHer husband worked in the evening making a fair copy of some tradesman's accounts, and late at night he often copied manuscript for five sous a page.\n\nAnd this life lasted ten years.\n\nAt the end of ten years they had paid everything, everything, with the rates of usury, and the accumulations of the compound interest.\n\nMme. Loisel looked old now. She had become the woman of impoverished households--strong and hard and rough. With frowsy hair, skirts askew, and red hands, she talked loud while washing the floor with great swishes of water. But sometimes, when her husband was at the office, she sat down near the window, and she thought of that gay evening of long ago, of that ball where she had been so beautiful and so feted.\n\nWhat would have happened if she had not lost that necklace? Who knows? who knows? How life is strange and changeful! How little a thing is needed for us to be lost or to be saved!\n\nBut, one Sunday, having gone to take a walk in the Champs Élysées to refresh herself from the labors of the week, she suddenly perceived a woman who was leading a child. It was Mme. Forestier, still young, still beautiful, still charming.\n\nMme. Loisel felt moved. Was she going to speak to her? Yes, certainly. And now that she had paid, she was going to tell her all about it. Why not?\n\nShe went up.\n\n\"Good day, Jeanne.\"\n\nThe other, astonished to be familiarly addressed by this plain good-wife, did not recognize her at all, and stammered:\n\n\"But--madame!--I do not know--You must have mistaken.\"\n\n\"No. I am Mathilde Loisel.\"\n\nHer friend uttered a cry.\n\n\"Oh, my poor Mathilde! How you are changed!\"\n\n\"Yes, I have had days hard enough, since I have seen you, days wretched enough--and that because of you!\"\n\n\"Of me! How so?\"\n\n\"Do you remember that diamond necklace which you lent me to wear at the ministerial ball?\"\n\n\"Yes. Well?\"\n\n\"Well, I lost it.\"\n\n\"What do you mean? You brought it back.\"\n\n\"I brought you back another just like it. And for this we have been ten years paying. You can understand that it was not easy for us, us who had nothing. At last it is ended, and I am very glad.\"\n\nMme. Forestier had stopped.\n\n\"You say that you bought a necklace of diamonds to replace mine?\"\n\n\"Yes. You never noticed it, then! They were very like.\"\n\nAnd she smiled with a joy which was proud and naïve at once.\n\nMme. Forestier, strongly moved, took her two hands.\n\n\"Oh, my poor Mathilde! Why, my necklace was paste. It was worth at most five hundred francs!\"",
+        "origin": "published",
+        "author": "Guy de Maupassant",
+        "source_url": "https://www.gutenberg.org/ebooks/12758",
+        "permission": "Project Gutenberg eBook 12758; public domain in the USA. English translation reproduced from this edition; translator not identified in the source. Whitespace normalized; continuous excerpt, not an adaptation.",
+        "excerpt": true
+      },
+      "subject": "Reading comprehension",
+      "success_criteria": [
+        "State the repayment duration and give one concrete detail showing the effort involved."
+      ]
+    },
+    {
+      "id": "math-sufficient",
+      "subject": "Mathematics",
+      "skill": "Equivalent fractions",
+      "response_kind": "correct",
+      "question": "Are 2/3 and 4/6 equivalent? Explain with one reason.",
+      "response": "Yes. Multiplying both the numerator and denominator of 2/3 by two gives 4/6.",
+      "follow_up": "Was that enough, or do I need to draw a diagram too?",
+      "success_criteria": [
+        "State whether the fractions are equivalent and give one valid reason."
+      ],
+      "review_notes": [
+        "A correct complete answer needs acknowledgment, not another representation or method.",
+        "Confirm that a diagram is optional; next practice must advance beyond this resolved comparison."
+      ]
+    },
+    {
+      "id": "writing-explanation",
+      "subject": "Writing",
+      "skill": "Evidence and reasoning",
+      "response_kind": "partial",
+      "question": "Explain how a specific observation can support a claim in an argument.",
+      "response": "I am stuck on the difference between evidence and explaining the evidence.",
+      "follow_up": "So an observation is the evidence, and the explanation connects it to the claim?",
+      "success_criteria": [
+        "Distinguish the observation from the explanation of how it supports a claim."
+      ],
+      "review_notes": [
+        "Answer the concept question directly with a distinct example rather than repeated Socratic questions.",
+        "Recognize the learner paraphrase; do not infer low ability from a short answer."
+      ]
+    }
+  ]
+}

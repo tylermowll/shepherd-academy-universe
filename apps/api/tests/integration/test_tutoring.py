@@ -30,6 +30,7 @@ from math_tutor.adapters.providers.config import ProviderConfig
 from math_tutor.adapters.providers.contracts import (
     ActivityPayload,
     FeedbackPayload,
+    LearningObservation,
     ModelRequest,
     ModelResult,
     ProviderError,
@@ -37,13 +38,18 @@ from math_tutor.adapters.providers.contracts import (
 )
 
 
-async def tutor_session(adult: AsyncClient, topic: str = "Scientific evidence") -> dict[str, Any]:
+async def tutor_session(
+    adult: AsyncClient,
+    topic: str = "Scientific evidence",
+    *,
+    initiative: Literal["balanced", "tutor_led", "learner_led"] = "balanced",
+) -> dict[str, Any]:
     response = await adult.post(
         "/api/v1/tutor/sessions",
         json={
             "learner_id": (await learner_ids(adult))[0],
             "topic": topic,
-            "initiative": "balanced",
+            "initiative": initiative,
         },
         headers={"Idempotency-Key": str(uuid4())},
     )
@@ -83,6 +89,7 @@ def install_tutor(
             result = ActivityPayload(
                 problem_text="Compare two seedlings grown with different amounts of light. Explain what evidence you would collect.",
                 concept_focus="Using evidence to support a claim",
+                success_criteria=["Name one observation and explain the comparison it supports."],
             )
         elif request.purpose == "read":
             result = ReadingPayload(
@@ -102,6 +109,13 @@ def install_tutor(
             )
         else:
             result = FeedbackPayload(
+                teaching_action="coach",
+                learning_observation=LearningObservation(
+                    assessment="developing",
+                    evidence="The learner names a measurement but has not linked it to the claim.",
+                    resolved_points=["Names a measurement"],
+                    open_points=["Connect evidence to the claim"],
+                ),
                 strengths=["You recorded a measurement before making a claim."],
                 guidance=[
                     "Explain how your measurement supports the claim, and consider what else you would keep the same."
@@ -463,6 +477,7 @@ async def test_canceled_photo_stage_and_expired_worker_do_not_resume(
         validated_payload=ActivityPayload(
             problem_text="This expired worker must not assign this activity.",
             concept_focus="Stale work",
+            success_criteria=["Explain one observation."],
         ),
     )
     assert worker.finish(engine, work, result) is False
@@ -501,7 +516,9 @@ async def test_copied_assignment_is_not_accepted_as_generated_practice(
         return ModelResult(
             model_id=request.model_id,
             validated_payload=ActivityPayload(
-                problem_text=original, concept_focus="Copied homework"
+                problem_text=original,
+                concept_focus="Copied homework",
+                success_criteria=["Explain one observation."],
             ),
         )
 
@@ -635,6 +652,10 @@ async def test_usable_reading_with_local_uncertainty_continues_with_qualified_ev
     assert "not the original image" in requests[-1].ordered_messages[-1].content
     assert requests[-1].private_image_bytes is None
     assert (await latest(adult, session))["operations"][-1]["feedback"] is not None
+    with Session(engine) as db:
+        turn = db.scalar(select(TutorTurn).where(TutorTurn.submission_id == UUID(result["id"])))
+        assert turn and turn.feedback
+        assert turn.feedback["evidence_link"]["support"] == "uncertain"
 
 
 @pytest.mark.anyio
@@ -724,7 +745,8 @@ async def test_conversation_spans_activities_and_more_than_four_exchanges_but_no
     context = "\n".join(message.content for message in request.ordered_messages)
     assert "EARLIER_REASONING_0" in context and "EARLIER_REASONING_5" in context
     assert "OTHER_SESSION_CONTENT" not in context
-    assert len(request.ordered_messages) == 13
+    assert len(request.ordered_messages) == 14
+    assert request.ordered_messages[-2].content.startswith("Saved learning evidence")
     assert request.ordered_messages[0].role == "user"
     assert request.ordered_messages[-1].role == "user"
 

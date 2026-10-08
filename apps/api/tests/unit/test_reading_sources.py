@@ -66,8 +66,8 @@ def test_alternate_xml_encoding_cannot_hide_entities(
 
 def test_news_marks_a_bounded_excerpt_and_does_not_follow_links() -> None:
     text = "<p>" + "Synthetic public observation. " * 150 + "</p>"
-    passage = sources.news(rss(text * 3))[0]
-    assert passage.excerpt and 100 <= len(passage.text) <= 8000
+    passage = sources.news(rss(text * 15))[0]
+    assert passage.excerpt and 100 <= len(passage.text) <= 50000
     with pytest.raises(sources.SourceError):
         sources.news(rss(text, "http://169.254.169.254/latest/"))
     with pytest.raises(sources.SourceError):

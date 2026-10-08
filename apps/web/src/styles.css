@@ -1139,3 +1139,25 @@ main:has(.tutor-workspace) {
   border: 1px solid var(--border, #d1d5db);
   border-radius: 0.5rem;
 }
+.material-position {
+  font-weight: 600;
+}
+.material-navigation {
+  margin-bottom: 1rem;
+}
+.material-options {
+  min-width: 0;
+}
+.activity-purpose {
+  margin-block: 0.75rem;
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--border, #d1d5db);
+  font-size: 0.95rem;
+}
+.activity-purpose p {
+  margin-block: 0.3rem;
+}
+.activity-purpose ul {
+  margin-block: 0.3rem;
+  padding-left: 1.25rem;
+}

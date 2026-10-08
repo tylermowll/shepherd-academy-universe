@@ -119,11 +119,44 @@ Open **Learners** to add yourself or a child. Sign out, then sign in with the
 learner account. Enter a topic, optionally add reference material, and choose
 **Start session**. The first activity is created automatically.
 
-For reading comprehension, choose **Paste a reading passage**, **Photograph a
-reading passage**, or **Let the tutor write a passage**. The passage appears
-separately from its question and is saved with the session. Next/Easier/Harder
-ask new questions about that same text. Choose different material under
-**Session & material** when ready to change passages.
+For reading or studying text in any subject, choose **Paste reading or study
+material**, **Photograph a reading passage**, or **Let the tutor write a passage**.
+Pasted or imported stories, articles, historical sources, science explanations
+and other study texts can contain up to 50,000 characters. Photo transcriptions
+and AI-written passages retain an 8,000-character ceiling. Assignment references
+keep their separate 8,000-character limit and guide distinct analogous practice.
+
+Choose **Read in sections** to work through the text with short, standard or long
+sections, or **Use the whole text** for discussion of material already read.
+Reading pace is separate from activity difficulty. Section boundaries preserve
+the exact saved text; the tutor receives the current section and bounded earlier
+context, with later sections excluded. The reader shows your position, and
+previous/next section controls save a new activity through the normal retry-safe
+workflow. Next/Easier/Harder ask another question about the current section.
+History and reopening preserve the selected section. Whole-text discussion must
+still fit the selected model's context. If generation fails because it is too
+large, open **Reading pace**, choose **Read in sections**, and select **Apply
+reading pace**. The saved material remains available during recovery.
+
+Select up to 1,500 characters of a difficult phrase or sentence in the passage
+to stage a request for help in the conversation. Review it before sending; an
+existing draft must be sent or cleared first. The original text remains visible.
+AI-written passages remain short, and a newly generated passage in section mode
+fits one section so the first question has its evidence available.
+Choose different material under **Session & material** when ready.
+
+Across subjects, activities show their learning goal and what a sufficient
+response should demonstrate. Tutor feedback records a teaching action and
+fallible observations tied to the student's work, including resolved points and
+remaining questions. It distinguishes independent work from work after help and
+uses that context when proposing subsequent practice. These observations are
+guidance, not verified grades or mastery scores; students control progression.
+Historical feedback keeps its original wording and has no invented assessment.
+
+When the selected tutor is a mock, Practice displays a prominent sample-response
+notice. A working website and a successful connection test do not establish
+teaching quality. After the T43 response-contract update, saved live tutors need
+a fresh tutor connection test; existing vision tests retain their validity.
 
 **Published story or news** offers two Aesop stories from a Project Gutenberg
 mirror and up to five recent NASA news passages. Choose **Load published text**,
@@ -242,8 +275,10 @@ The [Makefile](Makefile) is authoritative.
 | `make check`                                                             | Locks, lint, format, strict types, unit/component tests, builds, generated contracts, secret scan, IaC lint |
 | `make test-integration`                                                  | On-disk migration, authorization, recovery, provider-policy and retention checks                            |
 | `make smoke` / `make test-e2e`                                           | Isolated API/worker and desktop/mobile Chromium workflows                                                   |
-| `make eval-mock`                                                         | Original math/vision and 12-case reading mock contracts; no quality claim                                     |
+| `make eval-mock`                                                         | Original math/vision, 12-case reading and 12-case cross-subject mock contracts; no quality claim                                     |
 | `make eval-reading-live PROVIDER=... MAX_CALLS=3`                         | Explicit synthetic reading rehearsal; three calls per case, human quality review required                    |
+| `make eval-teaching-mock`                                                | Twelve original cross-subject conversation cases, 36 mock calls; contracts only                               |
+| `make eval-teaching-live MAX_CALLS=3`                                     | Explicit rehearsal of the installation's selected live tutor, three calls per case; rejects mock/stale routes |
 | `make audit`, `make hooks-check`                                         | Locked dependency vulnerability audit and tracked-file checks                                               |
 | `make contracts` / `make contracts-check`                                | Regenerate OpenAPI/TypeScript or reject drift                                                               |
 | `make format`, `make lint`, `make typecheck`                             | Focused developer checks                                                                                    |
@@ -259,6 +294,17 @@ Install the test browser with `pnpm exec playwright install --with-deps chromium
 or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an installed Chrome. Mobile
 emulation does not certify actual Safari/Chrome phone behavior. Restricted tools
 can use `UV_CACHE_DIR=/tmp/...` and `PNPM='pnpm --store-dir /tmp/...'`.
+
+Live evaluation is opt-in and may incur provider charges. Run it with the same
+exported environment and database configuration as the installation (or invoke
+the module inside that installation with the synthetic fixture available).
+The evaluator does not implicitly load `.env`; it resolves saved routes and
+checks the installation's policy and current tutor probe, then uses an isolated
+temporary database for all learner scenarios. Reports omit private operator
+notes, endpoints, keys and credential revisions. The cross-subject suite checks
+the conversation through feedback, follow-up and a subsequent activity in math,
+writing, science, history and reading. Human review remains separate from schema
+success and from actual evidence of student learning.
 
 CI also builds and smoke-tests the non-root container, scans HIGH/CRITICAL image
 vulnerabilities, and generates an SBOM. It does not provision, publish a service,

@@ -27,13 +27,13 @@ from math_tutor.adapters.db.models import (
     TutorProfileVersion,
     TutorTurn,
 )
-from math_tutor.adapters.providers.contracts import FeedbackPayload, ReadingPayload
+from math_tutor.adapters.providers.contracts import FeedbackPublic, ReadingPayload
 from math_tutor.api.access import Database, Principal, owned_learner
 from math_tutor.api.learners import Acknowledged
 from math_tutor.api.profiles import ProfileSettings
 from math_tutor.api.schemas import ProblemInstancePublic
 from math_tutor.domain.math import SKILLS, Verdict, generate, help_text, verify
-from math_tutor.reading import ActivitySource, ReadingPassage
+from math_tutor.reading import ActivitySource, MaterialFocus, ReadingPassage, material_focus
 
 router = APIRouter(prefix="/api/v1", tags=["practice"])
 ACTIVE = {"queued", "checking", "tutoring", "interpreting", "awaiting_confirmation"}
@@ -94,7 +94,7 @@ class OperationPublic(BaseModel):
     interpreted_final_answer: str | None = None
     ambiguities: list[str] = Field(default_factory=list)
     reading: ReadingPublic | None = None
-    feedback: FeedbackPayload | None = None
+    feedback: FeedbackPublic | None = None
 
 
 class ProblemPublic(ProblemInstancePublic):
@@ -105,6 +105,9 @@ class ProblemPublic(ProblemInstancePublic):
     reference_source: ActivitySource | None = None
     concept_focus: str | None = None
     passage: ReadingPassage | None = None
+    material_focus: MaterialFocus | None = None
+    learning_goal: str | None = None
+    success_criteria: list[str] = Field(default_factory=list)
 
 
 class SessionPublic(BaseModel):
@@ -203,12 +206,21 @@ def operation_public(db: Session, row: Submission) -> OperationPublic:
         reading=ReadingPublic.model_validate(interpretation.reading)
         if interpretation and interpretation.reading
         else None,
-        feedback=FeedbackPayload.model_validate(turn.feedback) if turn and turn.feedback else None,
+        feedback=FeedbackPublic.model_validate(
+            {
+                key: value
+                for key, value in turn.feedback.items()
+                if key in FeedbackPublic.model_fields
+            }
+        )
+        if turn and turn.feedback
+        else None,
     )
 
 
 def problem_public(db: Session, row: ProblemInstance) -> ProblemPublic:
     data = ProblemInstancePublic.model_validate(row).model_dump()
+    passage = ReadingPassage.model_validate(row.passage) if row.passage else None
     return ProblemPublic(
         **data,
         version=row.version,
@@ -216,7 +228,10 @@ def problem_public(db: Session, row: ProblemInstance) -> ProblemPublic:
         activity_state=row.parameters.get("activity_state", "ready"),
         reference_source=row.parameters.get("reference_source"),
         concept_focus=row.parameters.get("concept_focus"),
-        passage=ReadingPassage.model_validate(row.passage) if row.passage else None,
+        passage=passage,
+        material_focus=material_focus(passage, row.parameters) if passage else None,
+        learning_goal=row.parameters.get("concept_focus"),
+        success_criteria=row.parameters.get("success_criteria", []),
         operations=[
             operation_public(db, op)
             for op in db.scalars(

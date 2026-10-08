@@ -958,18 +958,22 @@ export interface components {
       tutoring_available: boolean;
     };
     /**
-     * FeedbackPayload
-     * @description Teaching observations are not grades, tools, or completion commands.
+     * FeedbackPublic
+     * @description Historical feedback records absent structured observations as unknown.
      */
-    FeedbackPayload: {
+    FeedbackPublic: {
       /** Concepts */
       concepts: string[];
       /** Guidance */
       guidance: string[];
+      learning_observation: components["schemas"]["LearningObservation"] | null;
       /** Next Step */
       next_step: string;
       /** Strengths */
       strengths: string[];
+      /** Teaching Action */
+      teaching_action:
+        ("acknowledge" | "clarify" | "explain" | "coach" | "extend") | null;
       /** Uncertainty Note */
       uncertainty_note?: string | null;
     };
@@ -1061,6 +1065,23 @@ export interface components {
       id: string;
     };
     /**
+     * LearningObservation
+     * @description Fallible evidence about this response, never a mastery score or a grade.
+     */
+    LearningObservation: {
+      /**
+       * Assessment
+       * @enum {string}
+       */
+      assessment: "sufficient" | "developing" | "uncertain" | "not_assessed";
+      /** Evidence */
+      evidence: string;
+      /** Open Points */
+      open_points: string[];
+      /** Resolved Points */
+      resolved_points: string[];
+    };
+    /**
      * LoginRequest
      * @description Credentials for the administrator or one learner account.
      */
@@ -1081,6 +1102,32 @@ export interface components {
        */
       authenticated: boolean;
     };
+    /**
+     * MaterialFocus
+     * @description Offsets count Unicode code points in the unchanged saved source.
+     */
+    MaterialFocus: {
+      /** End */
+      end: number;
+      /**
+       * Mode
+       * @enum {string}
+       */
+      mode: "whole" | "guided";
+      /** Section Count */
+      section_count: number;
+      /** Section Index */
+      section_index: number;
+      /**
+       * Section Size
+       * @enum {string}
+       */
+      section_size: "short" | "standard" | "long";
+      /** Start */
+      start: number;
+      /** Text */
+      text: string;
+    };
     /** OperationPublic */
     OperationPublic: {
       /** Ambiguities */
@@ -1097,7 +1144,7 @@ export interface components {
       created_at: string;
       /** Error Code */
       error_code?: string | null;
-      feedback?: components["schemas"]["FeedbackPayload"] | null;
+      feedback?: components["schemas"]["FeedbackPublic"] | null;
       /**
        * Id
        * Format: uuid
@@ -1300,6 +1347,9 @@ export interface components {
        * Format: uuid
        */
       id: string;
+      /** Learning Goal */
+      learning_goal?: string | null;
+      material_focus?: components["schemas"]["MaterialFocus"] | null;
       /** Operations */
       operations: components["schemas"]["OperationPublic"][];
       passage?: components["schemas"]["ReadingPassage"] | null;
@@ -1327,6 +1377,8 @@ export interface components {
       skill_id: string;
       /** Status */
       status: string;
+      /** Success Criteria */
+      success_criteria?: string[];
       /** Template Id */
       template_id: string;
       /** Template Version */
@@ -1990,8 +2042,14 @@ export interface components {
       difficulty?: ("introductory" | "standard" | "challenge") | null;
       /** Passage Title */
       passage_title?: string | null;
+      /** Reading Mode */
+      reading_mode?: ("whole" | "guided") | null;
       /** Reference Text */
       reference_text?: string | null;
+      /** Section Index */
+      section_index?: number | null;
+      /** Section Size */
+      section_size?: ("short" | "standard" | "long") | null;
       /**
        * Source
        * @default topic

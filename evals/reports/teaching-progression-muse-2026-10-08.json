@@ -1,0 +1,161 @@
+{
+  "suite": "cross-subject-teaching-v1",
+  "provenance": "T43 bounded live pilot: one public-domain Necklace excerpt (source and permission in passage metadata) and two original synthetic math/writing scenarios. No real learner data. Reading case matches the earlier v2 rehearsal with an explicit minimum-response criterion added for v3. This is a small qualitative sample, not a controlled experiment.",
+  "authored_at": "2026-10-08",
+  "fixture_sha256": "67d99f117dd8edd98f13b1197e0fe179f69dfe5268a961b04ecd20739394f0fe",
+  "recorded_at": "2026-10-08T17:07:42.388820+00:00",
+  "python": "3.14.7",
+  "provider_adapter": "muse_code_cli",
+  "model": "muse-spark-1.3",
+  "prompt_versions": [
+    "guidance-v3",
+    "activity-v3"
+  ],
+  "total_cases": 3,
+  "sample_size": 2,
+  "call_budget": 2,
+  "calls_attempted": 2,
+  "reported_token_usage": null,
+  "latency_ms": {
+    "p50": 24523.0,
+    "max": 29710
+  },
+  "cost_estimate": "Unavailable: two fresh one-step Muse requests, no retries. Prior results were replayed locally without inference.",
+  "contracts_passed": true,
+  "model_quality": "Two observed next-question outputs for qualitative review, not an independent score or a generalization claim.",
+  "photo_quality": "Not measured here; use the physical photo rehearsal.",
+  "outputs": [
+    {
+      "fixture_id": "math-sufficient",
+      "subject": "Mathematics",
+      "skill": "Equivalent fractions",
+      "response_kind": "correct",
+      "review_notes": [
+        "A correct complete answer needs acknowledgment, not another representation or method.",
+        "Confirm that a diagram is optional; next practice must advance beyond this resolved comparison."
+      ],
+      "stages": [
+        {
+          "stage": "next_question",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "problem_text": "Write a fraction that is equivalent to 3/5 and explain with one reason why it is equivalent.",
+              "concept_focus": "Equivalent fractions",
+              "success_criteria": [
+                "States a fraction",
+                "Gives one reason why it is equivalent"
+              ],
+              "passage": null
+            },
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 19336,
+            "finish_reason": "stop"
+          }
+        }
+      ],
+      "human_review": {
+        "false_correction": "pending",
+        "unsupported_claim": "pending",
+        "answer_leakage": "pending",
+        "follow_up_context": "pending",
+        "next_question_relevance": "pending",
+        "unnecessary_demands": "pending",
+        "recognizes_revision": "pending",
+        "appropriate_teaching_action": "pending"
+      },
+      "prior_context": {
+        "report": "teaching-muse-2026-10-08.json",
+        "fixture_id": "math-sufficient",
+        "stages": [
+          "feedback",
+          "follow_up"
+        ]
+      }
+    },
+    {
+      "fixture_id": "writing-explanation",
+      "subject": "Writing",
+      "skill": "Evidence and reasoning",
+      "response_kind": "partial",
+      "review_notes": [
+        "Answer the concept question directly with a distinct example rather than repeated Socratic questions.",
+        "Recognize the learner paraphrase; do not infer low ability from a short answer."
+      ],
+      "stages": [
+        {
+          "stage": "next_question",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "problem_text": "Try this new situation. Claim: Painting the edges of a crosswalk with bright borders helps drivers notice pedestrians sooner. Observation: At the bright-bordered crosswalk, drivers started slowing down farther back than at a plain crosswalk on the same street. In 2-3 sentences, explain why this observation supports the claim.",
+              "concept_focus": "Using reasoning to connect an observation to a claim",
+              "success_criteria": [
+                "Write 2-3 sentences.",
+                "Include one reason why the observation matters for the claim."
+              ],
+              "passage": null
+            },
+            "model_id": "muse-spark-1.3",
+            "reported_usage": {},
+            "latency_ms": 29710,
+            "finish_reason": "stop"
+          }
+        }
+      ],
+      "human_review": {
+        "false_correction": "pending",
+        "unsupported_claim": "pending",
+        "answer_leakage": "pending",
+        "follow_up_context": "pending",
+        "next_question_relevance": "pending",
+        "unnecessary_demands": "pending",
+        "recognizes_revision": "pending",
+        "appropriate_teaching_action": "pending"
+      },
+      "prior_context": {
+        "report": "teaching-muse-2026-10-08.json",
+        "fixture_id": "writing-explanation",
+        "stages": [
+          "feedback",
+          "follow_up"
+        ]
+      }
+    }
+  ],
+  "evaluation_transport": {
+    "cli_version": "Muse Code 1.0.3 (1.0.3-R2198.1)",
+    "provider": "meta",
+    "model": "muse-spark-1.3",
+    "reasoning_effort": "medium",
+    "max_model_steps_per_request": 1,
+    "retries": 0,
+    "verification": [
+      {
+        "call": 6,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      },
+      {
+        "call": 9,
+        "configured_model_verified": true,
+        "terminal": "completed",
+        "max_model_steps": 1
+      }
+    ],
+    "prompt_hashes": [
+      {
+        "pipeline_stage": 6,
+        "sha256": "bc3262fb46a4edaefb285cae82478e1ad815f0ca57e4fdd70fba535ccd52a8a0"
+      },
+      {
+        "pipeline_stage": 9,
+        "sha256": "1ff13d3c028cb2761d84f41c1d3eb0b25a88fe527a2cbe580d37211b003ff8cf"
+      }
+    ]
+  },
+  "prior_report_sha256": "17e25c3a08336af7b05af9c9e97a8af11db9578d8aadf1c20f1ee77ba2def2e6",
+  "scope": "Two fresh next-question generation requests after a general prompt clarification about meaningful application and exact criterion alignment. The production evaluator replayed seven previously recorded results locally to reconstruct its pipeline; only stages 6 (math generation) and 9 (writing generation) invoked Muse. Earlier feedback and follow-up outputs are unchanged and are not fresh measurements of the final guidance prompt. The reading case was replayed entirely and is omitted here. Original fixture hash identifies the full three-case fixture; the two selected case IDs appear in outputs. Production make_request/finish_model used isolated synthetic SQLite. Muse adds its own system context. This is not an application HTTP adapter or browser/worker evaluation. No private application settings or learner data were sent."
+}

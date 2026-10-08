@@ -230,7 +230,7 @@ def probe_requests(
             stage="tutor",
             purpose="generate",
             model_id=provider.model,
-            system_instruction="Create one short original science practice activity about observations and evidence. Do not include its answer. Return the required activity JSON.",
+            system_instruction="Create one short original science practice activity about observations and evidence, with concept_focus and 1–3 learner-visible sufficient-response success_criteria. Do not include its answer. Return the required activity JSON.",
             ordered_messages=[
                 Message(
                     role="user",
@@ -245,11 +245,11 @@ def probe_requests(
             stage="tutor",
             purpose="review",
             model_id=provider.model,
-            system_instruction="Guide a learner to explain their evidence. Do not solve their activity or assign a grade. Return the required feedback JSON.",
+            system_instruction="Select one teaching_action and a fallible learning_observation grounded in the response. A sufficient response requires acknowledge, empty open_points and empty next_step; do not add extra requirements. Otherwise offer one focused explanation or question. Do not solve their activity or assign a grade. Return the required feedback JSON.",
             ordered_messages=[
                 Message(
                     role="user",
-                    content="Synthetic activity: compare two seedlings grown with different light. Synthetic response: I would record their heights each day to see what changes.",
+                    content="Synthetic activity: compare two seedlings grown with different light. Goal: use evidence. Sufficient-response criterion: name one observation and explain how it supports a comparison. Synthetic response: I would record their heights each day to see what changes.",
                 )
             ],
             response_schema=FeedbackPayload.model_json_schema(),

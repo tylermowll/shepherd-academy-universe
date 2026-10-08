@@ -9,6 +9,13 @@ import { ComposerMenu } from "./ComposerMenu";
 import { TutorConversation } from "./TutorConversation";
 import { ReadingPassage } from "./ReadingPassage";
 import { ReadingSources } from "./ReadingSources";
+import { ActivityPurpose } from "./ActivityPurpose";
+import {
+  MaterialNavigation,
+  MaterialOptions,
+  type MaterialChange,
+  type MaterialPreferences,
+} from "./MaterialNavigation";
 
 type Props = {
   learner: string;
@@ -94,6 +101,12 @@ export function Tutor({
   const [source, setSource] = useState<Source>("topic");
   const [reference, setReference] = useState("");
   const [passageTitle, setPassageTitle] = useState("");
+  const [materialPreferences, setMaterialPreferences] =
+    useState<MaterialPreferences>({
+      reading_mode: "guided",
+      section_size: "standard",
+    });
+  const composer = useRef<HTMLTextAreaElement>(null);
   const [published, setPublished] = useState<Schema<"ImportedPassage"> | null>(
     null,
   );
@@ -414,10 +427,20 @@ export function Tutor({
   const activity = async (
     nextSource: Source = source,
     nextDifficulty?: Difficulty,
+    materialChange?: MaterialChange,
   ) => {
     if (!session) return;
     const body: Schema<"TutorActivityInput"> = {
       source: nextSource,
+      ...([
+        "reading_text",
+        "reading_photo",
+        "reading_generated",
+        "published",
+      ].includes(nextSource)
+        ? materialPreferences
+        : {}),
+      ...materialChange,
       ...(nextDifficulty ? { difficulty: nextDifficulty } : {}),
       ...(nextSource === "reference_text" || nextSource === "reading_text"
         ? { reference_text: reference }
@@ -510,7 +533,7 @@ export function Tutor({
           disabled={blocked || active}
         >
           <option value="topic">My topic</option>
-          <option value="reading_text">Paste a reading passage</option>
+          <option value="reading_text">Paste reading or study material</option>
           <option value="reading_photo">Photograph a reading passage</option>
           <option value="reading_generated">
             Let the tutor write a passage
@@ -522,6 +545,24 @@ export function Tutor({
           </option>
         </select>
       </label>
+      {[
+        "reading_text",
+        "reading_photo",
+        "reading_generated",
+        "published",
+      ].includes(source) && (
+        <>
+          <p className="fine">
+            Use stories, articles, science explanations, history sources, or
+            other study text. Work through sections or discuss the whole text.
+          </p>
+          <MaterialOptions
+            value={materialPreferences}
+            onChange={setMaterialPreferences}
+            disabled={blocked || active}
+          />
+        </>
+      )}
       {(source === "reference_text" || source === "reference_photo") && (
         <p className="notice">
           The tutor uses your material to create different practice on the same
@@ -557,17 +598,25 @@ export function Tutor({
         />
       )}
       {(source === "reference_text" || source === "reading_text") && (
-        <label>
-          {source === "reading_text" ? "Reading passage" : "Reference material"}
-          <textarea
-            value={reference}
-            onChange={(event) => setReference(event.target.value)}
-            required
-            maxLength={8000}
-            rows={6}
-            disabled={blocked || active}
-          />
-        </label>
+        <>
+          <label>
+            {source === "reading_text"
+              ? "Reading passage"
+              : "Reference material"}
+            <textarea
+              value={reference}
+              onChange={(event) => setReference(event.target.value)}
+              required
+              maxLength={source === "reading_text" ? 50000 : 8000}
+              rows={6}
+              disabled={blocked || active}
+            />
+          </label>
+          <p className="fine">
+            {reference.length.toLocaleString()} /{" "}
+            {source === "reading_text" ? "50,000" : "8,000"} characters
+          </p>
+        </>
       )}
       {(source === "reference_photo" || source === "reading_photo") && (
         <p>
@@ -715,13 +764,33 @@ export function Tutor({
           )}
         </div>
         {!features && <p role="status">Checking tutor availability…</p>}
-        {features?.tutoring_available && (
-          <p className="fine">
-            {features.text_processing === "mock"
-              ? "Sample responses only. An actual AI model is needed for tutoring."
-              : `Text processing: ${features.text_processing === "local_network" ? "your local network" : features.text_processing === "cloud" ? "cloud provider" : features.text_processing}.`}
-          </p>
-        )}
+        {features?.tutoring_available &&
+          (features.text_processing === "mock" ? (
+            <div className="notice" role="status">
+              <strong>Demo tutor — sample responses only</strong>
+              <p>
+                An actual AI model is needed for tutoring.{" "}
+                {isAdult
+                  ? "Choose a tested connection in Settings → Active models."
+                  : "Ask the adult who manages this app to connect an AI model."}
+              </p>
+              {isAdult && (
+                <button onClick={() => onNavigate?.("settings")}>
+                  Open model settings
+                </button>
+              )}
+            </div>
+          ) : (
+            <p className="fine">
+              Text processing:{" "}
+              {features.text_processing === "local_network"
+                ? "your local network"
+                : features.text_processing === "cloud"
+                  ? "cloud provider"
+                  : features.text_processing}
+              .
+            </p>
+          ))}
         {features && !features.tutoring_available && (
           <div className="notice" role="status">
             <h3>Tutoring is not available yet</h3>
@@ -756,6 +825,14 @@ export function Tutor({
                   difficulty,
                   initial_activity: {
                     source,
+                    ...([
+                      "reading_text",
+                      "reading_photo",
+                      "reading_generated",
+                      "published",
+                    ].includes(source)
+                      ? materialPreferences
+                      : {}),
                     ...(source === "reference_text" || source === "reading_text"
                       ? { reference_text: reference }
                       : {}),
@@ -899,7 +976,36 @@ export function Tutor({
                   aria-label="Passage and session tools"
                 >
                   {problem?.passage && (
-                    <ReadingPassage passage={problem.passage} />
+                    <ReadingPassage
+                      key={problem.id}
+                      passage={problem.passage}
+                      focus={problem.material_focus}
+                      disabled={
+                        disabled ||
+                        hasResponseDraft ||
+                        problem.activity_state !== "ready"
+                      }
+                      onAsk={
+                        session.status === "open"
+                          ? (question) => {
+                              setText(question);
+                              composer.current?.focus();
+                            }
+                          : undefined
+                      }
+                    />
+                  )}
+                  {problem?.material_focus && session.status === "open" && (
+                    <MaterialNavigation
+                      key={`${problem.id}-${problem.material_focus.mode}-${problem.material_focus.section_size}-${problem.material_focus.section_index}`}
+                      focus={problem.material_focus}
+                      disabled={disabled || hasResponseDraft}
+                      onChange={(change) =>
+                        void act(() =>
+                          activity("same_passage", undefined, change),
+                        )
+                      }
+                    />
                   )}
                   {session.status === "open" && (
                     <details open={!problem || undefined}>
@@ -922,11 +1028,12 @@ export function Tutor({
                       </h3>
                     </summary>
                     <SafeText text={problem.problem_text} />
+                    <ActivityPurpose problem={problem} />
                     <p className="fine">
                       Saved automatically ·{" "}
                       {difficultyLabel(session.difficulty)} difficulty
                     </p>
-                    {problem.concept_focus && (
+                    {problem.concept_focus && !problem.learning_goal && (
                       <p className="fine">Focus: {problem.concept_focus}</p>
                     )}
                   </details>
@@ -973,6 +1080,7 @@ export function Tutor({
                       <label>
                         Your work or question
                         <textarea
+                          ref={composer}
                           value={text}
                           onChange={(event) => setText(event.target.value)}
                           maxLength={8000}

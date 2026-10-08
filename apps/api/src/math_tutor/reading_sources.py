@@ -204,7 +204,7 @@ def story(data: bytes, title: str) -> ReadingPassage:
     if end is None:
         raise SourceError("source_changed")
     body = remaining[: end.start()].strip()
-    if not 40 <= len(body) <= 8000:
+    if not 40 <= len(body) <= 50000:
         raise SourceError("source_changed")
     return ReadingPassage(
         title=title,
@@ -272,10 +272,10 @@ def news(data: bytes) -> list[ReadingPassage]:
         text = extractor.text()
         if len(text) < 100 or not title.strip():
             continue
-        excerpt = not full_text or len(text) > 8000
-        if len(text) > 8000:
+        excerpt = not full_text or len(text) > 50000
+        if len(text) > 50000:
             # Select an explicit opening excerpt, ending at a paragraph when possible.
-            prefix = text[:8000]
+            prefix = text[:50000]
             end = prefix.rfind("\n\n")
             text = prefix[:end] if end >= 100 else prefix.rsplit(" ", 1)[0]
         passages.append(

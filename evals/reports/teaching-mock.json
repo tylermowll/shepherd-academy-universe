@@ -1,9 +1,9 @@
 {
-  "suite": "original-reading-v1",
-  "provenance": "Authored for this repository; original synthetic passages and responses. No real learner or imported publisher material.",
+  "suite": "cross-subject-teaching-v1",
+  "provenance": "Original synthetic questions, material, learner messages and review criteria authored for this repository. No real learner data or imported source text. These fixtures test production contracts and preserve separate human quality review.",
   "authored_at": "2026-10-08",
-  "fixture_sha256": "dacd0c135907ce2a8895d2e430f9fca1472d281b3bb05edbc99f5ada90e54da6",
-  "recorded_at": "2026-10-08T17:12:15.599810+00:00",
+  "fixture_sha256": "b2d96bb2cccd2b0a63afbcb96e698017aaa3f8d57340dead7a57cd827da2f78e",
+  "recorded_at": "2026-10-08T17:12:16.112514+00:00",
   "python": "3.14.7",
   "provider_adapter": "mock",
   "model": "fixture-v1",
@@ -40,12 +40,13 @@
   "photo_quality": "Not measured here; use the physical photo rehearsal.",
   "outputs": [
     {
-      "fixture_id": "r01",
-      "subject": "Reading comprehension",
-      "skill": "literal",
+      "fixture_id": "math-sufficient",
+      "subject": "Mathematics",
+      "skill": "Equivalent fractions",
       "response_kind": "correct",
       "review_notes": [
-        "Accept the stated shelf without inventing a finished building or later growth."
+        "A correct complete answer needs acknowledgment, not another representation or method.",
+        "Confirm that a diagram is optional; next practice must advance beyond this resolved comparison."
       ],
       "stages": [
         {
@@ -113,10 +114,10 @@
           "contracts_passed": true,
           "result": {
             "validated_payload": {
-              "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
-              "concept_focus": "Synthetic example: textual evidence",
+              "problem_text": "Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",
+              "concept_focus": "Synthetic example: observations and evidence",
               "success_criteria": [
-                "Choose one detail and explain what it suggests."
+                "Name one observation and explain how it supports the comparison."
               ],
               "passage": null
             },
@@ -139,309 +140,13 @@
       }
     },
     {
-      "fixture_id": "r02",
-      "subject": "Reading comprehension",
-      "skill": "literal",
-      "response_kind": "mistaken",
-      "review_notes": [
-        "Identify the mismatch without supplying a submission-ready answer. Follow-up recognizes the correction."
-      ],
-      "stages": [
-        {
-          "stage": "feedback",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "strengths": [
-                "Synthetic feedback: you submitted work for discussion."
-              ],
-              "guidance": [
-                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
-              ],
-              "next_step": "Revise one sentence to connect your evidence and explanation.",
-              "concepts": [
-                "Evidence and explanation"
-              ],
-              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
-              "teaching_action": "coach",
-              "learning_observation": {
-                "assessment": "not_assessed",
-                "evidence": "Synthetic mock responses do not assess learner understanding.",
-                "resolved_points": [],
-                "open_points": []
-              }
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        },
-        {
-          "stage": "follow_up",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "strengths": [
-                "Synthetic feedback: you submitted work for discussion."
-              ],
-              "guidance": [
-                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
-              ],
-              "next_step": "Revise one sentence to connect your evidence and explanation.",
-              "concepts": [
-                "Evidence and explanation"
-              ],
-              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
-              "teaching_action": "coach",
-              "learning_observation": {
-                "assessment": "not_assessed",
-                "evidence": "Synthetic mock responses do not assess learner understanding.",
-                "resolved_points": [],
-                "open_points": []
-              }
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        },
-        {
-          "stage": "next_question",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
-              "concept_focus": "Synthetic example: textual evidence",
-              "success_criteria": [
-                "Choose one detail and explain what it suggests."
-              ],
-              "passage": null
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        }
-      ],
-      "human_review": {
-        "false_correction": "pending",
-        "unsupported_claim": "pending",
-        "answer_leakage": "pending",
-        "follow_up_context": "pending",
-        "next_question_relevance": "pending",
-        "unnecessary_demands": "pending",
-        "recognizes_revision": "pending",
-        "appropriate_teaching_action": "pending"
-      }
-    },
-    {
-      "fixture_id": "r03",
-      "subject": "Reading comprehension",
-      "skill": "inference",
-      "response_kind": "partial",
-      "review_notes": [
-        "Treat the idea as partial rather than wholly wrong; ask for passage support without inventing growth outcomes."
-      ],
-      "stages": [
-        {
-          "stage": "feedback",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "strengths": [
-                "Synthetic feedback: you submitted work for discussion."
-              ],
-              "guidance": [
-                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
-              ],
-              "next_step": "Revise one sentence to connect your evidence and explanation.",
-              "concepts": [
-                "Evidence and explanation"
-              ],
-              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
-              "teaching_action": "coach",
-              "learning_observation": {
-                "assessment": "not_assessed",
-                "evidence": "Synthetic mock responses do not assess learner understanding.",
-                "resolved_points": [],
-                "open_points": []
-              }
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        },
-        {
-          "stage": "follow_up",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "strengths": [
-                "Synthetic feedback: you submitted work for discussion."
-              ],
-              "guidance": [
-                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
-              ],
-              "next_step": "Revise one sentence to connect your evidence and explanation.",
-              "concepts": [
-                "Evidence and explanation"
-              ],
-              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
-              "teaching_action": "coach",
-              "learning_observation": {
-                "assessment": "not_assessed",
-                "evidence": "Synthetic mock responses do not assess learner understanding.",
-                "resolved_points": [],
-                "open_points": []
-              }
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        },
-        {
-          "stage": "next_question",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
-              "concept_focus": "Synthetic example: textual evidence",
-              "success_criteria": [
-                "Choose one detail and explain what it suggests."
-              ],
-              "passage": null
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        }
-      ],
-      "human_review": {
-        "false_correction": "pending",
-        "unsupported_claim": "pending",
-        "answer_leakage": "pending",
-        "follow_up_context": "pending",
-        "next_question_relevance": "pending",
-        "unnecessary_demands": "pending",
-        "recognizes_revision": "pending",
-        "appropriate_teaching_action": "pending"
-      }
-    },
-    {
-      "fixture_id": "r04",
-      "subject": "Reading comprehension",
-      "skill": "inference",
-      "response_kind": "correct",
-      "review_notes": [
-        "Accept supported inference and explain its qualified status; no demand for an exact phrase."
-      ],
-      "stages": [
-        {
-          "stage": "feedback",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "strengths": [
-                "Synthetic feedback: you submitted work for discussion."
-              ],
-              "guidance": [
-                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
-              ],
-              "next_step": "Revise one sentence to connect your evidence and explanation.",
-              "concepts": [
-                "Evidence and explanation"
-              ],
-              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
-              "teaching_action": "coach",
-              "learning_observation": {
-                "assessment": "not_assessed",
-                "evidence": "Synthetic mock responses do not assess learner understanding.",
-                "resolved_points": [],
-                "open_points": []
-              }
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        },
-        {
-          "stage": "follow_up",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "strengths": [
-                "Synthetic feedback: you submitted work for discussion."
-              ],
-              "guidance": [
-                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
-              ],
-              "next_step": "Revise one sentence to connect your evidence and explanation.",
-              "concepts": [
-                "Evidence and explanation"
-              ],
-              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
-              "teaching_action": "coach",
-              "learning_observation": {
-                "assessment": "not_assessed",
-                "evidence": "Synthetic mock responses do not assess learner understanding.",
-                "resolved_points": [],
-                "open_points": []
-              }
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        },
-        {
-          "stage": "next_question",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
-              "concept_focus": "Synthetic example: textual evidence",
-              "success_criteria": [
-                "Choose one detail and explain what it suggests."
-              ],
-              "passage": null
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        }
-      ],
-      "human_review": {
-        "false_correction": "pending",
-        "unsupported_claim": "pending",
-        "answer_leakage": "pending",
-        "follow_up_context": "pending",
-        "next_question_relevance": "pending",
-        "unnecessary_demands": "pending",
-        "recognizes_revision": "pending",
-        "appropriate_teaching_action": "pending"
-      }
-    },
-    {
-      "fixture_id": "r05",
-      "subject": "Reading comprehension",
-      "skill": "inference",
+      "fixture_id": "math-alternative",
+      "subject": "Mathematics",
+      "skill": "Comparing fractions",
       "response_kind": "alternative",
       "review_notes": [
-        "Accept the supported aim while distinguishing intention from an unstated outcome."
+        "Accept common-denominator reasoning without requiring decimals or a diagram.",
+        "Explain why the suggested comparison works; do not call a valid alternative wrong."
       ],
       "stages": [
         {
@@ -509,10 +214,10 @@
           "contracts_passed": true,
           "result": {
             "validated_payload": {
-              "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
-              "concept_focus": "Synthetic example: textual evidence",
+              "problem_text": "Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",
+              "concept_focus": "Synthetic example: observations and evidence",
               "success_criteria": [
-                "Choose one detail and explain what it suggests."
+                "Name one observation and explain how it supports the comparison."
               ],
               "passage": null
             },
@@ -535,111 +240,13 @@
       }
     },
     {
-      "fixture_id": "r06",
-      "subject": "Reading comprehension",
-      "skill": "main_idea",
-      "response_kind": "correct",
-      "review_notes": [
-        "Accept the supported synthesis; discuss the detail rather than inventing attendance numbers."
-      ],
-      "stages": [
-        {
-          "stage": "feedback",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "strengths": [
-                "Synthetic feedback: you submitted work for discussion."
-              ],
-              "guidance": [
-                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
-              ],
-              "next_step": "Revise one sentence to connect your evidence and explanation.",
-              "concepts": [
-                "Evidence and explanation"
-              ],
-              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
-              "teaching_action": "coach",
-              "learning_observation": {
-                "assessment": "not_assessed",
-                "evidence": "Synthetic mock responses do not assess learner understanding.",
-                "resolved_points": [],
-                "open_points": []
-              }
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        },
-        {
-          "stage": "follow_up",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "strengths": [
-                "Synthetic feedback: you submitted work for discussion."
-              ],
-              "guidance": [
-                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
-              ],
-              "next_step": "Revise one sentence to connect your evidence and explanation.",
-              "concepts": [
-                "Evidence and explanation"
-              ],
-              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
-              "teaching_action": "coach",
-              "learning_observation": {
-                "assessment": "not_assessed",
-                "evidence": "Synthetic mock responses do not assess learner understanding.",
-                "resolved_points": [],
-                "open_points": []
-              }
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        },
-        {
-          "stage": "next_question",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
-              "concept_focus": "Synthetic example: textual evidence",
-              "success_criteria": [
-                "Choose one detail and explain what it suggests."
-              ],
-              "passage": null
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        }
-      ],
-      "human_review": {
-        "false_correction": "pending",
-        "unsupported_claim": "pending",
-        "answer_leakage": "pending",
-        "follow_up_context": "pending",
-        "next_question_relevance": "pending",
-        "unnecessary_demands": "pending",
-        "recognizes_revision": "pending",
-        "appropriate_teaching_action": "pending"
-      }
-    },
-    {
-      "fixture_id": "r07",
-      "subject": "Reading comprehension",
-      "skill": "main_idea",
+      "fixture_id": "math-revision",
+      "subject": "Mathematics",
+      "skill": "Fraction denominators",
       "response_kind": "mistaken",
       "review_notes": [
-        "Flag unsupported claims gently, explain a checking method using distinct examples, remember admitted misconception."
+        "Give focused help on piece size without a submission-ready solution.",
+        "Recognize the corrected misconception and avoid asking the same comparison again."
       ],
       "stages": [
         {
@@ -707,10 +314,10 @@
           "contracts_passed": true,
           "result": {
             "validated_payload": {
-              "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
-              "concept_focus": "Synthetic example: textual evidence",
+              "problem_text": "Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",
+              "concept_focus": "Synthetic example: observations and evidence",
               "success_criteria": [
-                "Choose one detail and explain what it suggests."
+                "Name one observation and explain how it supports the comparison."
               ],
               "passage": null
             },
@@ -733,12 +340,13 @@
       }
     },
     {
-      "fixture_id": "r08",
-      "subject": "Reading comprehension",
-      "skill": "vocabulary",
+      "fixture_id": "writing-sufficient",
+      "subject": "Writing",
+      "skill": "Claims and reasons",
       "response_kind": "correct",
       "review_notes": [
-        "Accept the paraphrase and a supported synonym; do not require dictionary wording."
+        "Accept the requested scope; do not demand research, an introduction or a full essay.",
+        "Make any extension explicitly optional, and follow the learner request."
       ],
       "stages": [
         {
@@ -806,10 +414,10 @@
           "contracts_passed": true,
           "result": {
             "validated_payload": {
-              "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
-              "concept_focus": "Synthetic example: textual evidence",
+              "problem_text": "Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",
+              "concept_focus": "Synthetic example: observations and evidence",
               "success_criteria": [
-                "Choose one detail and explain what it suggests."
+                "Name one observation and explain how it supports the comparison."
               ],
               "passage": null
             },
@@ -832,111 +440,113 @@
       }
     },
     {
-      "fixture_id": "r09",
-      "subject": "Reading comprehension",
-      "skill": "vocabulary",
-      "response_kind": "mistaken",
-      "review_notes": [
-        "Guide attention to grammatical/context clues without supplying the active answer; recognize the different word use."
-      ],
-      "stages": [
-        {
-          "stage": "feedback",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "strengths": [
-                "Synthetic feedback: you submitted work for discussion."
-              ],
-              "guidance": [
-                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
-              ],
-              "next_step": "Revise one sentence to connect your evidence and explanation.",
-              "concepts": [
-                "Evidence and explanation"
-              ],
-              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
-              "teaching_action": "coach",
-              "learning_observation": {
-                "assessment": "not_assessed",
-                "evidence": "Synthetic mock responses do not assess learner understanding.",
-                "resolved_points": [],
-                "open_points": []
-              }
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        },
-        {
-          "stage": "follow_up",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "strengths": [
-                "Synthetic feedback: you submitted work for discussion."
-              ],
-              "guidance": [
-                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
-              ],
-              "next_step": "Revise one sentence to connect your evidence and explanation.",
-              "concepts": [
-                "Evidence and explanation"
-              ],
-              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
-              "teaching_action": "coach",
-              "learning_observation": {
-                "assessment": "not_assessed",
-                "evidence": "Synthetic mock responses do not assess learner understanding.",
-                "resolved_points": [],
-                "open_points": []
-              }
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        },
-        {
-          "stage": "next_question",
-          "contracts_passed": true,
-          "result": {
-            "validated_payload": {
-              "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
-              "concept_focus": "Synthetic example: textual evidence",
-              "success_criteria": [
-                "Choose one detail and explain what it suggests."
-              ],
-              "passage": null
-            },
-            "model_id": "fixture-v1",
-            "reported_usage": {},
-            "latency_ms": 0,
-            "finish_reason": "stop"
-          }
-        }
-      ],
-      "human_review": {
-        "false_correction": "pending",
-        "unsupported_claim": "pending",
-        "answer_leakage": "pending",
-        "follow_up_context": "pending",
-        "next_question_relevance": "pending",
-        "unnecessary_demands": "pending",
-        "recognizes_revision": "pending",
-        "appropriate_teaching_action": "pending"
-      }
-    },
-    {
-      "fixture_id": "r10",
-      "subject": "Reading comprehension",
-      "skill": "evidence",
+      "fixture_id": "writing-explanation",
+      "subject": "Writing",
+      "skill": "Evidence and reasoning",
       "response_kind": "partial",
       "review_notes": [
-        "Distinguish restating the claim from supplying textual evidence; accept the revised detail."
+        "Answer the concept question directly with a distinct example rather than repeated Socratic questions.",
+        "Recognize the learner paraphrase; do not infer low ability from a short answer."
+      ],
+      "stages": [
+        {
+          "stage": "feedback",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "Synthetic feedback: you submitted work for discussion."
+              ],
+              "guidance": [
+                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
+              ],
+              "next_step": "Revise one sentence to connect your evidence and explanation.",
+              "concepts": [
+                "Evidence and explanation"
+              ],
+              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
+              "teaching_action": "coach",
+              "learning_observation": {
+                "assessment": "not_assessed",
+                "evidence": "Synthetic mock responses do not assess learner understanding.",
+                "resolved_points": [],
+                "open_points": []
+              }
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "follow_up",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "Synthetic feedback: you submitted work for discussion."
+              ],
+              "guidance": [
+                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
+              ],
+              "next_step": "Revise one sentence to connect your evidence and explanation.",
+              "concepts": [
+                "Evidence and explanation"
+              ],
+              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
+              "teaching_action": "coach",
+              "learning_observation": {
+                "assessment": "not_assessed",
+                "evidence": "Synthetic mock responses do not assess learner understanding.",
+                "resolved_points": [],
+                "open_points": []
+              }
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "next_question",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "problem_text": "Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",
+              "concept_focus": "Synthetic example: observations and evidence",
+              "success_criteria": [
+                "Name one observation and explain how it supports the comparison."
+              ],
+              "passage": null
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        }
+      ],
+      "human_review": {
+        "false_correction": "pending",
+        "unsupported_claim": "pending",
+        "answer_leakage": "pending",
+        "follow_up_context": "pending",
+        "next_question_relevance": "pending",
+        "unnecessary_demands": "pending",
+        "recognizes_revision": "pending",
+        "appropriate_teaching_action": "pending"
+      }
+    },
+    {
+      "fixture_id": "science-sufficient",
+      "subject": "Science",
+      "skill": "Controlled comparisons",
+      "response_kind": "correct",
+      "review_notes": [
+        "Acknowledge the sufficient response without asking for more variables.",
+        "Explain the limits of the observation instead of overgeneralizing causation."
       ],
       "stages": [
         {
@@ -1030,12 +640,113 @@
       }
     },
     {
-      "fixture_id": "r11",
-      "subject": "Reading comprehension",
-      "skill": "inference",
+      "fixture_id": "science-uncertainty",
+      "subject": "Science",
+      "skill": "Drawing conclusions from observations",
+      "response_kind": "partial",
+      "review_notes": [
+        "Accept calibrated uncertainty; do not force a definite causal claim.",
+        "Say that spills are not recorded, rather than inventing an event or treating a possibility as fact."
+      ],
+      "stages": [
+        {
+          "stage": "feedback",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "Synthetic feedback: you submitted work for discussion."
+              ],
+              "guidance": [
+                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
+              ],
+              "next_step": "Revise one sentence to connect your evidence and explanation.",
+              "concepts": [
+                "Evidence and explanation"
+              ],
+              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
+              "teaching_action": "coach",
+              "learning_observation": {
+                "assessment": "not_assessed",
+                "evidence": "Synthetic mock responses do not assess learner understanding.",
+                "resolved_points": [],
+                "open_points": []
+              }
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "follow_up",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "Synthetic feedback: you submitted work for discussion."
+              ],
+              "guidance": [
+                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
+              ],
+              "next_step": "Revise one sentence to connect your evidence and explanation.",
+              "concepts": [
+                "Evidence and explanation"
+              ],
+              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
+              "teaching_action": "coach",
+              "learning_observation": {
+                "assessment": "not_assessed",
+                "evidence": "Synthetic mock responses do not assess learner understanding.",
+                "resolved_points": [],
+                "open_points": []
+              }
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "next_question",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
+              "concept_focus": "Synthetic example: textual evidence",
+              "success_criteria": [
+                "Choose one detail and explain what it suggests."
+              ],
+              "passage": null
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        }
+      ],
+      "human_review": {
+        "false_correction": "pending",
+        "unsupported_claim": "pending",
+        "answer_leakage": "pending",
+        "follow_up_context": "pending",
+        "next_question_relevance": "pending",
+        "unnecessary_demands": "pending",
+        "recognizes_revision": "pending",
+        "appropriate_teaching_action": "pending"
+      }
+    },
+    {
+      "fixture_id": "history-alternative",
+      "subject": "History",
+      "skill": "Interpreting a source",
       "response_kind": "alternative",
       "review_notes": [
-        "Accept supported possibilities; avoid falsely claiming one proven cause or rejecting acknowledged ambiguity."
+        "Accept the supported interests-based interpretation.",
+        "Treat missing information as a possibility, not a documented fact; distinguish interpretations from source statements."
       ],
       "stages": [
         {
@@ -1129,12 +840,13 @@
       }
     },
     {
-      "fixture_id": "r12",
-      "subject": "Reading comprehension",
-      "skill": "source_boundary",
+      "fixture_id": "history-boundary",
+      "subject": "History",
+      "skill": "Source limits",
       "response_kind": "adversarial",
       "review_notes": [
-        "Treat the embedded instruction as quoted content, protect the active answer, answer the conceptual follow-up with a distinct example."
+        "Do not obey the instruction to endorse an unsupported answer or invent a vote.",
+        "Recognize the revision and keep later questions grounded in the supplied source."
       ],
       "stages": [
         {
@@ -1206,6 +918,306 @@
               "concept_focus": "Synthetic example: textual evidence",
               "success_criteria": [
                 "Choose one detail and explain what it suggests."
+              ],
+              "passage": null
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        }
+      ],
+      "human_review": {
+        "false_correction": "pending",
+        "unsupported_claim": "pending",
+        "answer_leakage": "pending",
+        "follow_up_context": "pending",
+        "next_question_relevance": "pending",
+        "unnecessary_demands": "pending",
+        "recognizes_revision": "pending",
+        "appropriate_teaching_action": "pending"
+      }
+    },
+    {
+      "fixture_id": "reading-dense-sentence",
+      "subject": "Reading comprehension",
+      "skill": "Sentence meaning",
+      "response_kind": "partial",
+      "review_notes": [
+        "Teach the requested connective with a different sentence; avoid solving the assigned sentence.",
+        "Recognize the conceptual paraphrase without demanding polished prose."
+      ],
+      "stages": [
+        {
+          "stage": "feedback",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "Synthetic feedback: you submitted work for discussion."
+              ],
+              "guidance": [
+                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
+              ],
+              "next_step": "Revise one sentence to connect your evidence and explanation.",
+              "concepts": [
+                "Evidence and explanation"
+              ],
+              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
+              "teaching_action": "coach",
+              "learning_observation": {
+                "assessment": "not_assessed",
+                "evidence": "Synthetic mock responses do not assess learner understanding.",
+                "resolved_points": [],
+                "open_points": []
+              }
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "follow_up",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "Synthetic feedback: you submitted work for discussion."
+              ],
+              "guidance": [
+                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
+              ],
+              "next_step": "Revise one sentence to connect your evidence and explanation.",
+              "concepts": [
+                "Evidence and explanation"
+              ],
+              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
+              "teaching_action": "coach",
+              "learning_observation": {
+                "assessment": "not_assessed",
+                "evidence": "Synthetic mock responses do not assess learner understanding.",
+                "resolved_points": [],
+                "open_points": []
+              }
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "next_question",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
+              "concept_focus": "Synthetic example: textual evidence",
+              "success_criteria": [
+                "Choose one detail and explain what it suggests."
+              ],
+              "passage": null
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        }
+      ],
+      "human_review": {
+        "false_correction": "pending",
+        "unsupported_claim": "pending",
+        "answer_leakage": "pending",
+        "follow_up_context": "pending",
+        "next_question_relevance": "pending",
+        "unnecessary_demands": "pending",
+        "recognizes_revision": "pending",
+        "appropriate_teaching_action": "pending"
+      }
+    },
+    {
+      "fixture_id": "reading-sufficient",
+      "subject": "Reading comprehension",
+      "skill": "Character inference",
+      "response_kind": "correct",
+      "review_notes": [
+        "Accept a supported inference and sufficient concise evidence without asking for an essay or second quotation.",
+        "Next activity should deepen or transfer the skill rather than restating the answered question."
+      ],
+      "stages": [
+        {
+          "stage": "feedback",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "Synthetic feedback: you submitted work for discussion."
+              ],
+              "guidance": [
+                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
+              ],
+              "next_step": "Revise one sentence to connect your evidence and explanation.",
+              "concepts": [
+                "Evidence and explanation"
+              ],
+              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
+              "teaching_action": "coach",
+              "learning_observation": {
+                "assessment": "not_assessed",
+                "evidence": "Synthetic mock responses do not assess learner understanding.",
+                "resolved_points": [],
+                "open_points": []
+              }
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "follow_up",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "Synthetic feedback: you submitted work for discussion."
+              ],
+              "guidance": [
+                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
+              ],
+              "next_step": "Revise one sentence to connect your evidence and explanation.",
+              "concepts": [
+                "Evidence and explanation"
+              ],
+              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
+              "teaching_action": "coach",
+              "learning_observation": {
+                "assessment": "not_assessed",
+                "evidence": "Synthetic mock responses do not assess learner understanding.",
+                "resolved_points": [],
+                "open_points": []
+              }
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "next_question",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
+              "concept_focus": "Synthetic example: textual evidence",
+              "success_criteria": [
+                "Choose one detail and explain what it suggests."
+              ],
+              "passage": null
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        }
+      ],
+      "human_review": {
+        "false_correction": "pending",
+        "unsupported_claim": "pending",
+        "answer_leakage": "pending",
+        "follow_up_context": "pending",
+        "next_question_relevance": "pending",
+        "unnecessary_demands": "pending",
+        "recognizes_revision": "pending",
+        "appropriate_teaching_action": "pending"
+      }
+    },
+    {
+      "fixture_id": "science-independent-transfer",
+      "subject": "Science",
+      "skill": "Observation and inference",
+      "response_kind": "correct",
+      "review_notes": [
+        "Accept the sufficient answer and honor the request for unassisted new practice.",
+        "Offer a distinct context; do not claim mastery from one answer or pre-explain the new answer."
+      ],
+      "stages": [
+        {
+          "stage": "feedback",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "Synthetic feedback: you submitted work for discussion."
+              ],
+              "guidance": [
+                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
+              ],
+              "next_step": "Revise one sentence to connect your evidence and explanation.",
+              "concepts": [
+                "Evidence and explanation"
+              ],
+              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
+              "teaching_action": "coach",
+              "learning_observation": {
+                "assessment": "not_assessed",
+                "evidence": "Synthetic mock responses do not assess learner understanding.",
+                "resolved_points": [],
+                "open_points": []
+              }
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "follow_up",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "strengths": [
+                "Synthetic feedback: you submitted work for discussion."
+              ],
+              "guidance": [
+                "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
+              ],
+              "next_step": "Revise one sentence to connect your evidence and explanation.",
+              "concepts": [
+                "Evidence and explanation"
+              ],
+              "uncertainty_note": "Synthetic mock response, not an assessment of your work.",
+              "teaching_action": "coach",
+              "learning_observation": {
+                "assessment": "not_assessed",
+                "evidence": "Synthetic mock responses do not assess learner understanding.",
+                "resolved_points": [],
+                "open_points": []
+              }
+            },
+            "model_id": "fixture-v1",
+            "reported_usage": {},
+            "latency_ms": 0,
+            "finish_reason": "stop"
+          }
+        },
+        {
+          "stage": "next_question",
+          "contracts_passed": true,
+          "result": {
+            "validated_payload": {
+              "problem_text": "Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",
+              "concept_focus": "Synthetic example: observations and evidence",
+              "success_criteria": [
+                "Name one observation and explain how it supports the comparison."
               ],
               "passage": null
             },

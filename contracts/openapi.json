@@ -84,9 +84,9 @@
         "title": "Features",
         "type": "object"
       },
-      "FeedbackPayload": {
+      "FeedbackPublic": {
         "additionalProperties": false,
-        "description": "Teaching observations are not grades, tools, or completion commands.",
+        "description": "Historical feedback records absent structured observations as unknown.",
         "properties": {
           "concepts": {
             "items": {
@@ -105,6 +105,16 @@
             "title": "Guidance",
             "type": "array"
           },
+          "learning_observation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LearningObservation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "next_step": {
             "maxLength": 1000,
             "title": "Next Step",
@@ -117,6 +127,24 @@
             "maxItems": 5,
             "title": "Strengths",
             "type": "array"
+          },
+          "teaching_action": {
+            "anyOf": [
+              {
+                "enum": [
+                  "acknowledge",
+                  "clarify",
+                  "explain",
+                  "coach",
+                  "extend"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teaching Action"
           },
           "uncertainty_note": {
             "anyOf": [
@@ -135,9 +163,11 @@
           "strengths",
           "guidance",
           "next_step",
-          "concepts"
+          "concepts",
+          "teaching_action",
+          "learning_observation"
         ],
-        "title": "FeedbackPayload",
+        "title": "FeedbackPublic",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -346,6 +376,56 @@
         "title": "LearnerPublic",
         "type": "object"
       },
+      "LearningObservation": {
+        "additionalProperties": false,
+        "description": "Fallible evidence about this response, never a mastery score or a grade.",
+        "properties": {
+          "assessment": {
+            "enum": [
+              "sufficient",
+              "developing",
+              "uncertain",
+              "not_assessed"
+            ],
+            "title": "Assessment",
+            "type": "string"
+          },
+          "evidence": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Evidence",
+            "type": "string"
+          },
+          "open_points": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 3,
+            "title": "Open Points",
+            "type": "array"
+          },
+          "resolved_points": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 3,
+            "title": "Resolved Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "assessment",
+          "evidence",
+          "resolved_points",
+          "open_points"
+        ],
+        "title": "LearningObservation",
+        "type": "object"
+      },
       "LoginRequest": {
         "description": "Credentials for the administrator or one learner account.",
         "properties": {
@@ -381,6 +461,64 @@
         "title": "LogoutResponse",
         "type": "object"
       },
+      "MaterialFocus": {
+        "additionalProperties": false,
+        "description": "Offsets count Unicode code points in the unchanged saved source.",
+        "properties": {
+          "end": {
+            "minimum": 1.0,
+            "title": "End",
+            "type": "integer"
+          },
+          "mode": {
+            "enum": [
+              "whole",
+              "guided"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "section_count": {
+            "minimum": 1.0,
+            "title": "Section Count",
+            "type": "integer"
+          },
+          "section_index": {
+            "minimum": 0.0,
+            "title": "Section Index",
+            "type": "integer"
+          },
+          "section_size": {
+            "enum": [
+              "short",
+              "standard",
+              "long"
+            ],
+            "title": "Section Size",
+            "type": "string"
+          },
+          "start": {
+            "minimum": 0.0,
+            "title": "Start",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "section_size",
+          "section_index",
+          "section_count",
+          "start",
+          "end",
+          "text"
+        ],
+        "title": "MaterialFocus",
+        "type": "object"
+      },
       "OperationPublic": {
         "properties": {
           "ambiguities": {
@@ -414,7 +552,7 @@
           "feedback": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/FeedbackPayload"
+                "$ref": "#/components/schemas/FeedbackPublic"
               },
               {
                 "type": "null"
@@ -906,6 +1044,27 @@
             "title": "Id",
             "type": "string"
           },
+          "learning_goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Learning Goal"
+          },
+          "material_focus": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MaterialFocus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "operations": {
             "items": {
               "$ref": "#/components/schemas/OperationPublic"
@@ -960,6 +1119,13 @@
           "status": {
             "title": "Status",
             "type": "string"
+          },
+          "success_criteria": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Success Criteria",
+            "type": "array"
           },
           "template_id": {
             "title": "Template Id",
@@ -1821,7 +1987,7 @@
             "title": "Source Url"
           },
           "text": {
-            "maxLength": 8000,
+            "maxLength": 50000,
             "minLength": 1,
             "title": "Text",
             "type": "string"
@@ -2368,10 +2534,25 @@
             ],
             "title": "Passage Title"
           },
+          "reading_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "whole",
+                  "guided"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reading Mode"
+          },
           "reference_text": {
             "anyOf": [
               {
-                "maxLength": 8000,
+                "maxLength": 50000,
                 "type": "string"
               },
               {
@@ -2379,6 +2560,34 @@
               }
             ],
             "title": "Reference Text"
+          },
+          "section_index": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Index"
+          },
+          "section_size": {
+            "anyOf": [
+              {
+                "enum": [
+                  "short",
+                  "standard",
+                  "long"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Size"
           },
           "source": {
             "default": "topic",
@@ -2398,7 +2607,7 @@
           "source_token": {
             "anyOf": [
               {
-                "maxLength": 50000,
+                "maxLength": 410000,
                 "type": "string"
               },
               {
