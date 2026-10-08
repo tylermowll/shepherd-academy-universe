@@ -71,11 +71,24 @@ migration, worker/API readiness, built UI, HEIF normalization and setup recovery
 The restricted image also fetched the approved public sources: one 714-character
 Aesop passage and five NASA passages. No learner data or inference was involved.
 
-Spark check: the collaboration tool exposes no Codex-Spark model. Current
-[official model documentation](https://learn.chatgpt.com/docs/models) says
-`gpt-5.3-codex-spark` retired on September 14, 2026. No Spark collaborator was
-started and no substitute model was represented as Spark. This check does not
-test the separate Meta Muse Spark tutor connection.
+Muse Spark collaboration was verified through installed **Muse Code 1.0.3
+(1.0.3-R2198.1)** with `--provider meta --model muse-spark-1.3`. The maintainer
+clarified that this was the requested Spark model. A `git archive` snapshot of
+the already-pushed public repository excluded all ignored runtime/private files.
+Automatic review initially rejected a possible private-source export; GitHub's
+repository API confirmed `visibility=PUBLIC` and `isPrivate=false`, and the
+same restricted review was then approved. No private file was sent.
+
+The first read-only review reached its eight-model-step cap without a final
+answer. A focused, self-contained public-source request with
+`muse exec --json --provider meta --model muse-spark-1.3 --reasoning-effort medium
+--max-model-steps 1` completed with exit code 0 and a `run_terminal` response:
+**No blocking findings in reviewed scope.** It reviewed the source importer,
+its unit tests and the reading contract; its remaining suggestions were optional
+parser test cases. Shell, writes, web tools, foreign personal context and session
+logging were disabled. The primary review found no additional blocking defect
+in those suggestions. This verifies Muse coding collaboration, not live tutoring
+quality or execution of the app's tests by Muse.
 
 `PATH=/home/mowll/.nvm/versions/node/v24.20.0/bin:$PATH UV_NO_ENV_FILE=1
 UV_CACHE_DIR=/tmp/shepherd-review-uv
@@ -136,9 +149,13 @@ Release commit `1800536` was pushed to `origin/main`. For the local update:
   The final patched image also imported the public Aesop and NASA sources.
 
 Live tutor/vision quality and physical-device acceptance remain unverified;
-mock fixtures do not establish teaching quality. No live inference, model
-download, private-data inspection or account reset was performed. Hosted CI
-is triggered by the push; its outcome is separate from the passed local evidence.
+mock fixtures do not establish teaching quality. No live application-provider
+inference, model download, private-data inspection or account reset was performed.
+[Hosted run 37799497116](https://github.com/tylermowll/shepherd-academy-universe/actions/runs/37799497116)
+passed both **checks** and **package** for release head `adbfd1d`, including the
+full browser suite, audits, container scan and SBOM generation. The subsequent
+commit only records this evidence and the Muse collaboration result; it changes
+no application code or deployed image.
 
 ### T42 — Reading passages and grounded practice (2026-10-08)
 
