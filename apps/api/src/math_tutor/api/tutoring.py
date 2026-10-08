@@ -29,6 +29,7 @@ from math_tutor.api.practice import (
     request_key,
 )
 from math_tutor.providers import authorize_route, effective_configuration
+from math_tutor.reading import ActivitySource, ReadingPassage
 
 router = APIRouter(prefix="/api/v1/tutor", tags=["AI tutoring"])
 Initiative = Literal["tutor_led", "balanced", "learner_led"]
@@ -51,15 +52,29 @@ class TutorSettingsInput(BaseModel):
 class TutorActivityInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     difficulty: Difficulty | None = None
-    source: Literal["topic", "reference_text", "reference_photo"] = "topic"
+    source: ActivitySource = "topic"
     reference_text: str | None = Field(default=None, max_length=8000)
+    passage_title: str | None = Field(default=None, min_length=1, max_length=200)
+    source_token: str | None = Field(default=None, max_length=50000)
 
     @model_validator(mode="after")
     def validate_reference(self) -> TutorActivityInput:
-        if self.source == "reference_text" and not (self.reference_text or "").strip():
+        if (
+            self.source in {"reference_text", "reading_text"}
+            and not (self.reference_text or "").strip()
+        ):
             raise ValueError("Reference text is required.")
-        if self.source != "reference_text" and self.reference_text is not None:
-            raise ValueError("Only a text reference accepts reference_text.")
+        if (
+            self.source not in {"reference_text", "reading_text"}
+            and self.reference_text is not None
+        ):
+            raise ValueError("Only a text source accepts reference_text.")
+        if self.passage_title is not None and (
+            self.source not in {"reading_text", "reading_photo"} or not self.passage_title.strip()
+        ):
+            raise ValueError("A passage title belongs to a pasted or photographed passage.")
+        if (self.source == "published") != bool(self.source_token):
+            raise ValueError("A published passage requires its imported source token.")
         return self
 
 
@@ -124,6 +139,8 @@ def create_session(
     owned_learner(db, actor, body.learner_id)
     if not body.topic.strip():
         raise HTTPException(422, "Choose a topic or describe what you want to practice.")
+    if body.initial_activity and body.initial_activity.source == "same_passage":
+        raise HTTPException(422, "Choose a passage before starting questions about it.")
     key, payload = request_key(request), digest(body.model_dump())
     old = db.scalar(
         select(PracticeSession).where(
@@ -221,9 +238,24 @@ def activity(
             old.version += 1
     config = effective_configuration(db)
     authorize_route(db, config, "tutor", session.learner_id)
-    photo = body.source == "reference_photo"
+    photo = body.source in {"reference_photo", "reading_photo"}
     if photo:
         authorize_route(db, config, "vision", session.learner_id)
+    passage: ReadingPassage | None = None
+    if body.source == "reading_text":
+        passage = ReadingPassage(
+            title=body.passage_title or "Your reading passage",
+            text=body.reference_text or "",
+            origin="pasted",
+        )
+    elif body.source == "same_passage":
+        if not problems or not problems[-1].passage:
+            raise HTTPException(409, "Choose a reading passage before requesting another question.")
+        passage = ReadingPassage.model_validate(problems[-1].passage)
+    elif body.source == "published":
+        from math_tutor.reading_sources import verify_source_token
+
+        passage = verify_source_token(body.source_token or "", session.learner_id)
     if body.difficulty is not None:
         session.profile_settings = {**session.profile_settings, "difficulty": body.difficulty}
     session.updated_at = utcnow()
@@ -237,10 +269,16 @@ def activity(
         parameters={
             "activity_state": "reference_capture" if photo else "generating",
             "reference_source": body.source,
-            "reference": body.reference_text or "",
+            "reference": (body.reference_text or "") if body.source == "reference_text" else "",
+            "reading_mode": body.source
+            in {"reading_text", "reading_photo", "reading_generated", "same_passage", "published"},
+            "passage_title": body.passage_title or "Your photographed passage",
             "request_digest": payload,
         },
-        problem_text="Photograph the source material. The tutor will create a different practice activity, not solve the original assignment."
+        passage=passage.model_dump(mode="json") if passage else None,
+        problem_text="Photograph the reading passage. The tutor will save its text and ask a question about it."
+        if body.source == "reading_photo"
+        else "Photograph the source material. The tutor will create a different practice activity, not solve the original assignment."
         if photo
         else "Preparing a new practice activity…",
         expected_result={},

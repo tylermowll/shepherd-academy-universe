@@ -49,6 +49,292 @@ specification gates pass.
 | T39 | Implemented, tested and deployed locally | Browser setup permission survives link expiry, reloads and API restarts; the local administrator account now exists. |
 | T40 | Implemented, tested and deployed locally | Settings loads after signup; rechecking the same session preserves pending requests and account changes still discard stale responses. |
 | T41 | Implemented; automated gates passed; live/device acceptance pending | Tutor and provider saves recover without duplicate work, account/setup transitions are explicit, conversation space is usable on desktop/mobile, Docker host-model routing is consistent, and dependency audits pass. |
+| T42 | Implemented; automated gates passed; live/device acceptance pending | Persisted pasted/photo/AI-written/published passages, grounded guidance and same-passage questions, attributed bounded imports, and original reading evaluation; evidence below. |
+
+### T42 release review and local update (2026-10-08)
+
+The maintainer authorized gap closure, pushing all reviewed work to `main`,
+updating the existing installation, and checking Spark collaboration availability.
+The review retained T42's API/schema and privacy boundaries. It corrected the
+reading-photo capture wording, labeled description-only NASA feed entries as
+excerpts, and rejected alternate XML encodings before parsing so entity
+declarations cannot bypass the guard. Tests add four encoding regressions,
+summary attribution, and photographed-passage browser coverage through feedback,
+next questions, reload and History.
+
+Initial targeted evidence: `uv run --project apps/api --locked --no-env-file
+pytest apps/api/tests/unit/test_reading_sources.py
+apps/api/tests/integration/test_reading.py` passed **37 tests**. The reviewed
+container built as `math-practice-tutor:t42-review` and passed
+`sh scripts/container-smoke.sh math-practice-tutor:t42-review`, including fresh
+migration, worker/API readiness, built UI, HEIF normalization and setup recovery.
+The restricted image also fetched the approved public sources: one 714-character
+Aesop passage and five NASA passages. No learner data or inference was involved.
+
+Spark check: the collaboration tool exposes no Codex-Spark model. Current
+[official model documentation](https://learn.chatgpt.com/docs/models) says
+`gpt-5.3-codex-spark` retired on September 14, 2026. No Spark collaborator was
+started and no substitute model was represented as Spark. This check does not
+test the separate Meta Muse Spark tutor connection.
+
+`PATH=/home/mowll/.nvm/versions/node/v24.20.0/bin:$PATH UV_NO_ENV_FILE=1
+UV_CACHE_DIR=/tmp/shepherd-review-uv
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/opt/google/chrome/chrome
+make check test-integration smoke eval-mock audit` passed the project checks,
+**218 backend unit, 171 frontend component, 283 integration and 72 desktop/mobile
+browser tests**, plus the 12-case/36-call original reading evaluation. Its final
+audit failed on newly reported `urllib3` and `virtualenv` vulnerabilities.
+The bounded lockfile update uses `uv lock --directory apps/api --upgrade-package
+urllib3==2.8.0 --upgrade-package virtualenv==21.7.13`, followed by `uv sync
+--directory apps/api --locked`. No other package versions changed; no audit
+exception or ignored advisory was added.
+
+After that Python audit passed, the JavaScript audit reported affected
+`brace-expansion` and `source-map-js` build-tool dependencies. `pnpm update -r
+brace-expansion source-map-js --lockfile-only` and `pnpm install
+--frozen-lockfile` updated only `brace-expansion` 2.1.4 → 2.1.7 / 5.0.9 → 5.0.12
+and `source-map-js` 1.2.1 → 1.2.2. `pnpm audit` then reported no known
+vulnerabilities. Direct dependency manifests are unchanged. The unsupported
+`--depth Infinity` flag initially failed without making changes; pnpm 12's
+documented unlimited-depth default was used instead.
+
+Final `make check audit` passed with 218 unit/171 component tests and both audits
+reporting no known vulnerabilities. The 283 integration cases passed with the
+Python fixes; all six reading desktop/mobile scenarios passed again after both
+lockfile updates. The image was rebuilt and smoke-tested with those locks.
+
+The local Trivy 0.75.0 HIGH/CRITICAL image scan then identified two fixed OpenSSL
+findings in the pinned Debian runtime (CVE-2026-75804 and CVE-2026-84782).
+`infra/docker/Dockerfile` refreshes only the existing Distroless Debian 13 nonroot
+digest to `sha256:e792ab3d241a468a4fd7519ddbbebe66b49b5f365771716ea688ad40b6c6f1c2`.
+No package metadata was removed and no scan suppression was added.
+
+The patched image passed the container smoke test and Trivy's HIGH/CRITICAL
+scan with **zero findings**, including unfixed findings (none suppressed).
+`trivy image --input /image.tar --scanners vuln --severity HIGH,CRITICAL
+--exit-code 1` ran in `aquasec/trivy:0.75.0` with only the public image archive
+mounted. Its CycloneDX SBOM contains 52 components (`/tmp/shepherd-t42-sbom.json`).
+The final image ID is
+`sha256:2d122fccc6047fd6376eb5bd6d3ca057e13a90cbb4cedf76328fff9fe1c2a1e3`.
+`make hooks-check` passed all repository hooks, including the full project check.
+Push and retained-data installation update are next. Live tutor/vision quality
+and physical-device acceptance remain unverified; mock fixtures do not establish
+teaching quality.
+
+### T42 — Reading passages and grounded practice (2026-10-08)
+
+Authorized by the maintainer's request to implement the reading-readiness review.
+Preserve typed/photo/AI-written passages separately from questions,
+reuse the same passage for feedback and subsequent activities, retain homework
+separation, add bounded published-text import and reading evaluation coverage,
+and reconcile the documentation discrepancies. Live model and physical device
+acceptance remain external evidence, not an automated completion claim.
+
+Affected contracts: activity input/output, learner activity/history and export,
+generation/review context, persisted passage snapshots, source import, and
+generated OpenAPI/TypeScript. Checks: passage fidelity/reuse/reopen, photo routing,
+original passage generation, homework exclusion, ownership/deletion, bounded
+source failures, and reading evaluation provenance; then `make check`,
+`make test-integration`, `make smoke`, and the synthetic evaluation gates.
+
+Implementation and files:
+
+- Migration `0018_reading_passages.py` and `adapters/db/models.py` store a typed
+  passage snapshot independently of the generated question. `reading.py`,
+  provider `contracts.py`, `api/practice.py`, `api/tutoring.py` and `tutoring.py`
+  distinguish reading text/photo/original/same-passage/published modes. Guidance
+  receives complete passage evidence, and subsequent questions reuse it. Models
+  cannot replace supplied text or add publisher metadata. Photo interpretation
+  persists before automatic generation, with incidental uncertainty qualified.
+  Topic/assignment activities still return no reading passage, and original
+  homework is excluded from feedback. Ownership, export, cascade deletion,
+  idempotency, retry and context-budget boundaries remain enforced.
+- `api/reading.py`, `reading_sources.py` and `api/app.py` implement an explicit
+  source picker for two Aesop fables on a Gutenberg mirror and up to five NASA
+  news passages. Text has attribution, source links, dates when present and
+  permission metadata; long news items are labeled opening excerpts. Fetches
+  accept only fixed URLs, pin public unicast DNS addresses, reject redirects
+  and oversized/encoded bodies, omit credentials/proxies/learner work, and use
+  a 12-second child-process deadline with bounded cleanup. XML entity declarations,
+  scripts and image/figure captions are excluded. Source previews are signed,
+  learner-bound and expire after an hour; saved passages follow ordinary retention.
+  Network work releases SQLite writes and rechecks access afterwards.
+- `ReadingPassage.tsx`, `ReadingSources.tsx`, `Tutor.tsx`,
+  `TutorConversation.tsx` and `styles.css` show source choices, original-text
+  labeling, published previews and a reader panel beside the question/conversation
+  on desktop and above it on phones. Next/Easier/Harder preserve the current
+  passage after reload and History. New material remains an explicit choice.
+  Safe text rendering, source errors, unsent drafts and stale-request handling
+  stay visible. OpenAPI and TypeScript clients were regenerated.
+- `reading_evaluation.py`, `evals/fixtures/reading-v1.json`,
+  `evals/reports/reading-mock.json` and the Makefile add 12 original cases and
+  36 production-prompt contract calls. Cases cover literal understanding,
+  inference, main idea, vocabulary, evidence and hostile quoted instructions;
+  correct, mistaken, partial and supported alternative responses are followed
+  by discussion and an adaptive next question. Reviewer notes are withheld from
+  the model. Reports record provenance/hash, settings, prompt/model versions,
+  sample size, errors, tokens and latency; quality judgements remain pending.
+  `make eval-mock` includes this suite. Live reading has an explicit provider and
+  whole-case call budget, with authorization required before configuration loads.
+- Backend `test_reading.py`, `test_reading_sources.py`,
+  `test_reading_evaluation.py`, migration/auth/setup revision tests, frontend
+  Reading/Tutor tests and `tests/smoke/reading.spec.ts` cover the full loop and
+  failure/authorization paths. README, Help, SPECIFICATION, ACCEPTANCE,
+  TUTOR_EVALUATION and fixture MANIFEST describe the current workflow. D009 now
+  matches incidental-uncertainty routing; HANDOFF leads with T42/T41.
+
+Validation:
+
+- `PATH=/home/mowll/.nvm/versions/node/v24.20.0/bin:$PATH UV_NO_ENV_FILE=1
+  UV_CACHE_DIR=/tmp/shepherd-review-uv PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/opt/google/chrome/chrome
+  make check smoke eval-mock`: **passed**, including **70 desktop/mobile browser
+  tests** (10.5 minutes) and the synthetic evaluation. The initial check passed
+  211 unit and 171 component cases;
+  final bounds additions are covered by the following run.
+- With the same pinned Node/uv environment, `make lint format-check typecheck
+  test test-integration contracts-check secret-check infra-check`: **213 backend
+  unit, 171 frontend component and 283 integration tests passed**. Ruff, ESLint,
+  Prettier, mypy (77 source files), both TypeScript checks, generated-contract
+  drift, tracked public credential scan and IaC lint passed. Real on-disk
+  migration/schema drift and 0018 rollback retain other activity data. The
+  existing Starlette deprecation and Vite bundle-size warnings remain.
+- `make eval-mock` passed deterministic math/vision contracts and the new
+  **12-case/36-call** original reading suite. No live quality conclusion follows
+  from these mock results.
+- Desktop/phone synthetic screenshots were inspected; source text has its own
+  reader panel and the question stays visible above the conversation. Browser
+  assertions retain more than 240 pixels of conversation and no horizontal
+  overflow. Screenshots are supporting UI review, not correctness evidence.
+- `make build` passed again on the final source: backend source/wheel packaging
+  and production web/PWA assets built successfully. No dependency or infrastructure
+  service was added; dependency versions are unchanged.
+- `uv run --project apps/api --locked --no-env-file python
+  /tmp/shepherd_public_sources_smoke.py`: the final importer fetched the two
+  reviewed public sources: **one 714-character Hare/Tortoise passage, one
+  303-character Fox/Grapes passage and five NASA passages** (1,758, 7,572,
+  5,001, 5,276 and 1,128 characters). Only public source requests were made;
+  no model call or learner work was sent.
+- Additional credential-pattern scanning of all 14 new untracked public text
+  files and `git diff --check` passed. Changed/new files were reviewed for private
+  data, generated drift, provider-policy bypasses and hidden-answer disclosure.
+
+The first new browser runs had no Playwright-managed executable; the available
+`/opt/google/chrome/chrome` resolved that environment failure. A new select
+locator also timed out; it now uses the accessible combobox role, matching the
+existing helpers. Targeted reading desktop/mobile checks passed after those
+corrections. The source-client tests exposed a double-open of the injected HTTP
+client; the importer now preserves the caller's client lifecycle. No test
+requirement was removed or weakened.
+
+Remaining external evidence: live tutor/vision quality, actual phone camera/HEIC
+and accessibility checks. The next bounded action is the documented synthetic
+live reading rehearsal with the chosen model and an explicit call/spend budget,
+then a physical phone rehearsal. No paid/live inference, private configuration
+or learner-data inspection, model download, deployment, Git commit or push was
+performed. The running installation still needs a deliberate update/migration
+after review. OpenAI subscription sign-in is a separate integration, not supplied
+by the reading task or the existing API-key connection.
+
+### Reading-comprehension readiness review (2026-10-08)
+
+The maintainer requested a review focused on getting reading comprehension ready,
+with pasted passages and photos from the start, AI-written passages, and published
+short stories/news if the added work is modest. This records review findings and
+the next implementation boundary; it does not mark reading quality accepted.
+Only this task log changed. No application behavior was changed or deployed.
+
+The existing tutor supplies learner sign-in, topic/reference intake, automatic
+photo reading, generated activities, discussion, difficulty, history, ownership,
+and retries. T41 is the latest completed automated increment. The remaining work
+for this use case is narrower than completing every historical release gate.
+
+Findings, in priority order:
+
+1. **Passage evidence is not reliably available during feedback.**
+   `tutoring.make_request` sends the stored reference during generation, but its
+   review request receives the generated `problem_text`, learner work, and recent
+   conversation without the original reference. Passage-specific feedback depends
+   on the model having copied enough of the passage into the activity. The input
+   accepts 8,000 characters, while `ActivityPayload.problem_text` permits only
+   4,000. Pasted source text is also absent from the learner's returned activity;
+   photographed source text can remain visible in its reader report. Homework
+   reference exclusion is intentional and must remain: distinguish reading
+   passage evidence from original assignment questions rather than replaying all
+   raw references into guidance.
+2. **Next activity drops the explicit passage source.** All three next-activity
+   buttons in `Tutor.tsx` call `activity("topic", ...)`. The new activity stores
+   no reference. Generation receives selected earlier activity/work snippets,
+   including only the first 1,000 characters of an earlier activity, rather than
+   the complete original passage. This cannot reliably support a sequence of
+   questions about the same text. Preserve the selected passage until the learner
+   explicitly chooses another source, including after reload and History reopen.
+3. **AI-written passages need an explicit contract.** A free-topic request can
+   ask the model to write a passage inside the activity, but there is no separate
+   passage field, source mode, or reading-specific acceptance suite. Store and
+   display an original generated passage separately from its question and carry
+   it through discussion and subsequent activities. Label it as AI-written.
+4. **Reading quality remains unmeasured.** The browser test named for reading
+   and history uses an invented homework request and synthetic responses. The
+   `eval-live` tutor cases use historical math prompts and `TutorPayload`, rather
+   than the current reading activity/feedback contracts. Add original reading
+   cases for literal understanding, inference, main idea, vocabulary in context,
+   and supporting evidence, with correct, mistaken, partial, and alternative
+   responses. Check unsupported claims, false corrections, direct-answer
+   disclosure, follow-up context, and next-question relevance. Human review with
+   the selected tutor is still required; mocks do not establish teaching quality.
+5. **Published-source import is additional scope.** No story/news importer is
+   implemented. A bounded picker/importer for selected sources can reuse the
+   passage flow without adding autonomous model tools or a retrieval service.
+   Preserve title, author/publisher, source URL, publication date when available,
+   and source permission metadata; extract a bounded passage before generating
+   questions. Project Gutenberg publishes specific
+   [machine-access methods](https://www.gutenberg.org/policy/robot_access.html),
+   while a news API such as
+   [Guardian Open Platform](https://open-platform.theguardian.com/access/)
+   requires a key and an appropriate access arrangement. Neither source was
+   connected or imported. Implement one reviewed source at a time; broad web
+   search and arbitrary-site extraction are a larger task.
+
+Next bounded implementation: passage persistence and reuse for pasted,
+photographed, and AI-written text. Affected contracts are `TutorActivityInput`,
+`TutoringSessionPublic`/`ProblemPublic`, `ActivityPayload`, generation/review
+context, learner History, and existing ownership/export/retention boundaries.
+Regenerate the API client if these schemas change. Add focused integration,
+component, and browser regressions for source fidelity, feedback grounding,
+same-passage next activities, reload/reopen, and continued homework separation.
+Then add the reading evaluation set and perform an explicitly authorized live
+rehearsal. Both photo input and handwritten responses also require actual phone
+camera/HEIC and reading-quality evidence. Optional AWS/browser-model research
+does not need to delay this reading slice.
+
+Documentation discrepancy: D009's original photo-routing bullet still requires
+"no reported ambiguity," whereas the current repository instructions,
+specification section 4, and T36 implementation allow incidental uncertainty
+when useful feedback is possible. The current explicit instruction governs;
+reconcile the older wording without reinstating an approval gate. HANDOFF also
+still leads with T40 rather than the later T41 evidence.
+
+Actual validation:
+
+- `PATH=/home/mowll/.nvm/versions/node/v24.20.0/bin:$PATH UV_NO_ENV_FILE=1
+  UV_CACHE_DIR=/tmp/shepherd-review-uv make test`: **194 backend unit tests and
+  162 frontend component tests passed**. The first restricted run had seven
+  socket-permission setup errors; the permitted rerun used only synthetic local
+  HTTP servers and resolved those environment errors.
+- `UV_CACHE_DIR=/tmp/shepherd-review-uv uv run --directory apps/api --locked
+  --no-env-file pytest tests/unit/test_tutoring_contracts.py
+  tests/integration/test_tutoring.py /tmp/shepherd_reading_review_test.py`:
+  **58 passed** (26 existing contract cases, 30 existing integration cases, two
+  temporary review probes). The probes used temporary on-disk SQLite and mocked
+  providers for pasted and photographed passages. They demonstrated that a
+  schema-valid question omitting the passage is accepted, and the original text
+  is subsequently absent from feedback and topic-based next-generation requests.
+  These passing probes establish the omission, not correctness of that behavior;
+  they remain outside the repository in `/tmp`. Restricted ASGI runs stalled and
+  were canceled; the permitted rerun completed in 7.01 seconds.
+- No live/paid inference, private configuration/data/log inspection, model
+  download, deployment, or Git push. Full integration, browser smoke, physical
+  devices, and live reading quality were not rerun/verified in this review.
 
 ### T41 — Journey reliability and flow review (2026-09-19)
 

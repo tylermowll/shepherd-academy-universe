@@ -630,6 +630,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/reading/import": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Load Source */
+    post: operations["load_source_api_v1_reading_import_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/reading/sources": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Sources */
+    get: operations["sources_api_v1_reading_sources_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/sessions": {
     parameters: {
       query?: never;
@@ -952,6 +986,12 @@ export interface components {
       /** Status */
       status: string;
     };
+    /** ImportedPassage */
+    ImportedPassage: {
+      passage: components["schemas"]["ReadingPassage"];
+      /** Source Token */
+      source_token: string;
+    };
     /** LearnerAccountUpdate */
     LearnerAccountUpdate: {
       /** Alias */
@@ -1262,11 +1302,22 @@ export interface components {
       id: string;
       /** Operations */
       operations: components["schemas"]["OperationPublic"][];
+      passage?: components["schemas"]["ReadingPassage"] | null;
       /** Problem Text */
       problem_text: string;
       /** Reference Source */
       reference_source?:
-        ("topic" | "reference_text" | "reference_photo") | null;
+        | (
+            | "topic"
+            | "reference_text"
+            | "reference_photo"
+            | "reading_text"
+            | "reading_photo"
+            | "reading_generated"
+            | "same_passage"
+            | "published"
+          )
+        | null;
       /**
        * Session Id
        * Format: uuid
@@ -1682,6 +1733,33 @@ export interface components {
       providers: components["schemas"]["ProviderPublic"][];
       routes: components["schemas"]["Routes"];
     };
+    /** ReadingPassage */
+    ReadingPassage: {
+      /** Author */
+      author?: string | null;
+      /**
+       * Excerpt
+       * @default false
+       */
+      excerpt: boolean;
+      /**
+       * Origin
+       * @enum {string}
+       */
+      origin: "pasted" | "photo" | "ai_written" | "published";
+      /** Permission */
+      permission?: string | null;
+      /** Published At */
+      published_at?: string | null;
+      /** Source Url */
+      source_url?: string | null;
+      /** Text */
+      text: string;
+      /** Title */
+      title: string;
+      /** Uncertainties */
+      uncertainties?: string[];
+    };
     /** ReadingPublic */
     ReadingPublic: {
       /** Ambiguities */
@@ -1852,6 +1930,34 @@ export interface components {
       /** Required */
       required: boolean;
     };
+    /** SourceChoice */
+    SourceChoice: {
+      /**
+       * Id
+       * @enum {string}
+       */
+      id: "aesop_hare" | "aesop_grapes" | "nasa_news";
+      /** Title */
+      title: string;
+    };
+    /** SourceImportInput */
+    SourceImportInput: {
+      /**
+       * Learner Id
+       * Format: uuid
+       */
+      learner_id: string;
+      /**
+       * Source Id
+       * @enum {string}
+       */
+      source_id: "aesop_hare" | "aesop_grapes" | "nasa_news";
+    };
+    /** SourceImportPublic */
+    SourceImportPublic: {
+      /** Passages */
+      passages: components["schemas"]["ImportedPassage"][];
+    };
     /** SubmissionInput */
     SubmissionInput: {
       /**
@@ -1882,6 +1988,8 @@ export interface components {
     TutorActivityInput: {
       /** Difficulty */
       difficulty?: ("introductory" | "standard" | "challenge") | null;
+      /** Passage Title */
+      passage_title?: string | null;
       /** Reference Text */
       reference_text?: string | null;
       /**
@@ -1889,7 +1997,17 @@ export interface components {
        * @default topic
        * @enum {string}
        */
-      source: "topic" | "reference_text" | "reference_photo";
+      source:
+        | "topic"
+        | "reference_text"
+        | "reference_photo"
+        | "reading_text"
+        | "reading_photo"
+        | "reading_generated"
+        | "same_passage"
+        | "published";
+      /** Source Token */
+      source_token?: string | null;
     };
     /** TutorSettingsInput */
     TutorSettingsInput: {
@@ -3177,6 +3295,59 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  load_source_api_v1_reading_import_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SourceImportInput"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SourceImportPublic"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  sources_api_v1_reading_sources_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SourceChoice"][];
         };
       };
     };

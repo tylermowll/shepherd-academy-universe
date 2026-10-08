@@ -224,6 +224,18 @@ an answer key, solve the reference assignment, or present a copied assignment as
 new practice. For reading, ground passage-specific questions in text actually
 supplied; ask for an excerpt when necessary.
 
+Reading practice stores a typed passage snapshot separately from its question.
+The learner can paste or photograph a passage, request an original AI-written
+passage, or explicitly import an offered published source. Preserve the full
+snapshot for guidance, subsequent questions, History and administrator export;
+ownership, retention and deletion follow the activity. Next/Easier/Harder reuse
+that passage until different material is selected. Distinguish original generated
+text, photo uncertainties, and published title/author/URL/date/permission metadata.
+Models may generate original text only when requested; they cannot replace supplied
+passages or invent published attribution. Homework references remain separate
+and are excluded from feedback as before. Source imports use a fixed reviewed
+catalog and bounded public HTTP; no arbitrary URLs or autonomous model tools.
+
 Practice collects the topic, difficulty, tutor style and optional reference in
 one form. It supplies `initial_activity` with session creation so the session,
 first activity and pending job are committed atomically. A repeated request key
@@ -1026,6 +1038,18 @@ decision. No later acceptance gate is waived.
 T00–T05 are the first complete **non-AI** slice. T06–T10 add the controlled tutoring workflow. T11–T19 finish portable version-1 behavior. T20–T23 are later work, not excuses to delay a usable release.
 
 Tasks may need splitting into smaller subtasks before implementation. Keep their parent acceptance criteria and dependencies. Never mark T19 complete while core providers are only undocumented stubs; a missing live credential may be an explicit verification limitation, but implemented adapters still need meaningful contract tests.
+
+### T42 reading-comprehension contract
+
+T42 depends on T25/T41. Deliver pasted, photographed, AI-written and selected
+published passages with independent persistence/display, grounded feedback and
+same-passage next questions. Published imports preserve provenance and bound
+network time, response size and destination. Regenerate public contracts and
+add source fidelity/reuse/reopen/export/deletion, ownership, input and source
+failure regressions. Exit evidence includes `make check`, `make test-integration`,
+`make smoke`, and `make eval-mock` with the original reading suite. Live model
+quality and physical photo/device/accessibility acceptance remain separately
+recorded human gates; mock contracts cannot close them.
 
 ## 16. Development and release commands
 

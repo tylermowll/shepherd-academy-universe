@@ -8,6 +8,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Tutor } from "../src/Tutor";
 import { App } from "../src/App";
+import type { Schema } from "../src/client";
 
 const learner = "911c9abc-4e8e-424d-a914-4338187ba00a";
 const sessionId = "911c9abc-4e8e-424d-a914-4338187ba00b";
@@ -1277,4 +1278,145 @@ it("keeps rejected photos and follow-ups together across activities without a di
   expect(screen.queryByRole("button", { name: /dismiss|cancel/i })).toBeNull();
   expect(screen.queryByText("What is working")).toBeNull();
   expect(screen.queryByText("Try this next")).toBeNull();
+});
+
+it("reopens the complete passage separately and reuses it for harder practice", async () => {
+  const passage = {
+    title: "Mira's seedling",
+    text: "Mira moved the pot toward the window. She built a sunny shelf.",
+    origin: "pasted",
+    uncertainties: [],
+  };
+  const fetcher = installSession(
+    session([{ ...activity(), passage, reference_source: "reading_text" }]),
+  );
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  expect(await screen.findByLabelText("Reading passage")).toHaveTextContent(
+    passage.text,
+  );
+  expect(screen.getByText("Your pasted passage")).toBeVisible();
+  fireEvent.click(screen.getByText("Next activity options"));
+  fireEvent.click(screen.getByRole("button", { name: "Harder next activity" }));
+  await vi.waitFor(() => {
+    const sent = fetcher.mock.calls.find(([url]) =>
+      url.endsWith("/activities"),
+    );
+    expect(JSON.parse(sent![1].body as string)).toEqual({
+      source: "same_passage",
+      difficulty: "challenge",
+    });
+  });
+});
+
+it.each(["reading_text", "reading_photo", "reading_generated"])(
+  "starts reading with the selected %s source",
+  async (source) => {
+    const fetcher = vi.fn((url: string, options: RequestInit) => {
+      if (url.endsWith("/features")) return response(capabilities);
+      if (url.endsWith(`/tutor/sessions/${sessionId}`))
+        return response(session([activity()]));
+      if (url.endsWith("/tutor/sessions"))
+        return response(options.method === "POST" ? session([activity()]) : []);
+      throw new Error(url);
+    });
+    vi.stubGlobal("fetch", fetcher);
+    render(<Tutor learner={learner} offline={false} act={run} />);
+    await screen.findByLabelText("Practice source");
+    fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
+      target: { value: "Reading comprehension" },
+    });
+    fireEvent.change(screen.getByLabelText("Practice source"), {
+      target: { value: source },
+    });
+    if (source !== "reading_generated")
+      fireEvent.change(screen.getByLabelText("Passage title (optional)"), {
+        target: { value: "Original synthetic passage" },
+      });
+    if (source === "reading_text") {
+      expect(
+        screen.getByRole("button", { name: "Start session" }),
+      ).toBeDisabled();
+      fireEvent.change(screen.getByLabelText("Reading passage"), {
+        target: { value: "Mira built a sunny shelf for the seedling." },
+      });
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Start session" }));
+    await vi.waitFor(() => {
+      const sent = fetcher.mock.calls.find(
+        ([url, options]) =>
+          url.endsWith("/tutor/sessions") && options.method === "POST",
+      );
+      const body = JSON.parse(
+        sent![1].body as string,
+      ) as Schema<"TutoringSessionInput">;
+      expect(body.initial_activity?.source).toBe(source);
+      if (source === "reading_text")
+        expect(body.initial_activity?.reference_text).toBe(
+          "Mira built a sunny shelf for the seedling.",
+        );
+      if (source !== "reading_generated")
+        expect(body.initial_activity?.passage_title).toBe(
+          "Original synthetic passage",
+        );
+    });
+  },
+);
+
+it("starts published reading only after a selected preview supplies its source token", async () => {
+  const passage = {
+    title: "Synthetic public story",
+    text: "A seedling moved toward the sunlight.",
+    origin: "published",
+    author: "Synthetic author",
+    permission: "Original test fixture",
+    source_url: "https://www.gutenberg.org/ebooks/21",
+    uncertainties: [],
+  };
+  const fetcher = vi.fn((url: string, options: RequestInit) => {
+    if (url.endsWith("/features")) return response(capabilities);
+    if (url.endsWith("/reading/sources"))
+      return response([{ id: "aesop_hare", title: "Synthetic source" }]);
+    if (url.endsWith("/reading/import"))
+      return response({
+        passages: [{ passage, source_token: "owned-synthetic-preview" }],
+      });
+    if (url.endsWith(`/tutor/sessions/${sessionId}`))
+      return response(session([activity()]));
+    if (url.endsWith("/tutor/sessions"))
+      return response(
+        options.method === "POST" ? session([{ ...activity(), passage }]) : [],
+      );
+    throw new Error(url);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  await screen.findByLabelText("Practice source");
+  fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
+    target: { value: "Reading inference" },
+  });
+  fireEvent.change(screen.getByLabelText("Practice source"), {
+    target: { value: "published" },
+  });
+  await screen.findByRole("option", { name: "Synthetic source" });
+  expect(screen.getByRole("button", { name: "Start session" })).toBeDisabled();
+  expect(
+    fetcher.mock.calls.some(([url]) => url.endsWith("/reading/import")),
+  ).toBe(false);
+  fireEvent.click(screen.getByRole("button", { name: "Load published text" }));
+  await screen.findByText("Synthetic public story");
+  fireEvent.click(screen.getByRole("button", { name: "Start session" }));
+  await vi.waitFor(() => {
+    const sent = fetcher.mock.calls.find(
+      ([url, options]) =>
+        url.endsWith("/tutor/sessions") && options.method === "POST",
+    );
+    expect(
+      (JSON.parse(sent![1].body as string) as Schema<"TutoringSessionInput">)
+        .initial_activity,
+    ).toEqual({ source: "published", source_token: "owned-synthetic-preview" });
+  });
+  await screen.findByLabelText("Your work or question");
+  expect(
+    screen.queryByRole("button", { name: "Load published text" }),
+  ).toBeNull();
 });

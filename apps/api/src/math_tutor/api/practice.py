@@ -33,6 +33,7 @@ from math_tutor.api.learners import Acknowledged
 from math_tutor.api.profiles import ProfileSettings
 from math_tutor.api.schemas import ProblemInstancePublic
 from math_tutor.domain.math import SKILLS, Verdict, generate, help_text, verify
+from math_tutor.reading import ActivitySource, ReadingPassage
 
 router = APIRouter(prefix="/api/v1", tags=["practice"])
 ACTIVE = {"queued", "checking", "tutoring", "interpreting", "awaiting_confirmation"}
@@ -101,8 +102,9 @@ class ProblemPublic(ProblemInstancePublic):
     assistance_level: int
     operations: list[OperationPublic]
     activity_state: Literal["generating", "reference_capture", "ready"] = "ready"
-    reference_source: Literal["topic", "reference_text", "reference_photo"] | None = None
+    reference_source: ActivitySource | None = None
     concept_focus: str | None = None
+    passage: ReadingPassage | None = None
 
 
 class SessionPublic(BaseModel):
@@ -214,6 +216,7 @@ def problem_public(db: Session, row: ProblemInstance) -> ProblemPublic:
         activity_state=row.parameters.get("activity_state", "ready"),
         reference_source=row.parameters.get("reference_source"),
         concept_focus=row.parameters.get("concept_focus"),
+        passage=ReadingPassage.model_validate(row.passage) if row.passage else None,
         operations=[
             operation_public(db, op)
             for op in db.scalars(

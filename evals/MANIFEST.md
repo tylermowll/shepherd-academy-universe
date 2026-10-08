@@ -9,6 +9,13 @@ arithmetic and synthetic text. No learner record, employer material, workbook
 page, private photograph, credential, or downloaded model weight is included.
 Application-original fixture content is MIT licensed with the repository.
 
+`fixtures/reading-v1.json` contains 12 original reading cases across literal
+understanding, inference, main idea, vocabulary, evidence and hostile quoted
+instructions. Responses include correct, mistaken, partial and alternative
+interpretations. Passages and reviewer notes are authored here, not imported
+publisher content. `reports/reading-mock.json` records 36 synthetic calls through
+production prompts/persistence; its human-review fields remain pending.
+
 | Files                                              | Source and purpose                                                                                                                                                           |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `fixtures/rational-v1.json`                        | 33 original exact answer/format/parser cases; deterministic software verification                                                                                            |

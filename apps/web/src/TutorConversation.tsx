@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, type Schema } from "./client";
 import { SafeText } from "./SafeText";
+import { ReadingPassage } from "./ReadingPassage";
 
 type Props = {
   session: Schema<"TutoringSessionPublic">;
@@ -70,6 +71,9 @@ export function TutorConversation(props: Props) {
             {problem.status !== "assigned" && (
               <details className="conversation-activity">
                 <summary>Earlier activity {index + 1}</summary>
+                {problem.passage && (
+                  <ReadingPassage passage={problem.passage} />
+                )}
                 <SafeText text={problem.problem_text} />
               </details>
             )}

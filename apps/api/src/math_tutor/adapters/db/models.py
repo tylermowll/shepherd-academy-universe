@@ -154,6 +154,7 @@ class ProblemInstance(Base):
     )
 
     session: Mapped[PracticeSession] = relationship(back_populates="problems")
+    passage: Mapped[dict[str, Any] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
 
 
 class Administrator(Base):

@@ -160,7 +160,9 @@ not a limitation the maintainer accepted.
   handwriting/organization feedback. The worker automatically continues clear
   readings; there is no manual approval or hidden browser acknowledgement gate.
   Routing requires clear quality, a confidence score of at least
-  0.85, no reported ambiguity, and the current operation/version. This score is a
+  0.85, nonempty task-relevant text, no blocking rejection reason, and the current
+  operation/version. Incidental uncertainty is qualified without blocking usable
+  feedback. This score is a
   routing heuristic from the model, **not calibrated evidence of 85% accuracy**.
   Unclear work stops for a cleaner photograph, organized rewriting, or a new typed
   submission. No silent guesses or corrections to the student's work.

@@ -7,6 +7,21 @@ remain required before claiming the associated release gates complete.
 
 ## Functional/security mapping
 
+T42's reading software gate covers complete saved passages in generation,
+guidance, next questions, reload/History/export/deletion; clear photo continuation;
+original-passage labeling and replacement rejection; imported-source ownership,
+expiry, authorization and bounded public fetching. The tests are
+`test_reading.py`, `test_reading_sources.py`, `test_reading_evaluation.py`, frontend
+Reading/Tutor tests and `tests/smoke/reading.spec.ts`. Migration 0018 has drift and
+rollback evidence. `make eval-mock` includes 12 original reading cases with
+36 contract calls. These do not measure teaching or optical-reading quality.
+
+Before reading use is accepted, perform the [reading rehearsal](TUTOR_EVALUATION.md#reading-comprehension-rehearsal)
+with the selected live tutor and real phone. Record model/route/prompt settings,
+sample denominator, false corrections, invented source claims, answer leakage,
+supported alternative interpretations, follow-up memory and next-question relevance.
+Physical camera/HEIC, keyboard/screen-reader and phone viewport evidence remain open.
+
 T25 is the current product acceptance gate. The A01–A24 table below is historical
 math/workflow regression evidence, not proof that the multi-subject tutor works.
 In particular, A06/A23's old manual-confirmation behavior and A21's authored-hint

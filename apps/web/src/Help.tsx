@@ -105,6 +105,17 @@ export function HelpPage({
                   practice, include the passage you want to discuss.
                 </p>
               </ContextHelp>
+              <ContextHelp topic="How do I practice reading comprehension?">
+                <p>
+                  Choose a pasted or photographed passage, let the tutor write
+                  an original passage, or load an offered published story or
+                  news passage. The passage is saved separately from its
+                  question. Next activity options keep using that text; choose
+                  different practice material to change it. Published text has a
+                  preview and source attribution. A book title alone cannot
+                  supply its text.
+                </p>
+              </ContextHelp>
               <ContextHelp topic="Why is Start session unavailable?">
                 <p>
                   The demo cannot accept personal work. A private app and an

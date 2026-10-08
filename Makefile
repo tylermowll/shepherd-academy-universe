@@ -85,7 +85,7 @@ check: pre-commit-check build contracts-check secret-check infra-check
 smoke: build
 	$(PNPM) smoke
 
-.PHONY: contracts contracts-check secret-check audit eval-mock eval-live start dev serve demo worker test-e2e infra-check backup restore
+.PHONY: contracts contracts-check secret-check audit eval-mock eval-live eval-reading-mock eval-reading-live start dev serve demo worker test-e2e infra-check backup restore
 
 contracts:
 	$(UV) run --project $(API_PROJECT) --locked python scripts/export-contracts.py --output contracts/openapi.json
@@ -107,6 +107,14 @@ infra-check:
 
 eval-mock:
 	$(UV) run --project $(API_PROJECT) --locked python -m math_tutor.evaluation --fixtures evals/fixtures/rational-v1.json --output evals/reports/deterministic.json
+	$(MAKE) eval-reading-mock
+
+eval-reading-mock:
+	$(UV) run --project $(API_PROJECT) --locked --no-env-file python -m math_tutor.reading_evaluation --fixtures evals/fixtures/reading-v1.json --output evals/reports/reading-mock.json
+
+eval-reading-live:
+	@test -n "$(PROVIDER)" || { echo "Set PROVIDER to an explicitly configured provider ID."; exit 1; }
+	$(UV) run --project $(API_PROJECT) --locked --no-env-file python -m math_tutor.reading_evaluation --fixtures evals/fixtures/reading-v1.json --output /tmp/shepherd-reading-live.json --live-provider "$(PROVIDER)" --authorize-synthetic-calls --max-calls $(if $(MAX_CALLS),$(MAX_CALLS),3)
 
 eval-live:
 	@test -n "$(PROVIDER)" || { echo "Set PROVIDER to an explicitly configured provider ID."; exit 1; }

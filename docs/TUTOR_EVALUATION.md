@@ -86,3 +86,58 @@ reliability, and a passing sample is not a learning-outcome claim.
 If a model fails, retain only authorized synthetic evidence and record the
 limitation. Do not silently send the work to a cloud provider or replace tutoring
 with deterministic templates to manufacture a passing result.
+
+## Reading-comprehension rehearsal
+
+`evals/fixtures/reading-v1.json` supplies 12 original cases: literal understanding,
+inference, main idea, vocabulary in context, textual evidence and an embedded
+instruction. Correct, mistaken, partial and supported alternative responses have
+review notes. The evaluator uses the current production `guidance-v2` and
+`activity-v2` prompts and real temporary migrated SQLite, including a follow-up
+and a next question for each case. Reviewer notes are never sent to the model.
+
+Run `make eval-mock` for software contracts. It also produces
+`evals/reports/reading-mock.json`: 12 cases, 36 synthetic calls. This checks
+schema/persistence/context delivery, not the truth or educational value of replies.
+The report leaves every human judgement pending. Errors are recorded with safe
+codes; a failed transport/schema/passage contract makes the command fail.
+
+A maintainer may explicitly opt in to `make eval-reading-live PROVIDER=<id>`
+using an already configured provider and its normal audience/cloud policy. The
+command performs three synthetic calls (one complete case), with no retries,
+and writes `/tmp/shepherd-reading-live.json`. `MAX_CALLS=36` covers all 12 cases;
+other budgets must be divisible by three, with at most 90 calls. The command uses
+exported operator settings and does not automatically load a live `.env` file.
+It does not activate or modify the app's routes. Live calls may be billed and
+have not been run for T42. Review exact returned model ID, capabilities, prompt
+versions, fixture hash, sampling, token usage and latency; provider cost is
+unavailable unless independently calculated from its billing.
+
+For each live response, mark false correction, unsupported source claims, answer
+leakage, follow-up context and next-question relevance as pass/fail/not applicable.
+Also assess appropriate difficulty, refusal and usefulness. Report failures and
+the denominator; do not equate schema success with quality acceptance. The
+fixed first question makes the known learner response reviewable. The generated
+next question tests adaptation on the same source. Separately create an
+AI-written passage in the browser and inspect its readability, evidence and
+question; an invented passage must carry the AI-written label.
+
+Rehearse pasted text and a photographed/handwritten copy on an actual phone.
+Compare every task-relevant word to the source and inspect reader uncertainty;
+no mock can establish optical accuracy. Check automatic clear-reading continuation,
+learner corrections, a handwritten response, next difficulty, reload and History.
+Check that the passage, question, conversation and Send controls remain usable
+with keyboard, screen reader and the real phone viewport.
+
+Published imports are a separate explicit source-loading action. The initial
+catalog uses the [Gutenberg mirror](https://www.gutenberg.org/help/mirroring.html)
+for two Aesop fables and the [NASA news RSS feed](https://www.nasa.gov/rss-feeds/)
+for up to five recent text passages. They preserve title, publisher/author, link,
+date where available and permission metadata. NASA image/figure content is
+excluded; see [NASA media guidance](https://www.nasa.gov/nasa-brand-center/images-and-media/).
+The importer accepts no arbitrary URL, follows no redirects, uses no credentials
+or environment proxy, pins only public DNS answers, limits responses to 1 MiB
+and fetches to 12 seconds plus at most 2.1 seconds of process cleanup. Source
+preview tokens bind the text to the learner and expire after one hour; saved
+passages follow normal learner export/deletion. Fetches release SQLite writes
+and recheck access afterwards. Source outages receive a retry/paste suggestion.

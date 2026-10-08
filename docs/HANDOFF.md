@@ -4,14 +4,19 @@ The local administrator account exists. Open the app address and sign in;
 first-account setup is finished. The `shepherd-academy-universe` Compose project
 runs one API and one worker against the retained database in this checkout.
 
-T40 fixes Settings failing immediately after signup. Rechecking the same session
-no longer cancels pending requests. Responses from a previous identity are still
-discarded. The component regression reproduces the request order, and browser
-signup tests now require loaded Settings controls. Project checks passed with
-**194 backend unit tests**, **152 frontend component tests**, **14 affected
-desktop/mobile browser cases**, and container smoke. The fix is deployed locally;
-HTTPS readiness and frontend build checks passed. Exact evidence is in
-[TASKS](TASKS.md).
+T42 adds reading passages separate from questions: pasted text, photographs,
+original AI writing and selected published story/news imports. Guidance and
+Next/Easier/Harder retain the passage across reload and History. Published text
+has attributed previews and bounded fetching; homework remains reference-only.
+The original reading evaluation exercises production guidance and generation
+contracts and leaves teaching quality to human review. Current changes are in
+the checkout; the running installation has not been updated by this task.
+Exact validation and remaining gates are in [TASKS](TASKS.md).
+
+T41 is the preceding tested increment, covering recoverable tutor/provider saves,
+usable conversation space, account handoffs and Docker host-model routing.
+Its local evidence includes 194 backend unit, 162 frontend, 267 integration and
+66 desktop/mobile browser checks. T40's signup/Settings fix remains covered.
 
 For a fresh installation, the private owner link exchanges once for an eight-hour
 HttpOnly setup cookie. Setup survives refreshes and API restarts with the same

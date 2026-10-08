@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from math_tutor.adapters.images import NORMALIZED_IMAGE_MIME_TYPE
+from math_tutor.reading import OriginalPassage
 
 # Context sizes cross the JSON API and are persisted in SQLite JSON. A signed
 # 32-bit ceiling is exact in browser numbers, comfortably inside SQLite's signed
@@ -38,7 +39,7 @@ class Capabilities(BaseModel):
 class Message(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     role: Literal["user", "assistant"]
-    content: str = Field(max_length=12000)
+    content: str = Field(max_length=32000)
 
 
 class TutorPayload(BaseModel):
@@ -63,6 +64,7 @@ class ActivityPayload(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     problem_text: str = Field(min_length=12, max_length=4000)
     concept_focus: str = Field(min_length=1, max_length=500)
+    passage: OriginalPassage | None = None
 
 
 class ReadingPayload(BaseModel):

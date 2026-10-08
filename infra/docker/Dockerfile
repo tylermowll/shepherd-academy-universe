@@ -31,7 +31,7 @@ for installer in (runtime / "bin").glob("pip*"):
     installer.unlink()
 PYTHON
 
-FROM gcr.io/distroless/cc-debian13:nonroot@sha256:c31ff9abcb1910f3ab25c7957bdaf0bfe12a01eb546e8df2282f1c8f682b606c
+FROM gcr.io/distroless/cc-debian13:nonroot@sha256:e792ab3d241a468a4fd7519ddbbebe66b49b5f365771716ea688ad40b6c6f1c2
 COPY --from=api /opt/python /opt/python
 COPY --from=api /app/apps/api/.venv /app/apps/api/.venv
 COPY --from=api /app/apps/api/src /app/apps/api/src

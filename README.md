@@ -119,6 +119,19 @@ Open **Learners** to add yourself or a child. Sign out, then sign in with the
 learner account. Enter a topic, optionally add reference material, and choose
 **Start session**. The first activity is created automatically.
 
+For reading comprehension, choose **Paste a reading passage**, **Photograph a
+reading passage**, or **Let the tutor write a passage**. The passage appears
+separately from its question and is saved with the session. Next/Easier/Harder
+ask new questions about that same text. Choose different material under
+**Session & material** when ready to change passages.
+
+**Published story or news** offers two Aesop stories from a Project Gutenberg
+mirror and up to five recent NASA news passages. Choose **Load published text**,
+review the preview and attribution, then start practice. Imports send no learner
+work to those sources. If the source is unavailable, paste or photograph text
+you have permission to use. Source previews expire after an hour; saved passages
+remain with their sessions. This picker does not retrieve arbitrary books or URLs.
+
 The page tabs separate the workflow:
 
 - **Practice**: one conversation containing work, photos, readings and replies.
@@ -229,7 +242,8 @@ The [Makefile](Makefile) is authoritative.
 | `make check`                                                             | Locks, lint, format, strict types, unit/component tests, builds, generated contracts, secret scan, IaC lint |
 | `make test-integration`                                                  | On-disk migration, authorization, recovery, provider-policy and retention checks                            |
 | `make smoke` / `make test-e2e`                                           | Isolated API/worker and desktop/mobile Chromium workflows                                                   |
-| `make eval-mock`                                                         | Original deterministic fixtures and mock vision contracts; no quality claim                                 |
+| `make eval-mock`                                                         | Original math/vision and 12-case reading mock contracts; no quality claim                                     |
+| `make eval-reading-live PROVIDER=... MAX_CALLS=3`                         | Explicit synthetic reading rehearsal; three calls per case, human quality review required                    |
 | `make audit`, `make hooks-check`                                         | Locked dependency vulnerability audit and tracked-file checks                                               |
 | `make contracts` / `make contracts-check`                                | Regenerate OpenAPI/TypeScript or reject drift                                                               |
 | `make format`, `make lint`, `make typecheck`                             | Focused developer checks                                                                                    |

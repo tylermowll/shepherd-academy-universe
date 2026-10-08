@@ -7,6 +7,8 @@ import { PhotoInput } from "./PhotoInput";
 import { SafeText } from "./SafeText";
 import { ComposerMenu } from "./ComposerMenu";
 import { TutorConversation } from "./TutorConversation";
+import { ReadingPassage } from "./ReadingPassage";
+import { ReadingSources } from "./ReadingSources";
 
 type Props = {
   learner: string;
@@ -25,7 +27,7 @@ type Props = {
 };
 type Initiative = "tutor_led" | "balanced" | "learner_led";
 type Difficulty = "introductory" | "standard" | "challenge";
-type Source = "topic" | "reference_text" | "reference_photo";
+type Source = NonNullable<Schema<"TutorActivityInput">["source"]>;
 type Command = {
   path: string;
   body: unknown;
@@ -91,6 +93,10 @@ export function Tutor({
   const [difficulty, setDifficulty] = useState<Difficulty>("standard");
   const [source, setSource] = useState<Source>("topic");
   const [reference, setReference] = useState("");
+  const [passageTitle, setPassageTitle] = useState("");
+  const [published, setPublished] = useState<Schema<"ImportedPassage"> | null>(
+    null,
+  );
   const [text, setText] = useState("");
   const [working, setWorking] = useState(false);
   const [pending, setPending] = useState<Command | null>(null);
@@ -241,7 +247,9 @@ export function Tutor({
     Boolean(session && session.status !== "open");
   const hasResponseDraft = Boolean(
     text.trim() ||
-    (source === "reference_text" && reference.trim()) ||
+    ((source === "reference_text" || source === "reading_text") &&
+      reference.trim()) ||
+    (source === "published" && published) ||
     photoDraft,
   );
   const hasDraft =
@@ -340,14 +348,28 @@ export function Tutor({
         setText("");
       if (
         request.kind === "activity" &&
-        (request.body as Schema<"TutorActivityInput">).source ===
-          "reference_text"
+        ["reference_text", "reading_text"].includes(
+          (request.body as Schema<"TutorActivityInput">).source ?? "topic",
+        )
       )
         setReference("");
+      if (request.kind === "activity") {
+        setPublished(null);
+        if (
+          (request.body as Schema<"TutorActivityInput">).source === "published"
+        )
+          setSource("topic");
+      }
       if (created) {
         setNewSession(false);
         setTopic("");
         setReference("");
+        setPublished(null);
+        if (
+          (request.body as Schema<"TutoringSessionInput">).initial_activity
+            ?.source === "published"
+        )
+          setSource("topic");
         if (!commitSession(created)) {
           setConnectionError(
             "The saved session could not be opened for this learner. Reconnect to refresh your sessions.",
@@ -397,7 +419,15 @@ export function Tutor({
     const body: Schema<"TutorActivityInput"> = {
       source: nextSource,
       ...(nextDifficulty ? { difficulty: nextDifficulty } : {}),
-      ...(nextSource === "reference_text" ? { reference_text: reference } : {}),
+      ...(nextSource === "reference_text" || nextSource === "reading_text"
+        ? { reference_text: reference }
+        : {}),
+      ...(nextSource === "reading_text" || nextSource === "reading_photo"
+        ? { passage_title: passageTitle.trim() || null }
+        : {}),
+      ...(nextSource === "published"
+        ? { source_token: published?.source_token ?? null }
+        : {}),
     };
     await command("activity", `/tutor/sessions/${session.id}/activities`, body);
   };
@@ -473,17 +503,26 @@ export function Tutor({
         Practice source
         <select
           value={source}
-          onChange={(event) => setSource(event.target.value as Source)}
+          onChange={(event) => {
+            setSource(event.target.value as Source);
+            setPublished(null);
+          }}
           disabled={blocked || active}
         >
           <option value="topic">My topic</option>
-          <option value="reference_text">Pasted text or assignment</option>
+          <option value="reading_text">Paste a reading passage</option>
+          <option value="reading_photo">Photograph a reading passage</option>
+          <option value="reading_generated">
+            Let the tutor write a passage
+          </option>
+          <option value="published">Published story or news</option>
+          <option value="reference_text">Pasted assignment or reference</option>
           <option value="reference_photo">
-            Photo of a passage or assignment
+            Photo of an assignment or reference
           </option>
         </select>
       </label>
-      {source !== "topic" && (
+      {(source === "reference_text" || source === "reference_photo") && (
         <p className="notice">
           The tutor uses your material to create different practice on the same
           concepts. It does not answer the supplied assignment. For reading
@@ -491,9 +530,35 @@ export function Tutor({
           title.
         </p>
       )}
-      {source === "reference_text" && (
+      {(source === "reading_text" || source === "reading_photo") && (
         <label>
-          Reference material
+          Passage title (optional)
+          <input
+            value={passageTitle}
+            maxLength={200}
+            disabled={blocked || active}
+            onChange={(event) => setPassageTitle(event.target.value)}
+          />
+        </label>
+      )}
+      {source === "reading_generated" && (
+        <p>
+          The tutor writes an original passage about your learning goal, then
+          asks a question. Next activities use the same passage until you choose
+          new material.
+        </p>
+      )}
+      {source === "published" && (
+        <ReadingSources
+          key={learner}
+          learner={learner}
+          disabled={blocked || active || offline}
+          onChange={setPublished}
+        />
+      )}
+      {(source === "reference_text" || source === "reading_text") && (
+        <label>
+          {source === "reading_text" ? "Reading passage" : "Reference material"}
           <textarea
             value={reference}
             onChange={(event) => setReference(event.target.value)}
@@ -504,10 +569,11 @@ export function Tutor({
           />
         </label>
       )}
-      {source === "reference_photo" && (
+      {(source === "reference_photo" || source === "reading_photo") && (
         <p>
           After you start, send a photo from your phone or upload one here. The
-          tutor reads it to create related practice.
+          tutor reads it to create practice. Reading passages stay available for
+          questions and feedback.
         </p>
       )}
     </>
@@ -532,8 +598,11 @@ export function Tutor({
             disabled={
               disabled ||
               Boolean(text.trim() || photoDraft) ||
-              (source === "reference_text" && !reference.trim()) ||
-              (source === "reference_photo" && !features?.photos_available)
+              ((source === "reference_text" || source === "reading_text") &&
+                !reference.trim()) ||
+              ((source === "reference_photo" || source === "reading_photo") &&
+                !features?.photos_available) ||
+              (source === "published" && !published)
             }
           >
             Create practice activity
@@ -541,9 +610,10 @@ export function Tutor({
         </form>
         <ContextHelp topic="How is my reference used?">
           <p>
-            A passage or assignment helps the tutor choose related concepts and
-            a different activity. It cannot retrieve a book or webpage for you.
-            Paste or photograph the part you want to study.
+            Reading passages stay available for questions and feedback. Paste or
+            photograph text, ask for an original passage, or load one of the
+            published sources. Assignments guide different practice on related
+            concepts. A book title alone does not supply its text.
           </p>
         </ContextHelp>
       </details>
@@ -686,8 +756,14 @@ export function Tutor({
                   difficulty,
                   initial_activity: {
                     source,
-                    ...(source === "reference_text"
+                    ...(source === "reference_text" || source === "reading_text"
                       ? { reference_text: reference }
+                      : {}),
+                    ...(source === "reading_text" || source === "reading_photo"
+                      ? { passage_title: passageTitle.trim() || null }
+                      : {}),
+                    ...(source === "published"
+                      ? { source_token: published?.source_token ?? null }
                       : {}),
                   },
                 } satisfies Schema<"TutoringSessionInput">),
@@ -758,8 +834,12 @@ export function Tutor({
                   offline ||
                   !topic.trim() ||
                   !features?.tutoring_available ||
-                  (source === "reference_text" && !reference.trim()) ||
-                  (source === "reference_photo" && !features?.photos_available)
+                  ((source === "reference_text" || source === "reading_text") &&
+                    !reference.trim()) ||
+                  ((source === "reference_photo" ||
+                    source === "reading_photo") &&
+                    !features?.photos_available) ||
+                  (source === "published" && !published)
                 }
               >
                 Start session
@@ -810,14 +890,34 @@ export function Tutor({
                 session.
               </p>
             )}
-            <div className="tutor-workspace">
+            <div
+              className={`tutor-workspace${problem?.passage ? " reading-workspace" : ""}`}
+            >
+              {(session.status === "open" || problem?.passage) && (
+                <aside
+                  className="tutor-sidebar"
+                  aria-label="Passage and session tools"
+                >
+                  {problem?.passage && (
+                    <ReadingPassage passage={problem.passage} />
+                  )}
+                  {session.status === "open" && (
+                    <details open={!problem || undefined}>
+                      <summary>Session &amp; material</summary>
+                      {sessionControls}
+                    </details>
+                  )}
+                </aside>
+              )}
               <article className="tutor-activity chat-column">
                 {problem && (
                   <details className="activity-brief" open>
                     <summary>
                       <h3>
                         {problem.activity_state === "reference_capture"
-                          ? "Reference material"
+                          ? problem.reference_source === "reading_photo"
+                            ? "Reading passage photograph"
+                            : "Reference material"
                           : "Current activity"}
                       </h3>
                     </summary>
@@ -935,7 +1035,13 @@ export function Tutor({
                             <button
                               type="button"
                               disabled={disabled || hasResponseDraft}
-                              onClick={() => void act(() => activity("topic"))}
+                              onClick={() =>
+                                void act(() =>
+                                  activity(
+                                    problem.passage ? "same_passage" : "topic",
+                                  ),
+                                )
+                              }
                             >
                               Next activity
                             </button>
@@ -944,7 +1050,10 @@ export function Tutor({
                               disabled={disabled || hasResponseDraft}
                               onClick={() =>
                                 void act(() =>
-                                  activity("topic", "introductory"),
+                                  activity(
+                                    problem.passage ? "same_passage" : "topic",
+                                    "introductory",
+                                  ),
                                 )
                               }
                             >
@@ -954,7 +1063,12 @@ export function Tutor({
                               type="button"
                               disabled={disabled || hasResponseDraft}
                               onClick={() =>
-                                void act(() => activity("topic", "challenge"))
+                                void act(() =>
+                                  activity(
+                                    problem.passage ? "same_passage" : "topic",
+                                    "challenge",
+                                  ),
+                                )
                               }
                             >
                               Harder next activity
@@ -1022,14 +1136,6 @@ export function Tutor({
                   )}
                 </div>
               </article>
-              {session.status === "open" && (
-                <aside className="tutor-sidebar" aria-label="Session tools">
-                  <details open={!problem || undefined}>
-                    <summary>Session &amp; material</summary>
-                    {sessionControls}
-                  </details>
-                </aside>
-              )}
             </div>
           </div>
         )}

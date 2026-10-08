@@ -35,7 +35,7 @@ from math_tutor.adapters.db.engine import (
 from math_tutor.adapters.db.models import Learner, PracticeSession, ProblemInstance
 
 MIGRATIONS_DIR = Path(__file__).resolve().parents[2] / "migrations"
-HEAD_REVISION = "0017_learner_accounts"
+HEAD_REVISION = "0018_reading_passages"
 
 
 @pytest.fixture
@@ -684,3 +684,34 @@ def test_learner_account_migration_preserves_work_and_disambiguates_existing_nam
     upgrade(db_url)
     with Session(engine) as db:
         assert db.get(PracticeSession, saved_id) is not None
+
+
+def test_passage_migration_rolls_back_without_losing_other_activity_data(
+    engine: Engine, db_url: str
+) -> None:
+    upgrade(db_url)
+    with Session(engine) as db:
+        session = make_session()
+        problem = make_problem(session.id)
+        problem.passage = {
+            "title": "Synthetic passage",
+            "text": "Original test text.",
+            "origin": "pasted",
+        }
+        db.add(session)
+        db.add(problem)
+        db.commit()
+        problem_id = str(problem.id)
+    command.downgrade(alembic_config(db_url), "0017_learner_accounts")
+    assert "passage" not in table_columns(engine)["problem_instance"]
+    with engine.connect() as connection:
+        assert (
+            connection.exec_driver_sql(
+                "SELECT problem_text FROM problem_instance WHERE id = ?", (problem_id,)
+            ).scalar_one()
+            == "1/2 + 1/3"
+        )
+    upgrade(db_url)
+    with Session(engine) as db:
+        restored = db.get(ProblemInstance, uuid.UUID(problem_id))
+        assert restored is not None and restored.passage is None

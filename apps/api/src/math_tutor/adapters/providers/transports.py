@@ -34,6 +34,7 @@ from math_tutor.adapters.providers.contracts import (
     ReadingPayload,
     TutorPayload,
 )
+from math_tutor.reading import OriginalPassage
 
 
 class WireObject(BaseModel):
@@ -227,6 +228,17 @@ class MockProvider:
                 problem_text="Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",
                 concept_focus="Synthetic example: observations and evidence",
             )
+            if "This is READING COMPREHENSION." in request.system_instruction:
+                payload = ActivityPayload(
+                    problem_text="Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
+                    concept_focus="Synthetic example: textual evidence",
+                    passage=OriginalPassage(
+                        title="Synthetic passage: The Garden Window",
+                        text="Mira moved the seedling from a shaded corner toward the window each morning. After a week she asked her brother to build a sunny shelf. Together they measured the plant every day and wrote their observations in a notebook.",
+                    )
+                    if "Create an ORIGINAL short passage" in request.system_instruction
+                    else None,
+                )
         elif request.purpose == "read":
             # Exact encodings of the original public '2/5' fixture: direct
             # upload and preview-then-upload. JPEG normalization is lossy, so

@@ -167,6 +167,23 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "ImportedPassage": {
+        "properties": {
+          "passage": {
+            "$ref": "#/components/schemas/ReadingPassage"
+          },
+          "source_token": {
+            "title": "Source Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "passage",
+          "source_token"
+        ],
+        "title": "ImportedPassage",
+        "type": "object"
+      },
       "LearnerAccountUpdate": {
         "additionalProperties": false,
         "properties": {
@@ -896,6 +913,16 @@
             "title": "Operations",
             "type": "array"
           },
+          "passage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReadingPassage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "problem_text": {
             "title": "Problem Text",
             "type": "string"
@@ -906,7 +933,12 @@
                 "enum": [
                   "topic",
                   "reference_text",
-                  "reference_photo"
+                  "reference_photo",
+                  "reading_text",
+                  "reading_photo",
+                  "reading_generated",
+                  "same_passage",
+                  "published"
                 ],
                 "type": "string"
               },
@@ -1720,6 +1752,103 @@
         "title": "ProvidersPublic",
         "type": "object"
       },
+      "ReadingPassage": {
+        "additionalProperties": false,
+        "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "excerpt": {
+            "default": false,
+            "title": "Excerpt",
+            "type": "boolean"
+          },
+          "origin": {
+            "enum": [
+              "pasted",
+              "photo",
+              "ai_written",
+              "published"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "permission": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permission"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "maxLength": 2083,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "text": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Uncertainties",
+            "type": "array"
+          }
+        },
+        "required": [
+          "title",
+          "text",
+          "origin"
+        ],
+        "title": "ReadingPassage",
+        "type": "object"
+      },
       "ReadingPublic": {
         "additionalProperties": false,
         "properties": {
@@ -2099,6 +2228,70 @@
         "title": "SetupStatus",
         "type": "object"
       },
+      "SourceChoice": {
+        "properties": {
+          "id": {
+            "enum": [
+              "aesop_hare",
+              "aesop_grapes",
+              "nasa_news"
+            ],
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "SourceChoice",
+        "type": "object"
+      },
+      "SourceImportInput": {
+        "additionalProperties": false,
+        "properties": {
+          "learner_id": {
+            "format": "uuid",
+            "title": "Learner Id",
+            "type": "string"
+          },
+          "source_id": {
+            "enum": [
+              "aesop_hare",
+              "aesop_grapes",
+              "nasa_news"
+            ],
+            "title": "Source Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "learner_id",
+          "source_id"
+        ],
+        "title": "SourceImportInput",
+        "type": "object"
+      },
+      "SourceImportPublic": {
+        "properties": {
+          "passages": {
+            "items": {
+              "$ref": "#/components/schemas/ImportedPassage"
+            },
+            "title": "Passages",
+            "type": "array"
+          }
+        },
+        "required": [
+          "passages"
+        ],
+        "title": "SourceImportPublic",
+        "type": "object"
+      },
       "SubmissionInput": {
         "additionalProperties": false,
         "properties": {
@@ -2162,6 +2355,19 @@
             ],
             "title": "Difficulty"
           },
+          "passage_title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passage Title"
+          },
           "reference_text": {
             "anyOf": [
               {
@@ -2179,10 +2385,27 @@
             "enum": [
               "topic",
               "reference_text",
-              "reference_photo"
+              "reference_photo",
+              "reading_text",
+              "reading_photo",
+              "reading_generated",
+              "same_passage",
+              "published"
             ],
             "title": "Source",
             "type": "string"
+          },
+          "source_token": {
+            "anyOf": [
+              {
+                "maxLength": 50000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Token"
           }
         },
         "title": "TutorActivityInput",
@@ -4007,6 +4230,72 @@
         "summary": "Submit",
         "tags": [
           "practice"
+        ]
+      }
+    },
+    "/api/v1/reading/import": {
+      "post": {
+        "operationId": "load_source_api_v1_reading_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceImportInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceImportPublic"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Load Source",
+        "tags": [
+          "reading"
+        ]
+      }
+    },
+    "/api/v1/reading/sources": {
+      "get": {
+        "operationId": "sources_api_v1_reading_sources_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SourceChoice"
+                  },
+                  "title": "Response Sources Api V1 Reading Sources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Sources",
+        "tags": [
+          "reading"
         ]
       }
     },

@@ -27,6 +27,7 @@ from math_tutor.adapters.providers.contracts import (
     ProviderError,
     ReadingPayload,
 )
+from math_tutor.reading import ReadingPassage, evidence
 
 # A routing threshold, not a calibrated probability of correct recognition.
 READING_THRESHOLD = 0.85
@@ -130,12 +131,14 @@ def discussion(db: Session, problem: ProblemInstance, current: Submission) -> li
         turn = db.scalar(select(TutorTurn).where(TutorTurn.submission_id == row.id))
         # A reference-photo turn can itself produce an activity. Its source is
         # not learner work and must not enter the review conversation.
-        if turn and turn.prompt_version == "activity-v1":
+        if turn and turn.prompt_version.startswith("activity-"):
             continue
         reading = latest_reading(db, row)
         previous = db.get(ProblemInstance, row.problem_id)
         assert previous is not None
         text = "Activity context: " + previous.problem_text + "\n"
+        if previous.passage and previous.passage != problem.passage:
+            text += evidence(ReadingPassage.model_validate(previous.passage))
         text += "Learner message: " + row.text
         if row.work_text:
             text += "\nWritten work: " + row.work_text
@@ -197,7 +200,7 @@ def recent_learning(db: Session, session: PracticeSession, current: ProblemInsta
                 select(Submission, TutorTurn)
                 .join(TutorTurn, TutorTurn.submission_id == Submission.id)
                 .where(
-                    Submission.problem_id == problem.id, TutorTurn.prompt_version == "guidance-v1"
+                    Submission.problem_id == problem.id, TutorTurn.prompt_version.like("guidance-%")
                 )
                 .order_by(Submission.created_at.desc())
                 .limit(2)
@@ -264,6 +267,25 @@ def make_request(
             "level is required; adapt challenge to the topic and observed work."
         )
         instruction += " " + difficulty_guidance(session)
+        if problem.parameters.get("reading_mode"):
+            instruction += (
+                " This is READING COMPREHENSION. Create one question for literal understanding, inference, "
+                "main idea, vocabulary in context, or textual evidence. Keep the question separate from the passage. "
+                "Do not supply its answer or invent details outside the passage. Adapt to the learner's recent work. "
+            )
+            if problem.passage:
+                instruction += "Use the supplied passage exactly; return passage=null. Do not rewrite or replace it."
+            else:
+                instruction += (
+                    "Create an ORIGINAL short passage appropriate to the requested topic and difficulty in passage "
+                    "(title and text), plus a question in problem_text. Include enough evidence for the question. "
+                    "Do not attribute invented text to a real author, news outlet, book, or current event. "
+                    "Prefer 100–300 words; shorter for Easier and deeper reasoning for Harder."
+                )
+        else:
+            instruction += (
+                " Return passage=null; this activity does not request a new reading passage."
+            )
         history = recent_learning(db, session, problem)
         if history:
             messages.append(
@@ -282,6 +304,8 @@ def make_request(
         reference = problem.parameters.get("reference", "")
         if reference:
             content += "\nREFERENCE ONLY—do not solve or repeat:\n" + reference
+        if problem.passage:
+            content += "\n" + evidence(ReadingPassage.model_validate(problem.passage))
         messages.append(Message(role="user", content=content))
     else:
         purpose = "review"
@@ -339,7 +363,9 @@ def make_request(
             + "\nLearner work or discussion:\n"
             + text
         )
-        if len(content) > 12000:
+        if problem.passage:
+            content = evidence(ReadingPassage.model_validate(problem.passage)) + content
+        if len(content) > 32000:
             raise ProviderError(
                 "context_limit",
                 safe_message="Submit a shorter section of work; your input was not clipped.",
@@ -411,9 +437,18 @@ def finish_model(
             job.state, job.retryable = "failed", False
             return
         if problem.parameters.get("activity_state") == "reference_capture":
+            if problem.parameters.get("reference_source") == "reading_photo":
+                problem.passage = ReadingPassage(
+                    title=problem.parameters.get("passage_title", "Your photographed passage"),
+                    text=payload.transcription,
+                    origin="photo",
+                    uncertainties=payload.ambiguities,
+                ).model_dump(mode="json")
             problem.parameters = {
                 **problem.parameters,
-                "reference": payload.transcription,
+                "reference": payload.transcription
+                if problem.parameters.get("reference_source") == "reference_photo"
+                else "",
                 "activity_state": "generating",
             }
         # Persist the full reading first. A distinct queued stage performs tutoring;
@@ -424,6 +459,21 @@ def finish_model(
     if problem.parameters.get("activity_state") == "generating":
         if not isinstance(payload, ActivityPayload):
             raise ProviderError("malformed_output")
+        new_passage: ReadingPassage | None = None
+        if problem.parameters.get("reading_mode") and not problem.passage:
+            if payload.passage is None:
+                raise ProviderError(
+                    "passage_missing",
+                    retryable=True,
+                    safe_message="The tutor did not provide the requested reading passage. Retry the activity.",
+                )
+            new_passage = ReadingPassage(**payload.passage.model_dump(), origin="ai_written")
+        elif payload.passage is not None:
+            raise ProviderError(
+                "passage_replaced",
+                retryable=True,
+                safe_message="The tutor tried to replace the reading source. Retry with the saved passage.",
+            )
         reference = str(problem.parameters.get("reference", ""))
         session = db.get(PracticeSession, problem.session_id)
         assert session is not None
@@ -435,6 +485,8 @@ def finish_model(
                 safe_message="The provider repeated the supplied material instead of creating distinct practice. Start another activity; the original was not accepted as practice.",
             )
         problem.problem_text = payload.problem_text
+        if new_passage:
+            problem.passage = new_passage.model_dump(mode="json")
         problem.parameters = {
             **problem.parameters,
             "activity_state": "ready",
@@ -446,7 +498,7 @@ def finish_model(
                 message="New practice activity prepared. Work through it in your own words, or ask for a hint.",
                 source=source,
                 assistance_level=0,
-                prompt_version="activity-v1",
+                prompt_version="activity-v2",
             )
         )
     else:
@@ -464,7 +516,7 @@ def finish_model(
                 message=message,
                 source=source,
                 assistance_level=min(3, max(1, row.help_level)),
-                prompt_version="guidance-v1",
+                prompt_version="guidance-v2",
                 feedback=payload.model_dump(),
             )
         )
