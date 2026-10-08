@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { type Schema } from "./client";
-import { SafeText } from "./SafeText";
+import { characterCount } from "./text-limits";
 
 export function ReadingPassage({
   passage,
@@ -25,14 +25,14 @@ export function ReadingPassage({
         passageNode.current?.contains(selection.anchorNode) &&
         passageNode.current.contains(selection.focusNode)
       ) {
-        const value = selection.toString().trim();
-        setSelectedText(value.length <= 1500 ? value : "");
+        setSelectedText(selection.toString());
       }
     };
     document.addEventListener("selectionchange", rememberSelection);
     return () =>
       document.removeEventListener("selectionchange", rememberSelection);
   }, [onAsk]);
+  const selectionLength = characterCount(selectedText);
   const origin = {
     pasted: "Your pasted passage",
     photo: "Read from your photo",
@@ -61,7 +61,7 @@ export function ReadingPassage({
         tabIndex={0}
         aria-label="Reading passage"
       >
-        <SafeText text={focus?.text ?? passage.text} maxCharacters={50000} />
+        <div className="explanation">{focus?.text ?? passage.text}</div>
       </div>
       {onAsk && (
         <div className="sentence-help">
@@ -69,9 +69,17 @@ export function ReadingPassage({
             For a dense sentence or paragraph, select up to 1,500 characters
             here to prepare a question. You can also type your question below.
           </p>
+          {selectionLength > 1500 && (
+            <p role="status" className="notice">
+              Your selection contains {selectionLength.toLocaleString()}{" "}
+              characters. Select a shorter part, up to 1,500 characters.
+            </p>
+          )}
           <button
             type="button"
-            disabled={disabled || !selectedText}
+            disabled={
+              disabled || !selectedText.trim() || selectionLength > 1500
+            }
             onClick={() => {
               onAsk(
                 `Help me understand this part of the material:\n\n${selectedText}`,

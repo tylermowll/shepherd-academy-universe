@@ -95,3 +95,66 @@ it("ignores a drop while uploads are disabled", () => {
   );
   expect(imageRequest).not.toHaveBeenCalled();
 });
+
+it("keeps only a submission identity after an uncertain photo receipt and clears it after retry", async () => {
+  const learner = "911c9abc-4e8e-424d-a914-4338187ba00a";
+  vi.stubGlobal("URL", {
+    createObjectURL: () => "blob:synthetic",
+    revokeObjectURL: vi.fn(),
+  });
+  vi.mocked(imageRequest)
+    .mockResolvedValueOnce(
+      new Response(
+        new Blob(["synthetic normalized photo"], { type: "image/jpeg" }),
+      ),
+    )
+    .mockRejectedValueOnce(new TypeError("Synthetic lost acknowledgement"))
+    .mockResolvedValueOnce(new Response("{}", { status: 202 }));
+  render(
+    <PhotoInput
+      expanded
+      learner={learner}
+      problem="synthetic-problem"
+      version={1}
+      disabled={false}
+      onPendingChange={vi.fn()}
+      onSaved={async () => {}}
+      act={async (action) => {
+        try {
+          await action();
+        } catch {
+          /* App displays safe connection error. */
+        }
+      }}
+    />,
+  );
+  fireEvent.change(screen.getByLabelText("Take or choose a photo"), {
+    target: {
+      files: [
+        new File(["synthetic original photo"], "work.png", {
+          type: "image/png",
+        }),
+      ],
+    },
+  });
+  await screen.findByAltText("Your photograph before submission");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Submit this photograph" }),
+  );
+  const retry = await screen.findByRole("button", {
+    name: "Retry saved photograph",
+  });
+  const key = vi.mocked(imageRequest).mock.calls[1]![2];
+  expect(
+    JSON.parse(
+      window.sessionStorage.getItem(`shepherd:tutor-request:${learner}`)!,
+    ),
+  ).toEqual({ key, kind: "submission", owner: learner });
+  fireEvent.click(retry);
+  await waitFor(() =>
+    expect(
+      window.sessionStorage.getItem(`shepherd:tutor-request:${learner}`),
+    ).toBeNull(),
+  );
+  expect(vi.mocked(imageRequest).mock.calls[2]![2]).toBe(key);
+});

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { createLearner, login, navigate, openAttachments } from "./support";
+import type { Schema } from "../../apps/web/src/client";
 
 const text =
   "Mira carried a seedling to the shaded corner. Each morning she moved its pot toward the window. After a week, she asked her brother to build a sunny shelf.";
@@ -198,4 +199,99 @@ test("long science material has independent section pacing, saved navigation and
       () => document.documentElement.scrollWidth <= innerWidth + 1,
     ),
   ).toBe(true);
+});
+
+test("literal material and Unicode input survive intact with explicit overflow and faithful selected help", async ({
+  page,
+}) => {
+  await login(page);
+  await createLearner(page);
+  await page
+    .getByRole("textbox", { name: "Topic or learning goal", exact: true })
+    .fill("Reading: compare the stated costs and symbols");
+  await page
+    .getByRole("combobox", { name: "Practice source", exact: true })
+    .selectOption("reading_text");
+  const input = page.getByRole("textbox", {
+    name: "Reading passage",
+    exact: true,
+  });
+  const prefix =
+    "The ticket cost $5 and the bus cost $10. **Literal** `source` notation.\n\n";
+  const material = prefix + "🌱".repeat(30000);
+  await input.fill("🌱".repeat(50001));
+  await expect(input).toHaveValue("🌱".repeat(50001));
+  await expect(
+    page.getByText(/This material exceeds 50,000 characters/),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Start session", exact: true }),
+  ).toBeDisabled();
+  await input.fill(material);
+  await expect(input).toHaveValue(material);
+  await expect(
+    page.getByText(
+      `${Array.from(material).length.toLocaleString()} / 50,000 characters`,
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Start session", exact: true })
+    .click();
+  const passage = page.locator(
+    ".tutor-sidebar > .reading-passage .passage-text",
+  );
+  await expect(passage).toContainText(prefix.trim());
+  expect(await passage.locator("math, strong, code").count()).toBe(0);
+  const saved = await page.evaluate(async () => {
+    const id = new URLSearchParams(location.hash.slice(1)).get("tutor");
+    return (await (
+      await fetch(`/api/v1/tutor/sessions/${id}`, { cache: "no-store" })
+    ).json()) as Schema<"TutoringSessionPublic">;
+  });
+  expect(saved.problems[0]?.passage?.text).toBe(material);
+  expect(await passage.textContent()).toBe(
+    saved.problems[0]?.material_focus?.text,
+  );
+  await passage.evaluate((node, length) => {
+    const range = document.createRange();
+    range.setStart(node.querySelector(".explanation")!.firstChild!, 0);
+    range.setEnd(node.querySelector(".explanation")!.firstChild!, length);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.dispatchEvent(new Event("selectionchange"));
+  }, prefix.trim().length);
+  await page
+    .getByRole("button", { name: "Ask about selected text", exact: true })
+    .click();
+  const composer = page.getByRole("textbox", {
+    name: "Your work or question",
+    exact: true,
+  });
+  await expect(composer).toHaveValue(
+    `Help me understand this part of the material:\n\n${prefix.trim()}`,
+  );
+  await composer.fill("🌱".repeat(8001));
+  await expect(composer).toHaveValue("🌱".repeat(8001));
+  await expect(
+    page.getByRole("button", { name: "Send", exact: true }),
+  ).toBeDisabled();
+  await composer.fill("理".repeat(6000));
+  const submission = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/submissions") &&
+      response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  expect((await submission).status()).toBe(202);
+  await expect(page.locator(".learner-message .user-text")).toHaveText(
+    "理".repeat(6000),
+  );
+  await expect(
+    page.getByText(/This work exceeds the configured model context/),
+  ).toBeVisible();
+  await composer.fill("The bus cost $10, twice the ticket's $5 cost.");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect(page.locator(".tutor-feedback")).toHaveCount(1);
 });

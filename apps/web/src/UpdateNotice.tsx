@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 export function UpdateNotice({
   deferRefresh = false,
+  deferMessage = "An update is ready. Finish creating your administrator account before refreshing.",
 }: {
   deferRefresh?: boolean;
+  deferMessage?: string | undefined;
 }) {
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
   useEffect(() => {
@@ -36,8 +38,7 @@ export function UpdateNotice({
   if (deferRefresh)
     return (
       <aside className="notice" role="status">
-        An update is ready. Finish creating your administrator account before
-        refreshing.
+        {deferMessage}
       </aside>
     );
   return (

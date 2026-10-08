@@ -44,6 +44,9 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
   const [offline, setOffline] = useState(!navigator.onLine);
   const [learner, setLearner] = useState("");
   const [busy, setBusy] = useState(false);
+  const [tutorBusy, setTutorBusy] = useState(false);
+  const [tutorDraft, setTutorDraft] = useState(false);
+  const leavingAccount = useRef(false);
   const [location, setLocation] = useState(readLocation);
   const [learners, setLearners] = useState<Schema<"LearnerPublic">[]>([]);
   const [settingsVersion, setSettingsVersion] = useState(0);
@@ -112,6 +115,16 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
       rows.some((row) => row.id === current) ? current : "",
     );
   }, []);
+  useEffect(() => {
+    if (!tutorBusy && !tutorDraft) return;
+    const protectWork = (event: BeforeUnloadEvent) => {
+      if (leavingAccount.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", protectWork);
+    return () => window.removeEventListener("beforeunload", protectWork);
+  }, [tutorBusy, tutorDraft]);
   const chooseLearner = (id: string) => setLearner(id);
   const refresh = useCallback(async () => {
     const session = await api<Schema<"SessionStatus">>("/auth/session");
@@ -257,7 +270,10 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
               onClick={() =>
                 void act(async () => {
                   await api("/auth/logout", "POST");
+                  leavingAccount.current = true;
                   setIdentity("");
+                  setSession(null);
+                  setLearner("");
                   window.location.replace("/");
                 })
               }
@@ -289,7 +305,20 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
         ))}
       </nav>
       <UpdateNotice
-        deferRefresh={setupRequired || checkingSetup || !!setupToken}
+        deferRefresh={
+          setupRequired ||
+          checkingSetup ||
+          !!setupToken ||
+          tutorBusy ||
+          tutorDraft
+        }
+        deferMessage={
+          setupRequired || checkingSetup || !!setupToken
+            ? undefined
+            : tutorBusy
+              ? "An update is ready. Finish or recover your pending request before refreshing."
+              : "An update is ready. Send or clear your draft before refreshing."
+        }
       />
       {offline && (
         <p role="status" className="notice">
@@ -446,6 +475,8 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                   isAdult={isAdult}
                   onNavigate={navigate}
                   settingsVersion={settingsVersion}
+                  onBusyChange={setTutorBusy}
+                  onDraftChange={setTutorDraft}
                 />
               </div>
             )}

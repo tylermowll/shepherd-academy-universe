@@ -408,11 +408,11 @@ Record resolved versions and verification dates in `docs/DEPENDENCIES.md`.
 | Frontend          | React 19.2, TypeScript 6, Vite 8                                                | Client-rendered application; no server-component or Next.js layer needed                            |
 | Node toolchain    | Node.js 24 LTS; pnpm                                                            | Pin an exact pnpm release in `packageManager`; commit `pnpm-lock.yaml`                              |
 | UI                | Tailwind CSS 4; semantic HTML; small accessible component set                   | Use the current Vite integration, not old Tailwind initialization instructions                      |
-| Routing/data      | React Router; TanStack Query                                                    | Router in SPA/library mode; query cache is not permanent student storage                            |
-| Forms             | React Hook Form and Zod                                                         | Backend remains validation authority                                                                |
+| Routing/data      | React state; typed fetch; browser History API                                                    | Owned requests and route state; no permanent draft cache                            |
+| Forms             | Semantic HTML forms; generated API types                                                         | Backend remains validation authority                                                                |
 | Mathematics       | KaTeX; backend exact arithmetic                                                 | HTML+MathML rendering, `trust: false`, bounded input                                                |
-| PWA               | `vite-plugin-pwa` / Workbox                                                     | Prompt before activating an update; cache public assets only                                        |
-| Backend           | Python 3.14; FastAPI; Pydantic 2                                                | Latest stable Python line; pinned and tested at 3.14.7                                              |
+| PWA               | Explicit service worker; generated public asset manifest                                                     | Prompt before activating an update; cache public assets only                                        |
+| Backend           | Python 3.14; FastAPI; Pydantic 2                                                | Latest stable Python line; pinned and tested at 3.14.8                                              |
 | Python tooling    | uv; Ruff; mypy                                                                  | `uv.lock`, typed domain/provider boundaries, no ignored type failures by default                    |
 | Database          | SQLite; SQLAlchemy 2; stdlib sqlite3; Alembic                                   | Same on-disk engine/settings in development, tests, and deployment; current stable runtime per D004 |
 | HTTP/model access | HTTPX2; boto3 for Bedrock                                                       | Maintained HTTP client; small explicit adapters; no mandatory universal AI framework                |
@@ -1083,6 +1083,38 @@ revision, uncertainty and progression. Mock/schema success is not teaching-quali
 acceptance. Required gates: targeted unit/integration/component/browser tests,
 `make check`, `make test-integration`, `make smoke`, and bounded mock evaluation.
 Live-provider and physical-device evidence are recorded separately.
+
+### T44 adversarial review hardening contract
+
+The maintainer authorized closing the T43 adversarial review gaps and pushing
+the validated increment to `main`. Preserve source text literally, including
+currency, markup-looking punctuation and Unicode; count input limits in Unicode
+codepoints and retain excess input with an explicit validation error. Submission
+body budgets must accommodate the accepted schema's encoded Unicode payloads.
+Whole-text input must be constrained by the configured model context rather than
+an unrelated 32,000-character message ceiling.
+
+Persist only opaque pending command identifiers in browser session storage.
+Recover accepted session/activity/submission receipts with backend ownership
+checks. Explicit resolution of an absent receipt must serialize with acceptance
+and exclude delayed acceptance before replacement is allowed. Do not persist
+draft text, photos or session tokens, or automatically replay work after reload.
+Defer app updates while tutor commands are pending; warn about unsent drafts.
+
+Add bounded rejection of the reproduced copied-homework equation, answer-bearing
+criteria and sufficient feedback requiring further work. Keep assistance and
+source provenance server-owned, retain appropriate earlier guided context and
+exclude future sections. These guards reduce known failures; they do not verify
+the semantics of every model response or establish teaching effectiveness.
+
+Extend synthetic evaluation to actual learner misconceptions, questions,
+revisions, supported concise alternatives, guided navigation and independent
+answers to distinct fixture-authored transfer activities. Preserve the historical
+reports and identify mock results and pending human judgment explicitly. Refresh
+verified toolchain pins and current documentation. Required gates are targeted
+regressions, `make check test-integration smoke eval-mock audit hooks-check`,
+and container packaging checks for changed runtime pins. No live inference,
+provider selection or private installation deployment is authorized by this task.
 
 ## 16. Development and release commands
 

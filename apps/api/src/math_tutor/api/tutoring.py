@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from math_tutor.adapters.db.models import (
     DEFAULT_PROFILE,
+    CancelledTutorRequest,
     Job,
     PracticeSession,
     ProblemInstance,
@@ -38,6 +39,7 @@ from math_tutor.reading import (
     material_focus,
     section_offsets,
 )
+from math_tutor.request_recovery import require_uncancelled
 
 router = APIRouter(prefix="/api/v1/tutor", tags=["AI tutoring"])
 Initiative = Literal["tutor_led", "balanced", "learner_led"]
@@ -132,6 +134,97 @@ class TutoringSessionPublic(BaseModel):
     problems: list[ProblemPublic]
 
 
+class TutorRequestReceiptPublic(BaseModel):
+    kind: Literal["session", "activity", "submission"]
+    session_id: UUID
+    activity_id: UUID | None = None
+    submission_id: UUID | None = None
+
+
+class TutorRequestResolutionInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    learner_id: UUID
+
+
+class TutorRequestResolutionPublic(BaseModel):
+    status: Literal["accepted", "not_accepted"]
+    receipt: TutorRequestReceiptPublic | None = None
+
+
+def find_receipt(db: Session, learner_id: UUID, key: str) -> TutorRequestReceiptPublic | None:
+    session = db.scalar(
+        select(PracticeSession).where(
+            PracticeSession.learner_id == learner_id,
+            PracticeSession.mode == "ai_tutor",
+            PracticeSession.request_key == key,
+        )
+    )
+    if session is not None:
+        return TutorRequestReceiptPublic(kind="session", session_id=session.id)
+    problem = db.scalar(
+        select(ProblemInstance)
+        .join(PracticeSession)
+        .where(
+            PracticeSession.learner_id == learner_id,
+            PracticeSession.mode == "ai_tutor",
+            ProblemInstance.request_key == key,
+        )
+    )
+    if problem is not None:
+        return TutorRequestReceiptPublic(
+            kind="activity", session_id=problem.session_id, activity_id=problem.id
+        )
+    submission = db.scalar(
+        select(Submission)
+        .join(ProblemInstance, Submission.problem_id == ProblemInstance.id)
+        .join(PracticeSession, ProblemInstance.session_id == PracticeSession.id)
+        .where(
+            Submission.learner_id == learner_id,
+            Submission.request_key == key,
+            PracticeSession.mode == "ai_tutor",
+            ~Submission.request_key.startswith("activity:"),
+        )
+    )
+    if submission is not None:
+        problem = db.get(ProblemInstance, submission.problem_id)
+        assert problem is not None
+        return TutorRequestReceiptPublic(
+            kind="submission",
+            session_id=problem.session_id,
+            activity_id=problem.id,
+            submission_id=submission.id,
+        )
+    return None
+
+
+@router.get("/request-receipts/{key}", response_model=TutorRequestReceiptPublic)
+def request_receipt(
+    key: str, learner_id: UUID, db: Database, actor: Principal
+) -> TutorRequestReceiptPublic:
+    owned_learner(db, actor, learner_id)
+    receipt = find_receipt(db, learner_id, key)
+    if receipt is None:
+        raise HTTPException(404, "No accepted request was found. Resolve it before replacing it.")
+    return receipt
+
+
+@router.post("/request-receipts/{key}/resolve", response_model=TutorRequestResolutionPublic)
+def resolve_request(
+    key: str, body: TutorRequestResolutionInput, db: Database, actor: Principal
+) -> TutorRequestResolutionPublic:
+    private_tutoring()
+    owned_learner(db, actor, body.learner_id)
+    if not 1 <= len(key) <= 128 or not key.isascii():
+        raise HTTPException(422, "A bounded request key is required.")
+    receipt = find_receipt(db, body.learner_id, key)
+    if receipt is not None:
+        return TutorRequestResolutionPublic(status="accepted", receipt=receipt)
+    if db.get(CancelledTutorRequest, (body.learner_id, key)) is None:
+        db.add(CancelledTutorRequest(learner_id=body.learner_id, request_key=key))
+        db.flush()
+    return TutorRequestResolutionPublic(status="not_accepted")
+
+
 def public_session(db: Session, row: PracticeSession) -> TutoringSessionPublic:
     return TutoringSessionPublic(
         id=row.id,
@@ -180,6 +273,7 @@ def create_session(
     if body.initial_activity is not None:
         request_payload["initial_activity"] = activity_request_payload(body.initial_activity)
     key, payload = request_key(request), digest(request_payload)
+    require_uncancelled(db, body.learner_id, key)
     old = db.scalar(
         select(PracticeSession).where(
             PracticeSession.learner_id == body.learner_id, PracticeSession.request_key == key
@@ -246,6 +340,7 @@ def activity(
     private_tutoring()
     session = owned_tutoring_session(db, actor, session_id)
     key, payload = request_key(request), digest(activity_request_payload(body))
+    require_uncancelled(db, session.learner_id, key)
     problems = list(
         db.scalars(
             select(ProblemInstance)

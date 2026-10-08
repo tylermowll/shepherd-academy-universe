@@ -32,6 +32,7 @@ from math_tutor.api.practice import (
     owned_session,
     request_key,
 )
+from math_tutor.request_recovery import require_uncancelled
 from math_tutor.retention import photo_expired
 
 router = APIRouter(prefix="/api/v1", tags=["photos"])
@@ -121,6 +122,8 @@ async def upload_photo(
     problem = owned_problem(db, actor, problem_id)
     session = owned_session(db, actor, problem.session_id)
     learner_id, key = session.learner_id, request_key(request)
+    if session.mode == "ai_tutor":
+        require_uncancelled(db, learner_id, key)
     from math_tutor.providers import authorize_route, effective_configuration
 
     authorize_route(db, effective_configuration(db), "vision", learner_id)
@@ -141,6 +144,8 @@ async def upload_photo(
     db.expire_all()
     actor = principal(request, db)
     problem = owned_problem(db, actor, problem_id)
+    if problem.template_id.startswith("ai-"):
+        require_uncancelled(db, learner_id, key)
     old = db.scalar(
         select(Submission).where(Submission.learner_id == learner_id, Submission.request_key == key)
     )

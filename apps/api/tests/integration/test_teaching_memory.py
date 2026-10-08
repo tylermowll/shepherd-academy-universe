@@ -177,6 +177,9 @@ async def test_revision_sufficiency_and_explanation_keep_evidence_without_changi
             "activity_id": initial["id"],
             "submission_id": revised["id"],
             "support": "assisted",
+            "basis": "current_work",
+            "source_id": None,
+            "source_title": None,
         }
         practice = db.get(PracticeSession, UUID(session["id"]))
         problem = db.get(ProblemInstance, UUID(initial["id"]))
@@ -290,14 +293,144 @@ async def test_memory_survives_discussion_window_and_rejects_wrong_owner_or_forg
                     message="Synthetic reply",
                     source="synthetic",
                     assistance_level=1,
-                    prompt_version="guidance-v3",
+                    prompt_version="guidance-v4",
                     feedback=feedback,
                 )
             )
         db.flush()
+        stale = Submission(
+            learner_id=practice.learner_id,
+            problem_id=problem.id,
+            request_key=str(uuid4()),
+            payload_hash="b" * 64,
+            kind="question",
+            text="Was that enough?",
+            status="completed",
+        )
+        db.add(stale)
+        db.flush()
+        db.add(
+            TutorTurn(
+                submission_id=stale.id,
+                message="Historical reassurance remains visible.",
+                source="synthetic",
+                assistance_level=1,
+                prompt_version="guidance-v3",
+                feedback={
+                    "teaching_action": "acknowledge",
+                    "learning_observation": {
+                        "assessment": "sufficient",
+                        "evidence": "STALE_MISATTRIBUTED_EVIDENCE",
+                        "resolved_points": ["Incorrectly attributed new demonstration"],
+                        "open_points": [],
+                    },
+                    "evidence_link": {
+                        "activity_id": str(problem.id),
+                        "submission_id": str(stale.id),
+                        "support": "independent",
+                    },
+                },
+            )
+        )
+        db.flush()
         current = Submission(id=uuid4(), learner_id=practice.learner_id, problem_id=problem.id)
         assert "Older resolved evidence" in learning_memory(db, practice, problem)
         assert "Must not replace evidence" not in learning_memory(db, practice, problem)
+        assert "STALE_MISATTRIBUTED_EVIDENCE" not in learning_memory(db, practice, problem)
+        historical = db.scalar(select(TutorTurn).where(TutorTurn.submission_id == stale.id))
+        assert historical and historical.feedback
+        assert (
+            historical.feedback["learning_observation"]["evidence"]
+            == "STALE_MISATTRIBUTED_EVIDENCE"
+        )
         assert "Synthetic discussion 0\n" not in "\n".join(
             item.content for item in discussion(db, problem, current)
         )
+
+
+@pytest.mark.anyio
+async def test_reassurance_preserves_real_evidence_and_new_whole_source_does_not_inherit_old_facts(
+    adult: AsyncClient, engine: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from math_tutor.reading import source_identity
+
+    requests: list[ModelRequest] = []
+
+    def respond(_provider: ProviderConfig, request: ModelRequest) -> ModelResult:
+        requests.append(request)
+        if request.purpose == "generate":
+            payload: ActivityPayload | FeedbackPayload = ActivityPayload(
+                problem_text="What decision does Nia make about her boat?",
+                concept_focus="Describe a decision",
+                success_criteria=["Describe the stated decision."],
+            )
+        else:
+            payload = FeedbackPayload(
+                teaching_action="acknowledge",
+                learning_observation=LearningObservation(
+                    assessment="sufficient",
+                    evidence="The learner described Nia selling the boat.",
+                    resolved_points=["Nia sold the boat"],
+                    open_points=[],
+                ),
+                strengths=[],
+                guidance=["Your previous answer describes the decision. You may continue."],
+                next_step="",
+                concepts=[],
+            )
+        return ModelResult(model_id=request.model_id, validated_payload=payload)
+
+    monkeypatch.setattr(worker, "complete", respond)
+    session = await tutor_session(adult, "Reading decisions")
+    await activity(
+        adult,
+        session,
+        source="reading_text",
+        reading_mode="whole",
+        reference_text="Nia sold her boat to pay for repairs.",
+        passage_title="Nia",
+    )
+    assert worker.run_once(engine)
+    initial = await latest(adult, session)
+    for kind, text in [
+        ("answer", "She sold her boat."),
+        ("question", "Was that enough, or do I need to draw a diagram too?"),
+    ]:
+        current = await latest(adult, session)
+        response = await adult.post(
+            f"/api/v1/problems/{current['id']}/submissions",
+            json={"version": current["version"], "kind": kind, "text": text},
+            headers={"Idempotency-Key": str(uuid4())},
+        )
+        assert response.status_code == 202
+        assert worker.run_once(engine)
+    finished = await latest(adult, session)
+    answer, reassurance = finished["operations"][-2:]
+    assert reassurance["feedback"]["learning_observation"]["assessment"] == "not_assessed"
+    assert reassurance["verdict"] is None and "evidence_link" not in reassurance["feedback"]
+    with Session(engine) as db:
+        practice = db.get(PracticeSession, UUID(session["id"]))
+        problem = db.get(ProblemInstance, UUID(initial["id"]))
+        saved = db.scalar(
+            select(TutorTurn).where(TutorTurn.submission_id == UUID(reassurance["id"]))
+        )
+        assert practice and problem and saved and saved.feedback
+        link = saved.feedback["evidence_link"]
+        assert link["basis"] == "prior_work" and link["support"] == "not_assessed"
+        assert link["prior_submission_id"] == answer["id"]
+        assert link["source_id"] == source_identity(problem.passage)["source_id"]
+        memory = json.loads(learning_memory(db, practice, problem))
+        assert len(memory) == 1 and memory[0]["evidence_link"]["submission_id"] == answer["id"]
+        assert saved.feedback["provider_learning_observation"]["assessment"] == "sufficient"
+    await activity(
+        adult,
+        session,
+        source="reading_text",
+        reading_mode="whole",
+        reference_text="Nia kept her boat and cancelled the repairs.",
+        passage_title="Nia",
+    )
+    assert worker.run_once(engine)
+    context = "\n".join(message.content for message in requests[-1].ordered_messages)
+    assert "Nia kept her boat" in context
+    assert "Nia sold" not in context and "She sold" not in context

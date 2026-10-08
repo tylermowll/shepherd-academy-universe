@@ -25,6 +25,12 @@ class BoundedBodies:
             # Material can contain 50,000 Unicode characters, JSON escapes, or
             # an attributed source token. Other request bodies stay bounded.
             limit = 1024 * 1024
+        elif scope.get("method") == "POST" and re.fullmatch(
+            r"/api/v1/problems/[0-9a-fA-F-]{36}/submissions", path
+        ):
+            # Two 8,000-codepoint fields can each use 12-byte surrogate escapes.
+            # Match the schema even for astral Unicode and escaped JSON clients.
+            limit = 256 * 1024
 
         async def bounded_receive() -> Message:
             nonlocal total

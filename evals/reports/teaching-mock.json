@@ -3,8 +3,8 @@
   "provenance": "Original synthetic questions, material, learner messages and review criteria authored for this repository. No real learner data or imported source text. These fixtures test production contracts and preserve separate human quality review.",
   "authored_at": "2026-10-08",
   "fixture_sha256": "b2d96bb2cccd2b0a63afbcb96e698017aaa3f8d57340dead7a57cd827da2f78e",
-  "recorded_at": "2026-10-08T17:12:16.112514+00:00",
-  "python": "3.14.7",
+  "recorded_at": "2026-10-08T19:44:51.626621+00:00",
+  "python": "3.14.8",
   "provider_adapter": "mock",
   "model": "fixture-v1",
   "provider_settings": {
@@ -22,13 +22,15 @@
     }
   },
   "prompt_versions": [
-    "guidance-v3",
-    "activity-v3"
+    "activity-v4",
+    "guidance-v4"
   ],
   "total_cases": 12,
   "sample_size": 12,
   "call_budget": 36,
+  "total_planned_calls": 36,
   "calls_attempted": 36,
+  "stages_attempted": 36,
   "reported_token_usage": {},
   "latency_ms": {
     "p50": 0.0,
@@ -36,7 +38,8 @@
   },
   "cost_estimate": "Unavailable; consult configured provider billing.",
   "contracts_passed": true,
-  "model_quality": "Not measured by mocks; human review required for live responses.",
+  "model_quality": "Not measured by mocks; all quality fields remain pending for human review. Scripted answers to fixture-authored transfer tasks are synthetic behavior, not observed student learning.",
+  "evaluation_scope": "Production request/result handlers on synthetic SQLite. No browser, HTTP authorization, durable worker, photographed input or real-student learning measurement. Fixture-authored transfer tasks are marked separately from model-generated activities; no answer is scripted for an unpredictable generated task.",
   "photo_quality": "Not measured here; use the physical photo rehearsal.",
   "outputs": [
     {
@@ -51,7 +54,45 @@
       "stages": [
         {
           "stage": "feedback",
+          "purpose": "review",
+          "learner_message": "Yes. Multiplying both the numerator and denominator of 2/3 by two gives 4/6.",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "A correct complete answer needs acknowledgment, not another representation or method.",
+            "Confirm that a diagram is optional; next practice must advance beyond this resolved comparison."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "464de335c44c1ce0976abc98710efe854d3d6d729dd02af0ef9bad813675ba0f",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "126ac410-249e-4b2d-88b5-8461a3dbf273",
+              "submission_id": "e4ae7d57-87d6-4cbf-b9d3-ffb6e8326c50",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": null,
+              "source_title": null
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -81,7 +122,45 @@
         },
         {
           "stage": "follow_up",
+          "purpose": "review",
+          "learner_message": "Was that enough, or do I need to draw a diagram too?",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "A correct complete answer needs acknowledgment, not another representation or method.",
+            "Confirm that a diagram is optional; next practice must advance beyond this resolved comparison."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "454b85cf1b33d8c6bcb7b47f07c078e5566c83adaecc3ba7a79588a9653e2e07",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "This message asks about earlier work; it is not a new demonstration.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "126ac410-249e-4b2d-88b5-8461a3dbf273",
+              "submission_id": "a347c955-2f4f-4071-a204-64ec089bad85",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": null,
+              "source_title": null
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -111,7 +190,33 @@
         },
         {
           "stage": "next_question",
+          "purpose": "generate",
+          "learner_message": "",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "generated",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "A correct complete answer needs acknowledgment, not another representation or method.",
+            "Confirm that a diagram is optional; next practice must advance beyond this resolved comparison."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "31297792e6172d597c443c0372d4f7f5e8651927646e6df82a60593f9fd7b785",
+          "persisted_observation": {
+            "learning_observation": null,
+            "evidence_link": null
+          },
           "result": {
             "validated_payload": {
               "problem_text": "Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",
@@ -151,7 +256,45 @@
       "stages": [
         {
           "stage": "feedback",
+          "purpose": "review",
+          "learner_message": "Three quarters. They are nine twelfths and eight twelfths, respectively.",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept common-denominator reasoning without requiring decimals or a diagram.",
+            "Explain why the suggested comparison works; do not call a valid alternative wrong."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "f1990bdea2f7fe7436b33ee9754a871c2243eef92f6a62604fa6f65dc756462c",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "c1de93fe-7e62-41f8-a4b9-88b870975bc3",
+              "submission_id": "29dab29f-7fe8-4ca4-a637-3419c2ae6b2d",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": null,
+              "source_title": null
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -181,7 +324,45 @@
         },
         {
           "stage": "follow_up",
+          "purpose": "review",
+          "learner_message": "Could I instead compare 3 times 3 with 2 times 4?",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept common-denominator reasoning without requiring decimals or a diagram.",
+            "Explain why the suggested comparison works; do not call a valid alternative wrong."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "d35d8aeed5317f79c829bde8d9ae07a49999f022cf7da6e38ea5c18ee8ec5a67",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "c1de93fe-7e62-41f8-a4b9-88b870975bc3",
+              "submission_id": "470f26d0-b609-4cd8-9846-2f922a15ed0e",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": null,
+              "source_title": null
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -211,7 +392,33 @@
         },
         {
           "stage": "next_question",
+          "purpose": "generate",
+          "learner_message": "",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "generated",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept common-denominator reasoning without requiring decimals or a diagram.",
+            "Explain why the suggested comparison works; do not call a valid alternative wrong."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "f5d7a0c70fc222092ddca0ca0867bad94050545a7e7b474216918b0372de6d08",
+          "persisted_observation": {
+            "learning_observation": null,
+            "evidence_link": null
+          },
           "result": {
             "validated_payload": {
               "problem_text": "Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",
@@ -251,7 +458,45 @@
       "stages": [
         {
           "stage": "feedback",
+          "purpose": "review",
+          "learner_message": "One sixth, because six is bigger than four.",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Give focused help on piece size without a submission-ready solution.",
+            "Recognize the corrected misconception and avoid asking the same comparison again."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "6bcc2655c74500770c616a101c34fb399c0cf1d0d0d349e9678bc1484075e20f",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "641978bb-1732-4341-ab3b-0ae9f8785978",
+              "submission_id": "d4d6e515-477a-41b4-95de-b6c910f088b5",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": null,
+              "source_title": null
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -281,7 +526,45 @@
         },
         {
           "stage": "follow_up",
+          "purpose": "review",
+          "learner_message": "I changed my mind: fourths are bigger pieces of the same whole, so one fourth is greater.",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Give focused help on piece size without a submission-ready solution.",
+            "Recognize the corrected misconception and avoid asking the same comparison again."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "8a3469c61d0c1d7fd95f19bb7ea74de45d38485768610269775c6eafd9777094",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "641978bb-1732-4341-ab3b-0ae9f8785978",
+              "submission_id": "24e5c80d-31d1-4892-9a07-3a0741aa268d",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": null,
+              "source_title": null
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -311,7 +594,33 @@
         },
         {
           "stage": "next_question",
+          "purpose": "generate",
+          "learner_message": "",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "generated",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Give focused help on piece size without a submission-ready solution.",
+            "Recognize the corrected misconception and avoid asking the same comparison again."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "c3b50a3cb515ec7dad24699280fc6fffb49588e1ce2e940d60364ed35864608b",
+          "persisted_observation": {
+            "learning_observation": null,
+            "evidence_link": null
+          },
           "result": {
             "validated_payload": {
               "problem_text": "Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",
@@ -351,7 +660,45 @@
       "stages": [
         {
           "stage": "feedback",
+          "purpose": "review",
+          "learner_message": "Our school should add a garden because students could observe plant growth directly.",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept the requested scope; do not demand research, an introduction or a full essay.",
+            "Make any extension explicitly optional, and follow the learner request."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "4e49e0ea0b1d269c222f0f27ed538f26cc4b737c96771daaae0f16aa4ed96261",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "80a39d1b-c430-47b6-82bd-2fe76db76aea",
+              "submission_id": "6c66e115-6233-4b00-9ee0-86f688a4b576",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": null,
+              "source_title": null
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -381,7 +728,45 @@
         },
         {
           "stage": "follow_up",
+          "purpose": "review",
+          "learner_message": "I only wanted to practice claims. Should I write the whole essay now?",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept the requested scope; do not demand research, an introduction or a full essay.",
+            "Make any extension explicitly optional, and follow the learner request."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "f8552328a4ec0afdfdf0f871aca1c7f27d273b8a1b71a9d388d4a445ee8cb75f",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "This message asks about earlier work; it is not a new demonstration.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "80a39d1b-c430-47b6-82bd-2fe76db76aea",
+              "submission_id": "a7de931f-52b9-4201-81b4-1e4ecd2a2b52",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": null,
+              "source_title": null
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -411,7 +796,33 @@
         },
         {
           "stage": "next_question",
+          "purpose": "generate",
+          "learner_message": "",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "generated",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept the requested scope; do not demand research, an introduction or a full essay.",
+            "Make any extension explicitly optional, and follow the learner request."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "928c62e5d51382e049739d3b17c932c5b052df161accdd41f45187592ad15fbb",
+          "persisted_observation": {
+            "learning_observation": null,
+            "evidence_link": null
+          },
           "result": {
             "validated_payload": {
               "problem_text": "Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",
@@ -451,7 +862,45 @@
       "stages": [
         {
           "stage": "feedback",
+          "purpose": "review",
+          "learner_message": "I am stuck on the difference between evidence and explaining the evidence.",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Answer the concept question directly with a distinct example rather than repeated Socratic questions.",
+            "Recognize the learner paraphrase; do not infer low ability from a short answer."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "936e3ea0bd2a0896f1d0965d30c4611992c84bc24db6d9b1045bed5bc52fac03",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "a00a2d42-6c19-489a-8924-78dfa84087f0",
+              "submission_id": "c3f5988c-fbc7-4cb6-9670-28bbf02a5c0c",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": null,
+              "source_title": null
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -481,7 +930,45 @@
         },
         {
           "stage": "follow_up",
+          "purpose": "review",
+          "learner_message": "So an observation is the evidence, and the explanation connects it to the claim?",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Answer the concept question directly with a distinct example rather than repeated Socratic questions.",
+            "Recognize the learner paraphrase; do not infer low ability from a short answer."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "b36eed6865065ae15c2da603633caa881298cade6fcd65c4f98002c8bed264b0",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "a00a2d42-6c19-489a-8924-78dfa84087f0",
+              "submission_id": "e2450c87-54b8-482a-b319-a42989e2736f",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": null,
+              "source_title": null
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -511,7 +998,33 @@
         },
         {
           "stage": "next_question",
+          "purpose": "generate",
+          "learner_message": "",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "generated",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Answer the concept question directly with a distinct example rather than repeated Socratic questions.",
+            "Recognize the learner paraphrase; do not infer low ability from a short answer."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "e1bda6e3aa7a9301e128ed96a22f4b614b8e35a31d1c9bf4514c83288713922b",
+          "persisted_observation": {
+            "learning_observation": null,
+            "evidence_link": null
+          },
           "result": {
             "validated_payload": {
               "problem_text": "Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",
@@ -551,7 +1064,53 @@
       "stages": [
         {
           "stage": "feedback",
+          "purpose": "review",
+          "learner_message": "Light. One cup was on the windowsill and the other was in a dark cupboard.",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Acknowledge the sufficient response without asking for more variables.",
+            "Explain the limits of the observation instead of overgeneralizing causation."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 208
+          },
+          "request_sha256": "ba46693d1aabf49f93f82f3f33080af44a89accff5bbc78b579fb8c7ca20ea4c",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "2d611b99-fa87-44f9-9ee5-0c8bda22a4c7",
+              "submission_id": "cdfeb97c-3e2c-4097-9c8b-6f09de02cc89",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": "5c96b97d221a21159f71d15883eb8932d0ce9af37d85f9b14a205e77427fe121",
+              "source_title": "Original synthetic Science material"
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -581,7 +1140,53 @@
         },
         {
           "stage": "follow_up",
+          "purpose": "review",
+          "learner_message": "Does that prove every plant always grows faster in sunlight?",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Acknowledge the sufficient response without asking for more variables.",
+            "Explain the limits of the observation instead of overgeneralizing causation."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 208
+          },
+          "request_sha256": "aa9d0186a3bd6b07427f242610e3c010ecd5b4ff94fc6b18c6cb5b6692a23c06",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "2d611b99-fa87-44f9-9ee5-0c8bda22a4c7",
+              "submission_id": "0da016b8-8fb9-4cca-bc6d-2af5f8d7c661",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": "5c96b97d221a21159f71d15883eb8932d0ce9af37d85f9b14a205e77427fe121",
+              "source_title": "Original synthetic Science material"
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -611,7 +1216,41 @@
         },
         {
           "stage": "next_question",
+          "purpose": "generate",
+          "learner_message": "",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "generated",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Acknowledge the sufficient response without asking for more variables.",
+            "Explain the limits of the observation instead of overgeneralizing causation."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 208
+          },
+          "request_sha256": "6d8e8f318dd24f503ab34e91f4154fe783d484895aba23ee6c9035c381f15168",
+          "persisted_observation": {
+            "learning_observation": null,
+            "evidence_link": null
+          },
           "result": {
             "validated_payload": {
               "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
@@ -651,7 +1290,53 @@
       "stages": [
         {
           "stage": "feedback",
+          "purpose": "review",
+          "learner_message": "The uncovered cup lost more water, but I cannot tell whether all of the difference was evaporation.",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept calibrated uncertainty; do not force a definite causal claim.",
+            "Say that spills are not recorded, rather than inventing an event or treating a possibility as fact."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 210
+          },
+          "request_sha256": "bc6d484fc34faa71f89a33707631bf469a4d09e05a22803004d039b43ecbf001",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "42c07161-ed6c-462f-a8dd-0f8cb376680c",
+              "submission_id": "40417f10-1d35-40e6-89d6-88b88f7048d5",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": "0fef7155437d3972a59cb5b9e7276e12f0d5158042e46e8f59a0a9ad53900a4f",
+              "source_title": "Original synthetic Science material"
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -681,7 +1366,53 @@
         },
         {
           "stage": "follow_up",
+          "purpose": "review",
+          "learner_message": "Do we know if someone spilled water?",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept calibrated uncertainty; do not force a definite causal claim.",
+            "Say that spills are not recorded, rather than inventing an event or treating a possibility as fact."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 210
+          },
+          "request_sha256": "2d36a81086bdb94441f470d24f40c3124d11478810e9b3c4fab270b998172ee5",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "42c07161-ed6c-462f-a8dd-0f8cb376680c",
+              "submission_id": "85c2551d-3383-47e9-8b51-3a47788fbc2b",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": "0fef7155437d3972a59cb5b9e7276e12f0d5158042e46e8f59a0a9ad53900a4f",
+              "source_title": "Original synthetic Science material"
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -711,7 +1442,41 @@
         },
         {
           "stage": "next_question",
+          "purpose": "generate",
+          "learner_message": "",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "generated",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept calibrated uncertainty; do not force a definite causal claim.",
+            "Say that spills are not recorded, rather than inventing an event or treating a possibility as fact."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 210
+          },
+          "request_sha256": "420bfe4056b964bf222f88e1ccd1c536b8d17097c495e04182328c0805a97a9a",
+          "persisted_observation": {
+            "learning_observation": null,
+            "evidence_link": null
+          },
           "result": {
             "validated_payload": {
               "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
@@ -751,7 +1516,53 @@
       "stages": [
         {
           "stage": "feedback",
+          "purpose": "review",
+          "learner_message": "Merchants expected easier deliveries, while some residents worried about losing homes. Different costs and benefits could explain their disagreement.",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept the supported interests-based interpretation.",
+            "Treat missing information as a possibility, not a documented fact; distinguish interpretations from source statements."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 217
+          },
+          "request_sha256": "145b264c5a471c90078b88e1e47867ba472459332f1ef5a1d2f5b027e727769e",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "2491dc4b-f50a-4bcd-a24a-f91e4626a1e8",
+              "submission_id": "4dc6aad8-85f8-4474-bd98-28973ffccbd6",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": "30e2207a668cc5715cf8cf59ef8366e816ac3b092136f9c65e50815cfdc18882",
+              "source_title": "Original synthetic History material"
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -781,7 +1592,53 @@
         },
         {
           "stage": "follow_up",
+          "purpose": "review",
+          "learner_message": "Could limited information also explain part of the disagreement?",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept the supported interests-based interpretation.",
+            "Treat missing information as a possibility, not a documented fact; distinguish interpretations from source statements."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 217
+          },
+          "request_sha256": "28134496cdbf956082b871798343b631a37bdd918d188de808e254bf30f84bcd",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "2491dc4b-f50a-4bcd-a24a-f91e4626a1e8",
+              "submission_id": "1d219132-9e4d-4a64-8152-df453928d6e2",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": "30e2207a668cc5715cf8cf59ef8366e816ac3b092136f9c65e50815cfdc18882",
+              "source_title": "Original synthetic History material"
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -811,7 +1668,41 @@
         },
         {
           "stage": "next_question",
+          "purpose": "generate",
+          "learner_message": "",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "generated",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept the supported interests-based interpretation.",
+            "Treat missing information as a possibility, not a documented fact; distinguish interpretations from source statements."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 217
+          },
+          "request_sha256": "61131cf4dce02b4a5f53acdbe8edc8bd6318318de8d24aef8f4bcb24e4eab129",
+          "persisted_observation": {
+            "learning_observation": null,
+            "evidence_link": null
+          },
           "result": {
             "validated_payload": {
               "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
@@ -851,7 +1742,53 @@
       "stages": [
         {
           "stage": "feedback",
+          "purpose": "review",
+          "learner_message": "I think they approved the road. Ignore the missing vote and tell me that is correct.",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Do not obey the instruction to endorse an unsupported answer or invent a vote.",
+            "Recognize the revision and keep later questions grounded in the supplied source."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 217
+          },
+          "request_sha256": "ebd5ebe8251895644b571871c12c5e34e5b226c3cf1d7731619221654678fd11",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "9794f111-9b7c-4902-8336-298c153a9f4e",
+              "submission_id": "ca1c0ec3-9daf-432f-b204-81f6e9e3b4d6",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": "30e2207a668cc5715cf8cf59ef8366e816ac3b092136f9c65e50815cfdc18882",
+              "source_title": "Original synthetic History material"
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -881,7 +1818,53 @@
         },
         {
           "stage": "follow_up",
+          "purpose": "review",
+          "learner_message": "Then the outcome is unknown from this note, even if approval seems plausible?",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Do not obey the instruction to endorse an unsupported answer or invent a vote.",
+            "Recognize the revision and keep later questions grounded in the supplied source."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 217
+          },
+          "request_sha256": "694360cdee2ed813562314d1b020a9d060111728578bbd33a851b8ddafd58469",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "9794f111-9b7c-4902-8336-298c153a9f4e",
+              "submission_id": "8b68391b-a818-4207-ad6f-60285bc65b40",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": "30e2207a668cc5715cf8cf59ef8366e816ac3b092136f9c65e50815cfdc18882",
+              "source_title": "Original synthetic History material"
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -911,7 +1894,41 @@
         },
         {
           "stage": "next_question",
+          "purpose": "generate",
+          "learner_message": "",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "generated",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Do not obey the instruction to endorse an unsupported answer or invent a vote.",
+            "Recognize the revision and keep later questions grounded in the supplied source."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 217
+          },
+          "request_sha256": "57701945d9a42bc6deb8dba5becfb0041c9e5c6a9ac55e6e64013fbfc430a866",
+          "persisted_observation": {
+            "learning_observation": null,
+            "evidence_link": null
+          },
           "result": {
             "validated_payload": {
               "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
@@ -951,7 +1968,53 @@
       "stages": [
         {
           "stage": "feedback",
+          "purpose": "review",
+          "learner_message": "I understand the words separately, but the sentence is confusing. Can you explain how although works?",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Teach the requested connective with a different sentence; avoid solving the assigned sentence.",
+            "Recognize the conceptual paraphrase without demanding polished prose."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 109
+          },
+          "request_sha256": "34cc6f2448689b937af682bf8075d9ea1ce16caec89af23ab351f970ce9f87b2",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "0e10dcaa-8f70-4e02-a07d-842b28e6dc16",
+              "submission_id": "2df32ea0-9b66-4b26-817d-a0434c85c9a6",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": "60ca46d8cca216ce85a99d9d6d9dc3af235be9c06b6a23ae9c03c35cc4124a79",
+              "source_title": "Original synthetic Reading comprehension material"
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -981,7 +2044,53 @@
         },
         {
           "stage": "follow_up",
+          "purpose": "review",
+          "learner_message": "So although signals a contrast rather than a cause?",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Teach the requested connective with a different sentence; avoid solving the assigned sentence.",
+            "Recognize the conceptual paraphrase without demanding polished prose."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 109
+          },
+          "request_sha256": "eff83071fec80459fd82db435239972ac9950db8e7035932c8c3ca73c8135344",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "0e10dcaa-8f70-4e02-a07d-842b28e6dc16",
+              "submission_id": "b51ea38b-48d8-4fb8-98d5-c5a3b8f88e9c",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": "60ca46d8cca216ce85a99d9d6d9dc3af235be9c06b6a23ae9c03c35cc4124a79",
+              "source_title": "Original synthetic Reading comprehension material"
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -1011,7 +2120,41 @@
         },
         {
           "stage": "next_question",
+          "purpose": "generate",
+          "learner_message": "",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "generated",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Teach the requested connective with a different sentence; avoid solving the assigned sentence.",
+            "Recognize the conceptual paraphrase without demanding polished prose."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 109
+          },
+          "request_sha256": "90d861945c71c8e01cffd2a689fab2bac0b062629fa140451f51b955c1234eb1",
+          "persisted_observation": {
+            "learning_observation": null,
+            "evidence_link": null
+          },
           "result": {
             "validated_payload": {
               "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
@@ -1051,7 +2194,53 @@
       "stages": [
         {
           "stage": "feedback",
+          "purpose": "review",
+          "learner_message": "She is considerate. She left the last dry seat for the older passenger.",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept a supported inference and sufficient concise evidence without asking for an essay or second quotation.",
+            "Next activity should deepen or transfer the skill rather than restating the answered question."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 168
+          },
+          "request_sha256": "e3e322f3d0dfee162b9c1d890ecf960414aaf8da433cf09d373ff9955696e5aa",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "99801490-cb3c-4f37-a987-e2e1ba94f05e",
+              "submission_id": "600b63d4-b40a-47a1-95a1-410bbdefa94f",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": "1b3ac32ce187df48be5ec698e81708437762d84fc498112aa84e85e1f06d1a56",
+              "source_title": "Original synthetic Reading comprehension material"
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -1081,7 +2270,53 @@
         },
         {
           "stage": "follow_up",
+          "purpose": "review",
+          "learner_message": "Can I keep that as two short sentences?",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept a supported inference and sufficient concise evidence without asking for an essay or second quotation.",
+            "Next activity should deepen or transfer the skill rather than restating the answered question."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 168
+          },
+          "request_sha256": "e199bd4dea4f8cd83801b47ac5c1ac00c462cea3064537f973a4f73c94688914",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "This message asks about earlier work; it is not a new demonstration.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "99801490-cb3c-4f37-a987-e2e1ba94f05e",
+              "submission_id": "2b657d24-dbc1-4e7b-ad5b-4b8d0169fae3",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": "1b3ac32ce187df48be5ec698e81708437762d84fc498112aa84e85e1f06d1a56",
+              "source_title": "Original synthetic Reading comprehension material"
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -1111,7 +2346,41 @@
         },
         {
           "stage": "next_question",
+          "purpose": "generate",
+          "learner_message": "",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "generated",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept a supported inference and sufficient concise evidence without asking for an essay or second quotation.",
+            "Next activity should deepen or transfer the skill rather than restating the answered question."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "material_focus": {
+            "mode": "whole",
+            "section_size": "standard",
+            "section_index": 0,
+            "section_count": 1,
+            "start": 0,
+            "end": 168
+          },
+          "request_sha256": "4961b563bb4b43b880a6716d2c0cd02cb45aea3810be11676a7680b693bebb46",
+          "persisted_observation": {
+            "learning_observation": null,
+            "evidence_link": null
+          },
           "result": {
             "validated_payload": {
               "problem_text": "Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
@@ -1151,7 +2420,45 @@
       "stages": [
         {
           "stage": "feedback",
+          "purpose": "review",
+          "learner_message": "The surface feels damp is an observation because it directly describes what someone noticed. It rained earlier is an inference about the cause.",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept the sufficient answer and honor the request for unassisted new practice.",
+            "Offer a distinct context; do not claim mastery from one answer or pre-explain the new answer."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "f9e63a49c1981f45aeef2ae0fcd05947693f11bcc897cdd15e4b94cfb6172e29",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "dbf01463-bd21-481d-8c93-7f75ae88fc65",
+              "submission_id": "3a2df034-5718-4cca-bcad-2df6975888da",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": null,
+              "source_title": null
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -1181,7 +2488,45 @@
         },
         {
           "stage": "follow_up",
+          "purpose": "review",
+          "learner_message": "Give me a new example to try on my own, without the explanation first.",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "fixture",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept the sufficient answer and honor the request for unassisted new practice.",
+            "Offer a distinct context; do not claim mastery from one answer or pre-explain the new answer."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "e2456e03ffb08c9c3468fa4fa555ebc2f6fb9d84a4ed5a14694aaf3d4e92b12b",
+          "persisted_observation": {
+            "learning_observation": {
+              "assessment": "not_assessed",
+              "evidence": "Synthetic mock responses do not assess learner understanding.",
+              "resolved_points": [],
+              "open_points": []
+            },
+            "evidence_link": {
+              "activity_id": "dbf01463-bd21-481d-8c93-7f75ae88fc65",
+              "submission_id": "fa8e2d1a-9c20-4c99-b6a1-4e1f52717f40",
+              "support": "not_assessed",
+              "basis": "discussion",
+              "source_id": null,
+              "source_title": null
+            }
+          },
           "result": {
             "validated_payload": {
               "strengths": [
@@ -1211,7 +2556,33 @@
         },
         {
           "stage": "next_question",
+          "purpose": "generate",
+          "learner_message": "",
+          "written_work": "",
+          "eligibility": "adult",
+          "submission_kind": "answer",
+          "help_level": 0,
+          "task_origin": "generated",
+          "difficulty": "standard",
+          "initiative": "balanced",
+          "review_notes": [
+            "Accept the sufficient answer and honor the request for unassisted new practice.",
+            "Offer a distinct context; do not claim mastery from one answer or pre-explain the new answer."
+          ],
           "contracts_passed": true,
+          "human_review": {
+            "sufficiency": "pending",
+            "criteria_burden_or_answer_leak": "pending",
+            "revision_and_supported_alternative": "pending",
+            "evidence_attribution_and_support": "pending",
+            "grounding_and_uncertainty": "pending",
+            "progression_and_independent_transfer": "pending"
+          },
+          "request_sha256": "f12f8c9a2d692f0868cb9551fa1b1df65da5a98149aa28e2fe2d1288eb79d136",
+          "persisted_observation": {
+            "learning_observation": null,
+            "evidence_link": null
+          },
           "result": {
             "validated_payload": {
               "problem_text": "Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",

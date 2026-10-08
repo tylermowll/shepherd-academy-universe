@@ -188,7 +188,9 @@ quality gates from deterministic orchestration/security checks.
 
 ## D001 — Supported toolchain baseline (2026-09-06)
 
-The maintainer requested the latest LTS tooling. Use the newest LTS line where
+The following version evidence describes the September 6 baseline; the T44
+refresh below supersedes its runtime/tool pins. The maintainer requested the
+latest LTS tooling. Use the newest LTS line where
 the project offers one, otherwise supported stable releases, with exact locks.
 Do not install prereleases or disable checks to accommodate a newer package.
 
@@ -470,3 +472,17 @@ Provider response envelopes validate every consumed nested field before access,
 while ignoring unused vendor metadata. Malformed envelopes cannot terminate the
 worker. The Bedrock schema is checked against the installed SDK, including optional
 cache usage metadata, and the public provider statuses remain live-unverified.
+
+## D001 toolchain refresh — T44 (2026-10-08)
+
+Keep Node 24 as the current LTS line and Python 3.14 as the supported stable
+line. Advance their patch pins to 24.21.0 and 3.14.8, with pnpm 12.10.1 and
+uv/uv_build 0.12.23. Official version metadata and public image digests are
+recorded in DEPENDENCIES. The Python runtime still embeds SQLite 3.53.1; the
+original SQLite exception/floor remains in force. Preserve historical evidence
+above instead of describing old pins as current. No database driver, runtime
+major, application framework, provider or deployment topology changes.
+
+T44 also retried Vitest 5.0.3. Strict application type checking still fails with
+TS2428 (`Assertion` declaration type parameters) against jest-dom 7.0.1. Retain
+4.1.11 until the upstream declarations agree; do not weaken the type gate.

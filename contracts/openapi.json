@@ -2620,6 +2620,96 @@
         "title": "TutorActivityInput",
         "type": "object"
       },
+      "TutorRequestReceiptPublic": {
+        "properties": {
+          "activity_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity Id"
+          },
+          "kind": {
+            "enum": [
+              "session",
+              "activity",
+              "submission"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "submission_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submission Id"
+          }
+        },
+        "required": [
+          "kind",
+          "session_id"
+        ],
+        "title": "TutorRequestReceiptPublic",
+        "type": "object"
+      },
+      "TutorRequestResolutionInput": {
+        "additionalProperties": false,
+        "properties": {
+          "learner_id": {
+            "format": "uuid",
+            "title": "Learner Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "learner_id"
+        ],
+        "title": "TutorRequestResolutionInput",
+        "type": "object"
+      },
+      "TutorRequestResolutionPublic": {
+        "properties": {
+          "receipt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TutorRequestReceiptPublic"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "enum": [
+              "accepted",
+              "not_accepted"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "TutorRequestResolutionPublic",
+        "type": "object"
+      },
       "TutorSettingsInput": {
         "additionalProperties": false,
         "properties": {
@@ -4870,6 +4960,110 @@
         "summary": "Profiles",
         "tags": [
           "profiles"
+        ]
+      }
+    },
+    "/api/v1/tutor/request-receipts/{key}": {
+      "get": {
+        "operationId": "request_receipt_api_v1_tutor_request_receipts__key__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "learner_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Learner Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TutorRequestReceiptPublic"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request Receipt",
+        "tags": [
+          "AI tutoring"
+        ]
+      }
+    },
+    "/api/v1/tutor/request-receipts/{key}/resolve": {
+      "post": {
+        "operationId": "resolve_request_api_v1_tutor_request_receipts__key__resolve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TutorRequestResolutionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TutorRequestResolutionPublic"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve Request",
+        "tags": [
+          "AI tutoring"
         ]
       }
     },

@@ -7,6 +7,35 @@ remain required before claiming the associated release gates complete.
 
 ## Functional/security mapping
 
+T44 closes the reproduced source-rendering, Unicode-capacity and lost-request
+identity failures. Receipt recovery covers session/activity/text and ordinary
+photo submissions after an accepted response is lost, including reload. Explicit
+resolution excludes delayed acceptance under the same SQLite write lock. Pending
+work defers service-worker updates. Draft text/photos are not persisted in the
+browser; closing a tab still loses its ephemeral receipt marker. The separate
+phone companion retains its token-scoped upload workflow and physical-device
+recovery remains an external gate.
+
+Teaching guards reject the reproduced unchanged homework equation, scalar answer
+criteria and compulsory extra work after sufficient feedback. A reassurance-only
+question does not become a new demonstration. Current evidence uses server-owned
+source/support links and excludes older v3 observations; historical wording is
+preserved. These are bounded software rules, not universal semantic enforcement.
+Guided context now includes an explicitly bounded opening excerpt as well as
+recent sections; omitted intervening material and model prior knowledge remain
+quality risks. Codepoint section boundaries can divide a long combining/ZWJ
+cluster with no natural break, while preserving every saved character.
+
+The adversarial fixture adds four scripted scenarios/20 stages. They exercise
+wrong work, explanation, assisted revision, supported alternatives, section
+navigation and answers to distinct **fixture-authored** transfer tasks. Mock
+contract completion is not independent transfer or live-provider acceptance;
+human reviews remain pending. Before a useful supervised reading trial, test and
+select the actual tutor route, then review this bounded conversation through the
+application/worker path for concise sufficiency, provenance, spoiler resistance
+and an independently supplied learner answer. No paid calls or provider changes
+were made during T44. Exact local outcomes are recorded in TASKS.
+
 T42's reading software gate covers complete saved passages in generation,
 guidance, next questions, reload/History/export/deletion; clear photo continuation;
 original-passage labeling and replacement rejection; imported-source ownership,

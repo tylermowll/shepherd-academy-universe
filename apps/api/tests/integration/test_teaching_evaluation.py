@@ -1,6 +1,7 @@
 """Evaluation resolves the installed saved route without any network inference."""
 
 from pathlib import Path
+from typing import Literal
 
 import pytest
 from sqlalchemy.engine import Engine
@@ -14,14 +15,16 @@ from math_tutor.providers import probe_fingerprint
 from math_tutor.reading_evaluation import active_tutor
 
 
-def saved_provider(engine: Engine, *, cloud: bool = False) -> ProviderConfig:
+def saved_provider(
+    engine: Engine, *, cloud: bool = False, audience: Literal["adult_only", "mixed"] = "mixed"
+) -> ProviderConfig:
     provider = ProviderConfig(
         adapter="meta" if cloud else "ollama",
         model="synthetic-evaluation-no-network",
         enabled=True,
         base_url="https://example.invalid" if cloud else "http://127.0.0.1:11434",
         data_boundary="cloud" if cloud else "local_network",
-        audience="mixed",
+        audience=audience,
         eligibility_record="Synthetic test connection only",
     )
     with Session(engine) as db:
@@ -63,6 +66,27 @@ def test_active_rehearsal_uses_saved_route_and_requires_current_probe(engine: En
     selected = active_tutor()
     assert selected.model == provider.model
     assert selected.adapter == "ollama"
+
+
+def test_active_rehearsal_checks_each_fixture_audience_before_inference(
+    engine: Engine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("APP_AUDIENCE", "adult_only")
+    provider = saved_provider(engine, audience="adult_only")
+    with Session(engine) as db:
+        db.add(
+            ProviderProbe(
+                fingerprint=probe_fingerprint(provider, "tutor"),
+                provider_id="saved-synthetic-tutor",
+                stage="tutor",
+            )
+        )
+        db.commit()
+    assert active_tutor("adult").audience == "adult_only"
+    with pytest.raises(ProviderError) as result:
+        active_tutor("minor")
+    assert result.value.code == "audience_blocked"
 
 
 def test_active_rehearsal_does_not_bypass_installation_cloud_policy(engine: Engine) -> None:

@@ -1,8 +1,6 @@
 """Versioned multi-subject model tasks; only the server advances durable work."""
 
 import json
-import re
-from difflib import SequenceMatcher
 from typing import Literal
 
 from pydantic import ValidationError
@@ -20,6 +18,7 @@ from math_tutor.adapters.db.models import (
 from math_tutor.adapters.db.types import utcnow
 from math_tutor.adapters.providers.config import ProviderConfig
 from math_tutor.adapters.providers.contracts import (
+    MAX_TUTOR_MESSAGE_LENGTH,
     ActivityPayload,
     FeedbackPayload,
     LearningObservation,
@@ -29,7 +28,14 @@ from math_tutor.adapters.providers.contracts import (
     ProviderError,
     ReadingPayload,
 )
-from math_tutor.reading import SECTION_LENGTHS, ReadingPassage, evidence, history_allowed
+from math_tutor.reading import (
+    SECTION_LENGTHS,
+    ReadingPassage,
+    evidence,
+    history_allowed,
+    source_identity,
+)
+from math_tutor.teaching import repeated_task, required_follow_up, sufficiency_question
 
 # A routing threshold, not a calibrated probability of correct recognition.
 READING_THRESHOLD = 0.85
@@ -161,7 +167,7 @@ def discussion(db: Session, problem: ProblemInstance, current: Submission) -> li
                 + ". "
                 + (row.safe_error or "No tutoring response was produced for this attempt.")
             )
-        if len(text) > 32000:
+        if len(text) > MAX_TUTOR_MESSAGE_LENGTH:
             # Oversized optional history is omitted whole; current work and the
             # selected material still receive the explicit context check below.
             continue
@@ -246,7 +252,7 @@ def learning_memory(db: Session, session: PracticeSession, current: ProblemInsta
             ProblemInstance.session_id == session.id,
             Submission.learner_id == session.learner_id,
             Submission.status == "completed",
-            TutorTurn.prompt_version == "guidance-v3",
+            TutorTurn.prompt_version == "guidance-v4",
         )
         .order_by(Submission.created_at.desc(), Submission.id.desc())
         .limit(80)
@@ -258,6 +264,10 @@ def learning_memory(db: Session, session: PracticeSession, current: ProblemInsta
         if str(activity.id) in seen or not history_allowed(
             current.passage, current.parameters, activity.passage, activity.parameters
         ):
+            continue
+        if current.passage != activity.passage:
+            # A fact resolved in one story is not resolved evidence about a new
+            # story. The source identity is carried even in whole-material mode.
             continue
         feedback = turn.feedback or {}
         link = feedback.get("evidence_link")
@@ -277,6 +287,7 @@ def learning_memory(db: Session, session: PracticeSession, current: ProblemInsta
             "goal": activity.parameters.get("concept_focus"),
             "observation": observation.model_dump(),
             "evidence_link": link,
+            "source": source_identity(activity.passage),
         }
         length = len(json.dumps(item, ensure_ascii=False))
         if size + length > 4000:
@@ -301,10 +312,14 @@ def evidence_support(db: Session, row: Submission, observation: LearningObservat
         or (reading and reading.ambiguities)
     ):
         return "uncertain"
-    if row.kind == "hint":
+    if (
+        row.kind == "hint"
+        or row.help_level > 0
+        or (activity and activity.parameters.get("tutor_help_received"))
+    ):
         return "assisted"
-    earlier = db.scalars(
-        select(TutorTurn)
+    earlier = db.execute(
+        select(TutorTurn, Submission)
         .join(Submission, TutorTurn.submission_id == Submission.id)
         .where(
             Submission.problem_id == row.problem_id,
@@ -313,12 +328,54 @@ def evidence_support(db: Session, row: Submission, observation: LearningObservat
             Submission.created_at <= row.created_at,
             TutorTurn.prompt_version.like("guidance-%"),
         )
+        .order_by(Submission.created_at.desc(), Submission.id.desc())
         .limit(80)
     )
     # Historical help lacks structured actions, so do not claim independence.
-    if any((turn.feedback or {}).get("teaching_action") != "acknowledge" for turn in earlier):
+    if any(
+        prior.kind == "hint"
+        or prior.help_level > 0
+        or (turn.feedback or {}).get("teaching_action") != "acknowledge"
+        for turn, prior in earlier
+    ):
         return "assisted"
     return "independent"
+
+
+def prior_assessed_response(
+    db: Session, row: Submission
+) -> tuple[Submission, LearningObservation] | None:
+    """Retrieve an owned earlier assessment for a reassurance-only follow-up."""
+    rows = db.execute(
+        select(Submission, TutorTurn)
+        .join(TutorTurn, TutorTurn.submission_id == Submission.id)
+        .where(
+            Submission.problem_id == row.problem_id,
+            Submission.learner_id == row.learner_id,
+            Submission.id != row.id,
+            Submission.created_at <= row.created_at,
+            Submission.status == "completed",
+            TutorTurn.prompt_version == "guidance-v4",
+        )
+        .order_by(Submission.created_at.desc(), Submission.id.desc())
+        .limit(80)
+    )
+    for prior, turn in rows:
+        feedback = turn.feedback or {}
+        link = feedback.get("evidence_link", {})
+        if (
+            not isinstance(link, dict)
+            or link.get("submission_id") != str(prior.id)
+            or link.get("activity_id") != str(row.problem_id)
+        ):
+            continue
+        try:
+            observation = LearningObservation.model_validate(feedback.get("learning_observation"))
+        except ValidationError:
+            continue
+        if observation.assessment != "not_assessed":
+            return prior, observation
+    return None
 
 
 def make_request(
@@ -365,6 +422,8 @@ def make_request(
             "Criteria state the observable minimum sufficient response in learner-friendly words, matching the "
             "question's explicit requirements exactly, including its requested number of details. Do not add "
             "restatement, formatting or extra evidence that the question does not request. Do not reveal the answer in criteria. "
+            "Do not impose a sentence count unless learning that writing form is the actual goal. A concise supported "
+            "response may be sufficient; accept a reasoned qualification when an observation does not establish the claim. "
             "No worked solution or answer. "
             "Treat the supplied topic or reference as context, NEVER as an assignment to answer. For homework, "
             "identify its concepts and create a meaningfully DISTINCT analogous problem (different examples, "
@@ -432,7 +491,7 @@ def make_request(
             content += "\n" + evidence(
                 ReadingPassage.model_validate(problem.passage), problem.parameters
             )
-        if len(content) > 32000:
+        if len(content) > MAX_TUTOR_MESSAGE_LENGTH:
             raise ProviderError(
                 "context_limit",
                 safe_message="This material exceeds the request context. Choose guided sections; the saved source was not clipped.",
@@ -527,7 +586,7 @@ def make_request(
                 evidence(ReadingPassage.model_validate(problem.passage), problem.parameters)
                 + content
             )
-        if len(content) > 32000:
+        if len(content) > MAX_TUTOR_MESSAGE_LENGTH:
             raise ProviderError(
                 "context_limit",
                 safe_message="Choose guided sections or submit a shorter section of work; your input was not clipped.",
@@ -563,17 +622,7 @@ def make_request(
 
 
 def copied_reference(reference: str, generated: str) -> bool:
-    def clean(value: str) -> str:
-        return " ".join(re.findall(r"\w+", value.casefold()))
-
-    source, task = clean(reference), clean(generated)
-    return bool(
-        source
-        and (
-            source == task
-            or (len(source) >= 20 and SequenceMatcher(None, source, task).ratio() > 0.96)
-        )
-    )
+    return repeated_task(reference, generated)
 
 
 def finish_model(
@@ -681,12 +730,59 @@ def finish_model(
                 message="New practice activity prepared. Work through it in your own words, or ask for a hint.",
                 source=source,
                 assistance_level=0,
-                prompt_version="activity-v3",
+                prompt_version="activity-v4",
             )
         )
     else:
         if not isinstance(payload, FeedbackPayload):
             raise ProviderError("malformed_output")
+        provider_observation: dict[str, object] | None = None
+        prior: tuple[Submission, LearningObservation] | None = None
+        reassurance = bool(
+            not row.work_text and latest_reading(db, row) is None and sufficiency_question(row.text)
+        )
+        if reassurance:
+            prior = prior_assessed_response(db, row)
+            if (
+                prior
+                and prior[1].assessment == "sufficient"
+                and (
+                    payload.teaching_action in {"coach", "extend"}
+                    or any(
+                        required_follow_up(item)
+                        for item in [*payload.strengths, *payload.guidance, payload.next_step]
+                    )
+                )
+            ):
+                raise ProviderError(
+                    "feedback_intent_mismatch",
+                    retryable=True,
+                    safe_message="The tutor did not answer your question about earlier work. Your message is saved; retry the response.",
+                )
+            provider_observation = payload.learning_observation.model_dump()
+            payload = payload.model_copy(
+                update={
+                    "learning_observation": LearningObservation(
+                        assessment="not_assessed",
+                        evidence="This message asks about earlier work; it is not a new demonstration.",
+                        resolved_points=[],
+                        open_points=[],
+                    ),
+                }
+            )
+        link = {
+            "activity_id": str(problem.id),
+            "submission_id": str(row.id),
+            "support": evidence_support(db, row, payload.learning_observation),
+            "basis": "prior_work"
+            if reassurance and prior
+            else "discussion"
+            if payload.learning_observation.assessment == "not_assessed"
+            else "current_work",
+            **source_identity(problem.passage),
+        }
+        if prior:
+            link["prior_submission_id"] = str(prior[0].id)
         message = "\n\n".join(
             [*payload.strengths, *payload.guidance, payload.next_step]
             + ([payload.uncertainty_note] if payload.uncertainty_note else [])
@@ -699,18 +795,21 @@ def finish_model(
                 message=message,
                 source=source,
                 assistance_level=min(3, max(1, row.help_level)),
-                prompt_version="guidance-v3",
+                prompt_version="guidance-v4",
                 feedback={
                     **payload.model_dump(),
-                    "evidence_link": {
-                        "activity_id": str(problem.id),
-                        "submission_id": str(row.id),
-                        "support": evidence_support(db, row, payload.learning_observation),
-                    },
+                    "evidence_link": link,
+                    **(
+                        {"provider_learning_observation": provider_observation}
+                        if provider_observation
+                        else {}
+                    ),
                 },
             )
         )
         problem.assistance_level = max(problem.assistance_level, min(3, max(1, row.help_level)))
+        if row.kind == "hint" or row.help_level > 0 or payload.teaching_action != "acknowledge":
+            problem.parameters = {**problem.parameters, "tutor_help_received": True}
     row.status, job.state = "completed", "completed"
     problem.version += 1
     session = db.get(PracticeSession, problem.session_id)

@@ -106,6 +106,18 @@ class PracticeSession(Base):
     )
 
 
+class CancelledTutorRequest(Base):
+    """Owned opaque request tombstone; blocks acceptance after explicit recovery."""
+
+    __tablename__ = "cancelled_tutor_request"
+
+    learner_id: Mapped[uuid.UUID] = mapped_column(
+        UUIDType, ForeignKey("learner.id", ondelete="CASCADE"), primary_key=True
+    )
+    request_key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False, default=utcnow)
+
+
 class ProblemInstance(Base):
     """One assigned problem.
 

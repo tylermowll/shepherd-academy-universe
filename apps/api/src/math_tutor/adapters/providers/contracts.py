@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from math_tutor.adapters.images import NORMALIZED_IMAGE_MIME_TYPE
 from math_tutor.reading import OriginalPassage
+from math_tutor.teaching import answer_disclosing_criterion, required_follow_up
 
 # Context sizes cross the JSON API and are persisted in SQLite JSON. A signed
 # 32-bit ceiling is exact in browser numbers, comfortably inside SQLite's signed
@@ -16,6 +17,10 @@ from math_tutor.reading import OriginalPassage
 MAX_CONFIGURED_CONTEXT_LIMIT = 2_147_483_647
 DEFAULT_TUTOR_OUTPUT_LIMIT = 16384
 MAX_OUTPUT_TOKENS = 131072
+# A 50k-character passage can expand sixfold when JSON escapes control characters.
+# This envelope accommodates that source and current work. Actual model context
+# is independently enforced against the complete UTF-8 request, without clipping.
+MAX_TUTOR_MESSAGE_LENGTH = 400000
 DEFAULT_PROVIDER_ERROR_MESSAGE = "Provider could not complete this operation. Your work is saved."
 ReasoningEffort = Literal["default", "minimal", "low", "medium", "high", "xhigh"]
 
@@ -39,7 +44,7 @@ class Capabilities(BaseModel):
 class Message(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     role: Literal["user", "assistant"]
-    content: str = Field(max_length=32000)
+    content: str = Field(max_length=MAX_TUTOR_MESSAGE_LENGTH)
 
 
 class TutorPayload(BaseModel):
@@ -68,6 +73,16 @@ class ActivityPayload(BaseModel):
         min_length=1, max_length=3
     )
     passage: OriginalPassage | None = None
+
+    @model_validator(mode="after")
+    def criteria_do_not_supply_a_scalar_answer(self) -> Self:
+        if any(
+            answer_disclosing_criterion(self.problem_text, item) for item in self.success_criteria
+        ):
+            raise ValueError(
+                "Success criteria must not disclose an answer absent from the question."
+            )
+        return self
 
 
 class ReadingPayload(BaseModel):
@@ -123,6 +138,10 @@ class FeedbackPayload(FeedbackContent):
             self.teaching_action != "acknowledge"
             or self.next_step.strip()
             or self.learning_observation.open_points
+            or any(
+                required_follow_up(item)
+                for item in [*self.strengths, *self.guidance, self.uncertainty_note or ""]
+            )
         ):
             raise ValueError("Sufficient work must be acknowledged without a required next step.")
         return self

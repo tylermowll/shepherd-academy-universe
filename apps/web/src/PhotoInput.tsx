@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { ApiError, imageRequest, newKey } from "./client";
 import { BusyStatus } from "./BusyStatus";
+import {
+  forgetRequest,
+  rememberRequest,
+  type PendingRequestIdentity,
+} from "./request-recovery";
 
 type Props = {
   problem: string;
@@ -13,6 +18,7 @@ type Props = {
   companionToken?: string;
   reference?: boolean;
   expanded?: boolean;
+  learner?: string;
 };
 type PendingPhoto = {
   path: string;
@@ -31,6 +37,7 @@ export function PhotoInput({
   companionToken,
   reference = false,
   expanded = false,
+  learner,
 }: Props) {
   const [blob, setBlob] = useState<Blob | null>(null);
   const [url, setUrl] = useState("");
@@ -97,6 +104,10 @@ export function PhotoInput({
     );
   }
   async function sendPhoto(request: PendingPhoto) {
+    const identity: PendingRequestIdentity | null =
+      learner && !companionToken
+        ? { key: request.key, kind: "submission", owner: learner }
+        : null;
     setWorking(true);
     try {
       try {
@@ -115,10 +126,12 @@ export function PhotoInput({
         ) {
           setPending(null);
           onPendingChange(false);
+          if (identity) forgetRequest(identity);
         } else request.ambiguous = true;
         throw cause;
       }
       setPending(null);
+      if (identity) forgetRequest(identity);
       onPendingChange(false);
       setBlob(null);
       setUrl("");
@@ -249,6 +262,7 @@ export function PhotoInput({
                   setWorking(true);
                   onPendingChange(true);
                   let request: PendingPhoto | undefined;
+                  let started = false;
                   try {
                     request = {
                       path: companionToken
@@ -259,10 +273,17 @@ export function PhotoInput({
                       ambiguous: false,
                     };
                     if (!mounted.current) return;
+                    if (learner && !companionToken)
+                      rememberRequest({
+                        key: request.key,
+                        kind: "submission",
+                        owner: learner,
+                      });
                     setPending(request);
+                    started = true;
                     await sendPhoto(request);
                   } finally {
-                    if (!request) onPendingChange(false);
+                    if (!started) onPendingChange(false);
                     uploading.current = false;
                     setWorking(false);
                   }

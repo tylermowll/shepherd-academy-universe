@@ -45,12 +45,15 @@ def test_guided_evidence_keeps_current_source_and_excludes_future() -> None:
     content = evidence(passage, params)
     assert focus.text == passage.text[focus.start : focus.end] == paragraphs[4]
     assert "SOURCE_SECTION_2" in content and "SOURCE_SECTION_4" in content
-    assert "SOURCE_SECTION_0" not in content and "SOURCE_SECTION_5" not in content
-    assert "Earlier sections before the context below are not included" in content
+    assert "SOURCE_SECTION_0" in content and "SOURCE_SECTION_5" not in content
+    assert "SOURCE_SECTION_1" not in content
+    assert "may omit intervening sections" in content
     assert "Later sections are unread and excluded" in content
     source = json.loads(content.split("\n", 1)[1].split("\nEND READING PASSAGE")[0])
     assert source["selected_section"]["text"] == paragraphs[4]
     assert len(source["previous_sections"]) == 2
+    assert source["opening_context"]["text"] == paragraphs[0]
+    assert source["opening_context"]["is_excerpt"] is False
 
 
 def test_guided_history_rejects_future_whole_and_other_material() -> None:
@@ -63,7 +66,38 @@ def test_guided_history_rejects_future_whole_and_other_material() -> None:
     assert not history_allowed(saved, params, saved, {"material_mode": "whole"})
     assert not history_allowed(saved, params, None, {})
     assert not history_allowed(saved, params, {**saved, "title": "Other material"}, params)
-    assert history_allowed(saved, {"material_mode": "whole"}, None, {})
+    assert not history_allowed(saved, {"material_mode": "whole"}, None, {})
+    assert not history_allowed(
+        saved, {"material_mode": "whole"}, {**saved, "text": "Another source"}, {}
+    )
+    assert history_allowed(saved, {"material_mode": "whole"}, saved, {})
+
+
+def test_later_long_sections_keep_a_bounded_opening_premise_without_future_text() -> None:
+    source = ReadingPassage(
+        title="Original causal story",
+        origin="pasted",
+        text=(
+            "EARLY_CAUSE: Nia promised to return the borrowed boat. "
+            + "Opening context. " * 250
+            + "\n\n"
+            + "Middle context. " * 1500
+            + "\n\nFUTURE_ENDING: the promise was broken."
+        ),
+    )
+    params = {"material_mode": "guided", "section_size": "long", "section_index": 4}
+    content = evidence(source, params)
+    assert "EARLY_CAUSE" in content and "FUTURE_ENDING" not in content
+    saved = json.loads(content.split("\n", 1)[1].split("\nEND READING PASSAGE")[0])
+    opening = saved["opening_context"]
+    assert opening["text"] == source.text[opening["start"] : opening["end"]]
+    assert opening["is_excerpt"] is True
+    assert (
+        sum(len(item["text"]) for item in saved["previous_sections"])
+        + len(opening["text"])
+        + len(saved["selected_section"]["text"])
+        <= 5000
+    )
 
 
 def test_unscoped_photo_uncertainties_do_not_disclose_unread_material() -> None:

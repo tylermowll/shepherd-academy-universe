@@ -51,6 +51,100 @@ specification gates pass.
 | T41 | Implemented; automated gates passed; live/device acceptance pending | Tutor and provider saves recover without duplicate work, account/setup transitions are explicit, conversation space is usable on desktop/mobile, Docker host-model routing is consistent, and dependency audits pass. |
 | T42 | Implemented, reviewed, pushed and deployed locally; live/device acceptance pending | Persisted reading passages and grounded practice; 72 browser checks, fixed dependency/runtime findings, clean image scan and retained-data migration; evidence below. |
 | T43 | Implemented, reviewed and deployed locally; live/device acceptance pending | Shared teaching criteria and evidence, 50k material and guided progression; 255 unit, 180 component, 310 integration and 74 browser checks, plus bounded Muse samples below. |
+| T44 | Implemented; automated gates passed; live/device acceptance pending | Adversarial source/Unicode/request recovery and teaching-evidence hardening; 291 unit, 188 component, 340 integration and 80 browser checks, staged mock rehearsal, runtime refresh and clean image scan; evidence below. |
+
+### T44 — Adversarial review hardening (2026-10-08)
+
+Authorized by the maintainer to close the T43 review gaps, refresh stale tooling
+and push validated changes to `main`. Scope is the T44 specification contract.
+
+Contracts and implementation:
+
+- Reading source and selected quotations render as literal React text, preserving
+  currency, markup-looking punctuation and whitespace without executing markup.
+  Unicode codepoint limits agree with the API. Oversized drafts remain visible
+  with a validation error; accepted text/work payloads fit the encoded body limit.
+  Whole-material requests use configured context limits rather than the unrelated
+  32,000-character cap. Tests cover CJK and escaped astral input.
+- New owned request-receipt and resolution endpoints recover session, activity,
+  text and ordinary photo requests after a lost acknowledgment and reload.
+  Migration 0020 adds cancellation tombstones: resolution serializes with
+  acceptance and photo decoding rechecks cancellation and ownership before save.
+  Browser session storage holds only request/learner UUIDs and request kind;
+  reload never replays draft text or photographs. Pending work/drafts defer app
+  updates; browser unload warns and successful sign-out clears private UI.
+- Conservative teaching guards reject the reproduced unchanged homework
+  equations, scalar answer criteria and compulsory extra work after sufficient
+  feedback. Positive regressions preserve distinct formula/constant-based physics
+  practice, qualified criteria and acknowledgments of already completed work.
+  These rules are bounded recognizers, not semantic grading or universal guards.
+- Reassurance-only messages do not create fresh demonstrations. Assistance and
+  source links are server-owned, assistance survives the history window, and v3
+  observations remain in History but cannot shape v4 adaptation. Guided context
+  adds a bounded opening excerpt and recent preceding sections, explicitly marks
+  omissions, and excludes future/other-source discussion in prompts and memory.
+  Prompts accept concise supported alternatives and qualified causal inference.
+- The adversarial fixture adds four scripted conversations/20 stages with wrong
+  work, explanation, assisted revision, supported alternatives, guided navigation,
+  hostile text, and answers to distinct fixture-authored transfer activities.
+  Audience checks run before live evaluation calls; a failed generation prevents
+  review of an activity that was never generated. Historical Muse reports are
+  unchanged. Mock completion and scripted transfer are not teaching-quality proof.
+- Verified pins now use Node 24.21.0 LTS, Python 3.14.8, pnpm 12.10.1 and
+  uv/uv_build 0.12.23 across development, CI and Docker. Vitest 5.0.3 fails strict
+  declaration compatibility with jest-dom 7.0.1, so the tested 4.1.11 pin remains.
+  TypeScript and SQLite exceptions remain documented in DEPENDENCIES/D001.
+
+Validation uses synthetic temporary databases and public source only. Commands
+used the checksum-verified Node/pnpm tools under `/tmp/shepherd-t44-toolchain`,
+`UV_NO_ENV_FILE=1` and a `/tmp` uv cache. Sandbox-limited ASGI checks ran with
+approved execution permissions; no private settings or learner data were opened.
+
+- `make check test-integration`: passed lint/format, strict Python/TypeScript,
+  builds, generated-contract drift, tracked secret scan and IaC checks;
+  **291 backend unit, 188 component and 340 integration tests passed**. The
+  integration suite reports one upstream Starlette/AnyIO deprecation warning.
+- `make hooks-check secret-check`: passed all repository hooks and the scan,
+  including the newly staged source, synthetic fixtures and generated reports.
+- `docker build -f infra/docker/Dockerfile -t math-practice-tutor:t44-review .`
+  and `sh scripts/container-smoke.sh math-practice-tutor:t44-review`: passed on
+  final image `sha256:b74181ecf6f231394b7544ee6989fa81c322aad03ad9b290a2ffd8854118ba0d`.
+  Temporary volumes/containers were removed. Migration head, non-root API/worker,
+  owner setup, HEIF/cryptography and installer-free runtime checks passed.
+- Trivy 0.75.0 on `docker save` output, with `--scanners vuln --severity
+  HIGH,CRITICAL --exit-code 1` and no unfixed suppression: passed with zero
+  HIGH/CRITICAL findings. A CycloneDX SBOM was generated locally. Compose
+  configuration validated from a `/tmp` copy using synthetic environment values;
+  no Compose service or private installation was changed.
+
+- `PLAYWRIGHT_BROWSERS_PATH=/tmp/shepherd-t44-playwright make smoke eval-mock
+  audit`: passed **80 desktop/mobile Chromium browser tests**, the deterministic
+  suite, **12 reading cases/36 mock stages**, **12 teaching cases/36 mock stages**
+  and **four adversarial conversations/20 mock stages**. All three reading/teaching
+  reports pass contracts with human quality judgments explicitly pending. Python
+  and pnpm audits found no known vulnerabilities. The browser run preceded the
+  final teaching-guard refinements, which received the full source/integration
+  gates above; frontend code stayed frozen throughout the browser run.
+- `git diff --check` and `git diff --cached --check`: passed. Independent read-only
+  review rechecked teaching guard acceptance/rejection and owned receipt races;
+  four additional `/tmp` component probes kept malformed, mismatched-kind and
+  cross-owner receipts blocked without displaying another learner's work.
+
+Verification corrected environment failures rather than relaxing gates: the
+temporary pnpm launcher needed its reviewed native installer for Python subprocess
+execution, and smoke initially failed before any application assertions because
+the locked Playwright Chromium revision was absent. The locked browser was
+installed under `/tmp`. Initial formatting and a same-named pytest module were
+corrected. Independent review also found and corrected overly broad formula,
+constant, quoted-descriptor and completed-requirement guards before final tests.
+
+Remaining release boundary: actual installed-provider teaching, real learner
+transfer, physical-phone/accessibility and future-section leakage from model
+prior knowledge remain unverified. Codepoint sectioning can split pathological
+combining/ZWJ clusters without losing source characters. Closing a tab loses the
+receipt marker; the phone companion retains its separate token-based workflow.
+The maintainer must test/select the actual tutor route before a supervised trial;
+this increment performs no live inference, provider changes or deployment.
 
 ### T43 — Shared teaching and material progression (2026-10-08)
 

@@ -34,6 +34,7 @@ from math_tutor.api.profiles import ProfileSettings
 from math_tutor.api.schemas import ProblemInstancePublic
 from math_tutor.domain.math import SKILLS, Verdict, generate, help_text, verify
 from math_tutor.reading import ActivitySource, MaterialFocus, ReadingPassage, material_focus
+from math_tutor.request_recovery import require_uncancelled
 
 router = APIRouter(prefix="/api/v1", tags=["practice"])
 ACTIVE = {"queued", "checking", "tutoring", "interpreting", "awaiting_confirmation"}
@@ -462,6 +463,8 @@ def submit(
     problem = owned_problem(db, actor, problem_id)
     session = owned_session(db, actor, problem.session_id)
     key, payload = request_key(request), digest({"problem_id": problem_id, **body.model_dump()})
+    if session.mode == "ai_tutor":
+        require_uncancelled(db, session.learner_id, key)
     old = db.scalar(
         select(Submission).where(
             Submission.learner_id == session.learner_id, Submission.request_key == key

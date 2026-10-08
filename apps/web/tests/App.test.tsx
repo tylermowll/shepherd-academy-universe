@@ -118,6 +118,70 @@ describe("entry and offline practice", () => {
   });
 });
 
+it("protects an actual learner draft from accidental tab reload and clears the guard after the draft is cleared", async () => {
+  const learner = "911c9abc-4e8e-424d-a914-4338187ba00a";
+  const sessionId = "911c9abc-4e8e-424d-a914-4338187ba00b";
+  window.location.hash = `tutor=${sessionId}`;
+  const saved = {
+    id: sessionId,
+    learner_id: learner,
+    topic: "Synthetic reading",
+    initiative: "balanced",
+    difficulty: "standard",
+    status: "open",
+    problems: [
+      {
+        id: "911c9abc-4e8e-424d-a914-4338187ba00c",
+        status: "assigned",
+        version: 1,
+        activity_state: "ready",
+        problem_text: "Explain the source.",
+        reference_source: "topic",
+        operations: [],
+      },
+    ],
+  };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string) =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify(
+            url.endsWith("/auth/session")
+              ? {
+                  authenticated: true,
+                  role: "learner",
+                  learner_id: learner,
+                  csrf_token: "synthetic-csrf",
+                }
+              : url.endsWith("/features")
+                ? {
+                    tutoring_available: true,
+                    photos_available: false,
+                    text_processing: "mock",
+                  }
+                : url.endsWith(sessionId)
+                  ? saved
+                  : [saved],
+          ),
+        ),
+      ),
+    ),
+  );
+  render(<App />);
+  const reply = await screen.findByLabelText("Your work or question");
+  fireEvent.change(reply, {
+    target: { value: "Keep my synthetic observation." },
+  });
+  const guarded = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(guarded);
+  expect(guarded.defaultPrevented).toBe(true);
+  fireEvent.change(reply, { target: { value: "" } });
+  const cleared = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(cleared);
+  expect(cleared.defaultPrevented).toBe(false);
+});
+
 it("keeps a newly created learner when an older list request finishes late", async () => {
   const row = {
     id: "4a15f6fc-8866-468e-801c-1faedc9ae88b",

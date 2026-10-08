@@ -10,6 +10,13 @@ import { TutorConversation } from "./TutorConversation";
 import { ReadingPassage } from "./ReadingPassage";
 import { ReadingSources } from "./ReadingSources";
 import { ActivityPurpose } from "./ActivityPurpose";
+import { characterCount } from "./text-limits";
+import {
+  forgetRequest,
+  readRememberedRequest,
+  rememberRequest,
+  type PendingRequestIdentity,
+} from "./request-recovery";
 import {
   MaterialNavigation,
   MaterialOptions,
@@ -113,6 +120,11 @@ export function Tutor({
   const [text, setText] = useState("");
   const [working, setWorking] = useState(false);
   const [pending, setPending] = useState<Command | null>(null);
+  const [recovery, setRecovery] = useState(() =>
+    readRememberedRequest(learner),
+  );
+  const [recovering, setRecovering] = useState(false);
+  const [recoveryNotice, setRecoveryNotice] = useState("");
   const [photoPending, setPhotoPending] = useState(false);
   const [photoDraft, setPhotoDraft] = useState(false);
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
@@ -126,7 +138,8 @@ export function Tutor({
   const loadSequence = useRef(0);
   const polling = useRef(false);
   const selectingSession = useRef(0);
-  const blocked = working || pending !== null || photoPending;
+  const blocked =
+    working || pending !== null || photoPending || recovery !== null;
 
   const commitSession = useCallback(
     (loaded: Schema<"TutoringSessionPublic">) => {
@@ -191,6 +204,71 @@ export function Tutor({
     [load],
   );
 
+  const openRecoveredRequest = useCallback(
+    async (receipt: Schema<"TutorRequestReceiptPublic">) => {
+      if (!recovery || receipt.kind !== recovery.kind)
+        throw new Error(
+          "The interrupted request could not be matched. Check its saved receipt again.",
+        );
+      await load(receipt.session_id);
+      if (!mounted.current || selectedSession.current !== receipt.session_id)
+        return;
+      forgetRequest(recovery);
+      setRecovery(null);
+      setNewSession(false);
+      setRecoveryNotice(
+        "Your interrupted request was saved. Its session is open below; it has not been sent again.",
+      );
+    },
+    [load, recovery],
+  );
+
+  const recoverSavedRequest = useCallback(async () => {
+    if (!recovery) return;
+    setRecovering(true);
+    try {
+      const receipt = await api<Schema<"TutorRequestReceiptPublic">>(
+        `/tutor/request-receipts/${recovery.key}?learner_id=${learner}`,
+      );
+      if (mounted.current) await openRecoveredRequest(receipt);
+    } catch (cause) {
+      if (mounted.current) {
+        setRecoveryNotice(
+          cause instanceof ApiError && cause.status === 404
+            ? "The interrupted request has no saved receipt yet. Recheck it, or resolve it safely before starting another request. This browser kept only its identity; unsent text and photographs are not stored."
+            : "Your interrupted request could not be checked. Reconnect and check its saved receipt before continuing.",
+        );
+      }
+      if (!(cause instanceof ApiError && cause.status === 404)) throw cause;
+    } finally {
+      if (mounted.current) setRecovering(false);
+    }
+  }, [learner, openRecoveredRequest, recovery]);
+
+  const resolveSavedRequest = async () => {
+    if (!recovery) return;
+    setRecovering(true);
+    try {
+      const result = await api<Schema<"TutorRequestResolutionPublic">>(
+        `/tutor/request-receipts/${recovery.key}/resolve`,
+        "POST",
+        { learner_id: learner },
+      );
+      if (!mounted.current) return;
+      if (result.status === "accepted" && result.receipt)
+        await openRecoveredRequest(result.receipt);
+      else if (result.status === "not_accepted") {
+        forgetRequest(recovery);
+        setRecovery(null);
+        setRecoveryNotice(
+          "The interrupted request was not saved and cannot arrive later. Re-enter any lost text or photograph when you are ready.",
+        );
+      }
+    } finally {
+      if (mounted.current) setRecovering(false);
+    }
+  };
+
   useEffect(() => {
     mounted.current = true;
     const id = new URLSearchParams(window.location.hash.slice(1)).get("tutor");
@@ -203,8 +281,20 @@ export function Tutor({
 
   useEffect(() => {
     if (pageActive && !offline && selectingSession.current === 0)
-      void act(() => load(selectedSession.current || undefined));
-  }, [act, load, offline, page, pageActive, settingsVersion]);
+      void act(async () => {
+        await load(selectedSession.current || undefined);
+        if (recovery) await recoverSavedRequest();
+      });
+  }, [
+    act,
+    load,
+    offline,
+    page,
+    pageActive,
+    settingsVersion,
+    recovery,
+    recoverSavedRequest,
+  ]);
 
   const sessionId = session?.id;
   useEffect(() => {
@@ -258,6 +348,17 @@ export function Tutor({
     active ||
     offline ||
     Boolean(session && session.status !== "open");
+  const topicOverflow = characterCount(topic) > 500;
+  const titleOverflow = characterCount(passageTitle) > 200;
+  const referenceLength = characterCount(reference);
+  const referenceLimit = source === "reading_text" ? 50000 : 8000;
+  const referenceOverflow =
+    ["reading_text", "reference_text"].includes(source) &&
+    referenceLength > referenceLimit;
+  const materialOverflow =
+    referenceOverflow ||
+    (["reading_text", "reading_photo"].includes(source) && titleOverflow);
+  const responseLength = characterCount(text);
   const hasResponseDraft = Boolean(
     text.trim() ||
     ((source === "reference_text" || source === "reading_text") &&
@@ -326,6 +427,12 @@ export function Tutor({
   );
 
   const sendCommand = async (request: Command) => {
+    const identity: PendingRequestIdentity | null =
+      request.kind === "session" ||
+      request.kind === "activity" ||
+      request.kind === "submission"
+        ? { key: request.key, kind: request.kind, owner: learner }
+        : null;
     setWorking(true);
     try {
       let created: Schema<"TutoringSessionPublic"> | undefined;
@@ -348,10 +455,12 @@ export function Tutor({
         ) {
           pendingCommand.current = null;
           setPending(null);
+          if (identity) forgetRequest(identity);
         } else request.ambiguous = true;
         throw cause;
       }
       pendingCommand.current = null;
+      if (identity) forgetRequest(identity);
       if (!mounted.current) return;
       setPending(null);
       if (
@@ -411,7 +520,7 @@ export function Tutor({
     path: string,
     body: unknown,
   ) => {
-    if (pendingCommand.current || photoPending) return;
+    if (pendingCommand.current || photoPending || recovery) return;
     const request: Command = {
       kind,
       path,
@@ -420,6 +529,9 @@ export function Tutor({
       sessionId: selectedSession.current,
       ambiguous: false,
     };
+    if (kind === "session" || kind === "activity" || kind === "submission")
+      rememberRequest({ key: request.key, kind, owner: learner });
+    setRecoveryNotice("");
     pendingCommand.current = request;
     setPending(request);
     await sendCommand(request);
@@ -455,7 +567,7 @@ export function Tutor({
     await command("activity", `/tutor/sessions/${session.id}/activities`, body);
   };
   const submit = async (kind: "answer" | "question" | "hint", level = 0) => {
-    if (!problem) return;
+    if (!problem || (kind !== "hint" && responseLength > 8000)) return;
     await command("submission", `/problems/${problem.id}/submissions`, {
       version: problem.version,
       kind,
@@ -576,10 +688,15 @@ export function Tutor({
           Passage title (optional)
           <input
             value={passageTitle}
-            maxLength={200}
+            aria-invalid={titleOverflow || undefined}
             disabled={blocked || active}
             onChange={(event) => setPassageTitle(event.target.value)}
           />
+          {titleOverflow && (
+            <span role="status">
+              Keep the passage title to 200 characters. Your text is still here.
+            </span>
+          )}
         </label>
       )}
       {source === "reading_generated" && (
@@ -607,15 +724,22 @@ export function Tutor({
               value={reference}
               onChange={(event) => setReference(event.target.value)}
               required
-              maxLength={source === "reading_text" ? 50000 : 8000}
+              aria-invalid={referenceOverflow || undefined}
               rows={6}
               disabled={blocked || active}
             />
           </label>
           <p className="fine">
-            {reference.length.toLocaleString()} /{" "}
+            {referenceLength.toLocaleString()} /{" "}
             {source === "reading_text" ? "50,000" : "8,000"} characters
           </p>
+          {referenceOverflow && (
+            <p role="status" className="notice">
+              This material exceeds {referenceLimit.toLocaleString()}{" "}
+              characters. Your full text is still here. Shorten it before
+              sending.
+            </p>
+          )}
         </>
       )}
       {(source === "reference_photo" || source === "reading_photo") && (
@@ -646,6 +770,7 @@ export function Tutor({
             className="primary"
             disabled={
               disabled ||
+              materialOverflow ||
               Boolean(text.trim() || photoDraft) ||
               ((source === "reference_text" || source === "reading_text") &&
                 !reference.trim()) ||
@@ -852,11 +977,16 @@ export function Tutor({
               <input
                 value={topic}
                 onChange={(event) => setTopic(event.target.value)}
-                maxLength={500}
+                aria-invalid={topicOverflow || undefined}
                 required
                 disabled={blocked}
                 placeholder="e.g. photosynthesis, persuasive writing, or a book passage"
               />
+              {topicOverflow && (
+                <span role="status">
+                  Keep the topic to 500 characters. Your text is still here.
+                </span>
+              )}
             </label>
             <ContextHelp topic="What can I practice?">
               <p>
@@ -910,6 +1040,8 @@ export function Tutor({
                   blocked ||
                   offline ||
                   !topic.trim() ||
+                  topicOverflow ||
+                  materialOverflow ||
                   !features?.tutoring_available ||
                   ((source === "reference_text" || source === "reading_text") &&
                     !reference.trim()) ||
@@ -934,6 +1066,30 @@ export function Tutor({
           </form>
         )}
         {working && <BusyStatus message="Saving your request…" />}
+        {(recovery || recoveryNotice) && (
+          <div role="status" className="notice">
+            <p>
+              {recoveryNotice ||
+                "Checking the saved receipt for your interrupted request…"}
+            </p>
+            {recovery && (
+              <div className="actions">
+                <button
+                  disabled={offline || recovering}
+                  onClick={() => void act(recoverSavedRequest)}
+                >
+                  Check saved request
+                </button>
+                <button
+                  disabled={offline || recovering}
+                  onClick={() => void act(resolveSavedRequest)}
+                >
+                  Resolve interrupted request
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         {pending && !working && (
           <div role="status" className="notice">
             <p>
@@ -1083,12 +1239,20 @@ export function Tutor({
                           ref={composer}
                           value={text}
                           onChange={(event) => setText(event.target.value)}
-                          maxLength={8000}
+                          aria-invalid={responseLength > 8000 || undefined}
                           rows={2}
                           readOnly={disabled}
                           placeholder="Share your thinking, ask a question, or discuss a photo…"
                         />
                       </label>
+                      {responseLength > 8000 && (
+                        <p role="status" className="notice">
+                          Your response contains{" "}
+                          {responseLength.toLocaleString()} characters. Your
+                          full text is still here. Shorten it to 8,000
+                          characters before sending.
+                        </p>
+                      )}
                       <div className="composer-actions">
                         <button
                           type="button"
@@ -1185,7 +1349,9 @@ export function Tutor({
                         </ComposerMenu>
                         <button
                           className="primary send-message"
-                          disabled={disabled || !text.trim()}
+                          disabled={
+                            disabled || !text.trim() || responseLength > 8000
+                          }
                         >
                           Send
                         </button>
@@ -1216,6 +1382,7 @@ export function Tutor({
                           />
                           <PhotoInput
                             expanded
+                            learner={learner}
                             key={problem.id}
                             problem={problem.id}
                             version={problem.version}
@@ -1223,6 +1390,7 @@ export function Tutor({
                               active ||
                               working ||
                               pending !== null ||
+                              recovery !== null ||
                               offline ||
                               !features?.photos_available ||
                               session.status !== "open"

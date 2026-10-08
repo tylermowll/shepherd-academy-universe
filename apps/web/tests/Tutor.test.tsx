@@ -1625,17 +1625,42 @@ it("allows long science material while retaining the assignment-reference limit"
   fireEvent.change(screen.getByLabelText("Practice source"), {
     target: { value: "reference_text" },
   });
-  expect(screen.getByLabelText("Reference material")).toHaveAttribute(
+  expect(screen.getByLabelText("Reference material")).not.toHaveAttribute(
     "maxlength",
-    "8000",
   );
+  const oversizedReference = "A".repeat(8001);
+  fireEvent.change(screen.getByLabelText("Reference material"), {
+    target: { value: oversizedReference },
+  });
+  expect(screen.getByLabelText("Reference material")).toHaveValue(
+    oversizedReference,
+  );
+  expect(
+    screen.getByText(/This material exceeds 8,000 characters/),
+  ).toBeVisible();
+  expect(screen.getByRole("button", { name: "Start session" })).toBeDisabled();
   fireEvent.change(screen.getByLabelText("Practice source"), {
     target: { value: "reading_text" },
   });
-  expect(screen.getByLabelText("Reading passage")).toHaveAttribute(
+  expect(screen.getByLabelText("Reading passage")).not.toHaveAttribute(
     "maxlength",
-    "50000",
   );
+  const unicodeMaterial = "🌱".repeat(30000);
+  fireEvent.change(screen.getByLabelText("Reading passage"), {
+    target: { value: unicodeMaterial },
+  });
+  expect(screen.getByLabelText("Reading passage")).toHaveValue(unicodeMaterial);
+  expect(screen.getByText("30,000 / 50,000 characters")).toBeVisible();
+  const oversizedMaterial = "🌱".repeat(50001);
+  fireEvent.change(screen.getByLabelText("Reading passage"), {
+    target: { value: oversizedMaterial },
+  });
+  expect(screen.getByLabelText("Reading passage")).toHaveValue(
+    oversizedMaterial,
+  );
+  expect(
+    screen.getByText(/This material exceeds 50,000 characters/),
+  ).toBeVisible();
   fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
     target: { value: "Science: understand energy transfer" },
   });
@@ -1713,4 +1738,155 @@ it("clearly labels a selected mock tutor in private installations", async () => 
   );
   fireEvent.click(screen.getByRole("button", { name: "Open model settings" }));
   expect(navigate).toHaveBeenCalledWith("settings");
+});
+
+it("recovers an accepted session after a lost receipt and reload without storing or replaying its text", async () => {
+  let accepted = false;
+  let requestKey = "";
+  let starts = 0;
+  let storedIdentity: unknown;
+  const saved = session([studyActivity()]);
+  const fetcher = vi.fn((url: string, options: RequestInit) => {
+    if (url.endsWith("/features")) return response(capabilities);
+    if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(saved);
+    if (url.includes("/tutor/request-receipts/"))
+      return response({
+        kind: "session",
+        session_id: sessionId,
+        activity_id: problemId,
+        submission_id: null,
+      });
+    if (url.endsWith("/tutor/sessions")) {
+      if (options.method !== "POST") return response(accepted ? [saved] : []);
+      starts += 1;
+      requestKey = (options.headers as Record<string, string>)[
+        "Idempotency-Key"
+      ]!;
+      storedIdentity = JSON.parse(
+        window.sessionStorage.getItem(`shepherd:tutor-request:${learner}`)!,
+      );
+      accepted = true;
+      return Promise.reject(new TypeError("Synthetic lost accepted receipt"));
+    }
+    throw new Error(url);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const act = async (action: () => Promise<void>) => {
+    try {
+      await action();
+    } catch {
+      /* Displayed by App. */
+    }
+  };
+  let view = render(<Tutor learner={learner} offline={false} act={act} />);
+  fireEvent.change(await screen.findByLabelText("Topic or learning goal"), {
+    target: { value: "Private synthetic topic must remain in memory only" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Start session" }));
+  await screen.findByRole("button", { name: "Retry saved request" });
+  expect(storedIdentity).toEqual({
+    key: requestKey,
+    kind: "session",
+    owner: learner,
+  });
+  expect(window.location.hash).toBe("");
+  view.unmount();
+  view = render(<Tutor learner={learner} offline={false} act={act} />);
+  await screen.findByText(/Your interrupted request was saved/);
+  expect(
+    await screen.findByLabelText("Your work or question"),
+  ).not.toHaveAttribute("readonly");
+  expect(starts).toBe(1);
+  expect(window.location.hash).toBe(`#tutor=${sessionId}`);
+  expect(
+    window.sessionStorage.getItem(`shepherd:tutor-request:${learner}`),
+  ).toBeNull();
+  expect(
+    fetcher.mock.calls.some(([url]) => url.endsWith(`?learner_id=${learner}`)),
+  ).toBe(true);
+  view.unmount();
+});
+
+it("keeps an unaccepted request blocked until server resolution prevents a late duplicate", async () => {
+  const key = "911c9abc-4e8e-424d-a914-4338187ba009";
+  window.sessionStorage.setItem(
+    `shepherd:tutor-request:${learner}`,
+    JSON.stringify({ key, kind: "session", owner: learner }),
+  );
+  let resolutions = 0;
+  const fetcher = vi.fn((url: string, options: RequestInit) => {
+    if (url.endsWith("/features")) return response(capabilities);
+    if (url.endsWith("/tutor/sessions")) return response([]);
+    if (url.endsWith("/resolve")) {
+      resolutions += 1;
+      expect(JSON.parse(options.body as string)).toEqual({
+        learner_id: learner,
+      });
+      return response({ status: "not_accepted", receipt: null });
+    }
+    if (url.includes("/tutor/request-receipts/"))
+      return response({ detail: "No saved receipt." }, 404);
+    throw new Error(url);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  await screen.findByText(/The interrupted request has no saved receipt yet/);
+  expect(screen.getByLabelText("Topic or learning goal")).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Start session" })).toBeDisabled();
+  expect(
+    window.sessionStorage.getItem(`shepherd:tutor-request:${learner}`),
+  ).not.toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Check saved request" }));
+  await vi.waitFor(() =>
+    expect(
+      fetcher.mock.calls.filter(([url]) => url.includes("?learner_id=")).length,
+    ).toBe(2),
+  );
+  expect(screen.getByRole("button", { name: "Start session" })).toBeDisabled();
+  await vi.waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Resolve interrupted request" }),
+    ).toBeEnabled(),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Resolve interrupted request" }),
+  );
+  await screen.findByText(/was not saved and cannot arrive later/);
+  expect(resolutions).toBe(1);
+  expect(screen.getByLabelText("Topic or learning goal")).toBeEnabled();
+  expect(
+    window.sessionStorage.getItem(`shepherd:tutor-request:${learner}`),
+  ).toBeNull();
+  expect(
+    fetcher.mock.calls.filter(([, options]) => options.method === "POST"),
+  ).toHaveLength(1);
+});
+
+it("retains an oversized response without submitting it and permits a valid Unicode response", async () => {
+  const fetcher = installSession(session([studyActivity()]));
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  const reply = await screen.findByLabelText("Your work or question");
+  const oversized = "🌱".repeat(8001);
+  fireEvent.change(reply, { target: { value: oversized } });
+  expect(reply).toHaveValue(oversized);
+  expect(
+    screen.getByText(/Your response contains 8,001 characters/),
+  ).toBeVisible();
+  expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
+  expect(
+    fetcher.mock.calls.some(([, options]) => options.method === "POST"),
+  ).toBe(false);
+  const valid = "🌱".repeat(6000);
+  fireEvent.change(reply, { target: { value: valid } });
+  expect(screen.getByRole("button", { name: "Send" })).toBeEnabled();
+  fireEvent.click(screen.getByRole("button", { name: "Send" }));
+  await vi.waitFor(() => {
+    const request = fetcher.mock.calls.find(([url]) =>
+      url.endsWith("/submissions"),
+    );
+    expect(
+      (JSON.parse(request![1].body as string) as Schema<"SubmissionInput">)
+        .text,
+    ).toBe(valid);
+  });
 });

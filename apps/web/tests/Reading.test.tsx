@@ -66,6 +66,55 @@ it("renders the complete allowed study text including Unicode and its final sent
   expect(screen.getByLabelText("Reading passage").textContent).toBe(text);
 });
 
+it("preserves literal source notation and stages the exact selected wording", () => {
+  const text =
+    "The ticket cost $5 and the bus cost $10. **Literal** `source` notation.";
+  const ask = vi.fn();
+  render(<ReadingPassage passage={{ ...passage, text }} onAsk={ask} />);
+  const node = screen.getByLabelText("Reading passage");
+  expect(node.textContent).toBe(text);
+  expect(node.querySelector("math, strong, code")).toBeNull();
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  window.getSelection()!.removeAllRanges();
+  window.getSelection()!.addRange(range);
+  fireEvent(document, new Event("selectionchange"));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Ask about selected text" }),
+  );
+  expect(ask).toHaveBeenCalledWith(
+    `Help me understand this part of the material:\n\n${text}`,
+  );
+});
+
+it("counts selected astral characters once and explains an oversized selection", () => {
+  const text = "🌱".repeat(1500);
+  const ask = vi.fn();
+  const view = render(
+    <ReadingPassage passage={{ ...passage, text }} onAsk={ask} />,
+  );
+  const select = () => {
+    const range = document.createRange();
+    range.selectNodeContents(screen.getByLabelText("Reading passage"));
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(range);
+    fireEvent(document, new Event("selectionchange"));
+  };
+  select();
+  expect(
+    screen.getByRole("button", { name: "Ask about selected text" }),
+  ).toBeEnabled();
+  view.rerender(
+    <ReadingPassage passage={{ ...passage, text: text + "🌱" }} onAsk={ask} />,
+  );
+  select();
+  expect(
+    screen.getByRole("button", { name: "Ask about selected text" }),
+  ).toBeDisabled();
+  expect(screen.getByRole("status")).toHaveTextContent("1,501 characters");
+  expect(ask).not.toHaveBeenCalled();
+});
+
 it("loads public text only on request and lets the learner choose a news passage", async () => {
   const change = vi.fn();
   const second = {

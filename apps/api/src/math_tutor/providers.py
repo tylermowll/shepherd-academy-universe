@@ -84,7 +84,7 @@ def probe_fingerprint(provider: ProviderConfig, stage: str) -> str:
         (
             provider.model_dump_json(exclude={"requires_approval"})
             + stage
-            + (":ai-tutor-probe-v3" if stage == "tutor" else ":ai-tutor-probe-v2")
+            + (":ai-tutor-probe-v4" if stage == "tutor" else ":ai-tutor-probe-v2")
         ).encode()
     ).hexdigest()
 

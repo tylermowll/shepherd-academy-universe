@@ -1,14 +1,15 @@
 # Dependency baseline
 
-Verified September 6, 2026. `pyproject.toml` uses bounded direct requirements so
+Toolchain refreshed October 8, 2026; application package baseline was verified
+September 6, 2026. `pyproject.toml` uses bounded direct requirements so
 intent and compatibility remain visible; the exact, cross-platform resolution is
 committed in `apps/api/uv.lock` and installed with `--locked`.
 
 | Dependency | Declared / tested resolution | Purpose |
 |---|---:|---|
-| Python | 3.14 / 3.14.7 | Latest stable line; Python has no separate LTS edition |
-| uv CLI | `>=0.12.10,<0.13` / 0.12.10 | Environment and lock management; pin exactly in CI |
-| uv_build | `>=0.12.10,<0.13` / bundled 0.12.10 | Pure-Python build backend |
+| Python | 3.14 / 3.14.8 | Latest stable line; Python has no separate LTS edition |
+| uv CLI | `>=0.12.23,<0.13` / 0.12.23 | Environment and lock management; pin exactly in CI |
+| uv_build | `>=0.12.23,<0.13` / bundled 0.12.23 | Pure-Python build backend |
 | FastAPI | `>=0.141.1,<1` / 0.141.1 | HTTP API framework |
 | Pydantic | `>=2.13.5,<3` / 2.13.5 | Public and internal typed schemas |
 | Uvicorn | `>=0.52.4,<1` / 0.52.4 | Local ASGI server |
@@ -36,8 +37,8 @@ adds the provider, image, backup and evaluation dependencies recorded below.
 The approved SQLite plan is [D004](DECISIONS.md#d004--sqlite-for-the-initial-deployment-2026-09-06).
 SQLite has no separate LTS edition; its current stable release is **3.53.4**,
 verified against the [official release history](https://sqlite.org/changes.html)
-on September 6, 2026. The Python 3.14.7 interpreter (2026-08-05, the latest
-3.14 patch) reports **3.53.1** from `sqlite3.sqlite_version`; no reproducible
+on September 6, 2026. The managed Python 3.14.8 interpreter (2026-09-30, checked
+2026-10-08) still reports **3.53.1** from `sqlite3.sqlite_version`; no reproducible
 newer runtime exists, so T01 records a compatibility exception under D001 with
 an enforced floor of 3.53.1 instead of claiming 3.53.1 is latest.
 
@@ -48,8 +49,9 @@ a standalone SQLite CLI does not determine its version.
 
 ## Frontend and browser tooling
 
-Node.js **24.20.0** is the latest LTS and is pinned in `.node-version`. pnpm
-**12.3.4** is pinned in the root `packageManager` field. `pnpm-lock.yaml` records
+Node.js **24.21.0** is the latest LTS patch verified on October 8, 2026, pinned
+in `.node-version`. pnpm
+**12.10.1** is pinned in the root `packageManager` field. `pnpm-lock.yaml` records
 exact transitive resolutions and integrity hashes; installs use `--frozen-lockfile`.
 Project scripts reject unsupported Node and mismatched pnpm versions. Dependency
 install scripts are blocked unless explicitly reviewed in `pnpm-workspace.yaml`.
@@ -88,7 +90,7 @@ for evidence. No `skipLibCheck`, lint suppression, or relaxed peer resolution is
 ## CI tool pins
 
 Hook commands use uv-locked development packages and pnpm-locked frontend tools;
-there are no separately resolved hook environments. CI pins uv to 0.12.10 and
+there are no separately resolved hook environments. CI pins uv to 0.12.23 and
 Node via `.node-version`; pnpm/action-setup reads the exact root `packageManager`.
 
 | Action | Release | Verified commit |
@@ -99,8 +101,8 @@ Node via `.node-version`; pnpm/action-setup reads the exact root `packageManager
 | astral-sh/setup-uv | v7.6.0 | `37802adc94f370d6bfd71619e3f0bf239e1f3b78` |
 
 Pins were checked against the official repositories' release refs on September 6,
-2026. Ubuntu 24.04 is the latest generally available Ubuntu LTS runner; 26.04 is
-still a GitHub Public preview (see D001). See TASKS for observed hosted CI runs.
+2026. Ubuntu 24.04 remains the tested CI runner; runner availability was checked
+September 6 (see D001). See TASKS for observed hosted CI runs.
 
 Sources: [Node releases](https://nodejs.org/en/about/previous-releases),
 [Python downloads](https://www.python.org/downloads/),
@@ -159,3 +161,29 @@ existing React UI. It ships TypeScript declarations, supports React 19, and adds
 no remote QR service, credentials, runtime network calls, or application framework.
 The pnpm lockfile pins the package/integrity. See the
 [upstream documentation](https://github.com/zpao/qrcode.react).
+
+## T44 toolchain refresh (2026-10-08)
+
+Official metadata confirms Node 24.21.0 (Krypton LTS), pnpm 12.10.1,
+uv/uv_build 0.12.23 and Python 3.14.8. Pins, minimum versions, CI,
+README and Docker build/runtime stages match these versions. Public Docker
+manifest digests were checked for the exact Node/Python tags before updating.
+The managed Python runtime still embeds SQLite 3.53.1, so the documented
+compatibility floor/exception remains; the latest SQLite release remains 3.53.4.
+
+TypeScript 7.0.2 remains outside the declared TypeScript range of current
+typescript-eslint 8.71.1 (`>=4.8.4 <6.1.0`). Keep the tested 6.0.3
+application pin. This update does not claim all application dependency pins are
+the newest releases; locked audits and compatibility checks remain required.
+
+Version sources: [Node release metadata](https://nodejs.org/dist/index.json),
+[pnpm metadata](https://registry.npmjs.org/pnpm/latest),
+[uv release](https://github.com/astral-sh/uv/releases/tag/0.12.23),
+[uv_build metadata](https://pypi.org/pypi/uv_build/json),
+[Python 3.14.8](https://www.python.org/downloads/release/python-3148/),
+[TypeScript ESLint metadata](https://registry.npmjs.org/typescript-eslint/latest).
+
+Vitest 5.0.3 was rechecked during T44: install succeeded, but `pnpm typecheck`
+failed with TS2428 because its `Assertion` type parameters conflict with
+`@testing-library/jest-dom` 7.0.1. The temporary upgrade was reverted to 4.1.11;
+no `skipLibCheck`, declaration patch or suppressed type error was introduced.

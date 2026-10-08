@@ -801,6 +801,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/tutor/request-receipts/{key}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Request Receipt */
+    get: operations["request_receipt_api_v1_tutor_request_receipts__key__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/tutor/request-receipts/{key}/resolve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Resolve Request */
+    post: operations["resolve_request_api_v1_tutor_request_receipts__key__resolve_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/tutor/sessions": {
     parameters: {
       query?: never;
@@ -2066,6 +2100,40 @@ export interface components {
         | "published";
       /** Source Token */
       source_token?: string | null;
+    };
+    /** TutorRequestReceiptPublic */
+    TutorRequestReceiptPublic: {
+      /** Activity Id */
+      activity_id?: string | null;
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: "session" | "activity" | "submission";
+      /**
+       * Session Id
+       * Format: uuid
+       */
+      session_id: string;
+      /** Submission Id */
+      submission_id?: string | null;
+    };
+    /** TutorRequestResolutionInput */
+    TutorRequestResolutionInput: {
+      /**
+       * Learner Id
+       * Format: uuid
+       */
+      learner_id: string;
+    };
+    /** TutorRequestResolutionPublic */
+    TutorRequestResolutionPublic: {
+      receipt?: components["schemas"]["TutorRequestReceiptPublic"] | null;
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "accepted" | "not_accepted";
     };
     /** TutorSettingsInput */
     TutorSettingsInput: {
@@ -3673,6 +3741,74 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ProfilePublic"][];
+        };
+      };
+    };
+  };
+  request_receipt_api_v1_tutor_request_receipts__key__get: {
+    parameters: {
+      query: {
+        learner_id: string;
+      };
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TutorRequestReceiptPublic"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  resolve_request_api_v1_tutor_request_receipts__key__resolve_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        key: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TutorRequestResolutionInput"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TutorRequestResolutionPublic"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };

@@ -24,8 +24,8 @@ of production readiness or educational effectiveness.
 
 ## Run it on your computer
 
-Prerequisites: Git, GNU Make, Node **24.20.0**, pnpm **12.3.4**, and uv
-**0.12.10**. Python **3.14.7** is installed by uv if needed. See
+Prerequisites: Git, GNU Make, Node **24.21.0**, pnpm **12.10.1**, and uv
+**0.12.23**. Python **3.14.8** is installed by uv if needed. See
 [dependency decisions](docs/DEPENDENCIES.md).
 
 For **computer practice with iPhone photo submission**, follow
@@ -122,7 +122,9 @@ learner account. Enter a topic, optionally add reference material, and choose
 For reading or studying text in any subject, choose **Paste reading or study
 material**, **Photograph a reading passage**, or **Let the tutor write a passage**.
 Pasted or imported stories, articles, historical sources, science explanations
-and other study texts can contain up to 50,000 characters. Photo transcriptions
+and other study texts can contain up to 50,000 Unicode codepoints (including
+emoji). Excess input stays visible with an error; it is not silently shortened.
+Photo transcriptions
 and AI-written passages retain an 8,000-character ceiling. Assignment references
 keep their separate 8,000-character limit and guide distinct analogous practice.
 
@@ -134,8 +136,9 @@ context, with later sections excluded. The reader shows your position, and
 previous/next section controls save a new activity through the normal retry-safe
 workflow. Next/Easier/Harder ask another question about the current section.
 History and reopening preserve the selected section. Whole-text discussion must
-still fit the selected model's context. If generation fails because it is too
-large, open **Reading pace**, choose **Read in sections**, and select **Apply
+still fit the selected model's configured context; long texts no longer encounter
+an unrelated 32,000-character message ceiling. If generation fails because it is
+too large, open **Reading pace**, choose **Read in sections**, and select **Apply
 reading pace**. The saved material remains available during recovery.
 
 Select up to 1,500 characters of a difficult phrase or sentence in the passage
@@ -155,8 +158,10 @@ Historical feedback keeps its original wording and has no invented assessment.
 
 When the selected tutor is a mock, Practice displays a prominent sample-response
 notice. A working website and a successful connection test do not establish
-teaching quality. After the T43 response-contract update, saved live tutors need
-a fresh tutor connection test; existing vision tests retain their validity.
+teaching quality. After the T44 response and provenance hardening, saved live
+tutors need a fresh tutor connection test; existing vision tests retain their validity.
+Older teaching observations remain visible in History but are excluded from the
+current adaptive evidence memory.
 
 **Published story or news** offers two Aesop stories from a Project Gutenberg
 mirror and up to five recent NASA news passages. Choose **Load published text**,
@@ -182,7 +187,15 @@ The page tabs separate the workflow:
 
 Switching page tabs preserves unsent text, photo previews, and pending retry
 requests in memory. Closing/reloading the tab or switching learners can lose
-unsent work; submitted work is stored on the server. Learners see only Practice,
+unsent drafts; submitted work is stored on the server. Before sending a tutor
+session, activity, text submission or ordinary photo submission, this browser
+tab retains only its opaque request identifier and learner identifier. After reload it checks the owned
+server receipt without sending the work again. If acceptance is unknown, use
+**Check saved request** or **Resolve interrupted request** before continuing.
+Resolution opens accepted work or excludes delayed acceptance of the old request;
+you can then re-enter lost drafts. Closing the browser tab clears these browser
+identifiers, so use History to find already saved work. App updates wait while
+requests are pending and warn about unsent drafts. Learners see only Practice,
 History, and Help.
 
 The administrator manages learner accounts in **Learners**. Choose **Add learner
