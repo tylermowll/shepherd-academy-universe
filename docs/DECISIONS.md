@@ -133,8 +133,8 @@ not the restriction against learner-controlled destinations or credentials.
   settings, credentials or data. Missing settings may be generated exclusively;
   existing settings, accounts and data must not be replaced on restart.
 - No model installation, cloud provisioning, secret-return endpoint, new service,
-  or automatic local-to-cloud fallback is introduced. CLI-only adult bootstrap
-  remains an intentional local security boundary, with a prompt on first start.
+  or automatic local-to-cloud fallback is introduced. The original CLI-only
+  bootstrap detail was superseded by D011/D014's browser-first owner setup.
 
 ## D009 — AI tutoring is the primary product (2026-09-07)
 

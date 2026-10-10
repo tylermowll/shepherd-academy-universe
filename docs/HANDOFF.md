@@ -1,71 +1,56 @@
 # Current handoff
 
-The local administrator account exists. Open the app address and sign in;
-first-account setup is finished. The `shepherd-academy-universe` Compose project
-runs one API and one worker against the retained database in this checkout.
+The current implementation is **T44**, the adversarial review hardening increment
+dated 2026-10-08. It preserves source text and Unicode limits, recovers accepted
+tutor commands after lost acknowledgments, and strengthens bounded teaching and
+evidence guards. The schema head is `0020_request_recovery`. Recorded automated
+checks, container evidence and limitations are in [T44's TASKS entry](TASKS.md#t44--adversarial-review-hardening-2026-10-08).
+Those checks do not establish live teaching quality or learning outcomes.
 
-T43 adds shared teaching criteria and evidence-linked observations across subjects,
-plus guided sections and whole-text study for supplied material up to 50,000
-characters. Reading pace, activity difficulty and help are separate controls.
-Goals and sufficient-response criteria are visible; selected text can prepare a
-question without sending it. Source text and section focus survive History and
-reloads. T42's pasted/photo/AI-written/published sources remain supported;
-homework remains reference for distinct analogous practice.
+The existing private Compose installation was updated to **T44 source `62b30ca`
+on October 10, 2026**, at `0020_request_recovery`. Both writers stopped before a
+verified private rollback archive; the tested image then passed HTTPS readiness,
+served-asset matching and protected-endpoint checks. Current provider selections
+were not inspected or changed, and no inference was run. Image and verification
+details are in [TASKS](TASKS.md).
 
-The retained installation is now at migration `0019_teaching_observations`.
-API and worker run image
-`sha256:1abafa0262c72d379a81a365a7215a58ccfe1f328b44961783e97d5ecf9c695a`.
-The previous image and a stopped-writer recovery archive are retained outside Git.
-Local gates passed: 255 backend unit, 180 frontend, 310 integration and 74
-desktop/mobile browser checks, mock evaluations, hooks, dependency audits,
-container smoke and a clean HIGH/CRITICAL image scan. HTTPS readiness and the
-exact served section-navigation UI bundle were verified after the update.
-Exact commands, recovery paths and remaining gates are in [TASKS](TASKS.md).
+## Next bounded actions
 
-Open [the private app](https://zoopa-a-boop.taile8325e.ts.net) from its Tailscale
-network. The post-update active tutor is **mock**. An administrator must run a
-fresh tutor test under **Settings → Connection tests**, then select that
-connection under **Active models**, for meaningful learner feedback. T43's new
-response contract invalidates older tutor tests; photo-reader tests are unchanged.
-No private setting or selected provider was changed during this update.
+1. **Test and select the actual models.** In administrator **Settings**, authorize
+   synthetic **Connection tests**, then choose the tutor and photo reader under
+   **Active models**. T44's v4 tutor probe invalidates older tutor tests; the
+   photo-reader probe is unchanged. Saving or testing a connection does not
+   activate it. Use [PROVIDER_STATUS](PROVIDER_STATUS.md) for the data/audience
+   boundaries and exact runtime evidence.
+2. **Review real output through the app.** Use original synthetic work and
+   [TUTOR_EVALUATION](TUTOR_EVALUATION.md) to check reading fidelity, useful
+   teaching, revision/context, distinct homework practice and answer leakage.
+   Evaluate learning transfer with supervised human review; scripted fixture
+   answers and model self-ratings cannot establish it.
+3. **Close host and device acceptance.** The offline development restore passed.
+   Verify retained backups/ledger and separately stored settings, secret and passphrase,
+   restored app startup and fresh sign-ins. Record physical-phone camera/HEIC,
+   QR submission, background/reconnect, installation/update and manual
+   accessibility checks in [ACCEPTANCE](ACCEPTANCE.md). Browser-model device
+   measurement is optional research and remains separate.
 
-Eleven fresh Muse Spark CLI responses provide a small qualitative teaching pilot,
-with clearer sufficiency handling and direct explanations, plus remaining
-progression and unnecessary-demand concerns. Read the
-[recorded exchanges and limitations](../evals/reports/teaching-muse-2026-10-08.md).
-The CLI rehearsal is separate from the app's HTTP provider and browser/worker
-path. Independent learning outcomes and actual installed-provider quality are
-unmeasured; structured observations do not establish mastery or verified grades.
+## Current product boundaries
 
-For a fresh installation, the private owner link exchanges once for an eight-hour
-HttpOnly setup cookie. Setup survives refreshes and API restarts with the same
-secret; the cookie grants no normal account access. App updates defer their
-refresh action until signup finishes. `make start` connects to the standard
-running Docker API and prints a setup link only when no administrator exists.
-It cannot reset an account. D014 records the setup contract.
+Learners use individual sign-ins and a multi-subject conversation. The worker
+persists photo reading before feedback and continues clear task-relevant work
+automatically. Essential unreadable content receives specific clarification
+advice; incidental uncertainty must not block useful feedback. Rejected reader
+reports remain explicitly uncertain conversation context.
 
-The app is a multi-subject AI tutor. Learners sign in with individual usernames
-and passwords, choose a topic and work through a conversation. Photo reading
-appears before feedback; clear readings continue automatically. Unreadable work
-receives specific clarification advice. Assignments provide reference material
-for distinct practice and explanations, never answers to the active task.
-There is no fixed activity catalog or photo approval step in this workflow.
+Supplied study texts support whole-text or guided-section practice. Reading pace,
+activity difficulty and help are separate controls. Goals and sufficient-response
+criteria are visible; AI observations remain fallible guidance, never verified
+grades or mastery. Uploaded/pasted assignments are reference material for
+concepts and distinct analogous practice. They do not become tasks for the tutor
+to solve. There is no fixed teaching catalog or photo approval step.
 
-The administrator manages learner accounts and AI connections. Administrators
-who want to study create a separate learner account. Saving a connection does
-not test or activate it. Synthetic connection tests and active-model selection
-require separate actions in Settings. Provider routing, audience and ownership
-remain enforced by the backend.
-
-Broader live model quality, physical phone camera/install/update behavior, manual
-accessibility checks and browser-model device measurements remain unverified.
-Use [ACCEPTANCE](ACCEPTANCE.md) for these gates,
-[PROVIDER_STATUS](PROVIDER_STATUS.md) for provider evidence, and
-[RUNBOOK](RUNBOOK.md) for operation and recovery. Passing synthetic tests does
-not establish model quality or production readiness.
-
-Continue with one bounded task at a time. Preserve private settings and learner
-data, regenerate API clients from backend schemas when contracts change, and
-run the applicable Make gates. The current implementation has no legacy startup
-path or development-schema compatibility bridge. Historical task evidence stays
-in TASKS and architecture decisions stay in [DECISIONS](DECISIONS.md).
+Continue with one bounded task at a time. Preserve private data, regenerate API
+clients when schemas change, and use the checked-in Makefile for applicable
+gates. Keep historical evidence in [TASKS](TASKS.md) and architecture decisions in
+[DECISIONS](DECISIONS.md); use [README](../README.md) and [RUNBOOK](RUNBOOK.md) for
+current startup and recovery instructions.

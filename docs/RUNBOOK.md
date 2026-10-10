@@ -1,5 +1,11 @@
 # Operations runbook
 
+The existing private Compose installation was updated to T44 source `62b30ca`
+on October 10, 2026, at `0020_request_recovery`. [TASKS](TASKS.md) records its
+rollback archive, tested image and HTTPS verification. Live model/device quality
+and host recovery/secret custody remain
+[acceptance work](ACCEPTANCE.md#items-requiring-the-maintainer).
+
 ## Native local host
 
 Follow the README setup. `make start` loads private `.env`
@@ -38,10 +44,9 @@ checks reject local-only credentials in network mode, even if a service bypasses
 the native launcher. Recovery never requires deleting the database or changing
 the session secret.
 
-Migration `0013_local_password_policy` preserves existing accounts and marks newly
-accepted short passwords. Downgrade refuses while any local-only password remains;
-replace those passwords with at least twelve characters first. Otherwise dropping
-the flag could allow older code to expose a short password over the network.
+Learner passwords also need twelve characters for HTTPS. After the administrator
+can sign in over HTTPS, reset any shorter learner passwords under **Learners**;
+those resets sign out the affected learners' browsers.
 
 For unattended use, supervise the two commands independently with the host service
 manager, with the same private settings and local data directory. Use a dedicated
@@ -76,7 +81,7 @@ results using ACCEPTANCE. An emulator does not replace these checks.
 
 ## Container package
 
-The final image uses a digest-pinned Distroless Debian 13 runtime with no shell or
+The image uses a digest-pinned Distroless Debian 13 runtime with no shell or
 package manager (D007). Use the explicit Python/CLI commands below; rebuild for
 dependency changes. The Dockerfile builds public assets and a locked Python environment using the same
 managed Python runtime as native checks. Runtime UID/GID is 10001. Compose mounts
@@ -154,7 +159,7 @@ a CycloneDX SBOM. See TASKS for observed results.
 
 ## Retention, export and deletion
 
-Confirmed photos become inaccessible when processing completes and are then
+Submitted photos become inaccessible when processing completes and are then
 deleted. A crash or storage failure leaves a durable cleanup reference for the
 next sweep. Failed/unprocessed photos default to 24 hours and are capped at 24;
 `PHOTO_RETENTION_HOURS` permits shorter retention. History defaults to 30 days;
@@ -163,9 +168,7 @@ running. Expired photos are rejected by both the image API and the worker before
 inference, including when physical deletion is delayed. Monitor readiness;
 downtime delays physical expiry cleanup.
 
-Migration `0011_photo_deletion` adds a durable image-deletion queue. Apply it with
-API/worker writes stopped before running this version. Learner deletion and
-history expiry commit pending opaque image keys with the database purge; the
+Learner deletion and history expiry commit pending opaque image keys with the database purge; the
 worker removes those files during its next sweep. Failed unlinks retain their
 queue entries across restarts. Other cleanup and tutoring continue after a file
 failure. Temporary database/storage errors in the worker loop retry after five
@@ -184,7 +187,7 @@ revocation: the adult must delete them separately. Revocation prevents new devic
 requests. Learner deletion immediately revokes sessions and cancels work, purges
 database content, queues physical image deletion, and records a content-free UUID
 tombstone. Late worker output is discarded.
-The journal `data/deletions.jsonl` is fsynced before the deletion commit. Keep it
+The journal `deletions.jsonl` beside the configured database is fsynced before the deletion commit. Keep it
 private and preserve its latest version during recovery. Content-free audit events
 and tombstones are retained for recovery/accountability; no raw prompts or photos
 are in provider-call logs.
@@ -195,17 +198,21 @@ Stop API and worker writes. Backups use SQLite's backup API, then bundle referen
 photos, checksums, database and deletion ledger. AES-256-GCM encrypts the archive;
 scrypt derives the key from a separately stored passphrase. It is entered through
 a hidden prompt, never argv or a checked-in variable. Copying a live main SQLite
-file without its WAL is not a backup procedure.
+file without its WAL is not a backup procedure. For a native installation:
 
 ```bash
-make backup OUTPUT=/private/backup/tutor-2026-09-06.enc
-make restore INPUT=/private/backup/tutor-2026-09-06.enc OUTPUT=/private/restore-rehearsal LEDGER=/private/current/deletions.jsonl
+make backup OUTPUT=/private/backup/tutor.enc
+make restore INPUT=/private/backup/tutor.enc OUTPUT=/private/restore-rehearsal LEDGER=/private/current/deletions.jsonl
 ```
 
 Both targets acknowledge that you stopped writes. The destination must not exist.
 They load the same private `.env` as `make start`, including a custom database
 path, and refuse to run while the native launcher holds that database's lock.
 Stop independently supervised services too; the lock cannot stop those writers.
+For Compose, stop both services and point the host backup settings at the mounted
+`data/math_tutor.sqlite3` and its adjacent objects/ledger. Compose overrides the
+database/data paths inside containers; `make backup` does not discover those
+overrides or stop Docker writers. Check the host-side paths before using it.
 Supply the **current** deletion ledger, even when restoring an old archive. If no
 learner was ever deleted, explicitly create an empty private ledger. Never replace
 a missing current ledger with an old empty one to bypass deletion preservation.

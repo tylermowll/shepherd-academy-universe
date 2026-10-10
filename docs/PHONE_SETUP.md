@@ -59,11 +59,15 @@ This explicit reset signs out old administrator sessions; it does not delete
 learners or work. Section 3 starts the selected deployment again. Network startup
 refuses a local-only password rather than silently exposing that account.
 
+Learner passwords also need twelve characters for HTTPS. After restarting and
+signing in as administrator, reset any shorter passwords under **Learners**;
+those resets sign out the affected learners' browsers.
+
 ### Convenient private access: Tailscale
 
 Install Tailscale on the computer and iPhone and join your private network.
-Its Personal plan is currently free for eligible personal use. Enable HTTPS for
-your tailnet, then run this on the computer to proxy the application privately:
+Review its current plan/terms, enable HTTPS for your tailnet, then run this on the
+computer to proxy the application privately:
 
 ```bash
 tailscale serve --bg --https=443 http://127.0.0.1:8000
@@ -159,9 +163,10 @@ In the signed-in administrator app, open **Settings**:
    and cannot be overridden by this page.
 6. Under **Connection tests**, explicitly run **Test tutor** and **Test photo
    reader** as needed. Tests send sample data, not learner work, and API providers
-   may charge. The tutor test
-   uses two calls (activity generation and feedback); the photo test uses one and
-   must correctly read the known synthetic fraction.
+   may charge. The tutor test uses two calls (activity generation and feedback);
+   the photo test uses one and must correctly read the known synthetic fraction.
+   T44 requires a fresh test for saved live tutors. Unchanged
+   photo-reader tests retain their validity until the normal seven-day expiry.
 7. Under **Active models**, choose the tested **Tutor connection**
    and **Photo reader connection**, acknowledge where work will go, and save.
 
@@ -174,7 +179,9 @@ The same image-capable model may handle both roles. A cloud tutor receives text
 read from photos even when the photo reader is local. The default `demo` provider
 is a mock; it does not teach or read handwriting. Tests are not evidence of
 general model quality. See [provider verification](PROVIDER_STATUS.md) for
-capability expiry, context limits and evaluation guidance.
+capability expiry, response/context limits and evaluation guidance. Check your
+selected roles in Settings; the October 10 deployment did not inspect or change
+provider selections.
 
 File-managed connections remain an optional advanced deployment path and are
 read-only in Settings; see [the public example](../config/providers.example.yaml).
@@ -260,4 +267,5 @@ photos expire within 24 hours; the worker must be running to perform cleanup.
 
 Automated tests use original synthetic images. Actual Safari camera/HEIC, QR
 scanning, and exact-model handwriting quality require separate checks on your
-devices; consult the T24 evidence in TASKS for what was actually run.
+devices. Follow [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer) and
+[TUTOR_EVALUATION](TUTOR_EVALUATION.md) and record outcomes in TASKS.

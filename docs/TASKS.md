@@ -5,53 +5,225 @@ The normative scope, dependencies, deliverables, and exit evidence are in
 records implementation status; a task is complete only when all of its
 specification gates pass.
 
-| Task | Status                                                         | Current evidence / next boundary                                                                                                                                                                                                 |
-| ---- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T00  | Complete                                                       | Local gates and original hosted CI verified; review validation below.                                                                                                                                                            |
-| T01  | Reviewed; complete                                             | Explicit transactional SQLite, stable/private storage, real rollback/migration/drift gates. Review commit ae3f135 passes local and hosted CI.                                                                                    |
-| T02  | Reviewed; complete                                             | Startup/setup, strict origins, expiring CSRF, reset/rotation/revocation, bounded login limits, and session constraints in migration 0002. D005 removes the review's development-schema upgrade bridge; cutover evidence below.   |
-| T03  | Historical implementation; account access superseded by D013/T37 | Ownership isolation remains; browser pairing and its expiry/revoke workflow were retired in favor of administrator-managed learner sign-ins.                                                                                  |
-| T04  | Implemented; automated gates passed                            | Exact parser/generators; Fraction/property and hostile-input tests.                                                                                                                                                              |
-| T05  | Implemented; automated gates passed                            | Persisted practice, answers/steps/help/history and browser completion.                                                                                                                                                           |
-| T06  | Implemented; automated gates passed                            | Durable leases, six-call budget, idempotency, crash/deletion recovery.                                                                                                                                                           |
-| T07  | Implemented; contract-tested                                   | Mock and strict provider policy/errors; no cloud fallback.                                                                                                                                                                       |
-| T08  | Implemented; automated gates passed                            | Versioned profiles, questions, authored assistance and preview.                                                                                                                                                                  |
-| T09  | Implemented; live verification pending                         | Meta wire-contract, cloud-boundary and selected-audience tests; exact account contract must be verified.                                                                                                                         |
-| T10  | Implemented; automated gates passed                            | Private normalized photos, immutable confirmation and stale-write tests.                                                                                                                                                         |
-| T11  | Implemented; physical phone evidence pending                   | HEIF/metadata/bounds tests and browser preview/crop/rotation flow.                                                                                                                                                               |
-| T12  | Implemented; live unverified                                   | Ollama native text/image contracts; operator setup documented.                                                                                                                                                                   |
-| T13  | Implemented; live unverified                                   | vLLM/compatible bounded wire/capability contracts; runtime/model pending.                                                                                                                                                        |
-| T14  | Implemented; live unverified                                   | Bedrock Converse SDK Stubber tests; region/model/IAM pending.                                                                                                                                                                    |
-| T15  | Implemented; automated gates passed                            | Linear equation generator, independent arithmetic properties and exact parser.                                                                                                                                                   |
-| T16  | Implemented; automated gates passed                            | Review/progress, authenticated export, deletion and restore tombstones.                                                                                                                                                          |
-| T17  | Implemented; physical accessibility/phone evidence pending     | Public-only PWA caches, manual update, offline/reconnect browser tests.                                                                                                                                                          |
-| T18  | Implemented; live quality evaluation pending                   | 33 original rational and 30 rendered vision fixtures, four external fixtures; mock report and A01–A24 mapping.                                                                                                                   |
-| T19  | Implemented; final release acceptance pending                  | Hardened packaging/backup/restore/docs; local/hosted evidence below; maintainer gates remain.                                                                                                                                    |
-| T20  | Implemented; IaC validation passed                             | Single-host EC2/EBS, private backup S3, IAM/budget runbook; no provisioning.                                                                                                                                                     |
-| T21  | Implemented; automated gates passed                            | Public offline pack, exact local answers, no sync or grading authority.                                                                                                                                                          |
-| T22  | Implemented; automated gates passed                            | Opt-in external-photo question confirmation; four fixtures remain unverifiable.                                                                                                                                                  |
-| T23  | Implemented experiment; device measurement pending             | Pinned text-only WebLLM research with consent/hash validation/cancel/delete; no weights downloaded.                                                                                                                              |
-| T24  | Historical photo-approval detail superseded; physical phone/live provider verification pending | Expiring QR upload, computer display and automatic clear-reading guidance, HTTPS launch/runbook; automated migration, authorization, retry and two-browser gates passed.                                              |
-| T25  | Implemented; automated gates passed; live quality unverified   | AI-only multi-subject tutoring, reference-only homework intake, contextual guidance, adjustable initiative and automatic clear photo reading; 125 unit, 33 component, 128 integration and 28 browser tests passed.               |
-| T26  | Historical implementation; account access superseded by D013/T37 | Purposeful pages, plain wording and guided phone setup remain; parent-as-student profiles and learner pairing were replaced by distinct learner accounts.                                                                      |
-| T27  | Implemented; automated gates passed                            | Browser-managed AI connections/keys, current-schema tests, persistent startup and safe backup settings; 145 unit, 80 component, 188 integration and 42 browser tests passed.                                                     |
-| T28  | Implemented; automated gates passed                            | Browser-first owner setup, inline recovery, six-character loopback passwords with network safeguards; 159 unit, 103 component, 215 integration and 46 browser tests passed.                                                      |
-| T29  | Implemented; automated gates passed                            | Shepherd Academy Universe branding; fixed Meta cloud location, editable audience and disclaimer; project hooks/check, 216 integration and 4 affected browser tests passed.                                                        |
-| T30  | Implemented; automated gates passed                            | Guided AI setup, visible blockers, selectable pending connections and million-token context windows; 162 unit, 113 component, 217 integration and 18 affected browser tests passed.                                              |
-| T31  | Implemented; automated gates passed                            | Visible connection repair, tab-scoped named failures, and current Meta direct-API defaults; 162 unit, 115 component and 10 affected browser tests passed.                                                                        |
-| T32  | Implemented; automated gates passed                            | Strict tutor schemas, separate role-test guidance, save toast and stable terms review; 163 unit, 120 component, 217 integration and 10 affected browser tests passed.                                                            |
-| T33  | Implemented; automated gates passed                            | Contextual connection-save errors, stale-process guidance, key-format validation and consistent notices; 163 unit, 123 component and 12 desktop/mobile browser cases passed.                                                     |
-| T34  | Implemented; automated gates passed; live retest pending       | Editable tutor response budget, durable SQLite test diagnostics, visible failure phase/finish reason and restored terms review; 163 unit, 130 component, 226 integration and 12 browser cases passed.                            |
-| T35  | Implemented; automated gates passed; live photo retest pending | Bounded JPEG/HEIC and drag/drop, simpler Practice, difficulty controls, pending indicators, adult profile clarity and Meta thinking effort; 179 unit, 137 component, 234 integration and 52 desktop/mobile browser tests passed. |
-| T36  | Implemented; local containers updated; live quality unverified | Continuous conversation, qualified photo feedback, contextual follow-ups, compact workspace; 181 unit, 145 component, 238 integration tests, affected browser checks and container smoke passed.                                 |
-| T37 | Implemented; local installation reset and rebuilt; live quality unverified | Unique learner logins, administrator-only management, one-step practice, exclusive menus, stable connection approvals, two-hour QR and Shepherd branding; validation below. |
-| T38 | Implemented, tested and deployed locally | Docker setup links, protected signup updates and one current Compose deployment; evidence below. |
-| T39 | Implemented, tested and deployed locally | Browser setup permission survives link expiry, reloads and API restarts; the local administrator account now exists. |
-| T40 | Implemented, tested and deployed locally | Settings loads after signup; rechecking the same session preserves pending requests and account changes still discard stale responses. |
-| T41 | Implemented; automated gates passed; live/device acceptance pending | Tutor and provider saves recover without duplicate work, account/setup transitions are explicit, conversation space is usable on desktop/mobile, Docker host-model routing is consistent, and dependency audits pass. |
-| T42 | Implemented, reviewed, pushed and deployed locally; live/device acceptance pending | Persisted reading passages and grounded practice; 72 browser checks, fixed dependency/runtime findings, clean image scan and retained-data migration; evidence below. |
-| T43 | Implemented, reviewed and deployed locally; live/device acceptance pending | Shared teaching criteria and evidence, 50k material and guided progression; 255 unit, 180 component, 310 integration and 74 browser checks, plus bounded Muse samples below. |
-| T44 | Implemented; automated gates passed; live/device acceptance pending | Adversarial source/Unicode/request recovery and teaching-evidence hardening; 291 unit, 188 component, 340 integration and 80 browser checks, staged mock rehearsal, runtime refresh and clean image scan; evidence below. |
+## Current checkpoint (updated 2026-10-10)
+
+- **Repository:** T44 runtime source at `62b30ca`; the October 10 documentation
+  review and operational evidence are recorded below. Full source gates are
+  recorded on October 8; fresh deployment,
+  phone-layout and offline development-restore evidence is recorded below.
+- **Private installation:** updated to T44 on October 10 at migration
+  `0020_request_recovery`. API/worker image identity, private HTTPS readiness,
+  served frontend hashes and anonymous API rejection passed. Both writers stopped
+  before the verified rollback archive. Provider selections were not inspected
+  or changed; the older T43 mock-route check is historical evidence.
+- **Next operational action:** retest and explicitly select the intended tutor
+  and photo reader, then review real teaching through the app. T44 invalidates
+  earlier tutor probes; reader probes keep their normal validity. Live calls
+  remain separately authorized work.
+- **Release acceptance still open:** actual app/worker teaching quality and
+  independent transfer, physical camera/PWA/accessibility checks, operational
+  backup/secret custody and restored-app startup. The offline development restore,
+  all 40 existing mobile checks and six additional portrait/landscape flows passed.
+  Optional browser-model research and AWS hosting are separate.
+  Use [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer) and
+  [HANDOFF](HANDOFF.md) for the remaining actions.
+
+The table and dated entries below retain implementation history. Superseded
+photo approvals, learner pairing and authored hints are not current product
+instructions; D009/T25 and D013/T37 define the current tutoring/account flows.
+
+## Documentation review (2026-10-10)
+
+Reviewed README and all eleven project guides against the current source,
+Makefile and dated evidence. Removed obsolete specification scaffolding and
+math/profile/photo-approval instructions, condensed current setup and acceptance,
+and corrected provider evaluation scope, zero automatic schema repairs,
+native/Compose backup paths and short learner-password recovery on HTTPS.
+Historical task evidence and original model reports remain intact. T44 source
+and recorded checks are distinguished from the last T43 installation evidence;
+this review does not verify the running private app or current provider releases.
+
+Documentation checks passed:
+
+- Local Prettier `--check` on README and the eleven edited guides.
+- `python3 /tmp/shepherd-doc-links.py`: all 123 local paths/anchors across 21
+  tracked Markdown files resolve; specification footnote definitions resolve.
+- `python3 scripts/scan-secrets.py`: tracked public credential scan passed.
+- `git diff --check`: passed.
+
+Application/contract suites and live provider/device tests were not run because
+only documentation changed. No private settings/data were inspected, and no
+inference, model download, migration, deployment or push was performed.
+
+## Private deployment and phone layouts (2026-10-10)
+
+Authorized by the maintainer's request to deploy next and test phone sizes.
+Application source is T44; only documentation changed in the working tree.
+
+- `docker build -f infra/docker/Dockerfile -t math-practice-tutor:t44-deploy-20261010 .` and
+  `sh scripts/container-smoke.sh math-practice-tutor:t44-deploy-20261010` passed: restricted provider
+  subprocess without inference, HEIF/cryptography, non-root API/worker, migration,
+  served UI and protected browser-first setup with disposable synthetic data.
+- `python3 /tmp/shepherd-deploy.py` retained the previous image as
+  `math-practice-tutor:pre-t44-20261010-183713`. Compose `stop --timeout 100 api worker` completed;
+  both writers were verified stopped before creating `backups/pre-t44-20261010-183713.tar.gz`.
+  The opaque archive passed gzip/tar validation with mode 0600. Private contents
+  were not displayed. The old image and archive are a paired rollback checkpoint.
+- Tagged the tested image `math-practice-tutor:local`, then ran Compose
+  `run --rm --no-deps api alembic upgrade head`, `up -d --no-build api worker`
+  and `exec -T api alembic current`. Both services run
+  `sha256:c1fcb246f76200cbeb6171a423b67da67a675ced6e725f8cd5453111c69c4ee6` at `0020_request_recovery (head)`. Settings, accounts
+  and retained data were preserved.
+- `python3 /tmp/shepherd-release-verify.py` passed private HTTPS readiness,
+  exact served/image HTML/JS/CSS hashes, no-cache HTML/service worker headers,
+  and anonymous reading-source, administrator-provider and request-receipt
+  rejection. Served JavaScript: `/assets/index-aPHlqUOQ.js`.
+- Trivy 0.75.0 on `docker save` output, with `--scanners vuln --severity
+HIGH,CRITICAL --exit-code 1`: zero findings, including unfixed findings,
+  with no suppression. A CycloneDX SBOM was generated under
+  `/tmp/shepherd-deploy-scan/sbom.json`.
+- `make toolchain-check` and `make build` passed using the pinned Node 24.21.0,
+  pnpm 12.10.1 and uv 0.12.23 tools extracted from the public build stages.
+- `pnpm smoke --config=/tmp/shepherd-phone-checks/mobile.config.ts`: **40/40
+  existing mobile Chromium checks passed**. `pnpm exec playwright test
+--config=/tmp/shepherd-phone-checks/widths.config.ts`: **6/6 additional flows
+  passed** at 320×568, 375×667, 390×844, 430×932, 667×375 and 844×390. These flows
+  exercise all Settings sections, long guided material, multi-turn conversation/
+  reload, QR upload and scoped phone preview/send/receipt. Assertions checked
+  horizontal overflow, control bounds and reachability after each stage.
+  Both suites used isolated synthetic private-mode demo servers, no external
+  requests, one worker and zero retries. The environment used
+  `PATH=/tmp/shepherd-deploy-tools/bin:$PATH`, `UV_NO_ENV_FILE=1` and
+  `UV_CACHE_DIR=/tmp/shepherd-phone-uv-cache`. Installed Chrome 149.0.7827.55
+  (revision 1228) was selected with `executablePath`; Playwright 1.63's pinned
+  revision 1243 was unavailable. Configurations, results and supporting screenshots
+  are under `/tmp/shepherd-phone-checks`; screenshots alone are not correctness evidence.
+- Final documentation checks passed: Prettier on all twelve edited guides,
+  122 local paths/anchors across 21 tracked Markdown files, the tracked public
+  credential scan and `git diff --check`.
+
+No live provider tests, paid inference, model download or Git push occurred.
+Physical camera/HEIC, Safari behavior, device installation/backgrounding and
+manual accessibility remain external acceptance work.
+
+## Offline development restore rehearsal (2026-10-10)
+
+The maintainer explicitly approved the isolated rehearsal, then clarified that
+the installation is unreleased and no real learners have used it. Only the
+verified stopped-writer predeployment archive was processed. The original archive
+and running installation were unchanged; no private records, keys or diagnostics
+were displayed and networking was disabled.
+
+The initial attempt stopped at preflight because no deletion ledger existed in
+the archive or current data directory. Under the clarified development scope,
+the temporary ledger was derived from the snapshot's database deletion markers;
+there were none. This is a development restore check, not evidence that a
+separately retained historical deletion ledger has been preserved.
+
+A fully read-only temporary source directory caused SQLite to reject WAL
+sidecar creation during backup. A synthetic reproduction using production
+`backup.backup()` and Python 3.14.8/SQLite 3.53.1 confirmed the harness issue:
+directory mode 0500 with database mode 0400 failed; directory 0700 with the same
+read-only database and `mode=ro` succeeded without changing the main database.
+The corrected rehearsal allows sidecars only in the private disposable directory,
+preserves/checkpoints copied WAL contents and keeps the copied main database 0400.
+No application code or compatibility layer was added.
+
+`python3 /tmp/shepherd-restore-rehearsal.py` completed with exit 0,
+`complete=true` and all check flags true:
+
+- Private encrypted backup, authenticated restoration and wrong-passphrase rejection.
+- Database integrity/foreign keys and upgrade of only the restored copy to release head.
+- Restored browser sessions absent; unfinished jobs/submissions canceled and canceled-job leases clear.
+- All referenced retained objects present; temporary snapshot, plaintext intermediates,
+  encrypted archive and restored copies removed.
+
+No populated deletion replay was exercised because the temporary ledger was empty.
+The checks establish the restored final state, not populated-case coverage for
+every condition. Results are in `/tmp/shepherd-restore-verification.json`.
+The passphrase was transient: no retained encrypted operational backup was created.
+Separately retained settings/session-secret/passphrase custody, saved-key decryption
+and restored API/worker startup were outside this offline check.
+
+After cleanup, `python3 /tmp/shepherd-release-verify.py` passed private HTTPS
+readiness, API/worker readiness, served-image asset matching, no-cache HTML/service
+worker headers and anonymous protected-endpoint rejection again.
+Final Prettier, local-link, tracked public credential and `git diff --check`
+documentation checks passed after recording these results.
+
+## Documentation publication and deployment refresh (2026-10-10)
+
+The maintainer authorized updating the deployment and pushing the reviewed
+documentation to `main`. The twelve changed files are README and the eleven
+project guides; runtime source remains T44 at `62b30ca`.
+
+- `git fetch origin main`: local and remote `main` matched before publication.
+- `make format-check`, `make secret-check` and `make hooks-check` passed using
+  the pinned toolchain with `UV_NO_ENV_FILE=1`. The hook run includes backend/
+  frontend lock, lint, format, type and unit/component checks. Its initial sandbox
+  attempt failed because the newline hook opens a tracked skill file read/write;
+  the identical gate passed with the necessary file access, without hook skips.
+- `python3 /tmp/shepherd-refresh-deploy.py` reapplied the tested image using
+  Compose `up -d --no-build api worker`. Both running images still match
+  `sha256:c1fcb246f76200cbeb6171a423b67da67a675ced6e725f8cd5453111c69c4ee6`;
+  `alembic current` still reports `0020_request_recovery (head)`. No migration or
+  data/settings reset was needed for the documentation-only publication.
+- Private HTTPS/API/worker readiness, matching served HTML/JS/CSS, no-cache
+  HTML/service worker responses and anonymous protected-route rejection passed.
+  Public verification metadata is in `/tmp/shepherd-deployment-refresh.json`.
+
+The earlier phone, restore and image-scan evidence above applies to the same
+runtime image. Live inference and physical-device testing were not run.
+
+## Task status
+
+| Task | Status                                                                                         | Current evidence / next boundary                                                                                                                                                                                                 |
+| ---- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T00  | Complete                                                                                       | Local gates and original hosted CI verified; review validation below.                                                                                                                                                            |
+| T01  | Reviewed; complete                                                                             | Explicit transactional SQLite, stable/private storage, real rollback/migration/drift gates. Review commit ae3f135 passes local and hosted CI.                                                                                    |
+| T02  | Reviewed; complete                                                                             | Startup/setup, strict origins, expiring CSRF, reset/rotation/revocation, bounded login limits, and session constraints in migration 0002. D005 removes the review's development-schema upgrade bridge; cutover evidence below.   |
+| T03  | Historical implementation; account access superseded by D013/T37                               | Ownership isolation remains; browser pairing and its expiry/revoke workflow were retired in favor of administrator-managed learner sign-ins.                                                                                     |
+| T04  | Implemented; automated gates passed                                                            | Exact parser/generators; Fraction/property and hostile-input tests.                                                                                                                                                              |
+| T05  | Implemented; automated gates passed                                                            | Persisted practice, answers/steps/help/history and browser completion.                                                                                                                                                           |
+| T06  | Implemented; automated gates passed                                                            | Durable leases, six-call budget, idempotency, crash/deletion recovery.                                                                                                                                                           |
+| T07  | Implemented; contract-tested                                                                   | Mock and strict provider policy/errors; no cloud fallback.                                                                                                                                                                       |
+| T08  | Historical profile/help workflow; superseded by D009/T25                                       | Versioned exact-math profiles and authored help have regression evidence; the primary tutor uses generated activities and contextual guidance.                                                                                   |
+| T09  | Implemented; live verification pending                                                         | Meta wire-contract, cloud-boundary and selected-audience tests; exact account contract must be verified.                                                                                                                         |
+| T10  | Historical photo confirmation superseded; automated gates passed                               | Private normalization and stale-write evidence remain; the primary tutor displays readings and continues clear work automatically.                                                                                               |
+| T11  | Implemented; physical phone evidence pending                                                   | HEIF/metadata/bounds tests and browser preview/crop/rotation flow.                                                                                                                                                               |
+| T12  | Implemented; live unverified                                                                   | Ollama native text/image contracts; operator setup documented.                                                                                                                                                                   |
+| T13  | Implemented; live unverified                                                                   | vLLM/compatible bounded wire/capability contracts; runtime/model pending.                                                                                                                                                        |
+| T14  | Implemented; live unverified                                                                   | Bedrock Converse SDK Stubber tests; region/model/IAM pending.                                                                                                                                                                    |
+| T15  | Implemented; automated gates passed                                                            | Linear equation generator, independent arithmetic properties and exact parser.                                                                                                                                                   |
+| T16  | Implemented; automated gates passed                                                            | Review/progress, authenticated export, deletion and restore tombstones.                                                                                                                                                          |
+| T17  | Implemented; physical accessibility/phone evidence pending                                     | Public-only PWA caches, manual update, offline/reconnect browser tests.                                                                                                                                                          |
+| T18  | Implemented; live quality evaluation pending                                                   | Original math/vision fixtures and mock reports remain regression evidence; current tutor release checks are in ACCEPTANCE.                                                                                                       |
+| T19  | Implemented; final release acceptance pending                                                  | Hardened packaging/backup/restore/docs; local/hosted evidence below; maintainer gates remain.                                                                                                                                    |
+| T20  | Implemented; IaC validation passed                                                             | Single-host EC2/EBS, private backup S3, IAM/budget runbook; no provisioning.                                                                                                                                                     |
+| T21  | Implemented; automated gates passed                                                            | Public offline pack, exact local answers, no sync or grading authority.                                                                                                                                                          |
+| T22  | Optional exact-math utility; automated gates passed                                            | External-photo question confirmation remains separate from primary tutoring; four fixtures remain unverifiable.                                                                                                                  |
+| T23  | Implemented experiment; device measurement pending                                             | Pinned text-only WebLLM research with consent/hash validation/cancel/delete; no weights downloaded.                                                                                                                              |
+| T24  | Historical photo-approval detail superseded; physical phone/live provider verification pending | Expiring QR upload, computer display and automatic clear-reading guidance, HTTPS launch/runbook; automated migration, authorization, retry and two-browser gates passed.                                                         |
+| T25  | Implemented; automated gates passed; live quality unverified                                   | AI-only multi-subject tutoring, reference-only homework intake, contextual guidance, adjustable initiative and automatic clear photo reading; 125 unit, 33 component, 128 integration and 28 browser tests passed.               |
+| T26  | Historical implementation; account access superseded by D013/T37                               | Purposeful pages, plain wording and guided phone setup remain; parent-as-student profiles and learner pairing were replaced by distinct learner accounts.                                                                        |
+| T27  | Implemented; automated gates passed                                                            | Browser-managed AI connections/keys, current-schema tests, persistent startup and safe backup settings; 145 unit, 80 component, 188 integration and 42 browser tests passed.                                                     |
+| T28  | Implemented; automated gates passed                                                            | Browser-first owner setup, inline recovery, six-character loopback passwords with network safeguards; 159 unit, 103 component, 215 integration and 46 browser tests passed.                                                      |
+| T29  | Implemented; automated gates passed                                                            | Shepherd Academy Universe branding; fixed Meta cloud location, editable audience and disclaimer; project hooks/check, 216 integration and 4 affected browser tests passed.                                                       |
+| T30  | Implemented; automated gates passed                                                            | Guided AI setup, visible blockers, selectable pending connections and million-token context windows; 162 unit, 113 component, 217 integration and 18 affected browser tests passed.                                              |
+| T31  | Implemented; automated gates passed                                                            | Visible connection repair, tab-scoped named failures, and current Meta direct-API defaults; 162 unit, 115 component and 10 affected browser tests passed.                                                                        |
+| T32  | Implemented; automated gates passed                                                            | Strict tutor schemas, separate role-test guidance, save toast and stable terms review; 163 unit, 120 component, 217 integration and 10 affected browser tests passed.                                                            |
+| T33  | Implemented; automated gates passed                                                            | Contextual connection-save errors, stale-process guidance, key-format validation and consistent notices; 163 unit, 123 component and 12 desktop/mobile browser cases passed.                                                     |
+| T34  | Implemented; automated gates passed; live retest pending                                       | Editable tutor response budget, durable SQLite test diagnostics, visible failure phase/finish reason and restored terms review; 163 unit, 130 component, 226 integration and 12 browser cases passed.                            |
+| T35  | Implemented; automated gates passed; live photo retest pending                                 | Bounded JPEG/HEIC and drag/drop, simpler Practice, difficulty controls, pending indicators, adult profile clarity and Meta thinking effort; 179 unit, 137 component, 234 integration and 52 desktop/mobile browser tests passed. |
+| T36  | Implemented; local containers updated; live quality unverified                                 | Continuous conversation, qualified photo feedback, contextual follow-ups, compact workspace; 181 unit, 145 component, 238 integration tests, affected browser checks and container smoke passed.                                 |
+| T37  | Implemented; local installation reset and rebuilt; live quality unverified                     | Unique learner logins, administrator-only management, one-step practice, exclusive menus, stable connection approvals, two-hour QR and Shepherd branding; validation below.                                                      |
+| T38  | Implemented, tested and deployed locally                                                       | Docker setup links, protected signup updates and one current Compose deployment; evidence below.                                                                                                                                 |
+| T39  | Implemented, tested and deployed locally                                                       | Browser setup permission survives link expiry, reloads and API restarts; the local administrator account now exists.                                                                                                             |
+| T40  | Implemented, tested and deployed locally                                                       | Settings loads after signup; rechecking the same session preserves pending requests and account changes still discard stale responses.                                                                                           |
+| T41  | Implemented; automated gates passed; live/device acceptance pending                            | Tutor and provider saves recover without duplicate work, account/setup transitions are explicit, conversation space is usable on desktop/mobile, Docker host-model routing is consistent, and dependency audits pass.            |
+| T42  | Implemented, reviewed, pushed and deployed locally; live/device acceptance pending             | Persisted reading passages and grounded practice; 72 browser checks, fixed dependency/runtime findings, clean image scan and retained-data migration; evidence below.                                                            |
+| T43  | Implemented, reviewed and deployed locally; live/device acceptance pending                     | Shared teaching criteria and evidence, 50k material and guided progression; 255 unit, 180 component, 310 integration and 74 browser checks, plus bounded Muse samples below.                                                     |
+| T44  | Implemented and deployed privately; live/device acceptance pending                             | Adversarial source/Unicode/request recovery and teaching-evidence hardening; 291 unit, 188 component, 340 integration and 80 browser checks, staged mock rehearsal, runtime refresh and clean image scan; evidence below.        |
 
 ### T44 — Adversarial review hardening (2026-10-08)
 
@@ -112,13 +284,13 @@ approved execution permissions; no private settings or learner data were opened.
   Temporary volumes/containers were removed. Migration head, non-root API/worker,
   owner setup, HEIF/cryptography and installer-free runtime checks passed.
 - Trivy 0.75.0 on `docker save` output, with `--scanners vuln --severity
-  HIGH,CRITICAL --exit-code 1` and no unfixed suppression: passed with zero
+HIGH,CRITICAL --exit-code 1` and no unfixed suppression: passed with zero
   HIGH/CRITICAL findings. A CycloneDX SBOM was generated locally. Compose
   configuration validated from a `/tmp` copy using synthetic environment values;
   no Compose service or private installation was changed.
 
 - `PLAYWRIGHT_BROWSERS_PATH=/tmp/shepherd-t44-playwright make smoke eval-mock
-  audit`: passed **80 desktop/mobile Chromium browser tests**, the deterministic
+audit`: passed **80 desktop/mobile Chromium browser tests**, the deterministic
   suite, **12 reading cases/36 mock stages**, **12 teaching cases/36 mock stages**
   and **four adversarial conversations/20 mock stages**. All three reading/teaching
   reports pass contracts with human quality judgments explicitly pending. Python
@@ -207,7 +379,7 @@ Automated evidence:
   known vulnerabilities. `make hooks-check secret-check` passed, including the
   staged synthetic fixtures and model reports.
 - The final image passed `sh scripts/container-smoke.sh
-  math-practice-tutor:t43-review`: restricted provider subprocess, HEIF,
+math-practice-tutor:t43-review`: restricted provider subprocess, HEIF,
   cryptography, SQLite migrations/settings, nonroot API/worker/UI readiness and
   setup/account protection, using disposable synthetic data.
 - Trivy 0.75.0 scanned the final public image archive with
@@ -509,13 +681,13 @@ Implementation and files:
 Validation:
 
 - `PATH=/home/mowll/.nvm/versions/node/v24.20.0/bin:$PATH UV_NO_ENV_FILE=1
-  UV_CACHE_DIR=/tmp/shepherd-review-uv PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/opt/google/chrome/chrome
-  make check smoke eval-mock`: **passed**, including **70 desktop/mobile browser
+UV_CACHE_DIR=/tmp/shepherd-review-uv PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/opt/google/chrome/chrome
+make check smoke eval-mock`: **passed**, including **70 desktop/mobile browser
   tests** (10.5 minutes) and the synthetic evaluation. The initial check passed
   211 unit and 171 component cases;
   final bounds additions are covered by the following run.
 - With the same pinned Node/uv environment, `make lint format-check typecheck
-  test test-integration contracts-check secret-check infra-check`: **213 backend
+test test-integration contracts-check secret-check infra-check`: **213 backend
   unit, 171 frontend component and 283 integration tests passed**. Ruff, ESLint,
   Prettier, mypy (77 source files), both TypeScript checks, generated-contract
   drift, tracked public credential scan and IaC lint passed. Real on-disk
@@ -532,7 +704,7 @@ Validation:
   and production web/PWA assets built successfully. No dependency or infrastructure
   service was added; dependency versions are unchanged.
 - `uv run --project apps/api --locked --no-env-file python
-  /tmp/shepherd_public_sources_smoke.py`: the final importer fetched the two
+/tmp/shepherd_public_sources_smoke.py`: the final importer fetched the two
   reviewed public sources: **one 714-character Hare/Tortoise passage, one
   303-character Fox/Grapes passage and five NASA passages** (1,758, 7,572,
   5,001, 5,276 and 1,128 characters). Only public source requests were made;
@@ -640,13 +812,13 @@ still leads with T40 rather than the later T41 evidence.
 Actual validation:
 
 - `PATH=/home/mowll/.nvm/versions/node/v24.20.0/bin:$PATH UV_NO_ENV_FILE=1
-  UV_CACHE_DIR=/tmp/shepherd-review-uv make test`: **194 backend unit tests and
+UV_CACHE_DIR=/tmp/shepherd-review-uv make test`: **194 backend unit tests and
   162 frontend component tests passed**. The first restricted run had seven
   socket-permission setup errors; the permitted rerun used only synthetic local
   HTTP servers and resolved those environment errors.
 - `UV_CACHE_DIR=/tmp/shepherd-review-uv uv run --directory apps/api --locked
-  --no-env-file pytest tests/unit/test_tutoring_contracts.py
-  tests/integration/test_tutoring.py /tmp/shepherd_reading_review_test.py`:
+--no-env-file pytest tests/unit/test_tutoring_contracts.py
+tests/integration/test_tutoring.py /tmp/shepherd_reading_review_test.py`:
   **58 passed** (26 existing contract cases, 30 existing integration cases, two
   temporary review probes). The probes used temporary on-disk SQLite and mocked
   providers for pasted and photographed passages. They demonstrated that a
@@ -710,7 +882,7 @@ Changes and affected contracts:
 Validation:
 
 - `pytest apps/api/tests/unit`: **194 passed**. `pytest
-  apps/api/tests/integration`: **267 passed** with the existing Starlette
+apps/api/tests/integration`: **267 passed** with the existing Starlette
   deprecation warning.
 - `pnpm test`: **162 passed** across 10 frontend files. The Tutor
   recovery regressions, provider refresh recovery, account identity, and setup
@@ -759,7 +931,7 @@ Validation:
 - The two client refresh cases and the component signup case failed before the
   fix. The component showed the reported Session changed error and Retry AI
   settings button. After the fix, `pnpm --filter @math-tutor/web test
-  tests/client.test.tsx tests/Setup.test.tsx`: **42 passed**.
+tests/client.test.tsx tests/Setup.test.tsx`: **42 passed**.
 - `make check`: **194 backend unit tests**, **152 frontend component tests**,
   lint, formatting, types, builds, contract drift, secrets and IaC checks passed.
   The first sandboxed attempt could not create loopback sockets; rerunning with
@@ -768,11 +940,11 @@ Validation:
   `sh scripts/container-smoke.sh math-practice-tutor:local`: passed. The smoke
   uses disposable containers and synthetic data.
 - `pnpm exec playwright test tests/smoke/setup.spec.ts tests/smoke/bootstrap.spec.ts
-  --grep 'waiting update|native browser setup|installed update|browser setup permission|another learner|isolated and revocable'`:
+--grep 'waiting update|native browser setup|installed update|browser setup permission|another learner|isolated and revocable'`:
   **14 passed** across desktop/mobile Chromium. Signup, lost responses, reloads,
   updates, account switching and revocation passed.
 - Authorized `docker compose -f infra/docker/compose.yaml up -d --no-build api
-  worker`: passed. Compose loaded private settings normally. Both services run
+worker`: passed. Compose loaded private settings normally. Both services run
   the tested image; HTTPS readiness and the served frontend asset names match
   the tested build. The public setup check confirms the administrator remains.
 - `make hooks-check secret-check` and `git diff --check`: passed.
@@ -820,7 +992,7 @@ Validation:
   visitor state after signup were corrected before the final passing run.
 - `make test-integration`: **267 passed** against temporary SQLite databases.
 - `pnpm exec playwright test tests/smoke/setup.spec.ts tests/smoke/bootstrap.spec.ts
-  --grep 'waiting update|native browser setup|installed update|browser setup permission'`:
+--grep 'waiting update|native browser setup|installed update|browser setup permission'`:
   **10 desktop/mobile cases passed** using the installed Chrome browser. The
   restart test exchanges the link, reloads, restarts the API, removes anonymous
   CSRF, and successfully creates the account without reopening the owner link.
@@ -887,7 +1059,7 @@ Validation completed before the documentation review:
 - `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome make smoke`:
   **62 desktop/mobile cases passed** before the signup update fix. After that
   fix, `pnpm exec playwright test tests/smoke/setup.spec.ts
-  tests/smoke/bootstrap.spec.ts --grep 'waiting update|native browser setup|installed update'`
+tests/smoke/bootstrap.spec.ts --grep 'waiting update|native browser setup|installed update'`
   passed all **eight affected cases**, and `make check` passed again.
 - `docker build -f infra/docker/Dockerfile -t math-practice-tutor:local .` and
   `sh scripts/container-smoke.sh math-practice-tutor:local`: passed. The container

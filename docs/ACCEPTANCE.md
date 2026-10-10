@@ -1,165 +1,119 @@
-# Acceptance evidence and final maintainer checklist
+# Acceptance evidence and remaining checks
 
-Automated checks use synthetic data and on-disk temporary SQLite. They prove
-software behavior only. The maintainer explicitly deferred physical phone checks,
-live provider/model verification and actual browser-model measurements. Those
-remain required before claiming the associated release gates complete.
+Synthetic tests establish software behavior. Live model quality, learning
+outcomes, physical-device behavior and the actual host's recovery procedure need
+separate evidence. This checklist does not claim production readiness.
+
+## Current checkpoint
+
+Recorded automated gates passed through **T44 (October 8, 2026)**: 291 backend
+unit, 188 component, 340 integration and 80 desktop/mobile Chromium tests, plus
+mock evaluations, repository checks, dependency audits, container smoke and a
+clean HIGH/CRITICAL image scan. Exact commands and limits are in
+[the T44 task entry](TASKS.md#t44--adversarial-review-hardening-2026-10-08).
+Those complete source gates remain the October 8 evidence.
+
+On **October 10, 2026**, T44 source `62b30ca` was deployed to the existing private
+Compose installation at `0020_request_recovery`. Both writers stopped before a
+verified private rollback archive. The deployed image passed container smoke and
+a fresh scan with zero HIGH/CRITICAL findings. HTTPS readiness, matching served
+HTML/JS/CSS, protected reading/admin/receipt endpoints and no-cache HTML/service
+worker responses passed. Current provider selections were not inspected or
+changed; no inference was run. Exact image and commands are in [TASKS](TASKS.md).
+
+All 40 existing mobile Chromium checks and six additional synthetic phone flows
+passed at 320×568, 375×667, 390×844, 430×932, 667×375 and 844×390. Settings,
+long readings, conversation/reload and QR/photo upload passed overflow and control
+reachability assertions. The suites used installed Chrome 149 with an explicit
+browser override; exact commands and versions are in [TASKS](TASKS.md#private-deployment-and-phone-layouts-2026-10-10).
+Emulation does not establish physical camera, iPhone Safari, device installation
+or manual accessibility behavior. Use [HANDOFF](HANDOFF.md) for the remaining actions.
+
+The approved offline development restore rehearsal passed authenticated encrypted
+backup/restore, wrong-passphrase rejection, database integrity/foreign keys,
+release-schema migration, browser-session revocation, unfinished-job/submission
+cancellation, lease clearing and retained-object checks. The running data and
+rollback archive were untouched; temporary copies were removed. No deletion
+markers were present, so populated deletion replay was not exercised. This offline
+check did not cover separately stored settings, session secret and passphrase,
+or restored app startup and sign-in.
 
 ## Functional/security mapping
 
-T44 closes the reproduced source-rendering, Unicode-capacity and lost-request
-identity failures. Receipt recovery covers session/activity/text and ordinary
-photo submissions after an accepted response is lost, including reload. Explicit
-resolution excludes delayed acceptance under the same SQLite write lock. Pending
-work defers service-worker updates. Draft text/photos are not persisted in the
-browser; closing a tab still loses its ephemeral receipt marker. The separate
-phone companion retains its token-scoped upload workflow and physical-device
-recovery remains an external gate.
+The current product is the multi-subject tutor, with optional exact-math utilities.
+The former math-catalog, authored-hint and manual photo-approval acceptance flows
+are superseded by D009/T25. Their dated regression evidence remains in TASKS.
 
-Teaching guards reject the reproduced unchanged homework equation, scalar answer
-criteria and compulsory extra work after sufficient feedback. A reassurance-only
-question does not become a new demonstration. Current evidence uses server-owned
-source/support links and excludes older v3 observations; historical wording is
-preserved. These are bounded software rules, not universal semantic enforcement.
-Guided context now includes an explicitly bounded opening excerpt as well as
-recent sections; omitted intervening material and model prior knowledge remain
-quality risks. Codepoint section boundaries can divide a long combining/ZWJ
-cluster with no natural break, while preserving every saved character.
+Paths below are relative to the repository; test results are recorded in TASKS.
 
-The adversarial fixture adds four scripted scenarios/20 stages. They exercise
-wrong work, explanation, assisted revision, supported alternatives, section
-navigation and answers to distinct **fixture-authored** transfer tasks. Mock
-contract completion is not independent transfer or live-provider acceptance;
-human reviews remain pending. Before a useful supervised reading trial, test and
-select the actual tutor route, then review this bounded conversation through the
-application/worker path for concise sufficiency, provenance, spoiler resistance
-and an independently supplied learner answer. No paid calls or provider changes
-were made during T44. Exact local outcomes are recorded in TASKS.
+| Current requirement                                                                                                                                         | Automated coverage                                                                                                                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Topic-based activities, criteria, explanations, revision and learner-controlled progression                                                                 | `apps/api/tests/integration/test_tutoring.py`, `test_teaching_memory.py`, `test_teaching_output_boundaries.py`; `tests/smoke/tutor.spec.ts`         |
+| Assignment references produce distinct practice; sufficient work receives acknowledgment; reassurance creates no new demonstration                          | `apps/api/tests/unit/test_teaching_boundaries.py`; teaching memory/output integration tests and adversarial mock fixtures                           |
+| Saved material preserves literal text, Unicode limits, source ownership and guided section focus; supplied context excludes future sections                 | `apps/api/tests/integration/test_reading.py`; `apps/api/tests/unit/test_reading_sources.py`; `tests/smoke/reading.spec.ts`                          |
+| Full photo reading precedes feedback; clear work continues automatically; blocking uncertainty receives specific advice and stays uncertain in conversation | `apps/api/tests/unit/test_images.py`; tutoring integration tests; `tests/smoke/phone-navigation.spec.ts`                                            |
+| Duplicate requests, lost acknowledgments and reloads preserve owned work; resolution excludes delayed acceptance                                            | `apps/api/tests/integration/test_request_recovery.py`; `tests/smoke/request-recovery.spec.ts`                                                       |
+| Browser-first owner setup, separate learner sign-ins, revocation and cross-account isolation                                                                | `apps/api/tests/integration/test_browser_setup.py`, `test_owner_setup.py`, `test_auth_sessions.py`; `tests/smoke/setup.spec.ts`, `accounts.spec.ts` |
+| Backend provider capability/audience/cloud policy; safe failures and no automatic cloud fallback                                                            | `apps/api/tests/unit/test_provider_contracts.py`, `test_provider_execution.py`; `apps/api/tests/integration/test_provider_connections.py`           |
+| Retention, deletion, authenticated exports, migration integrity and restore tombstones                                                                      | `apps/api/tests/integration/test_retention_recovery.py`, `test_db_foundation.py`, `test_workflows.py`                                               |
+| Public-only PWA caches, account transitions and updates that defer while commands are pending                                                               | `tests/smoke/bootstrap.spec.ts`, `navigation.spec.ts`, `request-recovery.spec.ts`; frontend App/UpdateNotice tests                                  |
 
-T42's reading software gate covers complete saved passages in generation,
-guidance, next questions, reload/History/export/deletion; clear photo continuation;
-original-passage labeling and replacement rejection; imported-source ownership,
-expiry, authorization and bounded public fetching. The tests are
-`test_reading.py`, `test_reading_sources.py`, `test_reading_evaluation.py`, frontend
-Reading/Tutor tests and `tests/smoke/reading.spec.ts`. Migration 0018 has drift and
-rollback evidence. `make eval-mock` includes 12 original reading cases with
-36 contract calls. These do not measure teaching or optical-reading quality.
+Teaching guards reject reproduced copied equations, scalar answer criteria and
+required extra work after sufficient feedback. They are bounded recognizers,
+not universal semantic enforcement. AI observations remain fallible guidance;
+server-owned source/support links and current evidence versions govern adaptation.
+Older feedback remains visible without being treated as current learning evidence.
 
-Before reading use is accepted, perform the [reading rehearsal](TUTOR_EVALUATION.md#reading-comprehension-rehearsal)
-with the selected live tutor and real phone. Record model/route/prompt settings,
-sample denominator, false corrections, invented source claims, answer leakage,
-supported alternative interpretations, follow-up memory and next-question relevance.
-Physical camera/HEIC, keyboard/screen-reader and phone viewport evidence remain open.
+The mock suites include 12 reading cases/36 stages, 12 cross-subject cases/36
+stages and four adversarial conversations/20 stages. Scripted answers to
+fixture-authored transfer activities do not demonstrate independent learning.
+Recorded Muse CLI samples also do not verify the installed HTTP/browser/worker
+path. See [TUTOR_EVALUATION](TUTOR_EVALUATION.md) for live review procedures.
 
-T25 is the current product acceptance gate. The A01–A24 table below is historical
-math/workflow regression evidence, not proof that the multi-subject tutor works.
-In particular, A06/A23's old manual-confirmation behavior and A21's authored-hint
-policy do not apply to the primary AI workspace. The maintainer explicitly
-rejected templates and photo approvals; see D009.
-
-T25 acceptance must cover:
-
-- Free-text non-math topics without a required level or fixed catalog.
-- AI-generated activity → full photo reading displayed before feedback → automatic
-  clear-reading continuation → guidance → revision/discussion → appropriate next activity.
-- Pasted and photographed assignments used only to generate distinct analogous
-  practice; no direct original-homework solving. Reading questions grounded in a
-  supplied excerpt, not invented access to a book.
-- Uncertain/unreadable photos stop before tutoring and receive concrete
-  handwriting/organization advice; there is no approval UI or hidden acceptance call.
-- Adjustable initiative and bounded relevant context including previous learner
-  work and tutor replies, not just the most recent question.
-- Same ownership, revocation, idempotency, retry, deletion, provider-policy,
-  no-cloud-fallback, safe-rendering and migration integrity protections as before.
-
-Exact test paths/counts and observed outcomes belong in the T25 TASKS entry.
-Synthetic provider responses test software behavior; actual-model handwriting,
-pedagogy, groundedness and answer leakage remain separate human-reviewed gates.
-Use [TUTOR_EVALUATION](TUTOR_EVALUATION.md) for original cross-subject and homework
-policy cases plus an end-to-end iPhone rehearsal.
-
-First-account setup is covered by `test_local_start.py`,
-`test_container_start.py`, `test_browser_setup.py` and `test_owner_setup.py`:
-native startup, Docker discovery, private socket permissions, link expiry and
-renewal, stale-link rejection, atomic account creation and refusal to reset an
-existing account. Cookie tests cover scope, signature, expiry, origin binding,
-one-use exchange and permission after an API restart. `tests/smoke/setup.spec.ts`
-verifies reload/restart recovery, submission after anonymous CSRF expires, and
-deferred updates during signup. The user remains signed in after the update.
-`scripts/container-smoke.sh` checks the owner command and setup API in a
-disposable container. T38 and T39 in [TASKS](TASKS.md) record the commands and results.
-
-Paths below are relative to the repository. `workflows` means
-`apps/api/tests/integration/test_workflows.py`; `providers` means
-`apps/api/tests/unit/test_provider_contracts.py`; browser scenarios live in
-`tests/smoke/bootstrap.spec.ts`. Exact command outcomes are in TASKS.
-
-| Acceptance                            | Automated evidence                                                                                                                            |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| A01 correct exact answer              | `test_math_domain.py`, 33 rational fixtures; persisted-practice browser flow                                                                  |
-| A02 incorrect answer and help         | `test_equivalent_format_question_and_help_counters`; browser wrong answer then hint/revision                                                  |
-| A03 equivalent unsimplified value     | `test_value_format_and_equation_grammar_are_separate`; workflow format verdict                                                                |
-| A04 alternate method accepted         | Exact parser accepts equivalent fraction/decimal values independently of work text                                                            |
-| A05 final answer separate from steps  | `test_final_answer_is_separate_from_invalid_visible_reasoning`; reasoning explicitly not checked                                              |
-| A06 ambiguity requires confirmation   | `test_photo_confirmation_is_explicit_immutable_and_stale_safe`; browser photo preview/confirmation                                            |
-| A07 questions do not count as wrong   | `test_equivalent_format_question_and_help_counters`                                                                                           |
-| A08 one result for duplicate work     | `test_duplicate_canonical_payload_and_stale_versions`; duplicate photo confirmation test                                                      |
-| A09 crash after response              | `test_crash_after_provider_response_recovers_one_visible_result`; expired-lease and simultaneous-worker tests                                 |
-| A10 typed transport failures          | Provider wire/refusal/timeout/429/malformed tests; `test_failed_provider_retry_budget_and_stale_retry`                                        |
-| A11 text-only vision rejected         | Provider modality tests and effective-photo-feature policy                                                                                    |
-| A12 no local-to-cloud fallback        | Explicit route dispatch, typed local failure; `test_policy_change_never_replays_to_new_route`                                                 |
-| A13 hostile text has no authority     | Unsafe-parser cases; strict provider extra-field rejection; profile/solution-policy test; adversarial external fixture                        |
-| A14 two-learner isolation             | `test_learner_sign_in_is_revocable_and_isolated`; learner password sign-in browser isolation/revocation                                      |
-| A15 hidden answer exclusion           | `test_public_schemas.py`, persisted problem API payload assertions                                                                            |
-| A16 immutable profile snapshot        | `test_profile_version_is_snapshotted_and_solution_policy_enforced`                                                                            |
-| A17 deletion during inference/restore | `test_deletion_during_work_prevents_resurrection_and_restore`                                                                                 |
-| A18 hostile upload/math bounds        | `test_images.py`, parser properties, `test_csrf_and_chunked_body_limits`                                                                      |
-| A19 reconnect same operation          | Persisted-practice browser test disconnects after accepted submission, reloads and recovers one verdict; physical phone backgrounding pending |
-| A20 selected provider audience        | Mixed Meta route accepts mixed eligibility; a restricted route blocks learners outside its selection; explicit-cloud policy tests             |
-| A21 protected help uses authored text | Profile/solution-policy test; models never provide protected hints; actual pedagogy/disclosure evaluation pending                             |
-| A22 no previous learner UI/cache      | Browser learner switch, logout and sign-in revocation; offline cache asserts public assets only                                               |
-| A23 stale photo revision              | `test_photo_confirmation_is_explicit_immutable_and_stale_safe`                                                                                |
-| A24 controlled update                 | Browser update waits for user, preserves unsent entry before refresh, and refreshes only after acknowledgment                                 |
-
-Additional checks cover migration up/down/schema drift, foreign keys, short
-transactions and lock contention, UTC/UUID handling, backup authentication/tamper,
-metadata stripping/HEIF, private S3 SDK calls, external questions remaining
-unverifiable with zero progress, and offline exact arithmetic. No assertion was
-removed to hide a defect. See TASKS for the bugs found and fixed.
+Known limits remain explicit: closing a tab loses its receipt marker; the phone
+companion has a separate token workflow; pathological combining/ZWJ text can
+split across section boundaries without losing characters; model prior knowledge
+can reveal future events despite exclusion from supplied context.
 
 ## Items requiring the maintainer
 
-1. **Actual phones (T11/T17).** Use a private HTTPS deployment and synthetic work
-   on iPhone Safari and Android Chrome. Record device/OS/browser versions, trusted
-   certificate, learner sign-in/re-sign-in, denied camera access, JPEG/HEIC
-   capture, preview/crop/rotation, clear reading proceeding without approval,
-   unclear reading retake advice, 200% zoom, keyboard/screen-reader
-   behavior, app installation, update prompt, and background/reconnect after
-   submit. Confirm the same operation returns and logout/revocation clears content.
-   Expected: no direct homework/active-task answers, no sensitive browser
-   cache, no automatic refresh losing unsent work. Attach original synthetic
-   screenshots/results; do not upload real learner material.
-2. **Live provider evidence (T09/T12/T13/T14/T18/T19).** Choose the providers you
-   actually intend to run. Follow PROVIDER_STATUS with exact model/runtime/region,
-   eligibility record, explicit data consent and bounded synthetic probes/evals.
-   Check Meta's current authenticated wire documentation. Review every initial
-   fixture error, especially ambiguity and premature solutions. Record latency,
-   tokens and failures separately from correctness/pedagogy. Disabled/unverified
-   optional providers must stay labeled that way.
-3. **Browser model measurement (T23).** On one named WebGPU device, review the
-   separate model license and explicitly consent to the pinned download. Run the
-   three synthetic questions, export the report, fill device/memory/battery/
-   thermal/eviction/quality fields, exercise cancel/unload/delete, and record cold
-   versus warm latency and storage. This is text-only research, never the grading
-   engine. No model was downloaded during coding.
-4. **Private-host release rehearsal (T19).** Recover settings from your secret
-   manager, rehearse encrypted restore into a fresh directory with the current
-   deletion ledger, verify worker readiness, sign the administrator and learners
-   in again, and confirm backup retention and provider/data policy for the actual
-   host. Native synthetic and CI container checks do not validate your private
-   deployment configuration.
+1. **Test and select the intended models.** Follow
+   [PROVIDER_STATUS](PROVIDER_STATUS.md#test-and-select-the-tutor-and-photo-reader). Record exact
+   model/runtime/region where relevant, reviewed audience terms and data consent.
+   T44 requires a fresh tutor connection test; photo-reader tests keep their normal
+   validity. Select both roles explicitly. Only providers intended for use need
+   live acceptance; unverified optional routes stay labeled unverified.
+2. **Review real tutoring through the app and worker.** Use original synthetic
+   work and the [evaluation guide](TUTOR_EVALUATION.md). Check handwriting,
+   false corrections, sufficient answers and supported alternatives, explanation,
+   assisted revision, independent transfer, memory, grounded reading, spoilers and
+   homework/active-task answer leakage. Record failures and sample denominators;
+   report latency/tokens separately from teaching quality. Human review is required.
+3. **Use actual phones and accessibility tools.** On iPhone Safari and Android
+   Chrome, record device/OS/browser versions and private HTTPS trust. Check learner
+   sign-in/re-sign-in, QR upload, denied camera access, JPEG/HEIC capture,
+   preview/crop/rotation, automatic clear-reading continuation and retake advice.
+   Check 200% zoom, keyboard/screen reader, PWA installation/update and background/
+   reconnect after submission. Confirm the same operation returns, revocation
+   clears content and no sensitive browser cache or automatic refresh loses work.
+4. **Complete operational recovery.** Retain an encrypted backup and the current
+   deletion ledger; store its passphrase and deployment settings/session secret
+   separately. Verify restored API/worker readiness, fresh administrator/learner
+   sign-ins, saved-key decryption, retained provider policy and backup retention.
+   The completed offline development restore does not validate those settings
+   or recovery from separately retained operational copies.
 
-AWS provisioning is optional and was not performed. If selected, review the
-specific AMI, network/certificate/SSM access, retained EBS mount, secret ARN,
-least-privilege IAM, and budget before applying the template. No production or
-public deployment is implied by pushing the code.
+Attach only synthetic evidence without credentials or real learner material.
+Live inference, deployment and downloads require explicit authorization; this
+checklist records unfinished work rather than authorizing those actions.
+
+## Optional research and hosting
+
+T23 browser-model acceptance requires a named WebGPU device, reviewed model
+license, explicit download consent, synthetic questions, cold/warm latency,
+storage/memory/battery/thermal measurements and cancel/unload/delete checks.
+It is separate text-only research, not a prerequisite for the core tutor release.
+
+AWS provisioning remains optional. If chosen, review the AMI, network/certificate/
+SSM access, retained EBS mount, secret ARN, IAM and budget before applying IaC.
+Publishing source does not deploy an application.

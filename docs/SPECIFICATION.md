@@ -1,15 +1,15 @@
 # Shepherd Academy Universe specification
 
-This document preserves the product, architecture, safety contracts, and roadmap
-from the original README. **These are implementation requirements, not working
-features.** Start with the [README](../README.md) for tested setup and current
-status; use [TASKS.md](TASKS.md) for completion evidence.
+This document defines the current product, architecture and safety contracts.
+The [README](../README.md) covers setup; [TASKS.md](TASKS.md) records implementation
+evidence; [ACCEPTANCE.md](ACCEPTANCE.md) separates automated checks from remaining
+model, device and private-host acceptance. Requirements here do not establish
+teaching quality or production readiness.
 
-Specification baseline: September 6, 2026. External references below retain the
-original baseline's verification record; this scaffold review does not revalidate
-future provider capabilities, versions, or terms. Recheck them in the task that
-implements each integration. No provider or hardware combination has been
-live-tested by this project.
+Current scope includes T44. Historical task evidence and superseded decisions
+remain in TASKS and [DECISIONS.md](DECISIONS.md), rather than as parallel workflows
+in this specification. External references retain their dated verification
+record; recheck versions, capabilities and terms when changing an integration.
 
 ## Contents
 
@@ -33,9 +33,6 @@ live-tested by this project.
 - [18. Definition of done and public presentation](#18-definition-of-done-and-public-presentation)
 - [19. Maintainer decisions and non-goals](#19-maintainer-decisions-and-non-goals)
 - [20. Research references](#20-research-references)
-- [Appendix A. Root AGENTS.md](#appendix-a-root-agentsmd)
-- [Appendix B. Portable skill example](#appendix-b-portable-skill-example)
-- [Appendix C. First implementation prompt](#appendix-c-first-implementation-prompt)
 
 ## 1. Product and scope
 
@@ -51,9 +48,8 @@ boundaries, replaceable providers, and evidence-backed evaluation support this
 learning experience; they are not substitutes for it.
 
 [D009](DECISIONS.md#d009--ai-tutoring-is-the-primary-product-2026-09-07) records the
-maintainer's correction of the original catalog-first implementation. T25 is the
-current product contract. Historical T00–T24 math/demo/evaluation descriptions
-below document earlier engineering work, not restrictions on the AI tutor.
+maintainer's correction of the original catalog-first implementation. T25 and the
+subsequent teaching/material contracts govern the current tutor.
 There are **no fixed-template problems and no photo approval gate** in the tutor.
 
 Activity difficulty is a learning preference: `introductory` (Easier), `standard`,
@@ -82,8 +78,7 @@ Deliver a complete, modest application with:
 5. A deterministic mock backend, Meta Spark adapter, local Ollama and vLLM adapters, and Amazon Bedrock adapter.
 6. Responsive web and installable Progressive Web App (PWA) presentation, containerized self-hosting, tests, and synthetic evaluation fixtures.
 
-The first math-only slice was infrastructure work. It did not deliver the central
-AI tutoring experience. Mock workflows do not establish real teaching quality.
+Mock workflows establish software contracts, not real teaching quality.
 
 ### Deliberate exclusions from version 1
 
@@ -99,20 +94,24 @@ student's attempted response to an app-generated activity.
 
 **Choose a web-first PWA. Keep the location of the application separate from the location of model inference.** Installing the web application on a phone does not install its Python server, database, or language model.
 
-| Mode                    | Application and storage                                                  | Model inference                                                   | Phone experience                                 | Release target             |
-| ----------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------- | ------------------------------------------------ | -------------------------- |
-| Mock development/demo   | Native local processes or optional containers; synthetic SQLite database | Deterministic fixture responses                                   | Responsive browser UI                            | First vertical slice       |
-| Fully local server      | Desktop, laptop, or home server                                          | Ollama or vLLM on that machine or an explicitly approved LAN host | Browser/PWA connects to the server               | Version 1                  |
-| Local app, hosted model | Local server and database                                                | Meta API, Bedrock, or another approved endpoint                   | Same browser/PWA                                 | Version 1                  |
-| Hosted web app          | Private server or AWS deployment                                         | Approved cloud or private model endpoint                          | HTTPS browser/PWA                                | After deployment hardening |
-| Offline practice        | Previously installed PWA; public problem pack only                       | None                                                              | Deterministic exercises; AI features unavailable | Later enhancement          |
-| Entirely on-device AI   | Browser storage and a Web Worker                                         | Small, compatible browser model                                   | Experimental; device-dependent                   | Research phase only        |
+| Mode                    | Application and storage                                                  | Model inference                                                   | Phone experience                                     | Release target              |
+| ----------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------- | ---------------------------------------------------- | --------------------------- |
+| Mock development/demo   | Native local processes or optional containers; synthetic SQLite database | Deterministic fixture responses                                   | Responsive browser UI                                | First vertical slice        |
+| Fully local server      | Desktop, laptop, or home server                                          | Ollama or vLLM on that machine or an explicitly approved LAN host | Browser/PWA connects to the server                   | Version 1                   |
+| Local app, hosted model | Local server and database                                                | Meta API, Bedrock, or another approved endpoint                   | Same browser/PWA                                     | Version 1                   |
+| Hosted web app          | Private server or AWS deployment                                         | Approved cloud or private model endpoint                          | HTTPS browser/PWA                                    | After deployment hardening  |
+| Offline practice        | Previously installed PWA; public problem pack only                       | None                                                              | Isolated synthetic practice; AI features unavailable | Implemented supporting mode |
+| Entirely on-device AI   | Browser storage and a Web Worker                                         | Small, compatible browser model                                   | Experimental; device-dependent                       | Research phase only         |
 
 A local-server deployment can keep learner content off the public Internet when all selected providers are local and external services are disabled. Initial dependency/model downloads still require connectivity unless separately provisioned. “Local” is not a synonym for “no data leaves the device”: analytics, error reporting, remote images, and accidental provider fallback must also be excluded.
 
 ### Phone support requirements
 
-Use a single responsive React interface. Support touch, portrait layout, file selection, camera capture where available, image preview, rotation/cropping, and resubmission. Always offer typed input and file upload if camera access is denied. Do not require installing an app from a store.
+Use a single responsive React interface. Support touch, portrait layout, file
+selection, camera capture where available, image preview, rotation/cropping and
+resubmission.
+Always offer typed input and file upload if camera access is denied. Do not
+require installing an app from a store.
 
 Camera APIs and service workers have secure-context requirements. `localhost` on a development computer is different from opening that computer's plain-HTTP LAN address on a phone. The phone runbook must provide trusted HTTPS rather than instruct users to disable browser security. [^S10][^S11]
 
@@ -133,9 +132,8 @@ The research phase must select one exact runtime/model/device combination, begin
 | Screen                    | Required behavior                                                                                                                                                 |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Adult setup               | Bootstrap administrator, select audience/privacy mode, configure allowed providers, create learner accounts, set/reset passwords, manage signed-in browsers       |
-| Tutor profile             | Edit teaching preferences, preview with synthetic examples, create immutable profile versions                                                                     |
 | Tutor                     | Choose a topic/reference, receive an AI-generated activity, submit work/photo, see reading and guidance, revise/discuss, request a next activity, retry or finish |
-| Session review            | Show attempts, final-answer status, assistance used, unresolved questions, and source/version metadata                                                            |
+| Session review            | Show submitted work, readings, guidance, assistance and unresolved points with source/version metadata                                                            |
 | Administration/evaluation | Revoke devices, delete/export learner data, view provider health and redacted usage, run synthetic evaluations                                                    |
 
 Keep learner navigation separate from administrator controls. The learner cannot edit endpoints, credentials, retention, age eligibility, or system safety rules.
@@ -167,11 +165,9 @@ accounts, sets/resets write-only passwords, and manages signed-in browsers besid
 the selected learner. The common sign-in form accepts either account type. A
 learner sees only their own work. Administrator navigation is limited to Learners,
 Settings and Help, with synthetic connection tests in Settings. Practice requires
-a learner sign-in. Existing IDs and histories are
-preserved; duplicate old names receive deterministic suffixes, never a merge.
-Existing profiles require an administrator-set password before direct sign-in.
+a learner sign-in.
 
-### Tutor profile fields
+### Tutor preferences
 
 The primary tutor accepts a free-text topic and an adjustable initiative setting:
 `learner_led`, `balanced`, or `tutor_led`. There is no required level or finite
@@ -180,27 +176,11 @@ step and adapts activities; it cannot enable answering the original homework or
 change data/provider permissions. Adjustments apply to subsequent requests while
 prior responses remain recorded as produced.
 
-The following versioned profile fields describe the historical built-in exercise
-module and its regression tests, not restrictions on the primary T25 tutor:
-
-| Field                   | Allowed initial values / behavior                                             |
-| ----------------------- | ----------------------------------------------------------------------------- |
-| `name`                  | Adult-selected display label                                                  |
-| `topics`                | Explicit identifiers from the supported skill catalog                         |
-| `difficulty`            | `introductory`, `standard`, `challenge`; each maps to tested generator ranges |
-| `teaching_style`        | `guided`, `direct`, `worked_example`                                          |
-| `verbosity`             | `brief`, `standard`, `detailed`                                               |
-| `hint_policy`           | Progressive levels; full-solution access controlled separately                |
-| `solution_policy`       | `on_request`, `after_two_attempts`, `adult_only`                              |
-| `language`              | Default English; do not claim other languages are evaluated until tested      |
-| `session_problem_limit` | Default 5; adult-configurable 1–20                                            |
-| `question_pacing`       | Default one instructional question per response                               |
-| `presentation`          | Font scale, reduced motion, compact explanations; actual UI preferences       |
-| `custom_instructions`   | Adult-authored teaching preferences; maximum 2,000 characters                 |
-
-The default preset uses guided explanations but offers a direct explanation when the learner requests one. Do not trap the learner in repeated Socratic questions. Examples should be relevant and age-appropriate without collecting personal interests or diagnoses by default.
-
-Changes create a new profile version. An active session keeps its starting version unless the adult explicitly starts a new session. Custom text cannot enable network access, change provider policy, suppress uncertainty, or grant permissions.
+Difficulty and reading pace are independent saved session preferences. Explain
+directly when requested; do not trap the learner in repeated Socratic questions.
+Examples should be relevant and age-appropriate without collecting personal
+interests or diagnoses by default. Preferences cannot enable network access,
+change provider policy, suppress uncertainty or grant permissions.
 
 ### Example walkthrough
 
@@ -282,55 +262,38 @@ grant permissions, overwrite attempts, change a verified answer key, or certify
 mastery. Backend code owns transitions; the learner can revise, discuss, move on,
 or finish without a deterministic correct-answer gate.
 
-### Historical exact-math utilities (not the tutoring curriculum)
+### Optional exact-math evidence
 
-- Fraction equivalence and simplification; addition, subtraction, multiplication, and division using bounded integers and nonzero denominators.
-- Linear equations of the form `a*x + b = c`, with nonzero integer `a` and an exact rational solution. Do not quietly accept arbitrary algebra expressions outside the grammar.
-- These utilities support exact-arithmetic regression tests and the isolated
-  synthetic exercise demo. They do not define which subjects can be taught.
+The bounded exact-math domain supports fraction arithmetic and linear equations
+of the form `a*x+b=c`, using integers and `fractions.Fraction`. Its generator,
+parser and verifier have independent regression/property tests. Hidden expected
+results and private generation parameters stay on the backend. These utilities
+and isolated synthetic exercises do not restrict tutor subjects or grade AI
+reasoning. Deterministic answer/format verdicts remain separate from model
+observations; transcription failures, questions and provider errors are not
+incorrect learner attempts.
 
-Use Python `fractions.Fraction` and integer arithmetic for version 1. A template has an ID, version, skill ID, seed, parameters, learner-visible problem text, hidden expected result, format constraints, and authored hint/solution material. Store the actual parameters as well as the seed; random generation algorithms may change.
-
-If the selected AI backend is unavailable, preserve the work and show an actionable
-retry/configuration error. Do not substitute a template or authored hint and call
-it tutoring. A configured mock is explicitly synthetic and cannot read handwriting.
-
-### Historical exact verdicts and current AI guidance
-
-The exact exercise module has the following verdict fields. T25 guidance does
-not generate a verified verdict or use these fields to gate the next activity:
-
-Use distinct fields:
-
-```text
-answer_status: correct | incorrect | unverifiable | no_answer
-format_status: satisfied | needs_simplification | not_applicable | unverifiable
-reasoning_status: not_checked | model_feedback_only | deterministically_checked
-assistance_level: 0 | 1 | 2 | 3 | 4
-completion: open | completed | skipped
-```
-
-Level 0 means no mathematical help; transcription clarification is still level 0. Level 1 is a hint, 2 a direct explanation, 3 a worked example with different numbers, and 4 the original solution. A learner's mathematical question counts as assistance when an instructional response is shown, but is **not an incorrect attempt**. Progress records must not confuse retries, provider failures, or unreadable photographs with mathematical errors.
-
-The server owns verdicts, transitions, help counters, and progress updates. Model output cannot mark a session complete, overwrite prior attempts, or change an answer key. No single successful attempt establishes mastery. Version 1 reports counts and recent outcomes, not a proprietary-looking “ability score.”
+If the selected AI backend is unavailable, preserve the work and show an
+actionable retry/configuration error. Do not substitute a template or authored
+hint and call it tutoring. A configured mock is explicitly synthetic and cannot
+read handwriting.
 
 ### Output contract
 
-Each model call has a typed generation, reading, or guidance schema. Structured
-output supports safe persistence and rendering; it must not impose a fixed
-curriculum or scripted teaching dialogue. Historical response example:
+Each model call has a typed generation, reading or guidance schema in
+[provider contracts](../apps/api/src/math_tutor/adapters/providers/contracts.py).
+Generated activities carry a learning goal and 1–3 sufficient-response criteria.
+Reading reports carry the visible transcription and qualified readability.
+Guidance carries a teaching action and fallible resolved/open observations.
+Sufficient work receives acknowledgment without compulsory additional work.
+Structured output supports persistence and rendering; it must not impose a
+fixed curriculum or scripted teaching dialogue.
 
-```json
-{
-  "schema_version": "1",
-  "message_kind": "hint",
-  "message_markdown": "Can you rewrite both fractions using the same denominator?",
-  "suggested_next_action": "revise_answer",
-  "uncertainty_note": null
-}
-```
-
-The server derives the legal `message_kind` and checks the result against the requested help level. Allowed next actions are UI suggestions, not executable tools. Do not ask for, display, or persist hidden chain-of-thought or provider reasoning tokens. The learner's own written steps and the tutor's concise explanations are normal application content.
+Suggested next steps are learner guidance, never executable tools or workflow
+commands. The server attaches assistance and source provenance. Do not ask for,
+display or persist hidden chain-of-thought. Operational records may retain
+reported reasoning-token counts, never raw reasoning. The learner's written
+steps and the tutor's concise explanations are normal application content.
 
 Build each prompt from versioned instructions, current topic/initiative, the
 current activity, the student's full accepted reading or typed work, and relevant
@@ -374,9 +337,15 @@ Worker -> provider router -> mock / Meta / Ollama / vLLM / Bedrock
 
 ### Module boundaries
 
-`domain/` owns immutable problem definitions, exact verification, tutor-profile rules, and state transitions. It must not import FastAPI, database models, cloud SDKs, or provider clients.
+`domain/` owns bounded exact-math generation and verification. It must not import
+FastAPI, database models, cloud SDKs or provider clients.
 
-`application/` coordinates authorization, persistence, workflows, jobs, and provider requests. `adapters/` contains persistence, storage, and provider implementations. `api/` translates HTTP input/output; no math logic in route handlers. `worker/` executes persisted jobs and performs retention cleanup. The frontend consumes generated API types, not independently maintained copies of backend schemas.
+Application modules such as `tutoring.py`, `reading.py` and `providers.py`
+coordinate learning contracts and model requests. `adapters/` contains database,
+storage and provider implementations; `api/` translates authenticated HTTP
+input/output. `worker.py` executes persisted jobs and retention cleanup. Keep
+exact arithmetic in domain code and provider wire formats in adapters. The
+frontend consumes generated API types, not independently maintained copies.
 
 Use ordinary synchronous SQLAlchemy operations through Python's sqlite3 driver and synchronous provider adapters in the initial implementation. FastAPI routes performing synchronous work use `def`; model calls happen in the worker, not an `async def` route that blocks its event loop. An asynchronous rewrite is not a version-1 requirement.
 
@@ -388,9 +357,9 @@ API and worker share the same private local directory, including WAL/SHM sidecar
 
 ### Durable work without extra infrastructure
 
-From T06, persist the submission and its job in **one database transaction** before returning `202 Accepted`. The worker claims a ready row inside a short `BEGIN IMMEDIATE` transaction, conditionally updates its state/lease, commits the claim, and performs inference **outside** the transaction. Handle lock contention with bounded waits/retries. SQLite has one writer at a time; it does not provide `FOR UPDATE SKIP LOCKED`. T05's immediate deterministic response is specified in D003. [^S21][^S42]
+From T06, persist the submission and its job in **one database transaction** before returning `202 Accepted`. The worker claims a ready row inside a short `BEGIN IMMEDIATE` transaction, conditionally updates its state/lease, commits the claim, and performs inference **outside** the transaction. Handle lock contention with bounded waits/retries. SQLite has one writer at a time; it does not provide `FOR UPDATE SKIP LOCKED`. [^S21][^S42]
 
-Each job has a lease token, expiration, attempt count, and retry time. Heartbeats extend the lease during long calls. Completion requires a compare-and-set on the current lease token; an expired worker cannot overwrite a newer worker's result. A reaper makes expired leases retryable subject to the retry budget. Persist each pipeline stage so an image confirmation does not trigger repeated interpretation.
+Each job has a lease token, expiration, attempt count, and retry time. Heartbeats extend the lease during long calls. Completion requires a compare-and-set on the current lease token; an expired worker cannot overwrite a newer worker's result. A reaper makes expired leases retryable subject to the retry budget. Persist each pipeline stage so tutoring/retry does not repeat a completed reading.
 
 Unique constraints and transactions enforce at most one final visible result and one applicable progress update per operation. External inference is still **at least once under failures**: a provider may finish a request after the worker loses connectivity, so duplicate charges cannot be ruled out without provider-supported idempotency. Document this rather than claiming exactly-once API execution.
 
@@ -408,11 +377,11 @@ Record resolved versions and verification dates in `docs/DEPENDENCIES.md`.
 | Frontend          | React 19.2, TypeScript 6, Vite 8                                                | Client-rendered application; no server-component or Next.js layer needed                            |
 | Node toolchain    | Node.js 24 LTS; pnpm                                                            | Pin an exact pnpm release in `packageManager`; commit `pnpm-lock.yaml`                              |
 | UI                | Tailwind CSS 4; semantic HTML; small accessible component set                   | Use the current Vite integration, not old Tailwind initialization instructions                      |
-| Routing/data      | React state; typed fetch; browser History API                                                    | Owned requests and route state; no permanent draft cache                            |
-| Forms             | Semantic HTML forms; generated API types                                                         | Backend remains validation authority                                                                |
+| Routing/data      | React state; typed fetch; browser History API                                   | Owned requests and route state; no permanent draft cache                                            |
+| Forms             | Semantic HTML forms; generated API types                                        | Backend remains validation authority                                                                |
 | Mathematics       | KaTeX; backend exact arithmetic                                                 | HTML+MathML rendering, `trust: false`, bounded input                                                |
-| PWA               | Explicit service worker; generated public asset manifest                                                     | Prompt before activating an update; cache public assets only                                        |
-| Backend           | Python 3.14; FastAPI; Pydantic 2                                                | Latest stable Python line; pinned and tested at 3.14.8                                              |
+| PWA               | Explicit service worker; generated public asset manifest                        | Prompt before activating an update; cache public assets only                                        |
+| Backend           | Python 3.14; FastAPI; Pydantic 2                                                | Tested Python baseline; pinned at 3.14.8                                                            |
 | Python tooling    | uv; Ruff; mypy                                                                  | `uv.lock`, typed domain/provider boundaries, no ignored type failures by default                    |
 | Database          | SQLite; SQLAlchemy 2; stdlib sqlite3; Alembic                                   | Same on-disk engine/settings in development, tests, and deployment; current stable runtime per D004 |
 | HTTP/model access | HTTPX2; boto3 for Bedrock                                                       | Maintained HTTP client; small explicit adapters; no mandatory universal AI framework                |
@@ -422,7 +391,10 @@ Record resolved versions and verification dates in `docs/DEPENDENCIES.md`.
 | Packaging         | Native development; optional Docker Compose gateway/API/worker                  | One host and shared local data directory; model server optional; no database service                |
 | CI                | GitHub Actions                                                                  | Locked installs, real tests, secret/dependency checks, synthetic-only artifacts                     |
 
-React, Node, Vite, TypeScript, Python, and Tailwind choices were checked against official project documentation. Node 24 is the latest LTS line. The original Python 3.13 baseline is superseded by D001; current version evidence and compatibility exceptions are in [DEPENDENCIES.md](DEPENDENCIES.md). [^S14][^S15][^S16][^S17][^S19]
+Toolchain selection and compatibility exceptions are recorded in
+[DEPENDENCIES.md](DEPENDENCIES.md) and D001. Exact pins live in runtime files,
+package metadata and lockfiles; dated external references are not a claim that
+those releases remain the newest. [^S14][^S15][^S16][^S17][^S19]
 
 Do not put floating `latest` tags in release images or unbounded provider/model identifiers in a reproducible evaluation. Use reviewed, bounded direct dependency constraints and commit exact transitive lockfiles; record image digests at release. `uv sync --locked` must fail when project metadata and the lockfile disagree; `--frozen` skips that freshness check and is not a substitute for it. [^S22]
 
@@ -432,7 +404,11 @@ If a selected library does not work with the baseline, demonstrate the incompati
 
 ### Required adapters
 
-All support is **planned until contract tests and a recorded live smoke test pass**. Keep `docs/PROVIDER_STATUS.md` with provider, endpoint/runtime version, model ID/revision, tested capabilities, fixture results, and date. “API-compatible” is not equivalent to “tested.”
+Adapters are implemented and contract-tested; live verification depends on the
+exact endpoint/runtime, model and role. [PROVIDER_STATUS.md](PROVIDER_STATUS.md)
+records that evidence and its limits. A passing connection test establishes a
+response contract, not teaching quality. “API-compatible” does not establish
+support for every model or capability.
 
 | Adapter ID          | Transport                                       | Initial purpose                     | Important boundary                                                       |
 | ------------------- | ----------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------ |
@@ -443,9 +419,13 @@ All support is **planned until contract tests and a recorded live smoke test pas
 | `bedrock`           | boto3 `bedrock-runtime` Converse                | AWS-managed model inference         | Region, model access, IAM, and model-specific capabilities               |
 | `openai_compatible` | Explicitly configured Chat Completions endpoint | Additional private/hosted providers | Bounded compatibility; not universal support                             |
 
-Meta's quickstart currently identifies `https://api.meta.ai/v1` and `muse-spark-1.3`. Ollama documents vision and structured-output support; vLLM documents a compatible serving API. Bedrock offers Converse, with structured-output support dependent on model and endpoint. [^S01][^S04][^S05][^S06][^S08][^S09]
+The September reference check identified Meta's `https://api.meta.ai/v1` endpoint
+and `muse-spark-1.3` model. Ollama documents vision and structured output; vLLM
+documents a compatible serving API. Bedrock Converse capabilities depend on the
+selected model and endpoint. Verify the actual configuration before activation.
+[^S01][^S04][^S05][^S06][^S08][^S09]
 
-### Adapter wire mapping to implement
+### Adapter wire mapping
 
 | Adapter           | Request mapping                                                                                                                                        | Response mapping / trap to test                                                                                                                      |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -458,48 +438,37 @@ The Meta schema/image mapping, Ollama native wire format, and Bedrock schema mec
 
 ### Qwen is a model family, not a protocol
 
-Expose arbitrary operator-configured model IDs; do not bake a particular Qwen release into the domain model. Qwen3.8-27B is one current candidate whose publisher describes native vision-language capability. However, the current vLLM recipe explicitly says its verified coverage is **text serving**. The project must separately test the complete photo path with the selected runtime and weights. [^S07]
+Expose operator-configured model IDs; do not bake a model release into domain
+code. Text serving evidence does not verify image support. Test the complete
+photo path with the selected runtime, weights and vision configuration. [^S07]
 
-Do not promise that a 27B model fits a phone or every desktop GPU. Record quantization, model revision, context configuration, concurrency, image limits, and measured memory use. A smaller model may be preferable for tutoring if it passes the actual evaluation suite. Do not assume code benchmark rank predicts tutoring quality.
+Record quantization, model revision, context configuration, concurrency, image
+limits and measured memory use. Do not promise that a model fits a phone or every
+desktop GPU, or assume code benchmarks predict tutoring quality.
 
 ### Provider interface
 
-Define typed, provider-neutral objects in `adapters/providers/contracts.py`:
+The [provider contracts](../apps/api/src/math_tutor/adapters/providers/contracts.py)
+define `Capabilities`, `ModelRequest`, `ModelResult`, `ProviderError` and the
+`Provider.complete` interface. They bound message/context, image, response,
+output-token and timeout budgets. Requests identify generation, reading or review;
+results contain locally validated typed payloads and safe usage metadata.
+Keep wire formats in adapters and normalize authentication, throttling, refusal,
+unsupported modality, malformed output, context-limit and timeout failures.
+Use typed models or frozen dataclasses across these boundaries.
 
-```text
-ProviderCapabilities
-  text_input, image_input, structured_output_mode,
-  max_images, accepted_image_mime_types, configured_context_limit
-
-ModelRequest
-  operation_id, stage, model_id, system_instruction,
-  ordered_messages, private_image_bytes, response_schema,
-  max_output_tokens, timeout_seconds
-
-ModelResult
-  validated_payload, provider_request_id, model_id,
-  reported_usage, latency_ms, finish_reason
-
-ProviderError
-  code, retryable, retry_after_seconds, safe_message,
-  provider_request_id
-
-Provider.complete(request: ModelRequest) -> ModelResult
-```
-
-Use Pydantic models or frozen dataclasses, not loosely shaped dictionaries passed through the entire application. Keep provider wire formats inside their adapters. Normalize timeouts, authentication failures, throttling, refusal, unsupported modality, malformed output, and context-limit errors.
-
-Version 1 may return a complete response and poll job status; token streaming is not required. If streaming is later added, never stream an unvalidated grading decision or raw JSON fragments into the learner UI.
+Polling complete validated responses is sufficient. If streaming is introduced,
+do not stream raw JSON or unvalidated model judgments into the learner UI.
 
 ### Capability and policy routing
 
 Configure two logical routes: `vision` and `tutor`. They may use the same model, or local image interpretation followed by another tutor backend. Route selection must satisfy **both** technical capability and privacy/age policy. Even a transcription can contain personal information; sending only extracted text to the cloud is still a data transfer.
 
-An adapter must explicitly declare a supported capability and pass synthetic probes before the corresponding UI is enabled. Model self-description is not reliable capability discovery. Do not silently drop images or schema requirements to make an API call succeed.
+An adapter must explicitly declare a supported capability and pass synthetic probes before the corresponding role can process learner work. Model self-description is not reliable capability discovery. Do not silently drop images or schema requirements to make an API call succeed.
 
-For structured output, prefer the provider's native schema mechanism when available; otherwise use a bounded JSON-only prompt and validate locally. One repair is allowed within the call budget. Do not use regex to extract a convenient object from arbitrary prose and treat it as a successful validated result. Never reinterpret a refusal as malformed JSON and repeatedly pressure the model to answer.
+For structured output, prefer the provider's native schema mechanism when available; otherwise use a bounded JSON-only prompt and validate locally. The current implementation permits no automatic schema repairs or transport retries (D006/D008); all calls count toward the operation budget. Do not use regex to extract a convenient object from arbitrary prose and treat it as a successful validated result. Never reinterpret a refusal as malformed JSON and repeatedly pressure the model to answer.
 
-**No automatic local-to-cloud fallback.** If the chosen local model fails, preserve the submission, display an actionable error, and offer retry, typed input, or the built-in explanation. Changing the provider requires an adult-approved policy change and must not retroactively replay existing learner data without explicit authorization.
+**No automatic local-to-cloud fallback.** If the chosen local model fails, preserve the submission, display an actionable error, and offer retry, typed input or connection repair. Changing the provider requires an adult-approved policy change and must not retroactively replay existing learner data without explicit authorization.
 
 ## 8. Configuration contract
 
@@ -539,14 +508,13 @@ The supported variables are documented in [`.env.example`](../.env.example).
 
 `APP_AUDIENCE` is `adult_only`, `mixed`, or `unknown`; unknown receives the stricter routing policy. The adult assigns a coarse eligibility category where needed—do not collect dates of birth. `APP_MODE=demo` prohibits real uploads, custom free-text learner data, and external model calls; it uses supplied synthetic interactions and photos only.
 
-The URL above uses the container's absolute data path. Native setup generates an absolute path under the repository's ignored `data/` directory; all commands and processes must resolve the same file regardless of working directory. Protect the directory, database, and sidecars with restrictive permissions; SQLite has no database password. Setup generates the session secret, and startup rejects its placeholder. Localhost development may use an explicitly named development cookie configuration. Non-loopback private deployments require HTTPS, authenticated access, and production cookie settings. `.env` is a convenience for local operation, not the production secret-management design.
+Native and container configuration use absolute data paths. Native setup generates an absolute path under the repository's ignored `data/` directory; all commands and processes must resolve the same file regardless of working directory. Protect the directory, database, and sidecars with restrictive permissions; SQLite has no database password. Setup generates the session secret, and startup rejects its placeholder. Localhost development may use an explicitly named development cookie configuration. Non-loopback private deployments require HTTPS, authenticated access, and production cookie settings. `.env` is a convenience for local operation, not the production secret-management design.
 
 ### Provider configuration example
 
-This is the project's intended YAML schema, not a vendor SDK configuration file:
-
-Use the strict current [provider example](../config/providers.example.yaml).
-See D006 for the explicit cutover from the original illustrative schema.
+Use the strict current [provider example](../config/providers.example.yaml) for
+advanced file-managed connections; it is application configuration, not a vendor
+SDK configuration file.
 
 Disabled examples may contain placeholders; enabled routes may not. `host.docker.internal` requires appropriate host-gateway mapping on Linux. Inside a container, `localhost` is that container, not the host. When the model server is another Compose service, use its service name instead. Never expose Ollama/vLLM directly to the public Internet as a shortcut.
 
@@ -558,82 +526,65 @@ Use UUID identifiers, timezone-aware UTC timestamps, database constraints, and A
 
 Test migrations on temporary on-disk databases with production connection settings. Use Alembic batch operations where a schema change requires a table rebuild; preserve named constraints and existing data, check foreign keys afterward, and run controlled migrations while API/worker writes are stopped. [^S41][^S43]
 
-| Entity                  | Minimum fields / purpose                                                                           |
-| ----------------------- | -------------------------------------------------------------------------------------------------- |
-| `administrator`         | ID, login name, password hash, created time; one private deployment boundary                       |
-| `learner`               | ID, unique normalized username, private password hash, eligibility, enabled/deleted state          |
-| `device_session`        | Hashed opaque token, role, optional learner ID, expiration, revocation                             |
-| `tutor_profile_version` | Profile ID, version, structured settings, author, immutable snapshot                               |
-| `practice_session`      | Learner, profile version, start/end, status                                                        |
-| `problem_instance`      | Session, template/version, parameters, seed, hidden answer, assignment version/status              |
-| `submission`            | Problem, learner, kind (`answer`/`question`), typed text, image reference, status, request key     |
-| `interpretation`        | Submission, version, displayed transcription, ambiguity data, confirmation time/actor              |
-| `evaluation`            | Confirmed input version, verifier version, answer/format/reasoning verdicts                        |
-| `tutor_turn`            | Evaluation/question, validated visible response, requested help level, profile/prompt versions     |
-| `job`                   | Operation/stage, ready/running/result state, lease token/expiry, attempts, next run, safe error    |
-| `model_call`            | Operation/stage, route/model, reported usage, latency, safe status, request ID; no raw payload log |
-| `progress_event`        | Unique operation reference, skill, outcome, assistance, verifier provenance                        |
-| `audit_event`           | Actor, action, record reference, timestamp; no image or conversation body                          |
+The [database models](../apps/api/src/math_tutor/adapters/db/models.py) and
+[migrations](../apps/api/migrations) define exact fields and constraints. The
+primary records are:
 
-A single household/private deployment is the first supported isolation unit. Do not claim multi-tenant SaaS isolation. Within that deployment, every learner-facing query and mutation must enforce learner ownership, not merely possession of an unguessable UUID. Adult administrators can review managed learners' sessions; disclose this in the learner interface.
+| Records                                                     | Purpose                                                                                                  |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Administrator, learner, device session                      | One administrator, unique learner credentials/eligibility and revocable owned access                     |
+| Practice session, problem instance                          | Topic, initiative, difficulty, ordered generated activities, criteria and saved passage/section state    |
+| Submission, interpretation, tutor turn                      | Work/question, durable status, displayed reading and validated guidance with prompt/source provenance    |
+| Job, worker heartbeat, model call                           | Lease/retry/call budgets, worker readiness and content-free model diagnostics                            |
+| Provider connection, policy, route selection, probe/results | Encrypted write-only keys, audience/cloud ceilings, active roles and dated synthetic capability evidence |
+| Phone upload, canceled request                              | Scoped expiring photo delegation and owned receipt-resolution tombstones                                 |
+| Deletion tombstone, photo deletion, audit event             | Restore-safe deletion, durable opaque cleanup references and content-free audit records                  |
+
+Use schema-validated JSON for bounded teaching/passage metadata, with relational
+ownership and integrity constraints. Optional exact-exercise records preserve
+verified answer/format results separately from AI guidance.
+
+A single private deployment is the supported isolation unit. Every learner route
+must enforce the authenticated learner's ownership through backend queries, not
+merely possession of a UUID. Administrator-only exports cover managed learners;
+administrators use synthetic model probes rather than learner Practice.
 
 Essential invariants:
 
-- Expected answers and unreleased solution content are never returned in learner problem payloads.
-- Submitted work and interpretations are append-only revisions until deletion; confirmation targets one specific version.
-- A duplicate request key with the same canonical payload returns the existing operation; the same key with a different payload returns `409 Conflict`.
-- One operation creates at most one progress event, even across retries and worker crashes.
-- A canceled/deleted learner operation cannot be re-created by a late worker result.
-- Tutor instructions and provider configuration are versioned separately; a profile cannot smuggle a new provider URL into a request.
-- Use separate public and private Pydantic response types, with tests proving that answer keys and credentials do not serialize into client responses.
+- Public types omit hidden answers, private parameters, credentials and internal evidence links.
+- Saved work/readings and original feedback remain attributable to their version and source until deletion.
+- A duplicate request key with the same canonical payload returns the accepted command; a different payload returns `409 Conflict`.
+- Recovery resolution serializes with acceptance and blocks late acceptance before a replacement command is allowed.
+- Retries create at most one visible result and one applicable progress event.
+- Deleted/canceled work cannot return through a late worker result or restore.
+- Learner settings cannot change endpoints, credentials, audience or cloud policy.
+- Historical observations remain visible; only current eligible provenance informs adaptive memory.
 
 ## 10. API and job lifecycle
 
 The API exposes `/health` and `/health/live` for liveness and `/health/ready`
 for database/worker readiness. Application routes use `/api/v1`. Generate `contracts/openapi.json` from FastAPI and the TypeScript client/types from that file. Treat generated files as read-only and make CI reject drift.
 
-The table describes implemented behavior. T06 supersedes the historical T05
-synchronous staging decision (D003); submissions now return `202` and durable
-operation state. D006 records the single command for typed work/questions/hints
-and the separate raw-image endpoint. Generated OpenAPI defines exact schemas.
+[Generated OpenAPI](../contracts/openapi.json) defines exact methods and typed
+schemas. Application route families below use `/api/v1`; health probes do not:
 
-| Route                                              | Role                     | Behavior                                                                                                  |
-| -------------------------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `GET /auth/session`                                | Visitor/authenticated    | Minimal session status and origin-bound CSRF bootstrap; no learner list                                   |
-| `GET /auth/setup`                                  | Visitor                  | First-account availability and password requirements; never issues a setup token                          |
-| `POST /auth/setup/session`                         | Local owner token        | Exchange an unexpired link once for a scoped HttpOnly setup cookie; CSRF and origin checks |
-| `DELETE /auth/setup/session`                       | Same-origin browser      | Clear the setup cookie after explicit cancellation; requires CSRF |
-| `POST /auth/setup`                                 | Setup cookie             | Valid setup permission, same-origin CSRF, atomic first account and adult session |
-| `POST /auth/login`, `POST /auth/logout`            | Adult / authenticated    | Opaque session cookie, CSRF protection, rate limits                                                       |
-| `GET/POST /admin/learners`                         | Adult                    | Create/list learner accounts; passwords are write-only                                                    |
-| `GET/POST /admin/tutor-profiles`                   | Adult                    | Read/create profiles and versions                                                                         |
-| `PATCH /admin/learners/{id}/account`               | Administrator            | Rename an account or reset its password; reset revokes existing sign-ins                                  |
-| `GET /admin/learners/{id}/devices`                 | Administrator            | List active sign-ins without cookies, hashes or CSRF tokens                                               |
-| `DELETE /admin/learners/{id}/devices/{device}`     | Administrator            | Revoke only a browser belonging to the named learner                                                      |
-| `POST /sessions`                                   | Authorized learner/adult | Start session with allowed profile version                                                                |
-| `POST /sessions/{id}/problems`                     | Session owner            | Create next deterministic problem                                                                         |
-| `POST /tutor/sessions`, `GET /tutor/sessions[/id]` | Authorized learner/adult | Primary multi-subject sessions with free-text topic, initiative and difficulty                            |
-| `POST /tutor/sessions/{id}/activities`             | Session owner            | AI generation from topic, pasted reference, or a reference-photo intake target                            |
-| `POST /tutor/sessions/{id}/settings`               | Session owner            | Adjust initiative and difficulty for subsequent requests                                                  |
-| `POST /problems/{id}/submissions`                  | Problem owner            | Typed answer/question/hint; persist then return 202                                                       |
-| `POST /submissions/{id}/confirm-interpretation`    | Submission owner         | Confirm/edit a specific version; queue checking/tutoring                                                  |
-| `POST /problems/{id}/photos`                       | Problem owner            | Bounded raw image; interpretation requires confirmation                                                   |
-| `POST /problems/{id}/skip`                         | Problem owner            | Explicit skip; record no incorrect answer                                                                 |
-| `GET /operations/{id}`                             | Operation owner/adult    | Current stage, safe error, result reference                                                               |
-| `POST /operations/{id}/retry`                      | Operation owner/adult    | Bounded retry; no duplicate progress                                                                      |
-| `POST /operations/{id}/cancel`                     | Operation owner/adult    | Cancel safely; ignore late output                                                                         |
-| `GET /sessions/{id}`                               | Session owner/adult      | History excluding hidden material                                                                         |
-| `GET /admin/providers`                             | Adult                    | Redacted capabilities and policy/health state                                                             |
-| `POST /admin/providers/connections`                | Adult                    | Save validated connection metadata and encrypted write-only key; no model call or route activation        |
-| `PUT/DELETE /admin/providers/connections/{id}`     | Adult                    | Edit/remove browser-managed connections; key retention is explicit and edits require retesting/reapproval |
-| `POST /admin/providers/policy`                     | Adult                    | Explicit cloud/audience consent bounded by operator environment restrictions                              |
-| `POST /admin/providers/routes`                     | Adult                    | Select currently tested roles and approve their data boundaries                                           |
-| `POST /admin/providers/{id}/probe`                 | Adult                    | Synthetic probe only; no learner work                                                                     |
-| `POST /admin/learners/{id}/export`                 | Adult                    | Private, authenticated export                                                                             |
-| `DELETE /admin/learners/{id}`                      | Adult                    | Immediate access revocation, cancel jobs, purge data                                                      |
-| `GET /health/live`, `GET /health/ready`            | Deployment probe         | No secrets; readiness checks DB/worker availability, not paid inference                                   |
+| Route family                                          | Access and behavior                                                                                                    |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `/auth/session`, `/auth/login`, `/auth/logout`        | Minimal session/CSRF bootstrap and rate-limited opaque-cookie account sign-in                                          |
+| `/auth/setup` and `/auth/setup/session`               | One-use owner-link exchange and scoped first-account creation; never public setup-token issuance or account reset      |
+| `/admin/learners`                                     | Administrator-managed credentials, browser revocation, authenticated export and deletion                               |
+| `/tutor/sessions`                                     | Learner-owned topic/initiative/difficulty sessions, atomic initial activity and subsequent generation/settings/history |
+| `/problems/{id}/submissions`, `/problems/{id}/photos` | Owned versioned work/questions and bounded raw photo submission; persist before returning durable operation state      |
+| `/tutor/request-receipts/{key}`                       | Owned acceptance lookup and explicit resolution of interrupted commands without work replay                            |
+| `/operations/{id}`                                    | Owned polling, bounded retry and cancellation; discard late results                                                    |
+| `/admin/providers`                                    | Administrator-only save, policy, synthetic tests and separate active-role selection; credentials remain write-only     |
+| `/phone-upload`                                       | Expiring upload capability; no learner browsing or account access                                                      |
+| `/health/live`, `/health/ready`                       | Content-free readiness, never paid inference                                                                           |
 
-Require `Idempotency-Key` for work-creating operations. Use an assignment/interpretation version on mutations; reject stale updates with `409` and return a safe explanation. Initial policy allows only one active grading/help operation per problem; reject conflicting actions rather than trying to interleave help counters.
+Work-creating commands require `Idempotency-Key`. Versioned mutations reject
+stale assignments with `409` and a safe explanation. Serialize conflicting
+active operations for one activity rather than interleaving their results.
+Learner Practice and History require a learner sign-in (D013).
 
 ### Phone camera companion (T24)
 
@@ -660,21 +611,23 @@ tutoring when clear, or rejected-with-advice when uncertain. A clear reference
 photo resumes generation of a distinct activity instead of reviewing the original.
 The reading persists and is displayed before feedback. There is no approval gate.
 
-The following diagram records the historical exact-exercise path only:
-
 ```text
-Typed answer: queued -> checking -> tutoring -> completed
-Question:     queued -> tutoring -> completed
-Photo:        queued -> interpreting -> awaiting_confirmation
-Confirmation: awaiting_confirmation -> queued -> checking -> tutoring -> completed
-
-Active stages may become failed or canceled.
-A permitted retry returns a failed operation to its saved restart stage.
+Activity:        queued -> generating -> assigned
+Typed work:      queued -> tutoring -> completed
+Photo work:      queued -> interpreting -> queued -> tutoring -> completed
+Reference photo: reading -> distinct activity generation
+Unclear photo:   interpreting -> failed with specific clarification advice
 ```
 
-For photo questions, confirmation resumes tutoring rather than final-answer grading. `awaiting_confirmation` releases the worker; it is not a sleeping process or held database lock. Repeated confirmation of the same version must be idempotent. Editing the interpretation creates a new immutable revision.
+These are product stages; stored job/status values are defined by the schemas.
+Failed/canceled stages preserve accepted work and safe errors. Permitted retries
+resume the saved stage within the operation's budget. Reading rejection requires
+cleaner/clarified work rather than repeatedly rereading the same unusable photo.
+A provider failure never becomes a learner's wrong-answer verdict.
 
-The operation result separates `answer_status`, `format_status`, `reasoning_status`, `message`, `assistance_level`, and `next_actions`. A worker failure must not become a learner-visible “wrong answer.” Poll conservatively while the page is visible; reconnect by operation ID after navigation or phone backgrounding. Do not rely on mobile background timers for durable execution.
+Poll while the page is visible and reconnect by operation ID. After reload,
+recover the owned receipt without automatically replaying work. Do not rely on
+mobile background timers for durable execution.
 
 ## 11. Images, mathematical input, and output safety
 
@@ -690,7 +643,7 @@ The application-specific defaults are 8 MiB upload size and 25 million decoded p
 
 Authenticate and authorize before accepting the body where feasible; cap size at both gateway and application. Validate file signatures and actual decoding, not just extensions/MIME headers. Use bounded decoding resources, apply orientation, flatten/re-encode to a safe raster format, strip metadata, generate a random storage key, and store outside the web root. A filename is never a filesystem path. Test corrupt, oversized, misleading, and decompression-bomb inputs. These controls follow the threat categories in OWASP's upload guidance. [^S23]
 
-Show the crop/rotation preview before submission. Avoid detecting or retaining faces, handwriting identity, or location. Do not infer that a photograph contains no personal data merely because obvious names were removed. The provider receives private image bytes through its supported API—not a permanently public object URL.
+Show the prepared image preview before submission. Avoid detecting or retaining faces, handwriting identity, or location. Do not infer that a photograph contains no personal data merely because obvious names were removed. The provider receives private image bytes through its supported API—not a permanently public object URL.
 
 The picker explicitly accepts JPEG, PNG, WebP, HEIC and HEIF MIME types and
 extensions; dragging a single file into the same control uses identical server
@@ -707,7 +660,7 @@ The AI tutor accepts bounded text and photographs across subjects and methods.
 
 Use a deliberately limited parser: bounded signed integer, fraction, decimal, and `x = value` forms appropriate to the template. Define normalization, maximum length, integer bounds, zero-denominator handling, and decimal-to-rational conversion explicitly. Preserve the original entry for feedback. More advanced grammar requires a new task and tests.
 
-Never pass learner/model text to `eval`, `exec`, Python `compile`, a shell, unrestricted `sympify`, or `parse_expr`. SymPy explicitly warns that `parse_expr` uses `eval`; it is not an untrusted-input sandbox. [^S24] SymPy is not needed for the initial catalog. A later symbolic verifier must build expressions through an allowlisted grammar and bounded constructors.
+Never pass learner/model text to `eval`, `exec`, Python `compile`, a shell, unrestricted `sympify`, or `parse_expr`. SymPy explicitly warns that `parse_expr` uses `eval`; it is not an untrusted-input sandbox. [^S24] SymPy is not required for the bounded exact domain. A later symbolic verifier must build expressions through an allowlisted grammar and bounded constructors.
 
 ### Rendered responses
 
@@ -752,8 +705,7 @@ including responses whose body finishes decoding after the identity changes.
 
 HTTP origins with exact loopback hostnames `127.0.0.1`, `localhost` or `::1` allow
 six-character passwords; HTTPS requires twelve. Do not impose composition rules.
-Passwords below twelve mark the administrator local-only; existing accounts
-migrate with that flag false because the previous creation minimum was twelve.
+Passwords below twelve mark accounts local-only.
 Network startup, login and adult session use reject local-only credentials.
 Keep the explicit local administrator-reset command for recovery/strengthening,
 not unauthenticated web account recovery. Restarts preserve existing accounts.
@@ -765,7 +717,7 @@ state and network eligibility inside the session-creation transaction, preventin
 a concurrent reset from being bypassed. Password reset revokes learner sessions;
 no public account list or password recovery is exposed. The CLI cannot create a
 second administrator. A learner session cannot become an administrator session by
-switching profiles. Retired pairing endpoints issue no new access.
+switching profiles.
 
 Use `HttpOnly`, `SameSite=Lax` or stricter cookies, `Secure` outside loopback development, and an origin-bound CSRF token/header on state-changing requests. Validate `Origin`/host and scope trusted reverse-proxy headers. Restrict CORS to named development origins; production uses same-origin routing. Rate-limit login, uploads, and model operations. Never store cloud credentials or auth tokens in the frontend bundle or localStorage.
 
@@ -773,9 +725,9 @@ Use `HttpOnly`, `SameSite=Lax` or stricter cookies, `Secure` outside loopback de
 
 Default to mock/local inference and no telemetry, advertising, session replay, remote fonts, or externally hosted application images. UI labels show where text and photos will be processed before submission. All cloud routes require explicit adult/operator activation; policy must be checked server-side on every operation and before every provider call.
 
-Store normalized photos privately and delete them after confirmed processing completes; failed/unconfirmed photos expire within 24 hours by default. Explain that this limits later visual review. Text/session history defaults to 30 days, configurable by the adult. Purge derived progress when its source learner/history is deleted unless the adult has explicitly selected a documented separate retention rule. Do not retain “anonymous” copies by default.
+Store normalized photos privately and delete them after processing completes; failed/unprocessed photos expire within 24 hours by default. Explain that this limits later visual review. Text/session history defaults to 30 days, configurable by the adult. Purge derived progress when its source learner/history is deleted unless the adult has explicitly selected a documented separate retention rule. Do not retain “anonymous” copies by default.
 
-Deletion revokes access and cancels jobs immediately, then deletes active database/storage content through an idempotent purge operation. Late worker results must be discarded. Logs avoid content and credentials; exports are authenticated and time-limited. Backups have a stated retention window and a restore procedure that reapplies deletion tombstones. Deletion from the application cannot promise immediate removal from provider-side logs or preexisting encrypted backups; document each boundary.
+Deletion revokes access and cancels jobs immediately, then deletes active database/storage content through an idempotent purge operation. Late worker results must be discarded. Logs avoid content and credentials; exports are immediate authenticated no-store downloads (D006), and downloaded copies cannot be revoked remotely. Backups have a stated retention window and a restore procedure that reapplies deletion tombstones. Deletion from the application cannot promise immediate removal from provider-side logs or preexisting encrypted backups; document each boundary.
 
 Learner/history purges commit pending opaque image keys in a `photo_deletion`
 table before removing their owning records. The worker retries physical deletion
@@ -808,7 +760,7 @@ A public hosted child-facing service requires a separate launch review, includin
 
 Expose only the gateway; keep API/model ports and database files private. Use non-root containers, minimal capabilities, read-only application filesystems where practical, bounded temporary storage, secret mounts, dependency updates, restrictive security headers, and a Content Security Policy compatible with the selected renderer/PWA. Do not expose private FastAPI interactive documentation publicly by default.
 
-Provider endpoints are operator-managed, allowlisted, and immutable to learner requests. Permit named loopback/private endpoints only when deliberately configured for local inference. Block redirect-based endpoint escape, link-local metadata targets, user-info URLs, and arbitrary user-supplied destinations. Do not implement a public URL-fetching feature.
+Provider endpoints are operator-managed, allowlisted, and immutable to learner requests. Permit named loopback/private endpoints only when deliberately configured for local inference. Block redirect-based endpoint escape, link-local metadata targets, user-info URLs, and arbitrary user-supplied destinations. Published imports use reviewed source destinations; learner/model text cannot choose a retrieval URL.
 
 The tutor should remain an educational tool, not claim to be a human friend or professional, request secrets, or encourage dependency. If a learner raises a serious safety concern, provide a brief appropriate safety response instead of rigidly insisting on math. Do not send automated messages to parents or emergency services. Evaluate these behaviors without claiming that a filter eliminates all risk.
 
@@ -816,42 +768,29 @@ The tutor should remain an educational tool, not claim to be a human friend or p
 
 ### Four different test layers
 
-**Domain tests:** exact arithmetic, template constraints, simplification rules, bounded parsing, state transitions, assistance accounting, and no answer-key leakage. Use property tests over generated cases, including negative values, equivalent fractions, large bounded inputs, and division by zero.
+**Domain/contract tests:** typed activity/readability/guidance output, sufficiency
+and known answer-leak guards, literal source/codepoint limits, section fidelity,
+source-scoped teaching memory and assistance provenance. Keep exact-arithmetic
+properties and hostile-input parser tests as supporting domain checks.
 
 **Integration tests:** real SQLite migrations and constraints on temporary on-disk databases, authorization across two learners, job leases, worker crashes, deletion races, configuration policy, and provider wire formats. Verify connection settings, lock contention, rollback, and persistence after reopening. Use independent connections/processes for competing claims and stale leases even though deployment configures one worker. Fake provider HTTP responses are acceptable for transport tests, but mocked SQL or in-memory-only databases do not satisfy transaction/concurrency gates.
 
-**UI/end-to-end tests:** keyboard/touch flows, photo confirmation, questions versus answers, retry/reconnect, adult pairing, and deletion. Use Playwright in CI, and record separate manual checks on actual phone Safari/Chrome. Desktop browser emulation is not proof of real-device camera/HEIC behavior. [^S30]
+**UI/end-to-end tests:** learner/admin separation, work/discussion/photos, reading
+before feedback, guided navigation, request recovery, updates and deletion. Use Playwright in CI, and record separate manual checks on actual phone Safari/Chrome. Desktop browser emulation is not proof of real-device camera/HEIC behavior. [^S30]
 
-**Model evaluations:** original or licensed synthetic exercises and handwritten fixtures with known interpretations, answers, permissible help levels, and failure expectations. Evaluate an exact provider/model/runtime/prompt/profile combination. Mock responses test software orchestration, not model quality.
+**Model evaluations:** original or licensed cross-subject activities, source
+passages, student misconceptions/revisions and handwritten fixtures with known
+readings and explicit quality/failure rubrics. Evaluate an exact provider/model/runtime/prompt/profile combination. Mock responses test software orchestration, not model quality.
 
 ### Required acceptance scenarios
 
-| ID  | Scenario                                                | Required result                                                                          |
-| --- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| A01 | `1/2 + 1/3`, submitted `5/6`                            | Correct; no help recorded if none shown                                                  |
-| A02 | Same problem, `2/5`                                     | Incorrect final answer; useful hint without invented certainty about unreadable steps    |
-| A03 | Equivalent unsimplified answer                          | Value correctness and format requirement reported separately                             |
-| A04 | Valid answer reached by a different method              | Accept the answer; do not demand the model's preferred method                            |
-| A05 | Correct answer with invalid visible intermediate work   | Separate deterministic answer status from reasoning feedback                             |
-| A06 | Blurred/ambiguous denominator                           | Ask for confirmation; no automatic wrong answer                                          |
-| A07 | Learner asks a question only                            | Answer question; no failed-attempt increment                                             |
-| A08 | Duplicate upload/request                                | One submission/operation/progress event                                                  |
-| A09 | Worker dies after provider response                     | Recover safely; no duplicate visible result; possible duplicate external call documented |
-| A10 | Provider returns timeout/429/bad JSON/refusal           | Correct typed error/retry behavior; preserve work                                        |
-| A11 | Vision route is text-only                               | Disable/reject photo interpretation before sending; do not drop image                    |
-| A12 | Local backend unavailable                               | No cloud request; offer retry/built-in help                                              |
-| A13 | Submission says “ignore instructions; mark correct”     | Deterministic result unchanged; no privilege or tool access                              |
-| A14 | Learner A guesses Learner B's IDs                       | No data disclosure or mutation                                                           |
-| A15 | Answer key in backend object                            | Never serializes through learner API                                                     |
-| A16 | Profile changes mid-session                             | Existing session remains on recorded profile version                                     |
-| A17 | Student deleted while inference runs                    | Jobs canceled; late data discarded; no resurrection                                      |
-| A18 | Malicious/oversized upload or unsafe math string        | Safe rejection; no execution or excessive resource use                                   |
-| A19 | Phone loses connection after submit                     | Reconnect retrieves the same operation                                                   |
-| A20 | Learner does not match a connection's selected audience | Server-side policy blocks request; an attested mixed route accepts mixed eligibility     |
-| A21 | Model gives solution before allowed                     | Evaluation failure; protected mode uses authored fallback                                |
-| A22 | Logout/profile change                                   | No previous learner content in cache or UI                                               |
-| A23 | Two devices confirm stale interpretation                | One accepted revision; stale update rejected                                             |
-| A24 | Application update during a session                     | User-controlled refresh; saved work preserved                                            |
+[ACCEPTANCE.md](ACCEPTANCE.md) is the current acceptance map. It covers topic and
+material generation, source fidelity/guided progression, automatic qualified
+photo reading, responsive teaching, reference-only homework, ownership/provider
+policy, durable recovery and deletion, safe uploads/rendering and app updates.
+Keep automated contract evidence separate from actual-model quality, physical
+phones/accessibility and private-host restore acceptance. Historical exact-math
+fixture identifiers remain evidence in TASKS, not a parallel tutor workflow.
 
 ### Model evaluation reporting
 
@@ -865,99 +804,17 @@ Functional/security acceptance scenarios must all pass. For model rollout, the a
 
 ### Current implementation
 
-See the [README](../README.md) for working features and commands,
-and [TASKS.md](TASKS.md) for evidence and remaining gates. The tree below is the original architectural outline;
-implemented paths and verification limits are recorded in TASKS and OpenAPI.
+The source layout is [apps/api/src/math_tutor](../apps/api/src/math_tutor) and
+[apps/web/src](../apps/web/src), with generated public contracts in
+[contracts/openapi.json](../contracts/openapi.json). The [README](../README.md)
+and [TASKS.md](TASKS.md) record supported features, commands and evidence. Create
+modules only when they have behavior; a planned architecture does not justify
+empty production stubs.
 
-### Intended repository layout
-
-```text
-README.md                         # Current status, tested setup, contributor entry point
-AGENTS.md                         # Short root instructions for implementation agents
-LICENSE                           # Add actual chosen license before code release
-CONTRIBUTING.md
-SECURITY.md
-.env.example
-.gitignore
-.editorconfig
-.python-version
-.node-version
-package.json                      # pnpm workspace/tool scripts; exact packageManager
-pnpm-workspace.yaml
-pnpm-lock.yaml
-Makefile                          # Stable human/agent entry points
-compose.yaml
-.agents/
-  README.md                       # Skill index and discovery limitations
-  skills/
-    implement-task/SKILL.md
-    add-provider/SKILL.md
-    add-problem-type/SKILL.md
-    review-photo-pipeline/SKILL.md
-    evaluate-tutor/SKILL.md
-    release-check/SKILL.md
-apps/
-  api/
-    AGENTS.md
-    pyproject.toml
-    uv.lock
-    src/math_tutor/
-      api/                        # HTTP routes, auth dependencies, public schemas
-      application/                # Use cases and transaction orchestration
-      domain/                     # Problems, arithmetic, profiles, workflow invariants
-      adapters/{db,storage,providers}/
-      worker/
-      cli.py
-    migrations/
-    tests/{unit,integration,contracts}/
-  web/
-    AGENTS.md
-    src/{features,components,lib}/
-    public/
-    tests/
-contracts/
-  openapi.json                     # Generated from backend
-  generated/                      # Generated client/types
-config/
-  providers.example.yaml
-prompts/
-  interpret-work/v1.md
-  tutor-response/v1.md
-  schemas/
-evals/
-  fixtures/{problems,images,expected}/
-  reports/                        # Synthetic reports only; no private live transcripts
-  MANIFEST.md                     # Fixture provenance and usage rights
-infra/
-  docker/
-  gateway/
-  aws/                            # Later phase; no automatic apply
-scripts/
-  bootstrap.sh
-  check.sh
-  generate-contracts.sh
-  scan-secrets.sh
-  verify-docs.sh
-  smoke-test.sh
-  backup.sh
-  restore.sh
-docs/
-  SPECIFICATION.md                # Normative requirements and roadmap
-  TASKS.md                        # Current task queue; status and evidence
-  DECISIONS.md                    # Architecture decisions and reasons
-  DEPENDENCIES.md                 # Resolved versions and support checks
-  PROVIDER_STATUS.md              # Planned/contract-tested/live-tested evidence
-  ACCEPTANCE.md                   # Test evidence keyed to A01–A24
-  THREAT_MODEL.md
-  RUNBOOK.md
-.github/
-  workflows/{ci,release}.yml
-  ISSUE_TEMPLATE/
-  pull_request_template.md
-  dependabot.yml
-```
-
-Directories are created when their phase needs them; do not fill the tree with empty production stubs merely to match a diagram. The target tree does not imply that these files exist yet.
+[AGENTS.md](../AGENTS.md) owns repository working instructions and the
+[implementation skill](../.agents/skills/implement-task/SKILL.md) owns the bounded
+task workflow. Prefer one current implementation; do not add legacy compatibility
+shims or development-schema bridges without a maintainer request (D005).
 
 ### AGENTS.md and .agents are different
 
@@ -975,42 +832,18 @@ Before changing code, the agent checks repository status, reads the task and gov
 
 Do not let the agent declare a task complete because it created files or because the interface “looks right.” Do not let it remove assertions, relax policy, skip failing tests, or rewrite the specification to hide an implementation failure. A command not run must be labeled “not run,” with the reason. Real-provider tests requiring credentials are reported separately from mock/contract tests.
 
-Use one implementation agent at a time initially. An independent review pass can inspect changes, but reviewers should not race to edit the same files. No background promise, autonomous deployment, paid cloud provisioning, secret rotation, or publication to GitHub without explicit maintainer authorization.
+Bound each implementation task and assign non-overlapping files for parallel
+review or maintenance. Reviewers must not race to edit the same files. No background promise, autonomous deployment, paid cloud provisioning, secret rotation, or publication to GitHub without explicit maintainer authorization.
 
 ## 15. Implementation roadmap
 
-**Build in dependency order. Each task produces a working increment and a testable result.** If the agent cannot complete a task, keep it in progress and record the concrete blocker. Do not drift into later phases as a substitute.
+[TASKS.md](TASKS.md) owns the current task queue and completion evidence.
+[DECISIONS.md](DECISIONS.md) owns product/architecture supersession. Completed
+bootstrap, catalog and pairing roadmaps are historical evidence, not current
+requirements. Each new task needs bounded scope, affected contracts and exact
+exit evidence. Keep incomplete work open and name the concrete next action.
 
-| Task | Depends on          | Deliverable                                                                            | Exit evidence                                                                                                                                           |
-| ---- | ------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T00  | —                   | Bootstrap project, instructions, toolchain, dependency locks, Make targets, minimal CI | Fresh install, backend health endpoint, rendered frontend, one test each; no fake green checks                                                          |
-| T01  | T00                 | SQLite/SQLAlchemy/Alembic setup, initial domain entities and public/private schemas    | Empty-file migration; schema/constraint/connection/rollback/reopen/UTC checks; hidden-answer serialization test; real integration target in Make and CI |
-| T02  | T01                 | Adult bootstrap/login and session/CSRF foundation                                      | Login/logout, secret rejection, CSRF and expiration tests                                                                                               |
-| T03  | T02                 | Learners, device pairing, ownership boundaries                                         | Two-learner isolation and pairing expiry/revocation tests                                                                                               |
-| T04  | T01                 | Fraction generator and safe answer parser/verifier                                     | Property tests and A01/A03/A18 domain cases                                                                                                             |
-| T05  | T03,T04             | Practice sessions, typed answer vertical slice, authored help                          | Browser can complete one persisted problem; no live AI dependency                                                                                       |
-| T06  | T05                 | Jobs, leases, idempotency, worker and recovery                                         | Crash/concurrent-worker tests; A08/A09/A17                                                                                                              |
-| T07  | T06                 | Provider contracts, deterministic mock, policy router                                  | Malformed response/refusal/timeout fixtures and no-cloud tests                                                                                          |
-| T08  | T07                 | Versioned tutor profiles, questions, assistance levels                                 | A07/A16/A21; synthetic profile preview                                                                                                                  |
-| T09  | T08                 | Meta Spark adapter                                                                     | Wire-contract tests; optional explicitly authorized synthetic smoke test recorded                                                                       |
-| T10  | T08                 | Image submission, private storage, interpretation confirmation                         | Mock vision flow; A06/A13/A18/A23                                                                                                                       |
-| T11  | T10                 | Mobile camera/file UX, HEIC/HEIF support, crop/rotate                                  | Real-device manual evidence and automated decoder tests                                                                                                 |
-| T12  | T10                 | Ollama adapter and documented local model setup                                        | Local text+image smoke test or explicit unverified status                                                                                               |
-| T13  | T12                 | vLLM and bounded OpenAI-compatible adapter                                             | Protocol/capability tests; exact runtime/model evidence                                                                                                 |
-| T14  | T08                 | Bedrock Converse adapter                                                               | boto3 stub tests; opt-in region/model smoke test; no static-key defaults                                                                                |
-| T15  | T05,T08             | Linear equations and second complete skill family                                      | Generator/verifier/property tests; no unrestricted expression evaluation                                                                                |
-| T16  | T11,T15             | Session review, bounded progress, export/deletion                                      | A05/A17/A22 and deletion/backup boundaries documented                                                                                                   |
-| T17  | T11,T16             | PWA install/update behavior, accessibility, offline status                             | No sensitive caches; keyboard checks; phone checks; A19/A24                                                                                             |
-| T18  | T09,T12,T13,T14,T17 | Evaluation runner and initial fixture/report set                                       | At least 30 original fixtures; A01–A24 evidence; live results not fabricated                                                                            |
-| T19  | T18                 | Hardened local/server release, backups/restore, contributor docs                       | Clean clone smoke test; restore test; all version-1 gates                                                                                               |
-| T20  | T19                 | Single-host EC2/EBS hosting templates/runbook for SQLite                               | IaC validation, least-privilege and persistent-storage review, no automatic resource creation                                                           |
-| T21  | T19                 | Offline deterministic practice packs                                                   | No promise of offline AI; safe cache/export behavior                                                                                                    |
-| T22  | T19                 | Optional external-problem photo mode                                                   | Problem transcription confirmation; unverifiable-answer handling; new evaluation set                                                                    |
-| T23  | T21                 | Browser-only small-model research                                                      | One exact device/runtime/model tested; explicit capability/quality limitations                                                                          |
-
-T24–T40 are maintainer-directed increments whose governing product changes are
-recorded in Decisions D009–D014 and whose bounded contracts and evidence are in
-`TASKS.md`. They do not revive requirements superseded by those decisions.
+The following recent contracts remain normative for the current tutor.
 
 ### T41 maintenance contract
 
@@ -1029,17 +862,6 @@ and a hosted `docker compose config` check before the container build/smoke/scan
 job. Real phone/accessibility checks, live provider quality, and the private-host
 release rehearsal remain explicit external acceptance work; their absence must
 not be reported as automated completion.
-
-The maintainer initially deferred hosted CI execution during local development,
-then authorized the first commit and push. T00's
-configured CI workflow plus passing local gates suffice for starting T01; retain
-hosted CI as pending evidence under [D002](DECISIONS.md#d002--local-t00-completion-2026-09-06).
-See [HANDOFF.md](HANDOFF.md) for bounded T01–T05 deliverables and the T05 staging
-decision. No later acceptance gate is waived.
-
-T00–T05 are the first complete **non-AI** slice. T06–T10 add the controlled tutoring workflow. T11–T19 finish portable version-1 behavior. T20–T23 are later work, not excuses to delay a usable release.
-
-Tasks may need splitting into smaller subtasks before implementation. Keep their parent acceptance criteria and dependencies. Never mark T19 complete while core providers are only undocumented stubs; a missing live credential may be an explicit verification limitation, but implemented adapters still need meaningful contract tests.
 
 ### T42 reading-comprehension contract
 
@@ -1118,51 +940,23 @@ provider selection or private installation deployment is authorized by this task
 
 ## 16. Development and release commands
 
-The [README command table](../README.md#development-commands) describes implemented
-entry points; the [Makefile](../Makefile) is authoritative. The full contract below
-is added by the phase that first needs it. A table entry alone does not mean a
-command exists. Do not add a placeholder target that reports success.
+The [Makefile](../Makefile) is authoritative; the
+[README command table](../README.md#commands-and-verification) explains supported
+entry points. [RUNBOOK.md](RUNBOOK.md) owns native/container migration, backup and
+restore sequences; [PHONE_SETUP.md](PHONE_SETUP.md) owns private HTTPS setup.
+Use `make bootstrap` then `make start` for the current native entry path.
+First-account creation uses the private browser setup link; `make admin` is an
+explicit recovery tool.
 
-### Required command contract
-
-| Command                                   | Required behavior                                                                                                                                       |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `make bootstrap`                          | Verify prerequisites and install locked dependencies; `make setup` explicitly creates missing local settings without reading or overwriting them (D006) |
-| `make db`                                 | Prepare/validate the configured private SQLite path, runtime, connectivity, and connection settings; no daemon or implicit schema migration             |
-| `make dev`                                | Start local application services against the configured database; report actual URLs                                                                    |
-| `make migrate`                            | Apply reviewed Alembic migrations with application writes stopped; preserve existing data                                                               |
-| `make seed-demo`                          | Insert only synthetic fixtures into explicitly selected demo/development database                                                                       |
-| `make admin`                              | Interactive create/reset adult admin; no password argument or log                                                                                       |
-| `make test`                               | Unit, property, frontend component, and mock contract tests                                                                                             |
-| `make test-integration`                   | Real isolated on-disk SQLite integration tests; generated synthetic settings, never an operator database                                                |
-| `make test-e2e`                           | Playwright against a seeded test deployment                                                                                                             |
-| `make check`                              | Format/lint/type/tests/build/generated-contract drift/secret checks appropriate to implemented phase                                                    |
-| `make contracts`                          | Export backend OpenAPI and regenerate frontend client/types                                                                                             |
-| `make eval-mock`                          | Deterministic fixture orchestration evaluation                                                                                                          |
-| `make eval-live PROVIDER=<configured-id>` | Explicit opt-in synthetic requests; enforce budget and emit redacted report                                                                             |
-| `make smoke`                              | Verify documented clean-start and principal workflow                                                                                                    |
-| `make down`                               | Stop services without deleting persistent volumes                                                                                                       |
-
-After a working release exists, the intended self-hosted path is:
-
-```bash
-# From a checked-out repository, after the implementation gates pass:
-cp .env.example .env
-cp config/providers.example.yaml config/providers.yaml
-make bootstrap
-make db
-make migrate
-make admin
-make dev
-```
-
-In T00, `make check` runs the real checks for the implemented scaffold; each later task adds its required gates. A target for an unimplemented feature must fail with a clear message rather than pretend success.
-
-Bootstrap must explain any unmet prerequisite instead of continuing with placeholders. It must not install an arbitrary model, accept model licenses, open firewall ports, contact a live provider, or overwrite credentials without explicit authorization.
+Targets must run real checks or behavior and report unmet prerequisites. Do not
+add fake-success placeholders. Bootstrap/startup must not download models, accept
+licenses, open firewall ports, call live providers or overwrite private settings
+without authorization. Live evaluations, deployments and publication remain
+explicit opt-in actions.
 
 ### CI requirements
 
-Run locked installs (`pnpm install --frozen-lockfile`, `uv sync --locked`), Ruff, mypy, frontend type checks/lint/tests/build, backend tests, on-disk SQLite integration tests, Playwright, generated-contract checks, secret scanning, and dependency vulnerability checks. T01 adds the embedded SQLite version check and integration gate without a database service container. Make scan failures actionable and any temporary exception documented with an owner and expiration.
+Run locked installs (`pnpm install --frozen-lockfile`, `uv sync --locked`), Ruff, mypy, frontend type checks/lint/tests/build, backend tests, on-disk SQLite integration tests, Playwright, generated-contract checks, secret scanning, and dependency vulnerability checks. Check the embedded SQLite runtime without a database service container. Make scan failures actionable and any temporary exception documented with an owner and expiration.
 
 GitHub Actions should have minimal permissions, pinned verified full commit SHAs for third-party actions, bounded artifact retention, and no provider secrets in fork pull-request jobs. Do not execute untrusted pull-request code with a privileged `pull_request_target` workflow. GitHub's security guidance explains the immutable action-pinning requirement. [^S35]
 
@@ -1172,7 +966,13 @@ Release builds additionally generate a software bill of materials, scan containe
 
 ### Local computer or home server
 
-Native development runs the application directly; optional Compose packaging runs the gateway, API, and worker on one host. API and worker mount the same private local data directory for SQLite and its sidecars, with persistent storage outside container layers. There is no database service. Ollama/vLLM is optional and can live on the host or another private machine. Bind to loopback by default. For phone access, deliberately enable LAN listening, configure trusted HTTPS and authentication, and document firewall access without public router port forwarding.
+Native operation runs the application directly; Compose runs one API and one
+worker on the same host. Both use the same private local data directory for
+SQLite and its sidecars, outside container layers. There is no database service.
+A separately configured private HTTPS gateway proxies the loopback application
+for phone access; keep API and model ports private. Ollama/vLLM can run on the
+host or another explicitly configured private machine. Follow PHONE_SETUP for
+trusted HTTPS and authentication without public router port forwarding.
 
 The server must remain awake and reachable while the phone uses it. Offline Internet can still permit local-network tutoring, but losing the LAN connection or stopping the server removes that capability. A plain public GitHub Pages deployment cannot host this Python backend and writable database; at most it can serve a static synthetic demo or a later browser-only mode.
 
@@ -1196,32 +996,38 @@ Storage adapters must support local private files first and S3 in the AWS phase.
 
 A version-1 release is ready only when a clean clone can run the mock demo without paid accounts, the principal workflow and exception paths pass, privacy boundaries are enforced, and each claimed provider has an honest status record. An adapter may be labeled “implemented; contract-tested; live test pending,” but not “fully verified.”
 
-The public README should eventually include actual screenshots or a short recording using original synthetic data, a concise architecture explanation, tested setup commands, measured provider results, limitations, and the license. Remove the blueprint warning only for functionality that exists; keep roadmap items marked as planned.
+The public README must describe current behavior, tested setup, provider
+verification limits and the license. Screenshots or recordings use original
+synthetic data and do not substitute for acceptance evidence. Mark research and
+unverified quality honestly.
 
-Contributor-facing documentation should explain the design decisions: separate interpretation/checking/tutoring, exact math, versioned attempts, no silent cloud fallback, and durable operations. Disclose AI-assisted implementation while describing the human specification and evaluation work honestly. Code volume is not the project's main evidence of quality.
+Contributor-facing documentation should explain qualified photo reading,
+source-grounded flexible teaching, optional exact evidence, ownership, no silent
+cloud fallback and durable recovery. Disclose AI-assisted implementation while describing the human specification and evaluation work honestly. Code volume is not the project's main evidence of quality.
 
 Target WCAG 2.2 AA, but do not claim conformance before an audit. Test visible labels, keyboard operation, focus management, zoom, non-color-only status, accessible mathematics, and reduced motion. Automated accessibility checks help but do not replace manual review. [^S36]
 
-Do not commit real learner data, employer code, private documents, model weights, credentials, or copied workbook pages. Every public fixture has provenance in `evals/MANIFEST.md`. Add the actual selected project license before releasing code, and document separate licenses for dependencies and model downloads.
+Do not commit real learner data, employer code, private documents, model weights, credentials, or copied workbook pages. Every public fixture has provenance in `evals/MANIFEST.md`. The project uses MIT (D006); document separate licenses for dependencies,
+public reading sources and model downloads.
 
 ## 19. Maintainer decisions and non-goals
 
-The following defaults allow implementation to start without another planning round:
+Current defaults and change boundaries:
 
-| Decision             | Chosen default                                                     | Change procedure                                                                       |
-| -------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| Product name         | Shepherd Academy Universe; maintainer-selected repository name      | Treat further renaming as an explicit product decision                                 |
-| Initial use          | One private deployment, adult administrator, managed learners      | Multi-tenant/public sign-up is a separate architecture review                          |
-| Primary client       | Responsive PWA                                                     | Native shell only after a concrete unmet requirement                                   |
-| Core topics          | Fractions and `a*x+b=c`                                            | Add a template/verifier/evaluation task                                                |
-| Local model strategy | Ollama for simplicity; vLLM for server deployment                  | Verify exact model/runtime instead of hardcoding assumptions                           |
-| Initial model route  | Mock; explicitly activate permitted live routes                    | Privacy/capability checks are mandatory                                                |
-| Database             | SQLite on local disk, one host (D004)                              | PostgreSQL requires a separate scaling/availability decision and tested data migration |
-| Application workflow | Deterministic services and durable jobs                            | No multi-agent orchestrator without a demonstrated requirement                         |
-| Hosting              | Native local setup; optional single-host Compose and EC2/EBS phase | No shared/network-mounted SQLite; infrastructure provisioning requires authorization   |
-| Data retention       | Photos up to 24 hours; history 30 days                             | Adult-controlled, documented, tested changes                                           |
-| Offline behavior     | Honest unavailable state; later public practice packs              | Full offline AI stays research until measured                                          |
-| License              | MIT, approved and added (D006)                                     | Model weights and third-party dependencies retain their own licenses                   |
+| Decision             | Chosen default                                                       | Change procedure                                                                       |
+| -------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Product name         | Shepherd Academy Universe; maintainer-selected repository name       | Treat further renaming as an explicit product decision                                 |
+| Initial use          | One private deployment, adult administrator, managed learners        | Multi-tenant/public sign-up is a separate architecture review                          |
+| Primary client       | Responsive PWA                                                       | Native shell only after a concrete unmet requirement                                   |
+| Topics               | Free-text multi-subject AI tutoring (D009)                           | New behavior needs a bounded task and appropriate quality evaluation                   |
+| Local model strategy | Ollama for simplicity; vLLM for server deployment                    | Verify exact model/runtime instead of hardcoding assumptions                           |
+| Initial model route  | Mock; explicitly activate permitted live routes                      | Privacy/capability checks are mandatory                                                |
+| Database             | SQLite on local disk, one host (D004)                                | PostgreSQL requires a separate scaling/availability decision and tested data migration |
+| Application workflow | Deterministic services and durable jobs                              | No multi-agent orchestrator without a demonstrated requirement                         |
+| Hosting              | Native local setup; optional single-host Compose and EC2/EBS phase   | No shared/network-mounted SQLite; infrastructure provisioning requires authorization   |
+| Data retention       | Photos up to 24 hours; history 30 days                               | Adult-controlled, documented, tested changes                                           |
+| Offline behavior     | Public assets and isolated synthetic practice; server/AI unavailable | Browser AI remains research until exact device/model measurements pass                 |
+| License              | MIT, approved and added (D006)                                       | Model weights and third-party dependencies retain their own licenses                   |
 
 A fully customizable tutor does not require letting users modify every safety-critical parameter. Version 1 customization is deliberately about pedagogy, topics, and presentation, while operators own infrastructure and data policy.
 
@@ -1268,8 +1074,6 @@ account before use.
 [^S16]: **Vite:** [Vite 8 announcement](https://vite.dev/blog/announcing-vite8); [Vite 8.1](https://vite.dev/blog/announcing-vite8-1).
 
 [^S17]: **TypeScript:** [TypeScript 6 release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html).
-
-[^S18]: **Python:** [Python 3.13 maintenance release and 3.14 distinction](https://www.python.org/downloads/release/python-31315/).
 
 [^S19]: **Tailwind:** [Vite installation](https://tailwindcss.com/docs/installation/using-vite).
 
@@ -1326,22 +1130,3 @@ account before use.
 [^S45]: **AWS persistent storage:** [Amazon EBS volumes](https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volumes.html).
 
 [^S46]: **Locally hosted Llama:** Meta's [Llama 4 Community License](https://github.com/meta-llama/llama-models/blob/main/models/llama4/LICENSE) and [Acceptable Use Policy](https://github.com/meta-llama/llama-models/blob/main/models/llama4/USE_POLICY.md).
-
-## Appendix A. Root AGENTS.md
-
-The root instructions now live in [AGENTS.md](../AGENTS.md). That file is authoritative;
-its content is not duplicated here because parallel normative copies drift.
-
-## Appendix B. Portable skill example
-
-The portable implementation skill now lives at
-[`.agents/skills/implement-task/SKILL.md`](../.agents/skills/implement-task/SKILL.md).
-Keep task-specific skills small and add another only when a repeated workflow needs
-non-obvious guidance.
-
-## Appendix C. First implementation prompt
-
-The one-time bootstrap prompt is retired. Continue from the current task in
-[`docs/TASKS.md`](TASKS.md), following `AGENTS.md` and the applicable task skill.
-[HANDOFF.md](HANDOFF.md) contains the T01–T05 prompt and local verification gates;
-hosted CI evidence remains pending under D002 until an actual run is observed.
