@@ -13,13 +13,20 @@ clean HIGH/CRITICAL image scan. Exact commands and limits are in
 [the T44 task entry](TASKS.md#t44--adversarial-review-hardening-2026-10-08).
 Those complete source gates remain the October 8 evidence.
 
-On **October 10, 2026**, T44 source `62b30ca` was deployed to the existing private
-Compose installation at `0020_request_recovery`. Both writers stopped before a
+The October 11 refresh passed 830 local source/integration tests on Python 3.15 /
+HEIF 1.8.1; 80 browser checks initially passed on Python 3.15 / HEIF 1.8.0.
+Hosted CI checks every pushed commit with all 910 tests, mock evaluations,
+dependency audits and container gates. Its release SBOM is retained for 14 days.
+Exact local commands and per-commit workflow evidence are in [TASKS](TASKS.md).
+
+On **October 11, 2026**, runtime source `e9bf42c`, Python 3.15.0 and HEIF 1.8.1
+were deployed to the existing private Compose installation at
+`0020_request_recovery`. Both writers stopped before a
 verified private rollback archive. The deployed image passed container smoke and
 a fresh scan with zero HIGH/CRITICAL findings. HTTPS readiness, matching served
 HTML/JS/CSS, protected reading/admin/receipt endpoints and no-cache HTML/service
 worker responses passed. Current provider selections were not inspected or
-changed; no inference was run. Exact image and commands are in [TASKS](TASKS.md).
+changed; no test inference was invoked. Exact image and commands are in [TASKS](TASKS.md).
 
 All 40 existing mobile Chromium checks and six additional synthetic phone flows
 passed at 320×568, 375×667, 390×844, 430×932, 667×375 and 844×390. Settings,

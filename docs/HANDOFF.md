@@ -11,17 +11,20 @@ The October 11 local dependency refresh uses minimum-only `>=` requirements,
 Node 26.11.1, pnpm 12.11.2 and uv/uv_build 0.13.0. The corrected Python 3.15.0
 cutover now uses pillow-heif 1.8.1's completed wheels and a separate Python 3.14.8
 environment for cfn-lint's installation-metadata restriction. TypeScript and
-Vitest retain their documented compatible lock resolutions. All 910 automated
-tests, dependency audits and local container smoke passed with the corrected
-runtime. Actual validation and the distinction from the initial Python 3.14
+Vitest retain their documented compatible lock resolutions. Final local checks
+passed 830 source/integration tests, dependency audits, container smoke and a
+clean HIGH/CRITICAL image scan; the 80 browser checks initially passed with
+Python 3.15 / HEIF 1.8.0. Hosted CI runs all 910 against each pushed commit.
+Actual validation and the distinction from the initial Python 3.14
 checks are recorded in [TASKS](TASKS.md); current policy is in
 [DEPENDENCIES](DEPENDENCIES.md).
 
-The existing private Compose installation was updated to **T44 source `62b30ca`
-on October 10, 2026**, at `0020_request_recovery`. Both writers stopped before a
+The existing private Compose installation now uses **runtime source `e9bf42c`
+with Python 3.15.0 / HEIF 1.8.1, deployed on October 11, 2026**, at
+`0020_request_recovery`. Both writers stopped before a
 verified private rollback archive; the tested image then passed HTTPS readiness,
 served-asset matching and protected-endpoint checks. Current provider selections
-were not inspected or changed, and no inference was run. Image and verification
+were not inspected or changed, and no test inference was invoked. Image and verification
 details are in [TASKS](TASKS.md).
 
 ## Next bounded actions

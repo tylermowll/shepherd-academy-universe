@@ -1,7 +1,8 @@
 # Operations runbook
 
-The existing private Compose installation was updated to T44 source `62b30ca`
-on October 10, 2026, at `0020_request_recovery`. [TASKS](TASKS.md) records its
+The existing private Compose installation now uses runtime source `e9bf42c`,
+Python 3.15.0 and pillow-heif 1.8.1, deployed on October 11, 2026,
+at `0020_request_recovery`. [TASKS](TASKS.md) records its
 rollback archive, tested image and HTTPS verification. Live model/device quality
 and host recovery/secret custody remain
 [acceptance work](ACCEPTANCE.md#items-requiring-the-maintainer).

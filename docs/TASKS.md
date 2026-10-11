@@ -12,9 +12,10 @@ specification gates pass.
   the corrected app baseline is Python 3.15.0, with separate Python 3.14.8
   infrastructure tooling. Full source, integration, browser, audit and local
   container gates passed on Python 3.15; evidence is recorded below.
-  October 10 deployment, phone-layout and offline development-restore evidence
-  remains recorded below.
-- **Private installation:** updated to T44 on October 10 at migration
+  October 11 publication/deployment and the earlier phone-layout and offline
+  development-restore evidence are recorded below.
+- **Private installation:** updated to runtime source `e9bf42c` on October 11,
+  with Python 3.15.0 / HEIF 1.8.1, at migration
   `0020_request_recovery`. API/worker image identity, private HTTPS readiness,
   served frontend hashes and anonymous API rejection passed. Both writers stopped
   before the verified rollback archive. Provider selections were not inspected
@@ -248,8 +249,45 @@ math-practice-tutor:release-20261011`: exit 0, **zero HIGH/CRITICAL
   `PRE_COMMIT_HOME=/tmp/shepherd-refresh-pre-commit`: passed every applicable
   file hook and the full repository pre-commit source/type/test gate.
 
-Hosted CI and the retained-data deployment will be recorded as they complete.
-Live inference and physical-device tests remain separate.
+Published runtime source **`e9bf42c`** to `main` after the actual commit hook
+passed. `git fetch origin main` confirmed the remote still matched the original
+base; `git push origin main` advanced it without a force push. Its hosted
+[package job](https://github.com/tylermowll/shepherd-academy-universe/actions/runs/38146935496)
+passed the container build/smoke/scan and uploaded the non-expired `release-sbom`
+artifact (7,003 bytes). [Project checks](https://github.com/tylermowll/shepherd-academy-universe/actions/workflows/ci.yml)
+records each pushed commit's locked installations, all 910 tests, mock
+evaluations, dependency audits, container gates and retained SBOM.
+
+Updated the existing private Compose installation to the exact locally tested
+image above, preserving its data mount and operator settings:
+
+- Retained the old image as a timestamped rollback tag. The first host archive
+  attempt failed because the data directory is private to UID 10001; the old
+  services restarted safely. The failed partial archive was removed. No data
+  permissions were changed and no private contents were displayed.
+- `docker compose -f infra/docker/compose.yaml stop --timeout 100 api worker`:
+  both stopped before backup. A temporary container using the existing image,
+  UID **10001**, no network, read-only filesystem, dropped capabilities and a
+  read-only data mount streamed an opaque gzip/tar archive to ignored `backups/`.
+  `gzip -t` and a tar structure check with listing output discarded passed;
+  directory mode **700**, archive mode **600**. Old image and archive are the
+  paired rollback checkpoint; this does not replace operational secret custody.
+- Tagged the tested image as `math-practice-tutor:local`, then Compose
+  `run --rm --no-deps api alembic upgrade head`, `up -d --no-build api worker`
+  and `exec -T api alembic current`: passed at unchanged
+  **`0020_request_recovery (head)`**. Both running containers use image
+  `sha256:8f4244e3088a4e321a6342019d4eaf2f270bfd6a2779e00788d2a548c35a01e1`
+  and report Python **3.15.0** / pillow-heif **1.8.1**.
+- `python3 /tmp/shepherd-release-verify.py`: exit 0. Configured private HTTPS
+  readiness, exact served HTML/service-worker and **2/2** referenced JS/CSS
+  hashes, no-cache HTML/service worker and service-worker scope passed. All
+  **3/3** anonymous reading/admin/receipt GETs rejected access with `no-store`.
+  The verifier never read protected response bodies or private config/data/logs.
+
+The current README, RUNBOOK, HANDOFF and ACCEPTANCE now describe this installed
+runtime. Provider selections were not inspected or changed. No test inference,
+model download, new hosting infrastructure or physical-device checks were run;
+live quality and operational acceptance remain separate.
 
 ## Documentation review (2026-10-10)
 

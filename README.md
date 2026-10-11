@@ -13,9 +13,10 @@ concepts and different practice, never tasks for the tutor to complete.
 
 ## Current status
 
-Implementation and recorded automated checks are through **T44 (October 8, 2026)**.
-The existing private Compose installation was updated to T44 source `62b30ca` on
-**October 10, 2026**, at migration `0020_request_recovery`. HTTPS readiness, served
+Implementation is through **T44**, with the October 11 dependency refresh.
+The existing private Compose installation now uses runtime source `e9bf42c`,
+Python **3.15.0** and pillow-heif **1.8.1**, deployed on **October 11, 2026**
+at migration `0020_request_recovery`. HTTPS readiness, served
 assets and protected endpoints were verified. Current provider selections were
 not inspected or changed. T44 requires a fresh tutor connection test; unchanged
 photo-reader tests remain valid until normal expiry.
