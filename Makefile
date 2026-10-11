@@ -2,6 +2,12 @@ UV ?= uv
 PNPM ?= pnpm
 API_PROJECT := apps/api
 UV_PROJECT_ARGS := --directory $(API_PROJECT)
+INFRA_PROJECT := tools/infra
+INFRA_PYTHON := $(shell cat $(INFRA_PROJECT)/.python-version)
+INFRA_PROJECT_ENVIRONMENT ?= $(CURDIR)/$(INFRA_PROJECT)/.venv
+INFRA_PROJECT_ARGS := --project $(INFRA_PROJECT) --python $(INFRA_PYTHON)
+# Infrastructure tools must not reuse an API environment override.
+INFRA_UV = UV_PROJECT_ENVIRONMENT="$(INFRA_PROJECT_ENVIRONMENT)" $(UV)
 ENV_FILE ?= $(if $(UV_ENV_FILE),$(UV_ENV_FILE),$(CURDIR)/.env)
 # Only operator commands load settings, through captured/redacted uv diagnostics.
 LOCAL_COMMAND = $(UV) run --project $(API_PROJECT) --locked --no-env-file python -m math_tutor.local_start --env-file "$(ENV_FILE)" --uv "$(UV)"
@@ -12,6 +18,7 @@ LOCAL_COMMAND = $(UV) run --project $(API_PROJECT) --locked --no-env-file python
 
 bootstrap: toolchain-check
 	$(UV) sync $(UV_PROJECT_ARGS) --locked
+	$(INFRA_UV) sync $(INFRA_PROJECT_ARGS) --locked
 	$(PNPM) install --frozen-lockfile
 
 toolchain-check:
@@ -26,10 +33,12 @@ hooks-check:
 
 lock:
 	$(UV) lock $(UV_PROJECT_ARGS)
+	$(INFRA_UV) lock $(INFRA_PROJECT_ARGS)
 	$(PNPM) install --lockfile-only
 
 lock-check:
 	$(UV) lock $(UV_PROJECT_ARGS) --check
+	$(INFRA_UV) lock $(INFRA_PROJECT_ARGS) --check
 	$(PNPM) install --lockfile-only --frozen-lockfile --ignore-scripts
 
 db:
@@ -99,11 +108,11 @@ secret-check:
 	$(UV) run --project $(API_PROJECT) --locked python scripts/scan-secrets.py
 
 audit:
-	sh scripts/audit-python.sh
+	UV="$(UV)" INFRA_PROJECT_ENVIRONMENT="$(INFRA_PROJECT_ENVIRONMENT)" sh scripts/audit-python.sh
 	$(PNPM) audit
 
 infra-check:
-	$(UV) run --project $(API_PROJECT) --locked cfn-lint infra/aws/household.json
+	$(INFRA_UV) run $(INFRA_PROJECT_ARGS) --locked --no-env-file cfn-lint infra/aws/household.json
 
 eval-mock:
 	$(UV) run --project $(API_PROJECT) --locked python -m math_tutor.evaluation --fixtures evals/fixtures/rational-v1.json --output evals/reports/deterministic.json

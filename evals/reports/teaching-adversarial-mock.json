@@ -3,8 +3,8 @@
   "provenance": "Original synthetic staged conversations for the T43 adversarial-review corrections. The Necklace passage retains its public-domain attribution from the existing fixture. No real learner data. Scripted responses and fixture-authored transfer tasks exercise software orchestration only; mocks do not measure teaching quality or learning.",
   "authored_at": "2026-10-08",
   "fixture_sha256": "ce8ce687304dcee84a57d061dc1aa72b3b4811e456f47bfa170fef348f53b11e",
-  "recorded_at": "2026-10-08T19:44:52.111725+00:00",
-  "python": "3.14.8",
+  "recorded_at": "2026-10-11T14:14:06.967948+00:00",
+  "python": "3.15.0",
   "provider_adapter": "mock",
   "model": "fixture-v1",
   "provider_settings": {
@@ -82,7 +82,7 @@
             "start": 0,
             "end": 5347
           },
-          "request_sha256": "15e3d841f83a1e74f7329290f039b465736f7c305cfef40e8946c4ac49149393",
+          "request_sha256": "cbad02b173e4b2bf369b4a399369b4e91ed410bf6139eb29741aa5ef42679f69",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -91,8 +91,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "64978aab-c198-4555-80eb-7e2d0adf1313",
-              "submission_id": "a01cafa4-832a-4fd7-86c0-3347043ea6d4",
+              "activity_id": "8b70bf71-fd2a-4420-bb50-a770c2e83978",
+              "submission_id": "fae39b2a-db41-40a5-862e-d267901d81e9",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": "6f8cb530cf03e3f8341f93e73899b9e459450649c75e8ae778af8de15b9f814f",
@@ -157,7 +157,7 @@
             "start": 0,
             "end": 5347
           },
-          "request_sha256": "c5c23cca0e4cb891e1f1cb5c8b2125a0f4ec129456a36594d52beb8f69ab2b57",
+          "request_sha256": "4f9a85c368ce04fecda7d12bb80c23c16c4bc3003c1a018efbb9d18614708197",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -166,8 +166,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "64978aab-c198-4555-80eb-7e2d0adf1313",
-              "submission_id": "9c776ea1-e758-4423-bf9c-faad01039d6c",
+              "activity_id": "8b70bf71-fd2a-4420-bb50-a770c2e83978",
+              "submission_id": "7609301a-0f86-485c-bc88-01fa5e870871",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": "6f8cb530cf03e3f8341f93e73899b9e459450649c75e8ae778af8de15b9f814f",
@@ -232,7 +232,7 @@
             "start": 0,
             "end": 5347
           },
-          "request_sha256": "9405af209915f9e744d103964b83ca2ae319900060d22ec0e990f7226331b92c",
+          "request_sha256": "86cd5b2d9937bf1f715e43095dac8088cb17885d58b31cd9a42a62926b463584",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -241,8 +241,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "0341163e-127c-4654-a476-e7ed4fb02c02",
-              "submission_id": "82313f1b-0cac-4343-b99d-1b182c6b9d2d",
+              "activity_id": "47085dd5-a5aa-4d6e-9722-e3b7c8cecd65",
+              "submission_id": "df11c63d-f4ff-43e6-b113-4bd709ec49d1",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": "6f8cb530cf03e3f8341f93e73899b9e459450649c75e8ae778af8de15b9f814f",
@@ -307,7 +307,7 @@
             "start": 0,
             "end": 5347
           },
-          "request_sha256": "8f1824c1d09751c027820b338daaaf62a9710dff430159d3c9446b64155cc55c",
+          "request_sha256": "9feb2e9453c94114127f21a5ccec7533eb44f6f6b0dfe4e4ee6a2fdbe63aacf9",
           "persisted_observation": {
             "learning_observation": null,
             "evidence_link": null
@@ -379,7 +379,7 @@
             "start": 0,
             "end": 574
           },
-          "request_sha256": "a2e89dc70064a391ee4351a72e771b2323993f7ce7c0a7287d3e7a55e129d199",
+          "request_sha256": "dda0d704093b27798bda82d4706fff3f6cb6712c980514b72567d90cd50ec143",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -388,8 +388,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "d1bb8866-5184-440b-9d76-5352735a3226",
-              "submission_id": "7eb385d4-a9aa-4e1f-8552-aedd6290a8fe",
+              "activity_id": "572c97a1-76c8-4d59-89dd-fb74b48b2a03",
+              "submission_id": "c7ad7a1b-abd6-4975-8752-f1a47bf04dcc",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": "f7a7c5d1a22e3b32cbd5347f09710280a15985fef361a32c61f7502a80d809f5",
@@ -454,7 +454,7 @@
             "start": 0,
             "end": 574
           },
-          "request_sha256": "8ca0952c562b833b52d68231e6ac4ed2efe36f62f98ea0f457952364de8d1b02",
+          "request_sha256": "b2cc3e478ac4d645cd3387eefc87058b92a497164315ca90f2588f167d3b7d3a",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -463,8 +463,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "d1bb8866-5184-440b-9d76-5352735a3226",
-              "submission_id": "a06d6df6-e47c-4106-ac45-b4f09fc073e9",
+              "activity_id": "572c97a1-76c8-4d59-89dd-fb74b48b2a03",
+              "submission_id": "410b28f1-8a02-4c07-995c-ba6b117a4c62",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": "f7a7c5d1a22e3b32cbd5347f09710280a15985fef361a32c61f7502a80d809f5",
@@ -529,7 +529,7 @@
             "start": 0,
             "end": 574
           },
-          "request_sha256": "c5c91ab13ef9604a73d15c2dcdfd2ba5879b6418753fed639015494d8eb621f0",
+          "request_sha256": "dc9b1f6d0fdcae5370ff2a0ea55650c09d4941e97564c83040ccf78dd3330175",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -538,8 +538,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "d1bb8866-5184-440b-9d76-5352735a3226",
-              "submission_id": "d34aca3c-3752-4bc8-86d4-775e04feba00",
+              "activity_id": "572c97a1-76c8-4d59-89dd-fb74b48b2a03",
+              "submission_id": "2700dbde-2c74-4426-81cc-d8f16aade8b0",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": "f7a7c5d1a22e3b32cbd5347f09710280a15985fef361a32c61f7502a80d809f5",
@@ -604,7 +604,7 @@
             "start": 0,
             "end": 574
           },
-          "request_sha256": "9eece7e384a32f21a2db0927f776c45b4a5765f1adcc6e1a623b31abf146a8fd",
+          "request_sha256": "6d54c096c32454dddbd14eb370f2f0c702139fad83f168428aa6d4237f989740",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -613,8 +613,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "d1bb8866-5184-440b-9d76-5352735a3226",
-              "submission_id": "84a9b5fa-064f-4405-89a0-d9bddeb3975c",
+              "activity_id": "572c97a1-76c8-4d59-89dd-fb74b48b2a03",
+              "submission_id": "3b50f277-5819-4bb3-b614-1b1fe5a7a348",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": "f7a7c5d1a22e3b32cbd5347f09710280a15985fef361a32c61f7502a80d809f5",
@@ -679,7 +679,7 @@
             "start": 574,
             "end": 1169
           },
-          "request_sha256": "7b830ca294e073cd5115d5cacea3736488e3abd273b12cd5cd59ccca93095b0f",
+          "request_sha256": "6f2a0607b281b093bf737c42379108db3abcbb54735fc4c501320c04c39cab72",
           "persisted_observation": {
             "learning_observation": null,
             "evidence_link": null
@@ -730,7 +730,7 @@
             "start": 574,
             "end": 1169
           },
-          "request_sha256": "1a202cc70b8b5a9f3a7c97b14b29e5475a81eda8101c909c0c88a0e9ba1ad4c4",
+          "request_sha256": "44710b66db6d4f0ade22d8dcbc2f6a9cba9f638db38b8df73f7d9d2486d05faf",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -739,8 +739,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "c7d25179-654d-4afb-a449-7bc26800e46c",
-              "submission_id": "1f74a11a-7305-49d9-9030-e428d0727b49",
+              "activity_id": "deaf1876-de9e-4b44-ab35-3c4f888886c1",
+              "submission_id": "c09fc5fd-42bf-4b75-98b2-d0bf5da71b0f",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": "f7a7c5d1a22e3b32cbd5347f09710280a15985fef361a32c61f7502a80d809f5",
@@ -805,7 +805,7 @@
             "start": 0,
             "end": 2220
           },
-          "request_sha256": "bf78f15e89be063cc6c3319ec48dcce7025871703d6acc0c1e9ed7bd55a92355",
+          "request_sha256": "a94317724017ed9b2eba037e892d1b79b05b67ca2cd3ff4361d0bea04f5ce238",
           "persisted_observation": {
             "learning_observation": null,
             "evidence_link": null
@@ -856,7 +856,7 @@
             "start": 0,
             "end": 574
           },
-          "request_sha256": "083600cdf332b238e8101a601e4aacfdde5cd9f5f30e6c3674d33d5289846458",
+          "request_sha256": "41ee0c41b372d25d17720125facef97541ef30f6848e6561e023b364168cbcea",
           "persisted_observation": {
             "learning_observation": null,
             "evidence_link": null
@@ -920,7 +920,7 @@
             "grounding_and_uncertainty": "pending",
             "progression_and_independent_transfer": "pending"
           },
-          "request_sha256": "d6de61327a373f34fe52ddb25f3aae04cdc50a04af93314e746e29e02650f195",
+          "request_sha256": "cb3730ed7cf4beb055557e1f89fa85801b65b2b0bc3d500b434e91886eb952af",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -929,8 +929,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "2c5f6ff8-e96d-4283-b929-5a99e5caecdb",
-              "submission_id": "1fbb2787-8871-4c8c-a8dd-bc2479d2263b",
+              "activity_id": "152fbb36-3268-41a6-ac57-e0d8b415c8e8",
+              "submission_id": "f9f778ed-193a-4a03-9610-33719e51b741",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": null,
@@ -987,7 +987,7 @@
             "grounding_and_uncertainty": "pending",
             "progression_and_independent_transfer": "pending"
           },
-          "request_sha256": "40e6d0028758c7fa262744f3dabb2bb6fa4521f9fe0c5f7c5ff23fbfd0367692",
+          "request_sha256": "ecd661f5b3954a6502e0d2569aae7490ca4eb3cd4d44d00d243978b64ab6bc31",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -996,8 +996,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "2c5f6ff8-e96d-4283-b929-5a99e5caecdb",
-              "submission_id": "241cf9be-adb2-45ee-bc8f-4744ce805ae7",
+              "activity_id": "152fbb36-3268-41a6-ac57-e0d8b415c8e8",
+              "submission_id": "71c7eebb-61e8-4b44-a068-6ab3acb5a1b3",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": null,
@@ -1054,7 +1054,7 @@
             "grounding_and_uncertainty": "pending",
             "progression_and_independent_transfer": "pending"
           },
-          "request_sha256": "bdeccc4c11f357705c084928dbb2c42fb32ac9ef8f630b04226210b15406198d",
+          "request_sha256": "5208849838c1ba518922976bcae8df82f86fed3cc8d106d608307d1660aed418",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -1063,8 +1063,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "f903c91f-6297-4979-90e0-db54d74af3a9",
-              "submission_id": "4a056703-b24a-4803-8b7e-fff75a960f79",
+              "activity_id": "dc789421-9693-405f-8a47-246f1c8b2e50",
+              "submission_id": "6df00003-46f9-409b-8298-b77ce08e5f38",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": null,
@@ -1121,7 +1121,7 @@
             "grounding_and_uncertainty": "pending",
             "progression_and_independent_transfer": "pending"
           },
-          "request_sha256": "f14a4aab1277336ff415a99ceeeeef8c0ed21054acce489ad7ce1e4c42454d14",
+          "request_sha256": "84c127380a42e69c779ec8f5edf849ee27da74f25d7da0c800ae944fe5a8dd68",
           "persisted_observation": {
             "learning_observation": null,
             "evidence_link": null
@@ -1193,7 +1193,7 @@
             "start": 0,
             "end": 364
           },
-          "request_sha256": "74448978ff767907badd078af84de2eab1754650e3e2d59b2f62a1867e455a44",
+          "request_sha256": "0ad71b22664ae1e5c1f7e559a11708471e4457d55fc52a23159b800eaa4130e3",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -1202,8 +1202,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "04fc1cc5-9ee8-47c7-b8e1-6fbcc68cf8b3",
-              "submission_id": "562c3011-235a-4498-b537-7fda46cbfa26",
+              "activity_id": "c488677b-36d5-442c-9d14-831b0d541048",
+              "submission_id": "92cc5b2f-a084-4327-b785-86c2dc617b2f",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": "cc1946492447db073bae5c07e63e9cc6a9e92d0514313da55aaa3990c5b086a8",
@@ -1268,7 +1268,7 @@
             "start": 0,
             "end": 364
           },
-          "request_sha256": "7f4a1aa76617519ddb42b0832729a686aa5a965682ba2ae3872144130e146c72",
+          "request_sha256": "93c29b64b8ae25d9ae7f8fbce6faf3c6f14bdf933929b20fecd771402fce4e6d",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -1277,8 +1277,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "04fc1cc5-9ee8-47c7-b8e1-6fbcc68cf8b3",
-              "submission_id": "df1db2f7-88e1-4bc7-88c3-b4db866c867b",
+              "activity_id": "c488677b-36d5-442c-9d14-831b0d541048",
+              "submission_id": "58b9a040-71ef-4687-94de-2ae40136247a",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": "cc1946492447db073bae5c07e63e9cc6a9e92d0514313da55aaa3990c5b086a8",
@@ -1343,7 +1343,7 @@
             "start": 0,
             "end": 364
           },
-          "request_sha256": "12b73762325c8358e838ce0d34befa1b93b7d91047e7389f2db44b248a596d3b",
+          "request_sha256": "0e1c8ebdcb02cbc5be25fe219a5a43d546112f730312563636ee1eab916e1665",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -1352,8 +1352,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "04fc1cc5-9ee8-47c7-b8e1-6fbcc68cf8b3",
-              "submission_id": "1f6a02d5-f3ea-483c-97b9-c6bdc8e72d75",
+              "activity_id": "c488677b-36d5-442c-9d14-831b0d541048",
+              "submission_id": "6d4d644b-725f-4079-9887-bdd78885cb80",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": "cc1946492447db073bae5c07e63e9cc6a9e92d0514313da55aaa3990c5b086a8",
@@ -1418,7 +1418,7 @@
             "start": 0,
             "end": 364
           },
-          "request_sha256": "86b7f09a746b54b4ce7ac552a1ffd067630bd2c390c9455ad3ee188ae4d844a1",
+          "request_sha256": "3f10edc433896f1a5af4e918722e7d9218d91b6153490672ba559322bb62bef3",
           "persisted_observation": {
             "learning_observation": {
               "assessment": "not_assessed",
@@ -1427,8 +1427,8 @@
               "open_points": []
             },
             "evidence_link": {
-              "activity_id": "b22a364c-9878-4297-8115-01cc71f94ed2",
-              "submission_id": "1a10c3f0-6fda-4697-861e-bf95a638182a",
+              "activity_id": "8c065b23-4a24-445d-8c51-8a0d9b590cc8",
+              "submission_id": "5b391352-d9bb-4db7-b137-53a9e2ea7fa5",
               "support": "not_assessed",
               "basis": "discussion",
               "source_id": "cc1946492447db073bae5c07e63e9cc6a9e92d0514313da55aaa3990c5b086a8",

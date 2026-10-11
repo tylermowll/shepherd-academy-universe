@@ -3,43 +3,42 @@ name = "math-practice-tutor"
 version = "0.1.0"
 description = "Backend for the self-hosted Shepherd Academy Universe"
 license = "MIT"
-requires-python = ">=3.14.8,<3.15"
+requires-python = ">=3.15.0"
 dependencies = [
-    "alembic>=1.16,<2",
-    "argon2-cffi>=25.1,<26",
-    "boto3>=1.40,<2",
-    "cryptography>=50,<51",
-    "fastapi>=0.141.1,<1",
-    "httpx2>=2.12,<3",
-    "pillow>=12,<13",
-    "pillow-heif>=1,<2",
-    "pydantic>=2.13.5,<3",
-    "pyyaml>=6,<7",
-    "sqlalchemy>=2,<3",
-    "uvicorn>=0.52.4,<1",
+    "alembic>=1.20.0",
+    "argon2-cffi>=25.1.0",
+    "boto3>=1.43.111",
+    "cryptography>=50.0.2",
+    "fastapi>=0.143.0",
+    "httpx2>=2.13.1",
+    "pillow>=12.3.0",
+    "pillow-heif>=1.8.1",
+    "pydantic>=2.14.0",
+    "pyyaml>=6.0.3",
+    "sqlalchemy>=2.1.4",
+    "uvicorn>=0.54.0",
 ]
 
 [dependency-groups]
 dev = [
-    "boto3-stubs[bedrock-runtime,s3]>=1.40,<2",
-    "cfn-lint>=1,<2",
-    "httpx2>=2.12,<3",
-    "hypothesis>=6,<7",
-    "mypy>=2.3.1,<3",
-    "pip-audit>=2,<3",
-    "pre-commit>=4.6.2,<5",
-    "pre-commit-hooks>=6.0.0,<7",
-    "pytest>=9.1.1,<10",
-    "ruff>=0.16.6,<1",
-    "types-pyyaml>=6,<7",
+    "boto3-stubs[bedrock-runtime,s3]>=1.43.111",
+    "httpx2>=2.13.1",
+    "hypothesis>=6.169.0",
+    "mypy>=2.4.0",
+    "pip-audit>=2.10.1",
+    "pre-commit>=4.6.2",
+    "pre-commit-hooks>=6.0.0",
+    "pytest>=9.1.1",
+    "ruff>=0.17.0",
+    "types-pyyaml>=6.0.12.20260906",
 ]
 
 [build-system]
-requires = ["uv_build>=0.12.23,<0.13"]
+requires = ["uv_build>=0.13.0"]
 build-backend = "uv_build"
 
 [tool.uv]
-required-version = ">=0.12.23,<0.13"
+required-version = ">=0.13.0"
 
 [tool.uv.build-backend]
 module-name = "math_tutor"
@@ -51,12 +50,12 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 src = ["src", "tests"]
-target-version = "py314"
+target-version = "py315"
 
 [tool.ruff.lint]
 select = ["B", "E4", "E7", "E9", "F", "I", "SIM", "UP"]
 
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.15"
 strict = true
 warn_unreachable = true

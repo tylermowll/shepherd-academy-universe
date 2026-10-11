@@ -5,12 +5,15 @@ The normative scope, dependencies, deliverables, and exit evidence are in
 records implementation status; a task is complete only when all of its
 specification gates pass.
 
-## Current checkpoint (updated 2026-10-10)
+## Current checkpoint (updated 2026-10-11)
 
-- **Repository:** T44 runtime source at `62b30ca`; the October 10 documentation
-  review and operational evidence are recorded below. Full source gates are
-  recorded on October 8; fresh deployment,
-  phone-layout and offline development-restore evidence is recorded below.
+- **Repository:** T44 plus the October 11 minimum-only dependency refresh below.
+  Node 26.11.1, pnpm 12.11.2 and uv/uv_build 0.13.0 are the installer baselines;
+  the corrected app baseline is Python 3.15.0, with separate Python 3.14.8
+  infrastructure tooling. Full source, integration, browser, audit and local
+  container gates passed on Python 3.15; evidence is recorded below.
+  October 10 deployment, phone-layout and offline development-restore evidence
+  remains recorded below.
 - **Private installation:** updated to T44 on October 10 at migration
   `0020_request_recovery`. API/worker image identity, private HTTPS readiness,
   served frontend hashes and anonymous API rejection passed. Both writers stopped
@@ -31,6 +34,222 @@ specification gates pass.
 The table and dated entries below retain implementation history. Superseded
 photo approvals, learner pairing and authored hints are not current product
 instructions; D009/T25 and D013/T37 define the current tutoring/account flows.
+
+## Minimum-only dependency refresh (2026-10-11)
+
+Authorized by the maintainer's request to update every direct dependency floor
+and use `>=`, preferring Python 3.15 if compatible and Node 26. This supersedes
+the earlier bounded-range and Node LTS policies, as recorded in D001.
+
+Changed the Python runtime/dev/build requirements, all three JavaScript
+manifests, both generated lockfiles, runtime/toolchain validation, pnpm workspace
+policy, Node installer pin, CI and Docker build tools. Current documentation
+and three mock evaluation reports were refreshed. No API or database schema
+changes were needed; generated contract drift checks pass unchanged.
+
+All direct requirements are minimum-only, with floors updated to the current
+compatible stable resolutions in DEPENDENCIES. Installer baselines are Node
+26.11.1, pnpm 12.11.2, uv/uv_build 0.13.0 and Python 3.15.0 after the correction
+below. The toolchain checker
+accepts newer stable majors and rejects older or malformed versions.
+`pmOnFail: ignore` prevents pnpm from switching a newer installed CLI back to
+the exact `packageManager` installer pin. Exact lockfiles, installer versions
+and image digests remain reproducible choices; strict upstream peers still apply.
+
+Python 3.15.0 was downloaded through uv, but actual
+`uv lock --directory apps/api --upgrade --python 3.15.0` failed because
+`pillow-heif>=1.8.1` has no matching CPython 3.15 wheel or source distribution.
+cfn-lint 1.57.2 also declares Python `<3.15`, and checked stable Python 3.15
+Docker tags returned 404. The initial decision to retain Python 3.14.8 was
+superseded by the correction below: older current-compatible HEIF artifacts
+work, infrastructure tools can be isolated, and uv supplies the container
+interpreter. The TypeScript 6.0.3/5.9.3 and Vitest 4.1.11 lock exceptions remain
+necessary for the documented peer/declaration conflicts.
+
+The first full gate exposed Node 26's native storage globals shadowing jsdom.
+`apps/web/tests/setup.ts` now binds global storage to the genuine jsdom window;
+existing secret-storage assertions and cleanup remain intact. Entry/PhoneCapture
+tests passed 9/9, and a temporary bidirectional storage probe passed 2/2.
+The temporary pnpm install with lifecycle scripts disabled also exposed its
+shebangless placeholder to Python subprocesses; a temporary executable wrapper
+fixed the test environment without changing application subprocess handling.
+
+Initial Python 3.14 commands and outcomes (all app checks used `UV_NO_ENV_FILE=1`,
+`UV_CACHE_DIR=/tmp/shepherd-refresh-uv`, an isolated
+`UV_PROJECT_ENVIRONMENT=/tmp/shepherd-refresh-api-venv`, the managed Python
+3.14.8 path and verified temporary Node/pnpm tools):
+
+- `make bootstrap PNPM='pnpm --store-dir /tmp/shepherd-refresh-pnpm-store'`:
+  passed locked Python and frozen JavaScript installation.
+- `make check PNPM='pnpm --store-dir /tmp/shepherd-refresh-pnpm-store'`:
+  passed both lock checks, lint/format, strict Python/TypeScript types,
+  **291 backend unit tests**, **11 toolchain tests**, **188 component tests**,
+  wheel/sdist and web/PWA builds, unchanged API/client contract generation,
+  tracked-public credential scan and CloudFormation lint.
+- `make test-integration eval-mock`: **340 integration tests passed**;
+  deterministic math/vision, reading (**12 cases/36 stages**), cross-subject
+  (**12 cases/36 stages**) and adversarial (**4 cases/20 stages**) mock
+  contracts passed. Human teaching-quality judgments remain pending.
+- `make audit`: Python and pnpm reported no known vulnerabilities.
+- `PLAYWRIGHT_BROWSERS_PATH=/tmp/shepherd-refresh-browsers pnpm exec playwright
+install chromium`: installed Playwright 1.64.0's pinned Chromium revision
+  1248, Chrome for Testing 156.0.8078.4. With the same browser path,
+  `make smoke`: **80/80 passed** in **12.4 minutes**, including all 40 desktop
+  and 40 mobile Chromium workflows; no retries or live inference.
+- `DOCKER_CONFIG=/tmp/shepherd-refresh-docker-config docker build --file
+infra/docker/Dockerfile --tag math-practice-tutor:deps-20261011
+/tmp/shepherd-deps-container-context-final-20261011` and
+  `sh scripts/container-smoke.sh math-practice-tutor:deps-20261011`: passed.
+  The isolated context contained only 142 admitted tracked public files,
+  matching final source inputs. Final local image is
+  `sha256:337ec8558f521d9163f1b2e3ee53f7158c1c28be887e9f8d7b5b240c325136b3`.
+  Non-root API/worker, SQLite migration/settings, served UI, owner setup
+  protections, HEIF/cryptography and restricted provider subprocess rejection
+  passed without inference. Python is 3.14.8 and SQLite is 3.53.1.
+- Final Prettier check on all six edited guides, all **88** local Markdown
+  file/fragment links, the tracked-public credential scan and
+  `git diff --check`: passed.
+
+The uv build backend warns about the requested absence of a future-version
+upper bound; builds pass. Vite's existing large-chunk warning remains.
+All initial verification gates passed. The Python 3.15 correction below supersedes
+the runtime decision. Hosted CI, image vulnerability scanning/SBOM and live provider/physical-device
+tests were not run. No private configuration/data was inspected and no paid inference,
+model download, deployment, migration of retained data or Git push occurred.
+
+### Initial Python 3.15 correction (2026-10-11)
+
+The maintainer correctly identified pillow-heif's Python 3.15 support, added in
+1.6.0 on August 31. Fresh official PyPI JSON and Simple-index checks found
+Python 3.15 wheels and source distributions in 1.6.0, 1.7.0 and 1.8.0; the new
+1.8.1 publication initially had neither. Clean Python 3.15 installs reproduced failure for
+`>=1.8.1` and success for `>=1.8.0`, with real synthetic HEIF encode/decode and
+the application's JPEG normalization passing. All other app/development
+dependencies install and import on 3.15 once development-only cfn-lint is
+isolated; its metadata still declares `<3.15` despite an upstream code fix.
+
+Changed `.python-version`, the app Python floor, Ruff/mypy targets, compatible
+HEIF floor and regenerated app lock. Moved cfn-lint into locked `tools/infra`
+with a Python 3.14.8 installer pin; Make explicitly selects its separate
+environment and includes bootstrap, locks, validation and audit. Docker retains
+the pinned Python 3.14 installer host but copies uv-managed Python 3.15.0 into
+the final runtime; installer removal derives the interpreter's library path.
+Container smoke asserts the actual runtime matches `.python-version`.
+
+Python 3.15 checks used `UV_NO_ENV_FILE=1`,
+`UV_CACHE_DIR=/tmp/shepherd-refresh-uv`,
+`UV_PROJECT_ENVIRONMENT=/tmp/shepherd-refresh-315-api-venv`, the explicit
+managed Python 3.15.0 path and the same verified Node/pnpm tools as above.
+Make infrastructure commands selected
+`INFRA_PROJECT_ENVIRONMENT=/tmp/shepherd-refresh-infra-venv` and Python 3.14.8.
+
+- `make bootstrap PNPM='pnpm --store-dir /tmp/shepherd-refresh-pnpm-store'
+INFRA_PROJECT_ENVIRONMENT=/tmp/shepherd-refresh-infra-venv`: passed locked
+  app/infra installation and frozen JavaScript installation. App lock resolves
+  90 packages, infrastructure lock 10 (nine installed tool packages).
+- `make lint format-check typecheck`, then
+  `make check PNPM='pnpm --store-dir /tmp/shepherd-refresh-pnpm-store'
+INFRA_PROJECT_ENVIRONMENT=/tmp/shepherd-refresh-infra-venv`: passed three
+  lock checks, lint/format, strict mypy over 85 files and TypeScript,
+  **291 backend unit**, **11 toolchain** and **188 component tests**, app/web
+  builds, unchanged generated contracts, tracked-public credential scan and
+  isolated infrastructure lint.
+- `make test-integration eval-mock`: **340 passed in 57.37 seconds**; all
+  deterministic math/vision, reading (12/36), cross-subject (12/36) and
+  adversarial (4/20) mock contracts passed. Reports now record Python 3.15.0.
+  Human teaching-quality judgments remain pending.
+- `make audit INFRA_PROJECT_ENVIRONMENT=/tmp/shepherd-refresh-infra-venv`:
+  app Python, all nine installed infrastructure packages and pnpm each reported
+  no known vulnerabilities. A synthetic invalid CloudFormation property failed
+  with the expected E3002/exit 2; the real template passed.
+- `DOCKER_CONFIG=/tmp/shepherd-refresh-docker-config docker build --file
+/tmp/shepherd-py315-Dockerfile-20261011 --tag math-practice-tutor:py315-20261011
+/tmp/shepherd-deps-container-context-py315-20261011` and
+  `DOCKER_CONFIG=/tmp/shepherd-refresh-docker-config sh scripts/container-smoke.sh
+math-practice-tutor:py315-20261011`: passed. All 142 staged public files and
+  Dockerfile snapshot matched current source. Final local image ID is
+  `sha256:9ff318d9a1cb4ff6e61492271cced5972ddee8777a658e78847499413635e8af`;
+  actual runtime is Python 3.15.0 / SQLite 3.53.1 / pillow-heif 1.8.0.
+  Runtime identity, HEIF/cryptography, installer removal, restricted provider
+  rejection without inference, migration/settings, non-root API/worker/UI and
+  owner setup protections passed.
+- `PLAYWRIGHT_BROWSERS_PATH=/tmp/shepherd-refresh-browsers make smoke`:
+  **80/80 passed in 12.4 minutes**, 40 desktop and 40 mobile workflows on the
+  Python 3.15 API; no retries or live inference.
+- Final edited-guide Prettier check, **88** local Markdown file/fragment links,
+  public credential scan, TOML/YAML/shell syntax checks and `git diff --check`:
+  passed. All **910** source/integration/browser tests passed with the corrected
+  runtime; generated public contracts remain unchanged.
+
+Initial sandbox attempts failed on blocked package DNS / Node subprocess access;
+an async integration attempt was interrupted after stalling. The completed
+commands above used the required execution access, isolated environments and
+synthetic data. No assertions, timeouts, retries, peer checks or Python package
+compatibility metadata were relaxed. Hosted CI, image vulnerability scan/SBOM,
+live inference and physical-device tests were not run. No private data/config
+was inspected, and no model download, deployment or Git push occurred.
+
+### Release publication (2026-10-11)
+
+The maintainer authorized closing remaining gaps, publishing to the installation
+actually used, and pushing to `main`. The existing private Compose application
+is the deployment target; no new hosting infrastructure is introduced.
+
+During the final scan, official PyPI metadata changed from serial 42088455
+(48 files, no Python 3.15 wheels or source archive) to 42091405 at 14:09 UTC
+(70 files, including 16 Python 3.15/3.15t wheels and source archive).
+A fresh isolated Python 3.15 install of pillow-heif 1.8.1 and HEIF conversion
+passed. The final app requirement and lock now use 1.8.1, superseding the
+temporary 1.8.0 resolution above. cfn-lint remains 1.57.2 with its unchanged
+`>=3.10,<3.15` metadata; its isolated tool environment remains necessary.
+
+Closed two command/evidence gaps: `make audit UV=/path/to/uv` now uses that
+executable consistently, and CI retains the generated CycloneDX SBOM as the
+`release-sbom` artifact for 14 days. upload-artifact v7.0.2 is pinned to the
+verified official commit `cf430e030ddbb5b0abf93d22962f4752f3646cd9`.
+An actual audit with a UV path containing spaces and a failing global UV stub
+passed all app/infra/pnpm checks without invoking the fallback. YAML and shell
+syntax checks passed.
+
+Final Python 3.15 / HEIF 1.8.1 verification used the isolated app/infra
+environments and verified Node/pnpm tools recorded above:
+
+- `make check test-integration eval-mock
+PNPM='pnpm --store-dir /tmp/shepherd-refresh-pnpm-store'
+INFRA_PROJECT_ENVIRONMENT=/tmp/shepherd-refresh-infra-venv`: passed all
+  source/build/contract gates, **291 backend unit**, **11 toolchain**,
+  **188 component** and **340 integration tests** (integration: 57.39 seconds),
+  plus all four mock evaluation commands. The earlier 80 browser checks used
+  HEIF 1.8.0; the final lock's browser checks are part of hosted CI.
+- `DOCKER_CONFIG=/tmp/shepherd-refresh-docker-config docker build --file
+/tmp/shepherd-release-Dockerfile-20261011 --tag math-practice-tutor:release-20261011
+/tmp/shepherd-deps-container-context-release-20261011`: passed. The context
+  contained 142 admitted tracked public files and matched the current image
+  inputs. Final image ID is
+  `sha256:8f4244e3088a4e321a6342019d4eaf2f270bfd6a2779e00788d2a548c35a01e1`.
+- `DOCKER_CONFIG=/tmp/shepherd-refresh-docker-config sh scripts/container-smoke.sh
+math-practice-tutor:release-20261011`: passed the non-root API/worker,
+  migration/settings, served UI, owner protections, HEIF/cryptography,
+  installer removal and restricted-provider subprocess rejection checks.
+  Actual runtime is Python **3.15.0**, SQLite **3.53.1**, pillow-heif **1.8.1**
+  and Pillow **12.3.0**; no inference was run.
+- Trivy **0.75.0**, `image --image-src docker --scanners vuln,secret
+--pkg-types os,library --severity HIGH,CRITICAL --ignore-unfixed=false
+--ignorefile /tmp/shepherd-trivy-empty.ignore --exit-code 1 --timeout 5m
+--format json --output /tmp/shepherd-release-trivy.json
+math-practice-tutor:release-20261011`: exit 0, **zero HIGH/CRITICAL
+  vulnerabilities and secrets**, including unfixed findings. The verified
+  vulnerability database was updated at 2026-10-11T13:06:05Z.
+- The same image's `--format cyclonedx --output
+/tmp/shepherd-release-sbom.json` export passed: CycloneDX 1.7, **52 components**,
+  SHA-256 `5b4832b316d9c235bb9657a65170a30fd9d0dbfe7529783d4214b485dd9255de`.
+
+- `make hooks-install hooks-check` with the same isolated tools and
+  `PRE_COMMIT_HOME=/tmp/shepherd-refresh-pre-commit`: passed every applicable
+  file hook and the full repository pre-commit source/type/test gate.
+
+Hosted CI and the retained-data deployment will be recorded as they complete.
+Live inference and physical-device tests remain separate.
 
 ## Documentation review (2026-10-10)
 

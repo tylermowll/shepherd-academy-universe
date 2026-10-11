@@ -29,9 +29,11 @@ probes do not establish teaching quality or production readiness.
 
 ## Start the app
 
-Use Git, GNU Make, Node **24.21.0**, pnpm **12.10.1** and uv **0.12.23**.
-uv installs Python **3.14.8** if needed. These are the tested repository pins;
-see [DEPENDENCIES](docs/DEPENDENCIES.md).
+Use Git, GNU Make, Node **>=26.11.1**, pnpm **>=12.11.2** and uv **>=0.13.0**.
+uv installs Python **3.15.0** for the app and Python **3.14.8** for the isolated
+CloudFormation checker if needed. Minimum requirements allow newer stable
+tools; installers and lockfiles retain exact reproducible versions. Compatibility
+exceptions are recorded in [DEPENDENCIES](docs/DEPENDENCIES.md).
 
 ```bash
 make bootstrap

@@ -1,33 +1,39 @@
 # Dependency baseline
 
-Toolchain refreshed October 8, 2026; application package baseline was verified
-September 6, 2026. `pyproject.toml` uses bounded direct requirements so
-intent and compatibility remain visible; the exact, cross-platform resolution is
-committed in `apps/api/uv.lock` and installed with `--locked`.
+Direct Python and JavaScript floors were refreshed against official package
+metadata on October 11, 2026. All direct requirements use minimum-only `>=`
+ranges, as requested by the maintainer. Node and pnpm accept newer stable major
+versions. Exact runtime installer versions, `packageManager`, container digests
+and lockfiles preserve reproducible installs; upstream peer and transitive
+constraints still apply. Compatibility exceptions are recorded in
+[D001's refresh](DECISIONS.md#d001-floor-only-dependency-refresh-2026-10-11).
+Actual verification commands and outcomes are recorded in [TASKS](TASKS.md).
+The exact Python resolutions are committed in `apps/api/uv.lock` and
+`tools/infra/uv.lock` and installed with `--locked`.
 
-| Dependency           |        Declared / tested resolution | Purpose                                                              |
-| -------------------- | ----------------------------------: | -------------------------------------------------------------------- |
-| Python               |                       3.14 / 3.14.8 | Latest stable line; Python has no separate LTS edition               |
-| uv CLI               |         `>=0.12.23,<0.13` / 0.12.23 | Environment and lock management; pin exactly in CI                   |
-| uv_build             | `>=0.12.23,<0.13` / bundled 0.12.23 | Pure-Python build backend                                            |
-| FastAPI              |            `>=0.141.1,<1` / 0.141.1 | HTTP API framework                                                   |
-| Pydantic             |              `>=2.13.5,<3` / 2.13.5 | Public and internal typed schemas                                    |
-| Uvicorn              |              `>=0.52.4,<1` / 0.52.4 | Local ASGI server                                                    |
-| HTTPX2               |                `>=2.12,<3` / 2.12.0 | Maintained in-process API test client used by Starlette              |
-| pytest               |               `>=9.1.1,<10` / 9.1.1 | Backend tests                                                        |
-| Ruff                 |              `>=0.16.6,<1` / 0.16.6 | Formatting and linting                                               |
-| mypy                 |                `>=2.3.1,<3` / 2.3.1 | Static type checking                                                 |
-| pre-commit           |                `>=4.6.2,<5` / 4.6.2 | Git hook installation and staged-change isolation                    |
-| pre-commit-hooks     |                `>=6.0.0,<7` / 6.0.0 | Repository hygiene and private-key checks                            |
-| SQLAlchemy           |                   `>=2,<3` / 2.0.52 | SQLite persistence, ORM, and transaction control (T01)               |
-| Alembic              |                `>=1.16,<2` / 1.19.2 | Versioned SQLite migrations (T01)                                    |
-| argon2-cffi          |               `>=25.1,<26` / 25.1.0 | Argon2id adult password hashing; `$argon2id$` default verified (T02) |
-| argon2-cffi-bindings |                 transitive / 26.1.0 | Native Argon2 backend for argon2-cffi (T02)                          |
-| cffi                 |                  transitive / 2.1.1 | Foreign-function interface for the bindings (T02)                    |
-| pycparser            |                    transitive / 3.0 | C parser for cffi (T02)                                              |
-| greenlet             |                  transitive / 3.5.5 | SQLAlchemy optional concurrency support (T01)                        |
-| Mako                 |                  transitive / 1.4.1 | Alembic migration templating (T01)                                   |
-| MarkupSafe           |                  transitive / 3.0.3 | Mako escaping dependency (T01)                                       |
+| Dependency            | Declared / locked resolution | Purpose                                                              |
+| --------------------- | ---------------------------: | -------------------------------------------------------------------- |
+| Python                |          `>=3.15.0` / 3.15.0 | Application runtime and development tools                            |
+| Infrastructure Python |          `>=3.14.8` / 3.14.8 | Isolated cfn-lint environment selected explicitly by Make            |
+| uv CLI                |          `>=0.13.0` / 0.13.0 | Environment and lock management; pin exactly in CI                   |
+| uv_build              |  `>=0.13.0` / bundled 0.13.0 | Pure-Python build backend                                            |
+| FastAPI               |        `>=0.143.0` / 0.143.0 | HTTP API framework                                                   |
+| Pydantic              |          `>=2.14.0` / 2.14.0 | Public and internal typed schemas                                    |
+| Uvicorn               |          `>=0.54.0` / 0.54.0 | Local ASGI server                                                    |
+| HTTPX2                |          `>=2.13.1` / 2.13.1 | Maintained in-process API test client used by Starlette              |
+| pytest                |            `>=9.1.1` / 9.1.1 | Backend tests                                                        |
+| Ruff                  |          `>=0.17.0` / 0.17.0 | Formatting and linting                                               |
+| mypy                  |            `>=2.4.0` / 2.4.0 | Static type checking                                                 |
+| pre-commit            |            `>=4.6.2` / 4.6.2 | Git hook installation and staged-change isolation                    |
+| pre-commit-hooks      |            `>=6.0.0` / 6.0.0 | Repository hygiene and private-key checks                            |
+| SQLAlchemy            |            `>=2.1.4` / 2.1.4 | SQLite persistence, ORM, and transaction control (T01)               |
+| Alembic               |          `>=1.20.0` / 1.20.0 | Versioned SQLite migrations (T01)                                    |
+| argon2-cffi           |          `>=25.1.0` / 25.1.0 | Argon2id adult password hashing; `$argon2id$` default verified (T02) |
+| argon2-cffi-bindings  |          transitive / 26.1.0 | Native Argon2 backend for argon2-cffi (T02)                          |
+| cffi                  |           transitive / 2.1.1 | Foreign-function interface for the bindings (T02)                    |
+| pycparser             |            transitive / 3.11 | C parser for cffi (T02)                                              |
+| Mako                  |           transitive / 1.4.3 | Alembic migration templating (T01)                                   |
+| MarkupSafe            |           transitive / 3.0.4 | Mako escaping dependency (T01)                                       |
 
 Only dependencies used by implemented tasks are installed. The implemented roadmap
 adds the provider, image, backup and evaluation dependencies recorded below.
@@ -37,8 +43,8 @@ adds the provider, image, backup and evaluation dependencies recorded below.
 The approved SQLite plan is [D004](DECISIONS.md#d004--sqlite-for-the-initial-deployment-2026-09-06).
 SQLite has no separate LTS edition; the recorded upstream stable release was **3.53.4**,
 verified against the [official release history](https://sqlite.org/changes.html)
-on September 6, 2026. The managed Python 3.14.8 interpreter (2026-09-30, checked
-2026-10-08) reports **3.53.1** from `sqlite3.sqlite_version`. The tested runtime
+on September 6, 2026. The managed Python 3.15.0 interpreter (checked
+2026-10-11) reports **3.53.1** from `sqlite3.sqlite_version`. The tested runtime
 retains the D001 compatibility exception and enforced floor of 3.53.1; this
 document does not claim that embedded version is the latest upstream release.
 
@@ -49,48 +55,54 @@ a standalone SQLite CLI does not determine its version.
 
 ## Frontend and browser tooling
 
-Node.js **24.21.0** is the tested LTS patch verified on October 8, 2026, pinned
-in `.node-version`. pnpm
-**12.10.1** is pinned in the root `packageManager` field. `pnpm-lock.yaml` records
+Node.js **26.11.1** is the current stable installer pin in `.node-version`,
+verified against release metadata on October 11, 2026. pnpm **12.11.2** is pinned
+in the root `packageManager` field. Their `engines` requirements are
+`>=26.11.1` and `>=12.11.2`; the toolchain check accepts newer stable versions.
+`pnpm-lock.yaml` records
 exact transitive resolutions and integrity hashes; installs use `--frozen-lockfile`.
-Project scripts reject unsupported Node and mismatched pnpm versions. Dependency
+Project scripts reject versions below these floors and prereleases. Dependency
 install scripts are blocked unless explicitly reviewed in `pnpm-workspace.yaml`.
+That file sets `pmOnFail: ignore` so pnpm uses the installed compatible version
+instead of automatically switching to the exact `packageManager` installer pin;
+the engine requirements and toolchain check still enforce the declared minimums.
+See [pnpm's setting](https://pnpm.io/settings/cli#pmonfail).
 
-The versions below were checked against official npm metadata on September 6,
-2026 and tested together. TypeScript 6.0.3 and Vitest 4.1.11 are explicit compatible
+The versions below were checked against official npm metadata on October 11, 2026. Direct declarations use `>=` each listed floor, and the lock records the
+listed exact resolution. TypeScript 6.0.3 and Vitest 4.1.11 are explicit compatible
 stable exceptions to newer releases; see [D001](DECISIONS.md#d001--supported-toolchain-baseline-2026-09-06)
 for evidence. No `skipLibCheck`, lint suppression, or relaxed peer resolution is used.
 
-| Package                       | Pinned version |
-| ----------------------------- | -------------: |
-| `@eslint/js`                  |         10.0.1 |
-| `@playwright/test`            |         1.63.0 |
-| `@tailwindcss/vite`           |          4.3.3 |
-| `@testing-library/dom`        |         10.4.1 |
-| `@testing-library/jest-dom`   |          7.0.1 |
-| `@testing-library/react`      |         16.3.3 |
-| `@types/node`                 |        24.13.3 |
-| `@types/react`                |        19.2.18 |
-| `@types/react-dom`            |         19.2.7 |
-| `@vitejs/plugin-react`        |          6.1.1 |
-| `eslint`                      |        10.10.0 |
-| `eslint-plugin-react-hooks`   |          7.1.1 |
-| `eslint-plugin-react-refresh` |          0.5.6 |
-| `globals`                     |        17.12.0 |
-| `jsdom`                       |         30.0.1 |
-| `prettier`                    |          3.9.6 |
-| `react`                       |         19.2.8 |
-| `react-dom`                   |         19.2.8 |
-| `tailwindcss`                 |          4.3.3 |
-| `typescript`                  |          6.0.3 |
-| `typescript-eslint`           |         8.69.0 |
-| `vite`                        |          8.2.2 |
-| `vitest`                      |         4.1.11 |
+| Package                       | Floor / locked version |
+| ----------------------------- | ---------------------: |
+| `@eslint/js`                  |                 10.0.1 |
+| `@playwright/test`            |                 1.64.0 |
+| `@tailwindcss/vite`           |                  4.3.3 |
+| `@testing-library/dom`        |                 10.4.2 |
+| `@testing-library/jest-dom`   |                  7.0.1 |
+| `@testing-library/react`      |                 16.3.3 |
+| `@types/node`                 |                 26.6.5 |
+| `@types/react`                |                 19.3.0 |
+| `@types/react-dom`            |                 19.3.0 |
+| `@vitejs/plugin-react`        |                  6.1.2 |
+| `eslint`                      |                10.12.0 |
+| `eslint-plugin-react-hooks`   |                  7.1.1 |
+| `eslint-plugin-react-refresh` |                  0.5.7 |
+| `globals`                     |                17.13.0 |
+| `jsdom`                       |                 30.1.2 |
+| `prettier`                    |                 3.9.10 |
+| `react`                       |                 19.3.0 |
+| `react-dom`                   |                 19.3.0 |
+| `tailwindcss`                 |                  4.3.3 |
+| `typescript`                  |                  6.0.3 |
+| `typescript-eslint`           |                 8.71.1 |
+| `vite`                        |                  8.3.4 |
+| `vitest`                      |                 4.1.11 |
 
 ## CI tool pins
 
 Hook commands use uv-locked development packages and pnpm-locked frontend tools;
-there are no separately resolved hook environments. CI pins uv to 0.12.23 and
+there are no separately resolved hook environments. CI pins uv to 0.13.0 and
 Node via `.node-version`; pnpm/action-setup reads the exact root `packageManager`.
 
 | Action             | Release | Verified commit                            |
@@ -114,23 +126,25 @@ Sources: [Node releases](https://nodejs.org/en/about/previous-releases),
 
 ## T03–T23 additions
 
-| Package                     | Locked resolution                               | Purpose                                                                                                           |
-| --------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| boto3 / botocore            | 1.43.89                                         | Bedrock Converse and explicit S3 archive transport                                                                |
-| boto3-stubs / service stubs | 1.43.89 / exact per-service versions in uv.lock | Development-only schema typing; service packages have independent release numbers                                 |
-| Pillow                      | 12.3.0                                          | Bounded raster normalization and original synthetic fixtures                                                      |
-| pillow-heif                 | 1.7.0                                           | HEIC/HEIF decoder                                                                                                 |
-| cryptography                | 50.0.1                                          | Authenticated encrypted backup format                                                                             |
-| PyYAML / types-PyYAML       | uv.lock                                         | Strict operator configuration and development typing                                                              |
-| Hypothesis                  | 6.167.1                                         | Exact arithmetic properties                                                                                       |
-| pip-audit                   | 2.10.1                                          | Audit all locked Python dependencies                                                                              |
-| cfn-lint                    | 1.56.0                                          | Local CloudFormation validation; transitive SymPy is development-only IaC tooling, never a learner-text evaluator |
-| KaTeX / @types/katex        | 0.18.6 / 0.16.8                                 | Restricted trusted-false math rendering                                                                           |
-| @mlc-ai/web-llm             | 0.2.84                                          | Optional isolated browser research; no weights bundled                                                            |
-| openapi-typescript          | 7.13.0                                          | Generated frontend API schemas                                                                                    |
-| tools/contracts TypeScript  | 5.9.3                                           | Isolated generator peer compatibility; application remains 6.0.3                                                  |
+| Package                     | Declared / locked resolution                     | Purpose                                                                                       |
+| --------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| boto3 / botocore            | `>=1.43.111` / 1.43.111                          | Bedrock Converse and explicit S3 archive transport                                            |
+| boto3-stubs / service stubs | `>=1.43.111` / exact service versions in uv.lock | Development-only schema typing; service packages have independent release numbers             |
+| Pillow                      | `>=12.3.0` / 12.3.0                              | Bounded raster normalization and original synthetic fixtures                                  |
+| pillow-heif                 | `>=1.8.1` / 1.8.1                                | HEIC/HEIF decoder with published Python 3.15 wheels                                           |
+| cryptography                | `>=50.0.2` / 50.0.2                              | Authenticated encrypted backup format                                                         |
+| PyYAML                      | `>=6.0.3` / 6.0.3                                | Strict operator configuration                                                                 |
+| types-PyYAML                | `>=6.0.12.20260906` / 6.0.12.20260906            | Development typing for configuration                                                          |
+| Hypothesis                  | `>=6.169.0` / 6.169.0                            | Exact arithmetic properties                                                                   |
+| pip-audit                   | `>=2.10.1` / 2.10.1                              | Audit all locked Python dependencies                                                          |
+| cfn-lint                    | `>=1.57.2` / 1.57.2                              | Isolated Python 3.14 CloudFormation validation; transitive SymPy never evaluates learner text |
+| KaTeX / @types/katex        | `>=0.19.0` / 0.19.0; `>=0.16.8` / 0.16.8         | Restricted trusted-false math rendering                                                       |
+| @mlc-ai/web-llm             | `>=0.2.85` / 0.2.85                              | Optional isolated browser research; no weights bundled                                        |
+| openapi-typescript          | `>=7.13.0` / 7.13.0                              | Generated frontend API schemas                                                                |
+| tools/contracts TypeScript  | `>=5.9.3` / 5.9.3                                | Isolated generator peer compatibility; application remains 6.0.3                              |
 
-The Python lock resolves 97 packages including development tools. The first audit
+The app Python lock resolves 90 packages including development tools; cfn-lint
+has a separate infrastructure lock. The initial September audit
 identified PYSEC-2026-3552 in cryptography 49.0.0; upgrading to 50.0.1 cleared the
 Python audit. The pnpm audit also passed. There is no vulnerability suppression.
 Run audits again for release; an earlier pass is not a permanent security claim.
@@ -140,6 +154,8 @@ metadata was verified before pinning. The runtime uses uv-managed Python to reta
 the tested embedded SQLite version. CI scans HIGH/CRITICAL findings including
 unfixed ones with Trivy action v0.36.0 pinned to
 `ed142fd0673e97e23eac54620cfb913e5ce36c25`, and generates a CycloneDX SBOM.
+The SBOM is retained for 14 days as the `release-sbom` Actions artifact using
+upload-artifact v7.0.2 pinned to `cf430e030ddbb5b0abf93d22962f4752f3646cd9`.
 A failed image scan must be fixed or receive a separately documented reviewed
 exception; it is never silently ignored. See TASKS for the actual image scan result.
 
@@ -164,8 +180,8 @@ The pnpm lockfile pins the package/integrity. See the
 ## T44 toolchain refresh (2026-10-08)
 
 The October 8 metadata review recorded Node 24.21.0 (Krypton LTS), pnpm 12.10.1,
-uv/uv_build 0.12.23 and Python 3.14.8. Pins, minimum versions, CI,
-README and Docker build/runtime stages match these versions. Public Docker
+uv/uv_build 0.12.23 and Python 3.14.8. At that refresh, pins, minimum versions, CI,
+README and Docker build/runtime stages matched these versions. Public Docker
 manifest digests were checked for the exact Node/Python tags before updating.
 The managed Python runtime still embeds SQLite 3.53.1, so the documented
 compatibility floor/exception remains. The recorded upstream SQLite baseline is
@@ -187,3 +203,51 @@ Vitest 5.0.3 was rechecked during T44: install succeeded, but `pnpm typecheck`
 failed with TS2428 because its `Assertion` type parameters conflict with
 `@testing-library/jest-dom` 7.0.1. The temporary upgrade was reverted to 4.1.11;
 no `skipLibCheck`, declaration patch or suppressed type error was introduced.
+
+## Minimum-only dependency refresh (2026-10-11)
+
+The maintainer requested all direct dependency and tool floors to use `>=`.
+The Node 26.11.1 Docker build stage uses the verified public manifest digest
+`sha256:86f07bc9c5dce4578cf37e5a418b7bfc7f817cda25cde66e2b66e95ed86c4567`.
+The pinned Python 3.14.8 image hosts only the uv installer. The packaged app
+uses a separate uv-managed Python 3.15.0 interpreter, with installer cleanup
+paths derived from that interpreter's version.
+Installers use uv/uv_build 0.13.0 and pnpm 12.11.2.
+
+Python 3.15 wheels were added in pillow-heif 1.6.0 on August 31. The initial
+refresh incorrectly treated the absence of those artifacts in the new 1.8.1
+release as a library-wide limitation. Fresh official PyPI JSON and Simple-index
+checks found Python 3.15 wheels and source distributions in 1.6.0–1.8.0; 1.8.1
+initially had neither. The first compatible Python 3.15 resolution used 1.8.0.
+By 14:09 UTC on October 11, the official index had completed 1.8.1's publication:
+70 files, including 16 Python 3.15/3.15t wheels and a source distribution
+(PyPI serial 42091405). A fresh 3.15 install and HEIF conversion passed. The
+final release floor and lock are `pillow-heif>=1.8.1` / 1.8.1.
+
+cfn-lint 1.57.2 includes a Python 3.15 code fix but still declares `<3.15` in
+its installation metadata. Its development-only requirements and lock now live
+in `tools/infra`; Make explicitly selects its Python 3.14.8 pin and separate
+environment. Bootstrap, lock checks, infrastructure validation and dependency
+audit cover both projects. The app declares `requires-python>=3.15.0`.
+No package Python restriction is bypassed. The missing stable Python 3.15 Docker
+tag does not limit the uv-managed application runtime.
+
+TypeScript ESLint 8.71.1 retains the peer requirement `>=4.8.4 <6.1.0`;
+application TypeScript stays locked to 6.0.3. openapi-typescript 7.13.0 retains
+its `^5.x` peer, so the generator stays locked to TypeScript 5.9.3. Vitest
+5.0.3 and jest-dom 7.0.1 remain the releases involved in T44's declaration
+failure; retain the compatible 4.1.11 lock. Minimum-only direct requirements
+allow future compatible updates without changing these floors. Lock refreshes
+must still pass strict peer, type, test and audit gates.
+
+Version sources: [Node releases](https://nodejs.org/dist/index.json),
+[pnpm metadata](https://registry.npmjs.org/pnpm/latest),
+[uv 0.13.0](https://github.com/astral-sh/uv/releases/tag/0.13.0),
+[uv_build metadata](https://pypi.org/pypi/uv_build/json),
+[pillow-heif 1.6.0 release](https://github.com/bigcat88/pillow_heif/releases/tag/v1.6.0),
+[pillow-heif 1.8.0 artifacts](https://pypi.org/pypi/pillow-heif/1.8.0/json),
+[pillow-heif 1.8.1 artifacts](https://pypi.org/pypi/pillow-heif/1.8.1/json),
+[cfn-lint 1.57.2 metadata](https://pypi.org/pypi/cfn-lint/1.57.2/json),
+[cfn-lint Python 3.15 fix](https://github.com/aws-cloudformation/cfn-lint/pull/4717),
+[TypeScript ESLint metadata](https://registry.npmjs.org/typescript-eslint/latest),
+[OpenAPI TypeScript metadata](https://registry.npmjs.org/openapi-typescript/latest).

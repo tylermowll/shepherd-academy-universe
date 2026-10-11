@@ -486,3 +486,53 @@ major, application framework, provider or deployment topology changes.
 T44 also retried Vitest 5.0.3. Strict application type checking still fails with
 TS2428 (`Assertion` declaration type parameters) against jest-dom 7.0.1. Retain
 4.1.11 until the upstream declarations agree; do not weaken the type gate.
+
+## D001 floor-only dependency refresh (2026-10-11)
+
+The maintainer requested refreshed minimum-only `>=` requirements for every
+direct Python and JavaScript dependency and for toolchain acceptance. This
+supersedes the previous bounded-range and Node LTS selection policies. Advance
+Node to the stable 26.11.1 release, pnpm to 12.11.2 and uv/uv_build to 0.13.0.
+Accept newer stable tool versions, including newer majors, while retaining exact
+installer versions, `packageManager`, lock resolutions and container digests for
+reproducible builds. Upstream peer and transitive constraints remain enforced.
+Set pnpm's `pmOnFail: ignore` to honor an installed newer stable CLI while the
+engine requirements and toolchain check enforce minimums. The exact
+`packageManager` field continues to select reproducible installer versions.
+
+Use Python 3.15.0 and declare `requires-python >=3.15.0`. The initial failed
+resolution used `pillow-heif >=1.8.1`, whose new release initially lacked Python
+3.15 wheels and a source distribution. The maintainer pointed out the published
+Python 3.15 support added in August; a fresh install with `>=1.8.0` selected
+1.8.0 and passed real application HEIF normalization. The first cutover used this compatible
+floor and exact resolution rather than treating 1.8.1's artifacts as a
+library-wide limitation. During publication preparation on October 11, the
+official index completed 1.8.1's Python 3.15 artifacts. A fresh install and HEIF
+conversion passed; the final floor and exact lock therefore advance to 1.8.1.
+
+Isolate development-only cfn-lint in `tools/infra` with Python 3.14.8 while its
+installation metadata declares `<3.15`; its upstream Python 3.15 code fix does
+not change that restriction. Make explicitly selects the tool interpreter and
+separate environment, and includes its lock, validation and audit in the
+existing gates. The pinned Python 3.14 Docker builder only hosts uv; the final
+container receives uv-managed Python 3.15.0. The embedded SQLite floor remains
+3.53.1. No runtime service or deployment topology changes.
+
+The latest TypeScript ESLint 8.71.1 still requires TypeScript `>=4.8.4 <6.1.0`,
+so application TypeScript remains locked to 6.0.3. The OpenAPI generator retains
+TypeScript 5.9.3 to satisfy openapi-typescript 7.13.0's `^5.x` peer requirement.
+Vitest 5.0.3 and jest-dom 7.0.1 are unchanged since T44's reproduced TS2428
+failure; retain the compatible Vitest 4.1.11 lock. Their direct declarations
+use `>=` floors. Keep strict peers, strict type checking and the current pinned
+browser-model artifacts; real device interoperability remains an acceptance
+gate. Actual refresh validation is recorded in TASKS.
+
+Sources: [Node release metadata](https://nodejs.org/dist/index.json),
+[pnpm metadata](https://registry.npmjs.org/pnpm/latest),
+[uv 0.13.0](https://github.com/astral-sh/uv/releases/tag/0.13.0),
+[pillow-heif 1.6.0 release](https://github.com/bigcat88/pillow_heif/releases/tag/v1.6.0),
+[pillow-heif 1.8.0 metadata](https://pypi.org/pypi/pillow-heif/1.8.0/json),
+[pillow-heif 1.8.1 metadata](https://pypi.org/pypi/pillow-heif/1.8.1/json),
+[cfn-lint 1.57.2 metadata](https://pypi.org/pypi/cfn-lint/1.57.2/json),
+[TypeScript ESLint metadata](https://registry.npmjs.org/typescript-eslint/latest),
+[OpenAPI TypeScript metadata](https://registry.npmjs.org/openapi-typescript/latest).

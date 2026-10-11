@@ -1,6 +1,6 @@
-FROM node:24.21.0-bookworm-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS web
+FROM node:26.11.1-bookworm-slim@sha256:86f07bc9c5dce4578cf37e5a418b7bfc7f817cda25cde66e2b66e95ed86c4567 AS web
 WORKDIR /src
-RUN npm install --global pnpm@12.10.1
+RUN npm install --global pnpm@12.11.2
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json apps/web/package.json
 COPY tools/contracts/package.json tools/contracts/package.json
@@ -10,14 +10,15 @@ COPY tsconfig.json ./
 COPY scripts/build-pwa.mjs scripts/build-pwa.mjs
 RUN pnpm --filter @math-tutor/web build
 
+# This pinned image only hosts the installer; uv supplies the app's Python 3.15.
 FROM python:3.14.8-slim-bookworm@sha256:48b13b003dda20b16f9442b8475aa05fe21bf6579a8c881db92ffb4d8fd20f83 AS api
 ENV UV_PYTHON_INSTALL_DIR=/opt/python UV_PYTHON_PREFERENCE=only-managed UV_LINK_MODE=copy
-RUN pip install --no-cache-dir uv==0.12.23
+RUN pip install --no-cache-dir uv==0.13.0
 WORKDIR /app/apps/api
 COPY apps/api/pyproject.toml apps/api/uv.lock ./
 COPY .python-version /app/.python-version
 COPY apps/api/src src
-RUN uv sync --locked --no-dev --python 3.14.8 --python-preference only-managed
+RUN uv sync --locked --no-dev --python "$(cat /app/.python-version)" --python-preference only-managed
 # Installers are build tools. Remove their code and bundled wheels from the
 # standalone interpreter; application dependencies live in the separate venv.
 RUN .venv/bin/python - <<'PYTHON'
@@ -25,7 +26,8 @@ import shutil
 import sys
 from pathlib import Path
 runtime = Path(sys.base_prefix)
-for directory in (runtime / "lib/python3.14/site-packages", runtime / "lib/python3.14/ensurepip"):
+stdlib = runtime / f"lib/python{sys.version_info.major}.{sys.version_info.minor}"
+for directory in (stdlib / "site-packages", stdlib / "ensurepip"):
     shutil.rmtree(directory)
 for installer in (runtime / "bin").glob("pip*"):
     installer.unlink()

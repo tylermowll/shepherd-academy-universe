@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
-      - name: Install Node LTS
+      - name: Install tested Node baseline
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version-file: .node-version
@@ -30,7 +30,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
-          version: '0.12.23'
+          version: "0.13.0"
           enable-cache: false
       - name: Install locked development dependencies
         run: make bootstrap
@@ -84,8 +84,15 @@ jobs:
         with:
           image-ref: math-practice-tutor:ci
           format: table
-          exit-code: '1'
+          exit-code: "1"
           severity: HIGH,CRITICAL
           ignore-unfixed: false
       - name: Generate the release software bill of materials
         run: trivy image --format cyclonedx --output /tmp/math-tutor-sbom.json math-practice-tutor:ci
+      - name: Retain the release software bill of materials
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-sbom
+          path: /tmp/math-tutor-sbom.json
+          if-no-files-found: error
+          retention-days: 14

@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
 image=${1:-math-practice-tutor:ci}
+expected_python=$(cat "$(dirname "$0")/../.python-version")
 volume="math-tutor-ci-$$"
 api_name="math-tutor-api-$$"
 worker_name="math-tutor-worker-$$"
@@ -10,7 +11,7 @@ cleanup() {
 }
 trap cleanup EXIT HUP INT TERM
 docker volume create "$volume" >/dev/null
-docker run --rm --read-only --tmpfs /tmp "$image" python -c 'import importlib.util; from io import BytesIO; from PIL import Image; from math_tutor.adapters.images import normalize; from cryptography.hazmat.primitives.ciphers.aead import AESGCM; output=BytesIO(); Image.new("RGB",(64,32),"white").save(output,format="HEIF"); normalized=normalize(output.getvalue()); assert Image.open(BytesIO(normalized)).format=="JPEG"; assert len(AESGCM.generate_key(bit_length=256))==32; assert importlib.util.find_spec("pip") is None; assert importlib.util.find_spec("setuptools") is None; print("HEIF normalization, cryptography, and installer-free runtime passed.")'
+docker run --rm --read-only --tmpfs /tmp "$image" python -c 'import importlib.util, platform, sys; from io import BytesIO; from PIL import Image; from math_tutor.adapters.images import normalize; from cryptography.hazmat.primitives.ciphers.aead import AESGCM; assert platform.python_version()==sys.argv[1]; output=BytesIO(); Image.new("RGB",(64,32),"white").save(output,format="HEIF"); normalized=normalize(output.getvalue()); assert Image.open(BytesIO(normalized)).format=="JPEG"; assert len(AESGCM.generate_key(bit_length=256))==32; assert importlib.util.find_spec("pip") is None; assert importlib.util.find_spec("setuptools") is None; print(f"Python {platform.python_version()}, HEIF normalization, cryptography, and installer-free runtime passed.")' "$expected_python"
 docker run --rm --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges "$image" python -c '
 from uuid import uuid4
 from math_tutor.adapters.providers.config import ProviderConfig

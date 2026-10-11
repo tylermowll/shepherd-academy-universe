@@ -7,6 +7,16 @@ evidence guards. The schema head is `0020_request_recovery`. Recorded automated
 checks, container evidence and limitations are in [T44's TASKS entry](TASKS.md#t44--adversarial-review-hardening-2026-10-08).
 Those checks do not establish live teaching quality or learning outcomes.
 
+The October 11 local dependency refresh uses minimum-only `>=` requirements,
+Node 26.11.1, pnpm 12.11.2 and uv/uv_build 0.13.0. The corrected Python 3.15.0
+cutover now uses pillow-heif 1.8.1's completed wheels and a separate Python 3.14.8
+environment for cfn-lint's installation-metadata restriction. TypeScript and
+Vitest retain their documented compatible lock resolutions. All 910 automated
+tests, dependency audits and local container smoke passed with the corrected
+runtime. Actual validation and the distinction from the initial Python 3.14
+checks are recorded in [TASKS](TASKS.md); current policy is in
+[DEPENDENCIES](DEPENDENCIES.md).
+
 The existing private Compose installation was updated to **T44 source `62b30ca`
 on October 10, 2026**, at `0020_request_recovery`. Both writers stopped before a
 verified private rollback archive; the tested image then passed HTTPS readiness,

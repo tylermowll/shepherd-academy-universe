@@ -367,21 +367,22 @@ Do not use in-process FastAPI `BackgroundTasks` as the only record of required t
 
 ## 6. Technology stack and dependency policy
 
-Use the latest LTS line where one exists, otherwise current supported stable
-releases, with documented compatibility exceptions and exact lockfiles. The
-maintainer updated this policy during bootstrap; see [D001](DECISIONS.md#d001--supported-toolchain-baseline-2026-09-06).
+Use current stable releases with documented compatibility exceptions and exact
+lockfiles. The maintainer requested floor-only `>=` requirements for all direct
+dependencies and tools, including newer stable major versions, on October 11, 2026. This supersedes the earlier LTS and bounded-range policy; see
+[D001's refresh](DECISIONS.md#d001-floor-only-dependency-refresh-2026-10-11).
 Record resolved versions and verification dates in `docs/DEPENDENCIES.md`.
 
 | Area              | Selected stack                                                                  | Constraint / reason                                                                                 |
 | ----------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Frontend          | React 19.2, TypeScript 6, Vite 8                                                | Client-rendered application; no server-component or Next.js layer needed                            |
-| Node toolchain    | Node.js 24 LTS; pnpm                                                            | Pin an exact pnpm release in `packageManager`; commit `pnpm-lock.yaml`                              |
+| Frontend          | React 19.3, TypeScript 6, Vite 8                                                | Client-rendered application; no server-component or Next.js layer needed                            |
+| Node toolchain    | Node.js >=26.11.1; pnpm >=12.11.2                                               | Pin the installer in `packageManager`; allow newer stable tools and commit `pnpm-lock.yaml`         |
 | UI                | Tailwind CSS 4; semantic HTML; small accessible component set                   | Use the current Vite integration, not old Tailwind initialization instructions                      |
 | Routing/data      | React state; typed fetch; browser History API                                   | Owned requests and route state; no permanent draft cache                                            |
 | Forms             | Semantic HTML forms; generated API types                                        | Backend remains validation authority                                                                |
 | Mathematics       | KaTeX; backend exact arithmetic                                                 | HTML+MathML rendering, `trust: false`, bounded input                                                |
 | PWA               | Explicit service worker; generated public asset manifest                        | Prompt before activating an update; cache public assets only                                        |
-| Backend           | Python 3.14; FastAPI; Pydantic 2                                                | Tested Python baseline; pinned at 3.14.8                                                            |
+| Backend           | Python >=3.15.0; FastAPI; Pydantic 2                                            | Managed Python 3.15.0; compatible HEIF lock; separate Python 3.14 infrastructure checker            |
 | Python tooling    | uv; Ruff; mypy                                                                  | `uv.lock`, typed domain/provider boundaries, no ignored type failures by default                    |
 | Database          | SQLite; SQLAlchemy 2; stdlib sqlite3; Alembic                                   | Same on-disk engine/settings in development, tests, and deployment; current stable runtime per D004 |
 | HTTP/model access | HTTPX2; boto3 for Bedrock                                                       | Maintained HTTP client; small explicit adapters; no mandatory universal AI framework                |
@@ -396,7 +397,7 @@ Toolchain selection and compatibility exceptions are recorded in
 package metadata and lockfiles; dated external references are not a claim that
 those releases remain the newest. [^S14][^S15][^S16][^S17][^S19]
 
-Do not put floating `latest` tags in release images or unbounded provider/model identifiers in a reproducible evaluation. Use reviewed, bounded direct dependency constraints and commit exact transitive lockfiles; record image digests at release. `uv sync --locked` must fail when project metadata and the lockfile disagree; `--frozen` skips that freshness check and is not a substitute for it. [^S22]
+Do not put floating `latest` tags in release images or unbounded provider/model identifiers in a reproducible evaluation. Use reviewed minimum-only `>=` direct dependency requirements and commit exact transitive lockfiles; retain exact runtime installer versions and record image digests at release. Upstream peer and transitive constraints still apply. `uv sync --locked` must fail when project metadata and the lockfile disagree; `--frozen` skips that freshness check and is not a substitute for it. [^S22]
 
 If a selected library does not work with the baseline, demonstrate the incompatibility, choose the smallest supported adjustment, and record an architecture decision. Do not silently redesign the stack.
 
