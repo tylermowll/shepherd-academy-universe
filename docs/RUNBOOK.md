@@ -1,11 +1,9 @@
 # Operations runbook
 
-The existing private Compose installation now uses runtime source `e9bf42c`,
-Python 3.15.0 and pillow-heif 1.8.1, deployed on October 11, 2026,
-at `0020_request_recovery`. [TASKS](TASKS.md) records its
-rollback archive, tested image and HTTPS verification. Live model/device quality
-and host recovery/secret custody remain
-[acceptance work](ACCEPTANCE.md#items-requiring-the-maintainer).
+Use this guide for installation, upgrades, account recovery, retention and
+encrypted backups. [TASKS](TASKS.md) records the last observed installation
+state; it is not a live health check. [ACCEPTANCE](ACCEPTANCE.md) tracks the
+remaining model, device and recovery checks.
 
 ## Native local host
 
@@ -57,7 +55,7 @@ run multiple API workers or put SQLite on a network/cloud-sync filesystem.
 
 ## Private HTTPS and phones
 
-For the iPhone QR camera workflow and a step-by-step Spark/vLLM setup, see
+For private network setup and the iPhone QR camera workflow, see
 [PHONE_SETUP](PHONE_SETUP.md). `make serve` supervises the API/worker behind the
 separately configured HTTPS gateway and preserves data on exit.
 
@@ -91,7 +89,10 @@ drops capabilities, and binds only `127.0.0.1:8000`.
 The explicit Compose project name is `shepherd-academy-universe`, so changing
 the checkout directory does not silently choose another Docker project.
 
-From a fresh clone, after generating a private `.env`:
+From a fresh clone, run `make bootstrap`, then `make setup` to generate missing
+private `.env` settings. Setup refuses to overwrite an existing file. Review
+the public [.env example](../.env.example) for supported settings; edit the private
+file locally. Then:
 
 ```bash
 mkdir -p data
@@ -123,8 +124,15 @@ administrator exists, the command returns the sign-in address. Explicit
 `make dev`, `make serve` and
 alternate `ENV_FILE` values select native startup.
 
-For a container upgrade, stop both services, back up the mounted data directory,
-then run:
+For a container upgrade, stop both services and complete the
+[encrypted backup procedure](#encrypted-backup-and-restore-rehearsal) against the
+host-mounted data before building or migrating:
+
+```bash
+docker compose -f infra/docker/compose.yaml stop
+```
+
+After the backup succeeds:
 
 ```bash
 docker compose -f infra/docker/compose.yaml build
@@ -156,7 +164,7 @@ mechanism, not committed static keys.
 non-root API, worker readiness and built UI. It creates a synthetic administrator
 through the owner link, checks renewal and stale-link rejection, and verifies
 that account creation closes setup. CI separately scans the image and generates
-a CycloneDX SBOM. See TASKS for observed results.
+a CycloneDX SBOM. See [implementation history](history/TASKS.md) for observed results.
 
 ## Retention, export and deletion
 
@@ -188,8 +196,9 @@ revocation: the adult must delete them separately. Revocation prevents new devic
 requests. Learner deletion immediately revokes sessions and cancels work, purges
 database content, queues physical image deletion, and records a content-free UUID
 tombstone. Late worker output is discarded.
-The journal `deletions.jsonl` beside the configured database is fsynced before the deletion commit. Keep it
-private and preserve its latest version during recovery. Content-free audit events
+The journal `deletions.jsonl` beside the configured database is fsynced before
+the deletion commit. Keep it private and preserve its latest version during
+recovery. Content-free audit events
 and tombstones are retained for recovery/accountability; no raw prompts or photos
 are in provider-call logs.
 
@@ -230,10 +239,16 @@ session secret are **not** included. Recover those separately from your secret
 manager. Saved API keys require the original session secret for decryption; if
 you rotate it, replace the affected keys in adult Settings and retest connections.
 Encryption does not protect against someone who has both the database and that
-secret. Export the new database path after restore. Keep
-encrypted backups for at most seven days by default and keep the passphrase in a
-separate secure location. An adult must account for exported downloads and old
-backup retention when fulfilling deletion requests.
+secret. Restore writes `math_tutor.sqlite3`, `objects/` and `deletions.jsonl` into
+the new output directory. For native cutover, update `DATABASE_URL` in the private
+settings to the restored database. For Compose, keep both services stopped while
+switching the shared host data mount to that directory and set UID/GID 10001
+ownership. Keep the previous directory until the restored app passes its isolated
+startup and sign-in checks in [ACCEPTANCE](ACCEPTANCE.md).
+
+The operator must enforce the default seven-day encrypted-backup retention
+window; the local CLI does not schedule deletion. Keep the passphrase separately.
+Account for exported downloads and old backups when fulfilling deletion requests.
 
 Optional encrypted S3 transfer is an explicit operator CLI:
 

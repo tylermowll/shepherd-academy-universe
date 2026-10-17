@@ -1,9 +1,9 @@
 # The Necklace reading rehearsal
 
 Use [the paste-ready excerpt](the-necklace-excerpt.txt) in the web app's
-**Paste reading or study material** mode. It is 5,347 characters, within the
-50,000-character supplied-text limit. The full story in this edition is 16,119
-characters and also fits that limit. Choose a topic such as “Reading comprehension:
+**Paste reading or study material** mode. The excerpt contains 5,347 characters
+plus a trailing newline, within the 50,000-character supplied-text limit.
+Choose a topic such as “Reading comprehension:
 The Necklace — character, evidence, and irony” and start a session. The app
 generates a question. Choose **Read in sections** for guided practice or **Use the
 whole text** if you have already read it. **Next activity**, **Easier next activity**,
@@ -40,6 +40,7 @@ UV_NO_ENV_FILE=1 uv run --project apps/api --locked --no-env-file \
   --output /tmp/shepherd-necklace-mock.json
 ```
 
-This mock command cannot establish tutoring quality. Live evaluation requires
-explicit authorization and a call budget. The dated report distinguishes a
-Muse CLI prompt rehearsal from testing the web app's configured provider.
+This mock command cannot establish tutoring quality. Follow
+[TUTOR_EVALUATION](../../docs/TUTOR_EVALUATION.md) for live authorization, budgets
+and human review. Historical Muse CLI reports record a prompt rehearsal;
+they do not test the web app's configured provider or worker.

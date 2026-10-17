@@ -22,5 +22,6 @@ every future table.
 - Export OpenAPI and regenerate frontend types when API consumers are introduced.
   Add drift checks; do not hand-edit generated files.
 - Use root Make targets and record exact migration, test, and build outcomes.
-  T01 must pass real migration/integration gates before completion; no database
-  daemon or Docker is required. Consult docs/HANDOFF.md for T01–T05 boundaries.
+  Required migration/integration gates must pass before task completion; no
+  database daemon or Docker is required. Consult docs/TASKS.md for current task
+  scope and required checks.

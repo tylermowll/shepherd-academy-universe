@@ -1,35 +1,24 @@
 # Computer tutor with an iPhone camera
 
-Run the application on one desktop or laptop. The iPhone sends a photo to that
-computer through an expiring QR link. A configured vision model reads it; the
-computer shows the reading and then the tutor's guidance. Clear readings proceed
-automatically. There is no approval or confirmation button.
-No native iPhone app or public deployment is required.
-
-Choose any subject/topic. The AI creates practice, discusses your written work,
-and adapts follow-up activities. Photograph one response or source excerpt at a
-time so it remains readable. Uploaded/pasted homework is reference-only: the
-tutor generates distinct practice on related concepts rather than solving it.
-AI feedback is not a verified grade, and actual model quality must be tested.
+Run the tutor on one computer and send photos from an iPhone through an expiring
+QR link. The computer shows the model's reading before feedback and continues
+usable readings automatically. You can also sign in for full practice on the
+phone. Both workflows use the same private HTTPS address; no native iPhone app
+or public deployment is required.
 
 ## 1. Prepare the computer once
 
-Install the toolchain listed in README. In the checkout:
+Follow [README setup](../README.md#start-the-app) for the toolchain and first
+administrator account. In a new checkout:
 
 ```bash
 make bootstrap
 make start
 ```
 
-`make start` connects to the standard Docker app if it is already running on
-port 8000; otherwise it starts a native app with persistent settings and data.
-On first run, open the private setup link printed in the terminal and choose
-your administrator username and password in the browser. The link expires after
-30 minutes if unopened. Once opened, this browser has eight hours to finish
-setup, including after refreshes and app restarts. Run `make start` to renew an
-unopened expired link; stop a native terminal run with Ctrl+C first. Docker can
-keep running. App updates wait until signup finishes before offering a refresh.
-Keep the link private. Existing accounts sign in at the printed app address.
+`make start` uses the standard Docker app when it is already running on port
+8000; otherwise it starts the native app. Keep any printed first-account setup
+link private. Existing accounts sign in at the printed app address.
 
 For an existing installation, stop all app/worker writes and back up retained
 data before upgrading. If startup reports an old database schema, run
@@ -44,26 +33,17 @@ not for a coding agent to read. Never paste private files or keys into chat.
 The computer must stay awake. `localhost` on an iPhone means the iPhone itself.
 Both desktop and phone must open the **same configured HTTPS address**.
 
-HTTP localhost permits passwords of six characters; HTTPS requires twelve. If
-you chose a shorter local password, set the HTTPS origin and stop both app
-processes before resetting it. For a native app, run `make admin`. For Docker,
-run:
-
-```bash
-docker compose -f infra/docker/compose.yaml stop
-docker compose -f infra/docker/compose.yaml run --rm api python -m math_tutor.cli admin
-```
-
-Use your **existing login name** and a password of at least twelve characters.
-This explicit reset signs out old administrator sessions; it does not delete
-learners or work. Section 3 starts the selected deployment again. Network startup
-refuses a local-only password rather than silently exposing that account.
+HTTP localhost permits six-character passwords; HTTPS requires twelve. If the
+administrator has a shorter local password, stop both app processes, set the
+HTTPS origin and follow [password recovery](RUNBOOK.md#native-local-host) with
+the existing login name. Use the runbook's Docker reset command for containers.
+Network startup rejects local-only administrator passwords.
 
 Learner passwords also need twelve characters for HTTPS. After restarting and
 signing in as administrator, reset any shorter passwords under **Learners**;
 those resets sign out the affected learners' browsers.
 
-### Convenient private access: Tailscale
+### Tailscale private access
 
 Install Tailscale on the computer and iPhone and join your private network.
 Review its current plan/terms, enable HTTPS for your tailnet, then run this on the
@@ -82,9 +62,8 @@ on the iPhone. The API still binds only to computer loopback, and both devices
 need access to the configured Tailscale host. Do not expose vLLM to the internet.
 
 Tailscale adds an external networking dependency; it does not host the app or
-perform inference. See [Serve](https://tailscale.com/docs/reference/tailscale-cli/serve),
-[HTTPS](https://tailscale.com/docs/how-to/set-up-https-certificates), and
-[current Personal pricing](https://tailscale.com/pricing).
+perform inference. See its [Serve command reference](https://tailscale.com/docs/reference/tailscale-cli/serve)
+and [HTTPS setup](https://tailscale.com/docs/how-to/set-up-https-certificates).
 
 ### Entirely local Wi-Fi
 
@@ -133,60 +112,17 @@ administrator before continuing.
 
 ## 4. Configure actual tutoring and handwriting models
 
-In the signed-in administrator app, open **Settings**:
+Follow [provider setup](PROVIDER_STATUS.md#test-and-select-the-tutor-and-photo-reader)
+in administrator **Settings**: save the exact connection and data policy,
+explicitly test **Tutor** and **Photo reader**, then select both under
+**Active models**. The provider guide includes native/Docker endpoint examples.
+Saving or testing a connection does not activate it. Tests use synthetic data,
+may incur charges and require explicit authorization.
 
-1. Under **Connections**, select **Ollama**, **vLLM**, or your API type.
-2. Enter the model server address and exact installed/approved model name.
-   For a native app with Ollama on the same computer, use
-   `http://127.0.0.1:11434` and the name from `ollama list`. For a native app
-   with vLLM, use its serving address ending in `/v1`; for example,
-   `http://127.0.0.1:8081/v1`. It needs a different port from this app's default
-   port 8000.
-   For the Docker app with a model server on the host, use
-   `http://host.docker.internal:11434` for Ollama or, for example,
-   `http://host.docker.internal:8081/v1` for vLLM. Compose maps that name for
-   both the API connection test and worker inference on Linux. The alias does
-   not make a loopback-only model server reachable: bind the model server to a
-   private host interface that the Docker bridge can reach, and use the host
-   firewall to block model ports from untrusted networks. Never expose them to
-   the public Internet.
-3. Enter the API key if the endpoint requires one. Saved keys are encrypted on
-   the app server, never displayed again, and can be replaced or removed later.
-4. Choose the correct processing boundary and allowed users. Enable photo input
-   only if the installed model actually supports images; a checkbox cannot add
-   that capability. Review the model/provider terms and save the connection.
-5. Under **Data & privacy**, explicitly enable cloud processing if needed.
-   A Meta-hosted connection is always cloud processing, but its allowed audience
-   is selected by the adult operator. Read its provider-specific age/data notice
-   and confirm the terms applying to your account. The app records that choice;
-   it does not certify provider eligibility. Environment policy locks are shown
-   and cannot be overridden by this page.
-6. Under **Connection tests**, explicitly run **Test tutor** and **Test photo
-   reader** as needed. Tests send sample data, not learner work, and API providers
-   may charge. The tutor test uses two calls (activity generation and feedback);
-   the photo test uses one and must correctly read the known synthetic fraction.
-   T44 requires a fresh test for saved live tutors. Unchanged
-   photo-reader tests retain their validity until the normal seven-day expiry.
-7. Under **Active models**, choose the tested **Tutor connection**
-   and **Photo reader connection**, acknowledge where work will go, and save.
-
-Saving a connection alone makes no inference call and changes no active route.
-Saved connections are available to both API and worker without restarting.
-The app does not install models or start Ollama/vLLM. Start your model server
-separately, reachable from the app computer. The iPhone never calls it directly.
-
-The same image-capable model may handle both roles. A cloud tutor receives text
-read from photos even when the photo reader is local. The default `demo` provider
-is a mock; it does not teach or read handwriting. Tests are not evidence of
-general model quality. See [provider verification](PROVIDER_STATUS.md) for
-capability expiry, response/context limits and evaluation guidance. Check your
-selected roles in Settings; the October 10 deployment did not inspect or change
-provider selections.
-
-File-managed connections remain an optional advanced deployment path and are
-read-only in Settings; see [the public example](../config/providers.example.yaml).
-Bedrock uses that path and workload credentials. Never expose a model server
-publicly as a phone-access shortcut.
+The image-capable model can serve both roles. The default `demo` mock cannot
+teach or recognize arbitrary handwriting. A cloud tutor receives photo
+transcriptions even if the reader is local; review both roles' data boundaries.
+The app computer must reach the model server. The iPhone never calls it directly.
 
 ## 5. Create a learner account and start practice
 
@@ -212,8 +148,7 @@ the learner username and password created by the administrator. The administrato
 can reset that password and manage signed-in browsers in **Learners**. This
 account sign-in is separate from sending a photo through the QR link.
 
-The in-app **Help → Phone setup** page contains these two workflows and the HTTPS
-setup steps. The adjacent phone help disclosures link directly to it.
+The in-app **Help → Phone setup** page also explains these workflows.
 
 Return to the computer. Within the normal polling interval, the photo's processing
 status appears in session history. The app displays the full reading and any
@@ -265,7 +200,7 @@ photos expire within 24 hours; the worker must be running to perform cleanup.
   does not limit you to fixed math templates, but models differ in subject,
   handwriting, and teaching quality. Evaluate the exact configured model.
 
-Automated tests use original synthetic images. Actual Safari camera/HEIC, QR
-scanning, and exact-model handwriting quality require separate checks on your
-devices. Follow [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer) and
-[TUTOR_EVALUATION](TUTOR_EVALUATION.md) and record outcomes in TASKS.
+Automated tests use synthetic images. Follow
+[ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer) for physical Safari/
+Chrome, QR, HEIC and accessibility checks, and [TUTOR_EVALUATION](TUTOR_EVALUATION.md)
+for handwriting and teaching trials. Record new outcomes in [TASKS](TASKS.md).

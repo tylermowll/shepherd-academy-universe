@@ -1,69 +1,31 @@
 # Current handoff
 
-The current implementation is **T44**, the adversarial review hardening increment
-dated 2026-10-08. It preserves source text and Unicode limits, recovers accepted
-tutor commands after lost acknowledgments, and strengthens bounded teaching and
-evidence guards. The schema head is `0020_request_recovery`. Recorded automated
-checks, container evidence and limitations are in [T44's TASKS entry](TASKS.md#t44--adversarial-review-hardening-2026-10-08).
-Those checks do not establish live teaching quality or learning outcomes.
+Start with [TASKS](TASKS.md) for the current checkpoint, work queue and validation
+evidence. The application is implemented through T44; T45 reviews documentation.
+The last recorded private deployment was October 11, 2026. That record does not
+establish today's runtime, selected models or teaching quality.
 
-The October 11 local dependency refresh uses minimum-only `>=` requirements,
-Node 26.11.1, pnpm 12.11.2 and uv/uv_build 0.13.0. The corrected Python 3.15.0
-cutover now uses pillow-heif 1.8.1's completed wheels and a separate Python 3.14.8
-environment for cfn-lint's installation-metadata restriction. TypeScript and
-Vitest retain their documented compatible lock resolutions. Final local checks
-passed 830 source/integration tests, dependency audits, container smoke and a
-clean HIGH/CRITICAL image scan; the 80 browser checks initially passed with
-Python 3.15 / HEIF 1.8.0. Hosted CI runs all 910 against each pushed commit.
-Actual validation and the distinction from the initial Python 3.14
-checks are recorded in [TASKS](TASKS.md); current policy is in
-[DEPENDENCIES](DEPENDENCIES.md).
+The next operational step is to test and explicitly select the intended tutor
+and photo reader in administrator Settings. Follow
+[provider setup](PROVIDER_STATUS.md#test-and-select-the-tutor-and-photo-reader),
+then the [release acceptance checklist](ACCEPTANCE.md#items-requiring-the-maintainer).
+Live calls require separate authorization. Browser-model measurements and AWS
+hosting are optional.
 
-The existing private Compose installation now uses **runtime source `e9bf42c`
-with Python 3.15.0 / HEIF 1.8.1, deployed on October 11, 2026**, at
-`0020_request_recovery`. Both writers stopped before a
-verified private rollback archive; the tested image then passed HTTPS readiness,
-served-asset matching and protected-endpoint checks. Current provider selections
-were not inspected or changed, and no test inference was invoked. Image and verification
-details are in [TASKS](TASKS.md).
+## Where to find current guidance
 
-## Next bounded actions
+| Need                                                 | Document                                   |
+| ---------------------------------------------------- | ------------------------------------------ |
+| Setup, learner workflow and developer commands       | [README](../README.md)                     |
+| Requirements and architecture                        | [SPECIFICATION](SPECIFICATION.md)          |
+| Migrations, account recovery, backups and deployment | [RUNBOOK](RUNBOOK.md)                      |
+| Private HTTPS and phone uploads                      | [PHONE_SETUP](PHONE_SETUP.md)              |
+| Model connections, policy, testing and activation    | [PROVIDER_STATUS](PROVIDER_STATUS.md)      |
+| Synthetic evaluations and human teaching review      | [TUTOR_EVALUATION](TUTOR_EVALUATION.md)    |
+| Release evidence and remaining acceptance            | [ACCEPTANCE](ACCEPTANCE.md)                |
+| Toolchain policy and compatibility exceptions        | [DEPENDENCIES](DEPENDENCIES.md)            |
+| Architecture rationale and superseded decisions      | [DECISIONS](DECISIONS.md)                  |
+| Dated task and test records through October 11       | [Implementation history](history/TASKS.md) |
 
-1. **Test and select the actual models.** In administrator **Settings**, authorize
-   synthetic **Connection tests**, then choose the tutor and photo reader under
-   **Active models**. T44's v4 tutor probe invalidates older tutor tests; the
-   photo-reader probe is unchanged. Saving or testing a connection does not
-   activate it. Use [PROVIDER_STATUS](PROVIDER_STATUS.md) for the data/audience
-   boundaries and exact runtime evidence.
-2. **Review real output through the app.** Use original synthetic work and
-   [TUTOR_EVALUATION](TUTOR_EVALUATION.md) to check reading fidelity, useful
-   teaching, revision/context, distinct homework practice and answer leakage.
-   Evaluate learning transfer with supervised human review; scripted fixture
-   answers and model self-ratings cannot establish it.
-3. **Close host and device acceptance.** The offline development restore passed.
-   Verify retained backups/ledger and separately stored settings, secret and passphrase,
-   restored app startup and fresh sign-ins. Record physical-phone camera/HEIC,
-   QR submission, background/reconnect, installation/update and manual
-   accessibility checks in [ACCEPTANCE](ACCEPTANCE.md). Browser-model device
-   measurement is optional research and remains separate.
-
-## Current product boundaries
-
-Learners use individual sign-ins and a multi-subject conversation. The worker
-persists photo reading before feedback and continues clear task-relevant work
-automatically. Essential unreadable content receives specific clarification
-advice; incidental uncertainty must not block useful feedback. Rejected reader
-reports remain explicitly uncertain conversation context.
-
-Supplied study texts support whole-text or guided-section practice. Reading pace,
-activity difficulty and help are separate controls. Goals and sufficient-response
-criteria are visible; AI observations remain fallible guidance, never verified
-grades or mastery. Uploaded/pasted assignments are reference material for
-concepts and distinct analogous practice. They do not become tasks for the tutor
-to solve. There is no fixed teaching catalog or photo approval step.
-
-Continue with one bounded task at a time. Preserve private data, regenerate API
-clients when schemas change, and use the checked-in Makefile for applicable
-gates. Keep historical evidence in [TASKS](TASKS.md) and architecture decisions in
-[DECISIONS](DECISIONS.md); use [README](../README.md) and [RUNBOOK](RUNBOOK.md) for
-current startup and recovery instructions.
+Continue one bounded task at a time using [AGENTS](../AGENTS.md). Do not inspect
+private configuration, learner data or logs to update public docs.

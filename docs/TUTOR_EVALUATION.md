@@ -5,7 +5,8 @@ establish handwriting accuracy, useful teaching, resistance to answer leakage or
 learning gains. The current tutor uses `activity-v4` and `guidance-v4`; historical
 Muse CLI reports used earlier prompts and a different transport. See
 [PROVIDER_STATUS](PROVIDER_STATUS.md) for route status and activation requirements,
-and [TASKS](TASKS.md) for recorded commands and outcomes.
+[task history](history/TASKS.md) for recorded commands and outcomes, and
+[ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer) for outstanding release checks.
 
 Use original or licensed synthetic material. Live calls require explicit
 maintainer authorization and may be billed. Record the exact model/revision,
@@ -13,11 +14,10 @@ runtime, prompt versions, configuration, date and device/browser. Keep credentia
 private provider settings and real learner work out of public reports. Do not
 switch to a cloud route without the operator's data/audience approval.
 
-## Fixture suites and commands
+## Fixture suites
 
 The [Makefile](../Makefile) is the command authority. `make eval-mock` runs the
-exact-math/vision contract suite and all three tutor suites below. Individual
-targets allow a bounded rehearsal:
+exact-math/vision contract suite and all three tutor suites below:
 
 | Target                                | Fixtures                                                      | Scope                                                                                                                                           |
 | ------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -36,6 +36,9 @@ the staged suite, which was used to develop regressions.
 Reports under `evals/reports/*-mock.json` record contract results and leave human
 quality judgments pending. Transport, schema or passage-contract failure makes
 the command fail. Successful schemas do not close quality acceptance.
+Fixture provenance is recorded in [the manifest](../evals/MANIFEST.md).
+
+## Authorized live commands
 
 For a separately authorized live rehearsal, run inside the configured installation
 with operator settings already available; these commands do not load a live
@@ -71,7 +74,8 @@ Complete-case budgets for this staged suite are **4, 12, 16 or 20**. The evaluat
 limits any live run to 90 planned calls, accepts only whole-case budgets and adds
 no automatic retries. Failed generation prevents review of an activity that was
 never generated. Review reports before publishing; reported latency/tokens and
-provider billing are separate from quality. No live evaluation was run for T44.
+provider billing are separate from quality. Dated reports retain their original
+prompt and transport metadata; they are not evidence of a new live run.
 
 ## Application and physical-photo rehearsal
 

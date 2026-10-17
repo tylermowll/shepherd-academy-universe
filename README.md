@@ -13,20 +13,12 @@ concepts and different practice, never tasks for the tutor to complete.
 
 ## Current status
 
-Implementation is through **T44**, with the October 11 dependency refresh.
-The existing private Compose installation now uses runtime source `e9bf42c`,
-Python **3.15.0** and pillow-heif **1.8.1**, deployed on **October 11, 2026**
-at migration `0020_request_recovery`. HTTPS readiness, served
-assets and protected endpoints were verified. Current provider selections were
-not inspected or changed. T44 requires a fresh tutor connection test; unchanged
-photo-reader tests remain valid until normal expiry.
-
-The remaining release work is testing/selecting actual models, human-reviewed
-tutoring trials, physical phone/accessibility checks and private-host recovery
-and secret custody. Browser-model device measurements are optional
-research. See [the current handoff](docs/HANDOFF.md), [recorded evidence](docs/TASKS.md)
-and [acceptance checklist](docs/ACCEPTANCE.md). Automated tests and connection
-probes do not establish teaching quality or production readiness.
+The application is implemented through **T44**. Model selection and teaching
+quality, physical phone/accessibility checks and operational recovery still need
+[release acceptance](docs/ACCEPTANCE.md). Passing automated tests or a connection
+probe does not establish teaching quality or production readiness.
+See [TASKS](docs/TASKS.md) for the current checkpoint and
+[HANDOFF](docs/HANDOFF.md) for the documentation guide.
 
 ## Start the app
 
@@ -54,17 +46,16 @@ restarts. Unsent passwords clear on reload. `make start` renews an expired link
 when no administrator exists; it does not reset an existing account. Keep setup
 links private.
 
-Loopback HTTP passwords need **6 characters**; network/HTTPS passwords need
-**12**, without uppercase or symbol rules. Before moving an installation with
-short passwords to HTTPS, stop the API and worker and follow the password recovery
-instructions in [RUNBOOK](docs/RUNBOOK.md). `make admin` is the explicit native
-reset command; Docker uses the runbook's container command. Resets revoke sessions.
+Loopback HTTP passwords need **6 characters**; HTTPS passwords need **12**,
+without uppercase or symbol rules. Use the [runbook](docs/RUNBOOK.md) for password
+recovery or moving an installation with short passwords to HTTPS. Resets revoke
+sessions.
 
 Use `make start` after stopping a native app with Ctrl+C. `make dev` restricts the
 same workflow to loopback HTTP. For desktop practice with an iPhone camera, follow
 [PHONE_SETUP](docs/PHONE_SETUP.md) for private HTTPS and the expiring QR upload link.
-Before a retained database upgrade, stop both writers, back up the data and use
-`make migrate start` for native operation or the container runbook for Docker.
+Before upgrading a retained database, stop the API and worker, back up the data
+and follow the [migration instructions](docs/RUNBOOK.md).
 Never share live `.env`, private provider settings or learner data with coding agents.
 
 ## Configure AI and learner accounts
@@ -87,11 +78,9 @@ visible error. See [PROVIDER_STATUS](docs/PROVIDER_STATUS.md) for model limits,
 Meta thinking effort, role readiness, diagnostics and advanced provider setup.
 
 Keys entered in Settings are write-only and encrypted in the private database.
-Preserve the deployment secret separately in backups; changing it requires
-re-entering saved keys. Normal setup needs no provider YAML. Advanced operators
-can use [the public example](config/providers.example.yaml); file-managed
-connections appear read-only in Settings. Explicit environment cloud/audience
-restrictions remain enforced.
+Normal setup needs no provider YAML. See [provider setup](docs/PROVIDER_STATUS.md)
+for advanced file configuration and [backup recovery](docs/RUNBOOK.md) for key
+custody.
 
 Open **Learners** to create learner usernames, passwords and age groups. Each
 learner signs in through the common sign-in page and sees only their own work.
@@ -137,39 +126,26 @@ an existing conversation draft first.
 Photos accept JPG, PNG, WebP, HEIC or HEIF up to **8 MiB**, including drag and drop.
 The server converts them to bounded JPEGs and removes metadata. The phone QR page
 needs no learner login and grants only temporary upload access. It shows an
-upload receipt; the computer shows the reading and feedback. Readable work
-continues despite incidental uncertainty. Rejected reader reports remain
-explicitly uncertain conversational context.
+upload receipt; the computer shows the reading and feedback. Rejected reader
+reports remain explicitly uncertain conversational context.
 
 ## Recovery, privacy and operation
 
-Switching page tabs preserves drafts and retries in memory. Reloading, closing a
-tab or switching learners can lose unsent drafts. For pending session, activity,
-text and ordinary photo commands, session storage retains only opaque request and
-learner identifiers plus command kind. After reload, the browser checks the owned
-server receipt without resending work. Use **Check saved request** or **Resolve
-interrupted request** when acceptance is unknown. Resolution opens saved work or
-excludes delayed acceptance before replacement. Closing the tab clears these
-markers; use History for already saved work. The phone companion uses its
-separate token-based workflow.
+Switching app tabs preserves drafts in memory. Reloading, closing the browser tab
+or switching learners can lose unsent drafts. After reload, interrupted requests
+can be checked with **Check saved request** or **Resolve interrupted request**;
+the app checks a saved receipt without resending work. Closing the tab loses that
+receipt marker; use **History** for already saved work. The phone upload page has
+its own recovery flow.
 
 App updates wait while commands are pending and warn about unsent drafts.
 Service-worker caches contain public assets only. Submitted work is retained on
 the server; history defaults to 30 days. Processed photos are deleted, and
 failed/unprocessed photos expire within 24 hours. The worker enforces retention.
 Model-call records store safe status, timing and available token counts without
-raw prompts, images, responses or keys. There is no separate safety-message
-archive, classifier or alert service.
-
-```mermaid
-flowchart LR
-  Browser[React PWA] --> API[FastAPI: auth, ownership, tutoring]
-  API --> DB[(Private local SQLite)]
-  Worker[Separate worker] --> DB
-  Worker --> Routes[Policy-checked provider adapters]
-  API --> Photos[Private normalized photos]
-  Worker --> Photos
-```
+raw prompts, images, responses or keys. The PWA caches public assets; tutoring and
+saved work require the server. See the [specification](docs/SPECIFICATION.md) for
+architecture and data boundaries.
 
 Run one API process and one worker on the same host and local disk. Provider keys
 and exact-check answer keys stay on the backend. Models have no autonomous
@@ -205,12 +181,11 @@ Install the test browser with `pnpm exec playwright install --with-deps chromium
 or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to installed Chrome. Mobile emulation
 does not certify physical Safari/Chrome behavior.
 
-Live evaluations are separately opt-in and may be billed. See
-[TUTOR_EVALUATION](docs/TUTOR_EVALUATION.md) for actual commands, call limits,
-installation configuration and human review. Synthetic evaluator results do not
-establish the installed browser/worker loop or learning outcomes. CI also builds
-and smoke-tests the non-root image, scans HIGH/CRITICAL vulnerabilities and
-creates an SBOM. Recorded runs are in TASKS; configured CI is not observed evidence.
+Live evaluations are opt-in and may be billed; follow
+[TUTOR_EVALUATION](docs/TUTOR_EVALUATION.md) for commands, call limits and human
+review. CI also builds and smoke-tests the non-root image, scans HIGH/CRITICAL
+vulnerabilities and retains an SBOM. [TASKS](docs/TASKS.md) links recorded outcomes;
+a configured workflow is not evidence that a revision passed.
 
 ## Contributing and license
 

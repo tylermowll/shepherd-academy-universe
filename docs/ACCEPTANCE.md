@@ -6,52 +6,26 @@ separate evidence. This checklist does not claim production readiness.
 
 ## Current checkpoint
 
-Recorded automated gates passed through **T44 (October 8, 2026)**: 291 backend
-unit, 188 component, 340 integration and 80 desktop/mobile Chromium tests, plus
-mock evaluations, repository checks, dependency audits, container smoke and a
-clean HIGH/CRITICAL image scan. Exact commands and limits are in
-[the T44 task entry](TASKS.md#t44--adversarial-review-hardening-2026-10-08).
-Those complete source gates remain the October 8 evidence.
+The tutor is implemented through T44. The following results are dated evidence,
+not a claim about the current installation or live model quality:
 
-The October 11 refresh passed 830 local source/integration tests on Python 3.15 /
-HEIF 1.8.1; 80 browser checks initially passed on Python 3.15 / HEIF 1.8.0.
-Hosted CI checks every pushed commit with all 910 tests, mock evaluations,
-dependency audits and container gates. Its release SBOM is retained for 14 days.
-Exact local commands and per-commit workflow evidence are in [TASKS](TASKS.md).
+| Evidence                                                                                        | Recorded result                                                                                                                                                                                                                                 | Limits                                                                                                                                        |
+| ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| [October 17 publication checks](TASKS.md#publication-checks-2026-10-17)                         | 291 backend unit, 11 toolchain, 188 component, 340 integration and 80 desktop/mobile browser tests passed with the refreshed Python lock, including Pillow 13.0.0. Source/build/contract checks, mock evaluations and dependency audits passed. | Browser tests used Chrome 155 through the supported executable override. Local container packaging and live-provider quality were not tested. |
+| [October 11 private deployment](history/TASKS.md#release-publication-2026-10-11)                | Source `e9bf42c` deployed at `0020_request_recovery`; HTTPS readiness, served assets, cache headers and protected endpoints checked.                                                                                                            | Provider selections and live inference were not inspected or tested.                                                                          |
+| [October 10 phone layouts](history/TASKS.md#private-deployment-and-phone-layouts-2026-10-10)    | 40 mobile Chromium tests and six additional synthetic phone flows passed.                                                                                                                                                                       | Emulation does not establish physical camera, Safari, installation or manual accessibility behavior.                                          |
+| [October 10 offline restore](history/TASKS.md#offline-development-restore-rehearsal-2026-10-10) | Encrypted backup/restore, wrong-passphrase rejection, database integrity, migration, session/job cleanup and retained-object checks passed on disposable copies.                                                                                | The deletion ledger was empty; separately retained settings/secrets, restored startup and sign-in were not tested.                            |
 
-On **October 11, 2026**, runtime source `e9bf42c`, Python 3.15.0 and HEIF 1.8.1
-were deployed to the existing private Compose installation at
-`0020_request_recovery`. Both writers stopped before a
-verified private rollback archive. The deployed image passed container smoke and
-a fresh scan with zero HIGH/CRITICAL findings. HTTPS readiness, matching served
-HTML/JS/CSS, protected reading/admin/receipt endpoints and no-cache HTML/service
-worker responses passed. Current provider selections were not inspected or
-changed; no test inference was invoked. Exact image and commands are in [TASKS](TASKS.md).
-
-All 40 existing mobile Chromium checks and six additional synthetic phone flows
-passed at 320×568, 375×667, 390×844, 430×932, 667×375 and 844×390. Settings,
-long readings, conversation/reload and QR/photo upload passed overflow and control
-reachability assertions. The suites used installed Chrome 149 with an explicit
-browser override; exact commands and versions are in [TASKS](TASKS.md#private-deployment-and-phone-layouts-2026-10-10).
-Emulation does not establish physical camera, iPhone Safari, device installation
-or manual accessibility behavior. Use [HANDOFF](HANDOFF.md) for the remaining actions.
-
-The approved offline development restore rehearsal passed authenticated encrypted
-backup/restore, wrong-passphrase rejection, database integrity/foreign keys,
-release-schema migration, browser-session revocation, unfinished-job/submission
-cancellation, lease clearing and retained-object checks. The running data and
-rollback archive were untouched; temporary copies were removed. No deletion
-markers were present, so populated deletion replay was not exercised. This offline
-check did not cover separately stored settings, session secret and passphrase,
-or restored app startup and sign-in.
+Publication checks validate the refreshed lockfile; they do not update the
+private deployment record or establish model quality. See
+[DEPENDENCIES](DEPENDENCIES.md) for version ownership and [TASKS](TASKS.md) for
+commands and evidence limits.
 
 ## Functional/security mapping
 
 The current product is the multi-subject tutor, with optional exact-math utilities.
-The former math-catalog, authored-hint and manual photo-approval acceptance flows
-are superseded by D009/T25. Their dated regression evidence remains in TASKS.
-
-Paths below are relative to the repository; test results are recorded in TASKS.
+Paths below are relative to the repository; the table identifies coverage rather
+than claiming a new test run.
 
 | Current requirement                                                                                                                                         | Automated coverage                                                                                                                                  |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -71,14 +45,12 @@ not universal semantic enforcement. AI observations remain fallible guidance;
 server-owned source/support links and current evidence versions govern adaptation.
 Older feedback remains visible without being treated as current learning evidence.
 
-The mock suites include 12 reading cases/36 stages, 12 cross-subject cases/36
-stages and four adversarial conversations/20 stages. Scripted answers to
-fixture-authored transfer activities do not demonstrate independent learning.
-Recorded Muse CLI samples also do not verify the installed HTTP/browser/worker
-path. See [TUTOR_EVALUATION](TUTOR_EVALUATION.md) for live review procedures.
+Mock results and historical Muse CLI samples do not establish teaching quality
+or verify the installed HTTP/browser/worker path. Use
+[TUTOR_EVALUATION](TUTOR_EVALUATION.md) for fixture commands and live review procedures.
 
-Known limits remain explicit: closing a tab loses its receipt marker; the phone
-companion has a separate token workflow; pathological combining/ZWJ text can
+Known limits: request receipts are stored per tab and may be lost when it closes;
+the phone companion has a separate token workflow; pathological combining/ZWJ text can
 split across section boundaries without losing characters; model prior knowledge
 can reveal future events despite exclusion from supplied context.
 
@@ -87,8 +59,7 @@ can reveal future events despite exclusion from supplied context.
 1. **Test and select the intended models.** Follow
    [PROVIDER_STATUS](PROVIDER_STATUS.md#test-and-select-the-tutor-and-photo-reader). Record exact
    model/runtime/region where relevant, reviewed audience terms and data consent.
-   T44 requires a fresh tutor connection test; photo-reader tests keep their normal
-   validity. Select both roles explicitly. Only providers intended for use need
+   Select both roles after current connection tests pass. Only providers intended for use need
    live acceptance; unverified optional routes stay labeled unverified.
 2. **Review real tutoring through the app and worker.** Use original synthetic
    work and the [evaluation guide](TUTOR_EVALUATION.md). Check handwriting,
@@ -116,7 +87,7 @@ checklist records unfinished work rather than authorizing those actions.
 
 ## Optional research and hosting
 
-T23 browser-model acceptance requires a named WebGPU device, reviewed model
+Any future browser-model experiment requires a named WebGPU device, reviewed model
 license, explicit download consent, synthetic questions, cold/warm latency,
 storage/memory/battery/thermal measurements and cancel/unload/delete checks.
 It is separate text-only research, not a prerequisite for the core tutor release.

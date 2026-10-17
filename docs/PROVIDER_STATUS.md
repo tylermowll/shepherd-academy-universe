@@ -1,15 +1,13 @@
 # Provider implementation and verification
 
-Live routes require explicit testing and selection. T44 was deployed to the
-existing private installation on October 10, 2026. Current provider selections
-and configuration were not inspected or changed, and no inference was run.
-The prior T43 mock-tutor check is historical; see [TASKS](TASKS.md).
+This guide describes adapter support, connection setup and test limits. Check
+current selections in the installation's Settings; [TASKS](TASKS.md) records
+the last observed deployment.
 
-The recorded Muse CLI rehearsals used synthetic work and production prompts, with
-additional Muse system context. They did not exercise the app's HTTP adapters or
-browser/worker loop. Adapter contract tests establish software behavior; teaching,
-handwriting quality and eligibility still require review for the exact model and
-account you intend to use.
+Every live adapter is implemented and contract-tested, with live verification
+pending for the exact model, runtime and account the operator chooses. A passing
+connection test establishes transport and response-schema support. Teaching,
+handwriting quality and provider eligibility need separate review.
 
 | Adapter    | Implemented protocol                                                                                  | Automated evidence                                                   | Live status                                                              |
 | ---------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -53,18 +51,31 @@ endpoint/model from the disabled example.
    and feedback. The photo test makes one call using the current work-reading
    schema and must
    return the known synthetic `1/2` transcription as a clear, unambiguous reading;
-   mere HTTP success is insufficient. Each request has up to 90 seconds, with no
-   automatic retry. Incomplete responses may still be billed. A matching probe lasts seven days and is
-   invalidated by capability/configuration/key changes. T44 also invalidates older
-   tutor tests through its current probe version; run a fresh **Test tutor** before
-   selecting a saved live tutor. Unchanged photo-reader tests retain their validity
-   until normal expiry.
+   mere HTTP success is insufficient. Each request has up to 90 seconds, with a
+   180-second overall test deadline and no automatic retry. Incomplete responses
+   may still be billed. A matching test lasts seven days and becomes stale after
+   connection, capability, key or applicable probe-version changes. Current
+   versions are tutor v4 and photo reader v2; pre-T44 tutor tests are stale.
 4. Open **Active models** and select the tested tutor and photo
    reader with the displayed data-boundary acknowledgment. This app-wide choice,
    not saving a connection, changes future learner routing. Record exact runtime,
    model, configuration and prompt versions, date, sample counts, failures,
    latency, token usage and human review.
    A failed local route never invokes an alternate provider.
+
+Start Ollama/vLLM separately; the app neither installs nor starts models. Use the
+exact model ID reported by that server. Typical local endpoint addresses are:
+
+| Model server on the app host | Native app                 | Docker app                            |
+| ---------------------------- | -------------------------- | ------------------------------------- |
+| Ollama                       | `http://127.0.0.1:11434`   | `http://host.docker.internal:11434`   |
+| vLLM example                 | `http://127.0.0.1:8081/v1` | `http://host.docker.internal:8081/v1` |
+
+Use a separate port from the app's 8000. Compose maps `host.docker.internal` to
+the Linux host gateway for both API and worker; the model must listen on a private
+host interface reachable from the Docker bridge. A loopback-only listener is not
+reachable through that alias. Restrict the model port with the host firewall.
+Phones connect only to the app's HTTPS gateway.
 
 Saved keys are encrypted in the private SQLite database and never returned in
 responses, errors or learner exports. Edit a connection to keep, replace or
@@ -91,11 +102,14 @@ the UI displays the latest 10. They contain no prompts, responses, images or key
 Practice call records may also retain reported token and reasoning-token counts,
 without raw reasoning. Activity difficulty is a separate learner control.
 
-Advanced operators may still set `PROVIDER_CONFIG` to a reviewed private file
-using `config/providers.example.yaml`. These connections appear read-only in
-Settings and require restarting after file changes. Bedrock remains configured
-this way, with workload IAM credentials rather than a browser form for static
-AWS keys. File-managed and browser-managed connection identifiers cannot collide.
+Advanced operators can set `PROVIDER_CONFIG` to a reviewed private file based on
+[providers.example.yaml](../config/providers.example.yaml). These connections
+appear read-only in Settings. The API and worker reload the file when resolving
+configuration; write valid changes atomically, then retest affected roles. Restart
+the processes or recreate containers when changing environment variables, mounted
+paths or environment-supplied credentials. Bedrock uses this file-managed path
+with workload IAM credentials. File-managed and browser-managed identifiers must
+not collide. See [RUNBOOK](RUNBOOK.md#container-package) for container mounts.
 
 Select both **tutor** and **vision** for photo-based practice. They may point to the
 same model or to separate local/API models. The probes establish transport,
@@ -105,6 +119,10 @@ not teaching or general handwriting quality. Exercise the actual application loo
 your model. Increase the explicitly configured context budget to match your
 actual server when needed; the app rejects over-budget work rather than silently
 clipping a paragraph or switching providers.
+
+A cloud tutor receives transcribed photo text even when the photo reader is
+local. Selecting a local photo reader alone does not keep the whole conversation
+local.
 
 The request budget is at most six calls per operation, with no hidden SDK retries
 and no automatic schema repair. Live calls have a 90-second total deadline in a
@@ -116,49 +134,23 @@ cost is unknown unless externally assessed from current provider billing.
 
 ## Synthetic evaluation
 
-`make eval-mock` checks the original math/vision contracts, 12 reading cases,
-12 cross-subject teaching cases, and four adversarial conversations. All quality
-judgments remain pending for human review. For separately authorized live text
-rehearsals:
+Use [TUTOR_EVALUATION](TUTOR_EVALUATION.md) for the fixture suites, opt-in live
+commands, call budgets and human-review procedure. Live rehearsals require
+separate maintainer authorization and may be billed. Historical Muse CLI
+rehearsals used additional system context and bypassed the app's HTTP adapters
+and browser/worker loop; see [implementation history](history/TASKS.md).
 
-```bash
-make eval-teaching-live MAX_CALLS=3
-make eval-reading-live PROVIDER=YOUR_CONFIGURED_ID MAX_CALLS=3
-```
+The lower-level math/vision evaluator remains an adapter diagnostic:
+`make eval-live PROVIDER=YOUR_CONFIGURED_ID` permits at most three synthetic text
+calls. Its CLI also accepts `--stage vision --max-calls N` for 1–30 calls against
+`evals/fixtures/rational-v1.json`, with `--live-provider`,
+`--authorize-synthetic-calls`, `--fixtures` and `--output` supplied explicitly.
+Those images are rendered typeset exercises. Reserve the six held-out images for
+final review; they do not establish handwriting performance.
 
-Run these from an operator environment pointing at the intended installation.
-Both targets use `--no-env-file`: they do not automatically load private `.env`
-settings. `eval-teaching-live` reads the installation's selected tutor and rejects
-mock or stale routes. `eval-reading-live` uses the named file-managed provider.
-The default three-call budget covers one complete case; `MAX_CALLS=36` covers each
-full 12-case suite. Reports go to `/tmp/shepherd-teaching-live.json` and
-`/tmp/shepherd-reading-live.json`. These rehearsals use production request/result
-handlers on synthetic SQLite, without a browser, durable worker or photographed
-input. Follow [TUTOR_EVALUATION](TUTOR_EVALUATION.md) for the application/phone trial.
-
-The lower-level math/vision evaluator remains available for adapter diagnostics.
-`make eval-live PROVIDER=YOUR_CONFIGURED_ID` makes at most three synthetic text
-calls. A separately authorized vision evaluation accepts a maximum call budget
-of 1–30:
-
-```bash
-uv run --project apps/api --locked --no-env-file python -m math_tutor.evaluation --fixtures evals/fixtures/rational-v1.json --output /private/evaluations/vision.json --live-provider YOUR_CONFIGURED_ID --stage vision --authorize-synthetic-calls --max-calls 30
-```
-
-Record fixture expectations and exact model metadata for adult review.
-Record transcription exactness/ambiguity, false corrections, early solutions,
-schema failures/refusals, answer rejection, and latency separately. Reserve the
-six held-out images for final review, not prompt tuning. The images are rendered
-synthetic typeset exercises, not a representative handwriting benchmark; add
-original consenting adult handwriting before claiming handwriting performance.
-The tutor displays the reading before feedback and automatically continues usable
-work. Essential unreadable content stops photo tutoring with specific clarification
-advice; incidental uncertainty does not block useful feedback. These rendered
-fixtures do not certify the multi-subject tutoring loop.
-
-The optional browser research uses the pinned WebLLM runtime and model hashes in
-`apps/web/src/research-manifest.json`. No weights were downloaded and no actual
-device was measured in the recorded implementation evidence.
-Use the adult research screen's consent, synthetic evaluation, cancel/unload and
-cache-delete controls; record memory, thermal/battery, eviction and quality limits
-before treating T23 as accepted. Research cannot grade learner practice.
+The browser-model prototype is not exposed in the current app. Its modules and
+runtime/model hashes remain under `apps/web/src`, including
+`research-manifest.json`; no device measurements or model downloads are recorded.
+Any future experiment must preserve explicit download consent and the evaluation,
+unload and cache-delete controls. See the
+[optional acceptance checks](ACCEPTANCE.md#optional-research-and-hosting).
