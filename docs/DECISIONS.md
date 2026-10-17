@@ -40,9 +40,11 @@ reproducibility; strict upstream peers and type checks still apply. pnpm's
 replaced by the installer pin.
 
 The approved baselines are Python 3.15.0, Node 26.11.1, pnpm 12.11.2 and uv/uv_build
-0.13.0. Development-only cfn-lint runs in `tools/infra` on Python 3.14.8 while its
-metadata excludes 3.15. The container builder hosts uv; the final image receives
-uv-managed Python 3.15.0. This adds no runtime service or deployment topology.
+0.13.0. This refresh initially isolated development-only cfn-lint in `tools/infra`
+on Python 3.14.8 because its metadata excluded 3.15. D016 supersedes that split
+with one root Python project and runtime. The container builder hosts uv; the
+final image receives the locked Python environment. This adds no runtime service
+or deployment topology.
 
 Python 3.15 HEIF conversion passed with pillow-heif 1.8.1 after its index artifacts
 became available; the earlier 1.8.0 workaround is superseded. Application
@@ -331,3 +333,24 @@ work or invoke a provider. This avoids destructive data changes while removing
 the second teaching implementation. No compatibility route, schema bridge or
 new infrastructure is introduced. Explicitly optional browser-model research
 remains outside learner navigation.
+
+## D016 — One Python project and runtime (2026-10-17)
+
+The maintainer explicitly selected one root `pyproject.toml`, `uv.lock`,
+`.python-version` and `.venv` for the application and development tools, all on
+Python 3.15. Application source, migrations and tests remain under `apps/api`;
+Make, CI, native startup and container builds use the root project. Remove the
+separate infrastructure project and Python 3.14 pin.
+
+cfn-lint 1.57.2's [published Python upper bound](https://pypi.org/pypi/cfn-lint/1.57.2/json)
+lags its [merged Python 3.15 decoder fix](https://github.com/aws-cloudformation/cfn-lint/pull/4717).
+uv's [documented resolver behavior](https://docs.astral.sh/uv/concepts/resolution/#requires-python)
+ignores dependency Python upper bounds; normal installation and locking succeed
+without metadata overrides. The checked released CLI accepts valid JSON/YAML and
+the household template on 3.15, and rejects an invalid template with E3030.
+This is tested project compatibility, not a claim of formal upstream support.
+
+The consolidated lock extends the prior 90-package application resolution to
+97 packages, retaining every existing version and adding the seven validator
+packages from the former infrastructure lock. Keep exact lock resolutions and
+repeat installation, validation and audit checks when dependencies change.

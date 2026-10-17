@@ -400,24 +400,24 @@ dependencies and tools, including newer stable major versions, on October 11, 20
 [D001's refresh](DECISIONS.md#d001-floor-only-dependency-refresh-2026-10-11).
 Record resolved versions and verification dates in `docs/DEPENDENCIES.md`.
 
-| Area              | Selected stack                                                                  | Constraint / reason                                                                               |
-| ----------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Frontend          | React 19.3, TypeScript 6, Vite 8                                                | Client-rendered application; no server-component or Next.js layer needed                          |
-| Node toolchain    | Node.js >=26.11.1; pnpm >=12.11.2                                               | Pin the installer in `packageManager`; allow newer stable tools and commit `pnpm-lock.yaml`       |
-| UI                | Tailwind CSS 4; semantic HTML; small accessible component set                   | Use the current Vite integration, not old Tailwind initialization instructions                    |
-| Routing/data      | React state; typed fetch; browser History API                                   | Owned requests and route state; no permanent draft cache                                          |
-| Forms             | Semantic HTML forms; generated API types                                        | Backend remains validation authority                                                              |
-| Mathematics       | KaTeX; backend exact arithmetic                                                 | HTML+MathML rendering, `trust: false`, bounded input                                              |
-| PWA               | Explicit service worker; generated public asset manifest                        | Prompt before activating an update; cache public assets only                                      |
-| Backend           | Python >=3.15.0; FastAPI; Pydantic 2                                            | Managed Python 3.15.0; compatible HEIF lock; separate Python 3.14 infrastructure checker          |
-| Python tooling    | uv; Ruff; mypy                                                                  | `uv.lock`, typed domain/provider boundaries, no ignored type failures by default                  |
-| Database          | SQLite; SQLAlchemy 2; stdlib sqlite3; Alembic                                   | Same on-disk engine/settings in development, tests and deployment; runtime floor recorded in D001 |
-| HTTP/model access | HTTPX2; boto3 for Bedrock                                                       | Maintained HTTP client; small explicit adapters; no mandatory universal AI framework              |
-| Image handling    | Pillow; `pillow-heif`                                                           | Bounded raster decoding; EXIF orientation and metadata stripping                                  |
-| Authentication    | Server-side opaque sessions; Argon2id administrator and learner password hashes | No tokens in localStorage; learner sign-in and revocation                                         |
-| Tests             | pytest, Hypothesis, Vitest, Testing Library, Playwright                         | Unit, property, integration, UI, and end-to-end coverage                                          |
-| Packaging         | Native development; optional Docker Compose gateway/API/worker                  | One host and shared local data directory; model server optional; no database service              |
-| CI                | GitHub Actions                                                                  | Locked installs, real tests, secret/dependency checks, synthetic-only artifacts                   |
+| Area              | Selected stack                                                                  | Constraint / reason                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Frontend          | React 19.3, TypeScript 6, Vite 8                                                | Client-rendered application; no server-component or Next.js layer needed                               |
+| Node toolchain    | Node.js >=26.11.1; pnpm >=12.11.2                                               | Pin the installer in `packageManager`; allow newer stable tools and commit `pnpm-lock.yaml`            |
+| UI                | Tailwind CSS 4; semantic HTML; small accessible component set                   | Use the current Vite integration, not old Tailwind initialization instructions                         |
+| Routing/data      | React state; typed fetch; browser History API                                   | Owned requests and route state; no permanent draft cache                                               |
+| Forms             | Semantic HTML forms; generated API types                                        | Backend remains validation authority                                                                   |
+| Mathematics       | KaTeX; backend exact arithmetic                                                 | HTML+MathML rendering, `trust: false`, bounded input                                                   |
+| PWA               | Explicit service worker; generated public asset manifest                        | Prompt before activating an update; cache public assets only                                           |
+| Backend           | Python >=3.15.0; FastAPI; Pydantic 2                                            | Managed Python 3.15.0; compatible HEIF lock                                                            |
+| Python tooling    | uv; Ruff; mypy; cfn-lint                                                        | One root `pyproject.toml`, `uv.lock` and `.venv`; typed boundaries and checked validator compatibility |
+| Database          | SQLite; SQLAlchemy 2; stdlib sqlite3; Alembic                                   | Same on-disk engine/settings in development, tests and deployment; runtime floor recorded in D001      |
+| HTTP/model access | HTTPX2; boto3 for Bedrock                                                       | Maintained HTTP client; small explicit adapters; no mandatory universal AI framework                   |
+| Image handling    | Pillow; `pillow-heif`                                                           | Bounded raster decoding; EXIF orientation and metadata stripping                                       |
+| Authentication    | Server-side opaque sessions; Argon2id administrator and learner password hashes | No tokens in localStorage; learner sign-in and revocation                                              |
+| Tests             | pytest, Hypothesis, Vitest, Testing Library, Playwright                         | Unit, property, integration, UI, and end-to-end coverage                                               |
+| Packaging         | Native development; optional Docker Compose gateway/API/worker                  | One host and shared local data directory; model server optional; no database service                   |
+| CI                | GitHub Actions                                                                  | Locked installs, real tests, secret/dependency checks, synthetic-only artifacts                        |
 
 Toolchain selection and compatibility exceptions are recorded in
 [DEPENDENCIES.md](DEPENDENCIES.md) and D001. Exact pins live in runtime files,
@@ -847,6 +847,12 @@ The source layout is [apps/api/src/math_tutor](../apps/api/src/math_tutor) and
 and [TASKS.md](TASKS.md) record supported features, commands and current work. Create
 modules only when they have behavior; a planned architecture does not justify
 empty production stubs.
+
+The root [Python manifest](../pyproject.toml), [lockfile](../uv.lock) and
+`.python-version` own one Python 3.15 environment for application and development
+tools. Use the root Make targets; keep package source under `apps/api/src`.
+[D016](DECISIONS.md#d016--one-python-project-and-runtime-2026-10-17) records the
+consolidation and the checked CloudFormation validator compatibility exception.
 
 [AGENTS.md](../AGENTS.md) owns repository working instructions and the
 [implementation skill](../.agents/skills/implement-task/SKILL.md) owns the bounded

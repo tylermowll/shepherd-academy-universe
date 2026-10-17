@@ -15,32 +15,30 @@ a running private installation. Dated verification results are in
 Use these files for exact declarations and resolutions instead of maintaining a
 second package inventory in prose:
 
-| Scope                            | Declarations                                                    | Exact resolutions                             |
-| -------------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
-| API and Python development tools | [apps/api/pyproject.toml](../apps/api/pyproject.toml)           | [apps/api/uv.lock](../apps/api/uv.lock)       |
-| CloudFormation validation tools  | [tools/infra/pyproject.toml](../tools/infra/pyproject.toml)     | [tools/infra/uv.lock](../tools/infra/uv.lock) |
-| Workspace and browser tests      | [package.json](../package.json)                                 | [pnpm-lock.yaml](../pnpm-lock.yaml)           |
-| Web app                          | [apps/web/package.json](../apps/web/package.json)               | [pnpm-lock.yaml](../pnpm-lock.yaml)           |
-| Generated API client tools       | [tools/contracts/package.json](../tools/contracts/package.json) | [pnpm-lock.yaml](../pnpm-lock.yaml)           |
+| Scope                                     | Declarations                                                    | Exact resolutions                   |
+| ----------------------------------------- | --------------------------------------------------------------- | ----------------------------------- |
+| API, development and CloudFormation tools | [pyproject.toml](../pyproject.toml)                             | [uv.lock](../uv.lock)               |
+| Workspace and browser tests               | [package.json](../package.json)                                 | [pnpm-lock.yaml](../pnpm-lock.yaml) |
+| Web app                                   | [apps/web/package.json](../apps/web/package.json)               | [pnpm-lock.yaml](../pnpm-lock.yaml) |
+| Generated API client tools                | [tools/contracts/package.json](../tools/contracts/package.json) | [pnpm-lock.yaml](../pnpm-lock.yaml) |
 
 Lockfile updates need fresh validation. See [TASKS](TASKS.md) for changes made
 after the last recorded release gates.
 
-Each Python lockfile belongs beside its project's `pyproject.toml`. The API and
-infrastructure checker are independent projects with different Python baselines;
-the repository root is not a uv workspace. Keep `apps/api/uv.lock` and
-`tools/infra/uv.lock` in their current locations and use the root Make targets
-to operate them. Directory depth does not affect the lock's scope.
+Python uses one project: the root `pyproject.toml`, `uv.lock`, `.python-version`
+and `.venv`. Run the root Make targets or `uv run --locked` from the repository
+root. Application source remains under `apps/api/src`; it does not need a second
+project, lock or virtual environment. [D016](DECISIONS.md#d016--one-python-project-and-runtime-2026-10-17)
+records the consolidation.
 
 ## Runtime and installer pins
 
-| Tool                  | Repository pin                                 | Authority                                                                                     |
-| --------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Application Python    | 3.15.0; requirement `>=3.15.0`                 | [.python-version](../.python-version), API manifest                                           |
-| Infrastructure Python | 3.14.8; requirement `>=3.14.8`                 | [tools/infra/.python-version](../tools/infra/.python-version), infrastructure manifest        |
-| Node.js               | 26.11.1; requirement `>=26.11.1`               | [.node-version](../.node-version), root manifest                                              |
-| pnpm                  | 12.11.2; requirement `>=12.11.2`               | Root `packageManager` and `engines`                                                           |
-| uv                    | 0.13.0 in CI/container; requirement `>=0.13.0` | Python manifests, [CI](../.github/workflows/ci.yml), [Dockerfile](../infra/docker/Dockerfile) |
+| Tool    | Repository pin                                 | Authority                                                                                         |
+| ------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Python  | 3.15.0; requirement `>=3.15.0`                 | [.python-version](../.python-version), root Python manifest                                       |
+| Node.js | 26.11.1; requirement `>=26.11.1`               | [.node-version](../.node-version), root manifest                                                  |
+| pnpm    | 12.11.2; requirement `>=12.11.2`               | Root `packageManager` and `engines`                                                               |
+| uv      | 0.13.0 in CI/container; requirement `>=0.13.0` | Root Python manifest, [CI](../.github/workflows/ci.yml), [Dockerfile](../infra/docker/Dockerfile) |
 
 [The toolchain checker](../scripts/check-toolchain.mjs) enforces stable Node/pnpm
 versions at or above the manifest floors. [pnpm-workspace.yaml](../pnpm-workspace.yaml)
@@ -48,9 +46,10 @@ enforces strict peer checks and blocks unreviewed install scripts. Its
 `pmOnFail: ignore` setting allows an installed compatible pnpm instead of
 automatically switching it to the installer pin.
 
-The container's Python 3.14.8 build image hosts the installer only. uv supplies
-the application Python 3.15.0 runtime, which is copied into the digest-pinned
-Distroless Debian 13 non-root image. Build-only installer code is removed.
+The container uses Python 3.15.0 for its build host and uv-managed application
+runtime. The final image copies the locked runtime environment into the
+digest-pinned Distroless Debian 13 non-root image. Build-only installer code is
+removed.
 
 ## Compatibility constraints
 
@@ -59,10 +58,15 @@ Distroless Debian 13 non-root image. Build-only installer code is removed.
   Python 3.15.0 runtime reported 3.53.1. This is the embedded library, independent
   of any SQLite CLI. [D004](DECISIONS.md#d004--sqlite-for-the-initial-deployment-2026-09-06)
   defines the one-host, local-disk deployment boundary.
-- **Infrastructure Python:** cfn-lint 1.57.2's recorded metadata excludes Python
-  3.15. Its requirements, lock and environment are isolated under `tools/infra`;
-  Make explicitly selects Python 3.14.8. Its transitive SymPy dependency never
-  evaluates learner text.
+- **CloudFormation validator:** cfn-lint 1.57.2's [published metadata](https://pypi.org/pypi/cfn-lint/1.57.2/json)
+  still declares Python `<3.15`, although its [Python 3.15 decoder fix](https://github.com/aws-cloudformation/cfn-lint/pull/4717)
+  merged on October 1. uv [ignores dependency Python upper bounds](https://docs.astral.sh/uv/concepts/resolution/#requires-python),
+  so ordinary resolution and installation work without an override or patched
+  distribution. The October 17 check installed the released package on 3.15 and
+  validated JSON, YAML and the household template; an invalid template failed
+  with E3030. These checks justify the current shared environment, without
+  claiming formal upstream 3.15 support. Recheck the metadata and CLI on updates.
+  Its transitive SymPy dependency never evaluates learner text.
 - **TypeScript:** application TypeScript resolves to 6.0.3 within
   typescript-eslint 8.71.1's recorded `>=4.8.4 <6.1.0` peer range. The OpenAPI
   generator is isolated with TypeScript 5.9.3 for openapi-typescript 7.13.0's
@@ -81,11 +85,12 @@ establish compatibility with every future version.
 
 ## Verification and supply chain
 
-The [Makefile](../Makefile) owns commands: `make bootstrap` installs both Python
-projects with `--locked` and JavaScript with `--frozen-lockfile`; `make lock-check`
-checks their manifests; `make audit` audits both Python locks and pnpm. Audits
-must be repeated for a release. A past clean result is not a permanent security
-claim.
+The [Makefile](../Makefile) owns commands: `make bootstrap` installs the root Python
+project with `--locked` and JavaScript with `--frozen-lockfile`; `make lock-check`
+checks manifest/lock freshness; `make audit` audits the root Python lock and pnpm.
+The common Python environment includes cfn-lint for `make infra-check`.
+Audits must be repeated for a release. A past clean result is not a permanent
+security claim.
 
 [CI](../.github/workflows/ci.yml) pins third-party actions by commit and defines
 the source, browser, mock-evaluation, audit and container gates. It scans

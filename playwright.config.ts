@@ -23,7 +23,7 @@ export default defineConfig({
   ],
   webServer: {
     command:
-      "uv run --project apps/api --locked python scripts/serve-demo.py --port 4173 --mode private",
+      "uv run --locked --no-env-file python scripts/serve-demo.py --port 4173 --mode private",
     url: "http://127.0.0.1:4173/health/ready",
     reuseExistingServer: false,
     timeout: 60_000,

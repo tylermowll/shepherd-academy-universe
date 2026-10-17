@@ -36,9 +36,12 @@ def synthetic_database(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> str:
 
 
 def test_startup_keeps_existing_admin_credentials_and_sessions(
-    synthetic_database: str, monkeypatch: pytest.MonkeyPatch
+    synthetic_database: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    local_start.prepare_database(ROOT)
+    monkeypatch.chdir(tmp_path)
+    root = settings.repository_root()
+    assert root == ROOT
+    local_start.prepare_database(root)
     engine = create_engine_for_url(synthetic_database)
     try:
         with Session(engine) as db:
@@ -52,7 +55,7 @@ def test_startup_keeps_existing_admin_credentials_and_sessions(
         migrate = Mock(side_effect=AssertionError("Current databases need no migration"))
         monkeypatch.setattr("builtins.input", prompt)
         monkeypatch.setattr(command, "upgrade", migrate)
-        local_start.prepare_database(ROOT)
+        local_start.prepare_database(root)
         assert local_start.owner_setup_token(urlsplit(settings.app_public_origin())) is None
         prompt.assert_not_called()
         migrate.assert_not_called()
@@ -245,6 +248,7 @@ def test_uv_loads_synthetic_settings_without_shell_evaluation_or_value_output(
     destination.chmod(0o600)
     values = local_start.load_environment(destination, ROOT, executable)
     assert values["T27_SYNTHETIC_LITERAL"] == literal
+    assert Path(values["VIRTUAL_ENV"]).resolve() == ROOT / ".venv"
     assert not marker.exists()
     captured = capsys.readouterr()
     assert literal not in captured.out + captured.err

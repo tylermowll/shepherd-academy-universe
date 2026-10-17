@@ -60,7 +60,7 @@ def load_environment(destination: Path, root: Path, uv: str) -> dict[str, str]:
                 uv,
                 "run",
                 "--project",
-                str(root / "apps/api"),
+                str(root),
                 "--locked",
                 "--no-sync",
                 "--offline",

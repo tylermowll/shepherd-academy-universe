@@ -9,7 +9,8 @@ A task is complete only after its requirements and exit checks pass.
 ## Current checkpoint
 
 The application is implemented through T44, with the October 11 dependency
-refresh, T45 documentation consolidation and T46 legacy cleanup. The schema head
+refresh, T45 documentation consolidation, T46 legacy cleanup and T47 root Python
+project consolidation. The schema head
 is `0020_request_recovery`. The last recorded private
 deployment used runtime source `e9bf42c`, Python 3.15.0 and pillow-heif 1.8.1 on
 **October 11, 2026**. Image, HTTPS, served-asset and authorization checks are in
@@ -17,13 +18,119 @@ the [release record](history/TASKS.md#release-publication-2026-10-11).
 This is dated evidence; current provider selections and live teaching quality
 have not been verified.
 
-The maintainer subsequently refreshed `apps/api/uv.lock`. The October 17
-publication checks below validate that unchanged lockfile for the authorized push
-to `main`; October 11's deployment evidence still describes the older installation.
+The maintainer refreshed the former `apps/api/uv.lock` before T46 publication.
+T47 preserves those versions and artifacts in the root `uv.lock`, adding the
+CloudFormation validator. October 11's deployment evidence still describes the
+older installation.
 
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
-T46 below records the maintainer-approved cleanup and publication checks. No
-feature task is queued. Browser-model research and AWS hosting remain optional.
+T47 below is the maintainer-approved Python project consolidation. T46 records
+the earlier cleanup and publication checks. Browser-model research and AWS
+hosting remain optional.
+
+## T47 — Consolidate the Python project and runtime (2026-10-17)
+
+**Status:** Complete; all local exit checks passed. The maintainer explicitly authorized one root
+`pyproject.toml`, `uv.lock` and `.venv`, using Python 3.15 for the application and
+development tools.
+
+**Scope:** Move Python dependency ownership and tool configuration to the
+repository root, include CloudFormation validation in the common development
+environment, and remove the separate infrastructure project and Python pin.
+Update Make, CI, containers, startup/build paths, test fixtures and current
+guidance to use the root project. Preserve the existing locked versions while
+adding the validator's required packages. Keep dated validation and deployment
+history intact. No database migration, live inference, deployment or model
+download is authorized.
+
+**Contracts:** SPECIFICATION sections 5–6 and 16; the common Python 3.15 runtime;
+locked installs, package discovery, Alembic paths, native/container startup,
+synthetic test isolation and CloudFormation validation without provisioning.
+Document the checked cfn-lint 1.57.2 metadata exception and upstream support
+change instead of maintaining a second Python environment.
+
+**Validation plan:** Compare the consolidated lock with both prior locks; prove
+that existing package versions remain unchanged. Validate normal Python 3.15
+installation and cfn-lint on valid JSON/YAML, the household template and an
+invalid template that must fail. Run targeted path/configuration checks, then
+locked bootstrap, `make check`, integration tests, mock evaluations, built-app
+smoke, audits and hooks. Check documentation links/headings and command
+consistency, inspect the complete diff and record actual outcomes before marking
+the task complete.
+
+**Implementation:** Moved the application manifest, lock and Python tool
+configuration to the root; source, tests and Alembic migrations remain under
+`apps/api`. Added cfn-lint to the common development group and removed the separate
+infrastructure manifest, lock and Python pin. Removed the retired generated
+virtual environments and backend build directory after the root environment
+worked. Make, Git hooks, auditing, browser startup and native private-settings
+loading now select the root project. Checkout discovery remains independent of
+the shell's working directory.
+
+The container uses a verified, digest-pinned Python 3.15.0 build host and copies
+the root `.venv` into the existing non-root runtime. Development tools remain
+outside the production installation. Its synthetic disabled-provider check now
+supplies the required request purpose. D016 records the consolidation and the
+tested cfn-lint metadata exception; current guides use root commands.
+
+**Validation (2026-10-17, before publication):** Checks use uv 0.13.1, Python 3.15.0,
+checksum-verified Node 26.11.1 and pnpm 12.11.2 under the same temporary isolated
+runner as T46. Operator/provider variables are cleared and env-file loading is
+disabled. Socket/subprocess tests run outside the restricted sandbox against
+synthetic temporary data.
+
+- Lock comparison against both prior locks: **90 to 97 packages**, no existing
+  version, sdist or wheel-artifact changes; the seven additions retain their
+  former infrastructure-lock versions. No metadata override or patched package.
+- `make bootstrap`: passed with one locked Python installation and frozen pnpm.
+  A final offline `uv sync --locked` also passed after removing both retired
+  virtual environments; interpreter prefix is the root `.venv`.
+- `make check`: passed locks, lint/format, strict types, builds, contract drift,
+  credential scan and CloudFormation lint. **303 backend unit, 11 toolchain and
+  187 frontend component tests passed**; mypy checked 86 files.
+- `make test-integration`: **346 passed in 59.19 seconds**, including migrations,
+  retained sessions and private settings loaded through root uv from another
+  working directory. The focused startup/settings/database run passed 80 tests.
+- `make audit`: the consolidated Python lock and pnpm reported **no known
+  vulnerabilities**. The exported hashed requirements include cfn-lint.
+- The root Python 3.15 cfn-lint CLI accepts valid JSON/YAML and the household
+  template, and rejects an invalid template with E3030. Earlier comparison with
+  Python 3.14 produced the same four results on each interpreter.
+- Four mock evaluation CLI runs used the Makefile fixtures and wrote
+  `/tmp/shepherd-root-uv-*.json`: **33 exact and 30 vision cases** passed; reading
+  and teaching passed **36 stages each**, adversarial teaching **20**. An initial
+  scratch command named the absent adversarial v1 fixture; the corrected command
+  used the authoritative v2 fixture. Historical reports are unchanged.
+- `docker build -f infra/docker/Dockerfile -t shepherd-root-uv:t47 .`: passed.
+  `sh scripts/container-smoke.sh shepherd-root-uv:t47`: passed Python 3.15.0,
+  SQLite 3.53.1/WAL/foreign keys, HEIF conversion, cryptography, installer-free
+  runtime, restricted provider subprocess rejection, migrations, API/worker/UI,
+  setup-link renewal, stale-link rejection and administrator account creation.
+  Only disposable synthetic containers/volume and loopback port 18080 were used;
+  the smoke script removed them afterward.
+- `make hooks-install`: reinstalled the existing Git hook against the root
+  environment. An initial sandboxed hygiene run could not open the read-only
+  skill file for its newline check; the successful gate ran outside that
+  sandbox. Bootstrap's successful pnpm subprocess also received sandbox EPERM,
+  so the successful bootstrap and project gate used the approved external run.
+- `make smoke-built`: **80 desktop/mobile browser tests passed in 12.4 minutes**,
+  one worker, no retries and the production login throttle unchanged. Native
+  setup, reload/API restart and private request recovery use the root project.
+- `make hooks-files-check`: passed all tracked-file hygiene checks, including
+  root TOML, private-key detection, YAML, size, newline and whitespace checks.
+  The already-passed project gate is also enforced by the commit hook.
+- `python3 /tmp/shepherd-cleanup-doccheck.py`: passed **204 local links/headings**
+  across 22 Markdown files and all documented Make references against 46 targets.
+  Historical tasks and all nine evaluation reports remain byte-identical to HEAD.
+  Markdown/configuration formatting and staged whitespace checks passed.
+- Independent review found no missed active split-project paths. Git tracks
+  exactly one Python manifest, lock and version pin, all at the root. A fetch
+  confirmed starting `main` still matched `origin/main` before publication.
+
+All local exit checks passed. No live inference, model download, private-data
+inspection, destructive migration or application deployment was performed.
+Container vulnerability scanning and SBOM publication remain CI checks for the
+pushed revision; live provider, human and physical-device acceptance remain open.
 
 ## T46 — Retire catalog-era workflows and redundant checks (2026-10-17)
 

@@ -2,7 +2,8 @@
 
 Start with [TASKS](TASKS.md) for the current checkpoint, work queue and validation
 evidence. The application is implemented through T44; T45 consolidates
-documentation and T46 retires catalog-era runtime code and redundant checks.
+documentation, T46 retires catalog-era runtime code and redundant checks, and
+T47 consolidates Python into one root project and Python 3.15 environment.
 The last recorded private deployment was October 11, 2026. That record does not
 establish today's runtime, selected models or teaching quality.
 
@@ -30,3 +31,9 @@ hosting are optional.
 
 Continue one bounded task at a time using [AGENTS](../AGENTS.md). Do not inspect
 private configuration, learner data or logs to update public docs.
+
+Python commands run from the repository root using its `pyproject.toml`,
+`uv.lock`, `.python-version` and `.venv`; `apps/api` owns source, migrations and
+tests. Use the Makefile for locked installs and checks, including the shared
+CloudFormation validator. [DEPENDENCIES](DEPENDENCIES.md) records the validator's
+checked Python metadata exception.

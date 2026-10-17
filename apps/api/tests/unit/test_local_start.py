@@ -317,6 +317,8 @@ def test_loader_uses_private_captured_pipes_and_relative_filename(
         "SYNTHETIC_KEY": "not-printed"
     }
     arguments = parse.call_args.args[0]
+    assert arguments[arguments.index("--project") + 1] == str(tmp_path)
+    assert arguments[arguments.index("-c") - 1] == sys.executable
     assert arguments[arguments.index("--env-file") + 1] == "./.env"
     assert parse.call_args.kwargs["cwd"] == directory
     assert parse.call_args.kwargs["capture_output"] is True

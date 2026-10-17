@@ -1,24 +1,15 @@
 UV ?= uv
 PNPM ?= pnpm
-API_PROJECT := apps/api
-UV_PROJECT_ARGS := --directory $(API_PROJECT)
-INFRA_PROJECT := tools/infra
-INFRA_PYTHON := $(shell cat $(INFRA_PROJECT)/.python-version)
-INFRA_PROJECT_ENVIRONMENT ?= $(CURDIR)/$(INFRA_PROJECT)/.venv
-INFRA_PROJECT_ARGS := --project $(INFRA_PROJECT) --python $(INFRA_PYTHON)
-# Infrastructure tools must not reuse an API environment override.
-INFRA_UV = UV_PROJECT_ENVIRONMENT="$(INFRA_PROJECT_ENVIRONMENT)" $(UV)
 ENV_FILE ?= $(if $(UV_ENV_FILE),$(UV_ENV_FILE),$(CURDIR)/.env)
 # Only operator commands load settings, through captured/redacted uv diagnostics.
-LOCAL_COMMAND = $(UV) run --project $(API_PROJECT) --locked --no-env-file python -m math_tutor.local_start --env-file "$(ENV_FILE)" --uv "$(UV)"
+LOCAL_COMMAND = $(UV) run --locked --no-env-file python -m math_tutor.local_start --env-file "$(ENV_FILE)" --uv "$(UV)"
 
 .PHONY: bootstrap setup toolchain-check lock lock-check db migrate admin dev-api dev-web test \
 	test-integration lint format format-check typecheck build check hooks-install \
 	hooks-check hooks-files-check pre-commit-check smoke smoke-built
 
 bootstrap: toolchain-check
-	$(UV) sync $(UV_PROJECT_ARGS) --locked
-	$(INFRA_UV) sync $(INFRA_PROJECT_ARGS) --locked
+	$(UV) sync --locked
 	$(PNPM) install --frozen-lockfile
 
 toolchain-check:
@@ -26,23 +17,21 @@ toolchain-check:
 	node scripts/check-toolchain.mjs
 
 hooks-install:
-	$(UV) run --project $(API_PROJECT) --locked pre-commit install
+	$(UV) run --locked --no-env-file pre-commit install
 
 hooks-check:
-	$(UV) run --project $(API_PROJECT) --locked pre-commit run --all-files
+	$(UV) run --locked --no-env-file pre-commit run --all-files
 
 # CI runs the project gate separately; skip only that duplicate hook.
 hooks-files-check:
-	SKIP=project-check $(UV) run --project $(API_PROJECT) --locked pre-commit run --all-files
+	SKIP=project-check $(UV) run --locked --no-env-file pre-commit run --all-files
 
 lock:
-	$(UV) lock $(UV_PROJECT_ARGS)
-	$(INFRA_UV) lock $(INFRA_PROJECT_ARGS)
+	$(UV) lock
 	$(PNPM) install --lockfile-only
 
 lock-check:
-	$(UV) lock $(UV_PROJECT_ARGS) --check
-	$(INFRA_UV) lock $(INFRA_PROJECT_ARGS) --check
+	$(UV) lock --check
 	$(PNPM) install --lockfile-only --frozen-lockfile --ignore-scripts
 
 db:
@@ -56,39 +45,39 @@ admin:
 	$(LOCAL_COMMAND) --command admin
 
 setup:
-	$(UV) run $(UV_PROJECT_ARGS) --locked --no-env-file python -m math_tutor.cli setup
+	$(UV) run --locked --no-env-file python -m math_tutor.cli setup
 
 dev-api:
-	$(UV) run $(UV_PROJECT_ARGS) --locked uvicorn math_tutor.api.app:app --reload --no-proxy-headers
+	$(UV) run --locked --no-env-file uvicorn math_tutor.api.app:app --reload --no-proxy-headers
 
 dev-web:
 	$(PNPM) dev:web
 
 test:
-	$(UV) run $(UV_PROJECT_ARGS) --locked pytest tests/unit
+	$(UV) run --locked --no-env-file pytest apps/api/tests/unit
 	$(PNPM) test
 
 test-integration:
-	$(UV) run $(UV_PROJECT_ARGS) --locked pytest tests/integration
+	$(UV) run --locked --no-env-file pytest apps/api/tests/integration
 
 lint:
-	$(UV) run $(UV_PROJECT_ARGS) --locked ruff check .
+	$(UV) run --locked --no-env-file ruff check apps/api
 	$(PNPM) lint
 
 format:
-	$(UV) run $(UV_PROJECT_ARGS) --locked ruff format .
+	$(UV) run --locked --no-env-file ruff format apps/api
 	$(PNPM) format
 
 format-check:
-	$(UV) run $(UV_PROJECT_ARGS) --locked ruff format --check .
+	$(UV) run --locked --no-env-file ruff format --check apps/api
 	$(PNPM) format:check
 
 typecheck:
-	$(UV) run $(UV_PROJECT_ARGS) --locked mypy src tests
+	$(UV) run --locked --no-env-file mypy apps/api/src apps/api/tests
 	$(PNPM) typecheck
 
 build:
-	$(UV) build $(UV_PROJECT_ARGS)
+	$(UV) build
 	$(PNPM) build
 
 pre-commit-check: toolchain-check lock-check lint format-check typecheck test
@@ -104,48 +93,48 @@ smoke smoke-built:
 .PHONY: contracts contracts-check secret-check audit eval-mock eval-live eval-reading-mock eval-reading-live eval-teaching-mock eval-teaching-live eval-teaching-adversarial-mock start dev serve demo worker test-e2e infra-check backup restore
 
 contracts:
-	$(UV) run --project $(API_PROJECT) --locked python scripts/export-contracts.py --output contracts/openapi.json
+	$(UV) run --locked --no-env-file python scripts/export-contracts.py --output contracts/openapi.json
 	$(PNPM) --filter @math-tutor/contracts generate
 	$(PNPM) exec prettier --write apps/web/src/generated/api.d.ts
 
 contracts-check:
-	$(UV) run --project $(API_PROJECT) --locked python scripts/check-contracts.py
+	$(UV) run --locked --no-env-file python scripts/check-contracts.py
 
 secret-check:
-	$(UV) run --project $(API_PROJECT) --locked python scripts/scan-secrets.py
+	$(UV) run --locked --no-env-file python scripts/scan-secrets.py
 
 audit:
-	UV="$(UV)" INFRA_PROJECT_ENVIRONMENT="$(INFRA_PROJECT_ENVIRONMENT)" sh scripts/audit-python.sh
+	UV="$(UV)" sh scripts/audit-python.sh
 	$(PNPM) audit
 
 infra-check:
-	$(INFRA_UV) run $(INFRA_PROJECT_ARGS) --locked --no-env-file cfn-lint infra/aws/household.json
+	$(UV) run --locked --no-env-file cfn-lint infra/aws/household.json
 
 eval-mock:
-	$(UV) run --project $(API_PROJECT) --locked python -m math_tutor.evaluation --fixtures evals/fixtures/rational-v1.json --output evals/reports/deterministic.json
+	$(UV) run --locked --no-env-file python -m math_tutor.evaluation --fixtures evals/fixtures/rational-v1.json --output evals/reports/deterministic.json
 	$(MAKE) eval-reading-mock
 	$(MAKE) eval-teaching-mock
 	$(MAKE) eval-teaching-adversarial-mock
 
 eval-reading-mock:
-	$(UV) run --project $(API_PROJECT) --locked --no-env-file python -m math_tutor.reading_evaluation --fixtures evals/fixtures/reading-v1.json --output evals/reports/reading-mock.json
+	$(UV) run --locked --no-env-file python -m math_tutor.reading_evaluation --fixtures evals/fixtures/reading-v1.json --output evals/reports/reading-mock.json
 
 eval-reading-live:
 	@test -n "$(PROVIDER)" || { echo "Set PROVIDER to an explicitly configured provider ID."; exit 1; }
-	$(UV) run --project $(API_PROJECT) --locked --no-env-file python -m math_tutor.reading_evaluation --fixtures evals/fixtures/reading-v1.json --output /tmp/shepherd-reading-live.json --live-provider "$(PROVIDER)" --authorize-synthetic-calls --max-calls $(if $(MAX_CALLS),$(MAX_CALLS),3)
+	$(UV) run --locked --no-env-file python -m math_tutor.reading_evaluation --fixtures evals/fixtures/reading-v1.json --output /tmp/shepherd-reading-live.json --live-provider "$(PROVIDER)" --authorize-synthetic-calls --max-calls $(if $(MAX_CALLS),$(MAX_CALLS),3)
 
 eval-teaching-mock:
-	$(UV) run --project $(API_PROJECT) --locked --no-env-file python -m math_tutor.reading_evaluation --fixtures evals/fixtures/teaching-v1.json --output evals/reports/teaching-mock.json
+	$(UV) run --locked --no-env-file python -m math_tutor.reading_evaluation --fixtures evals/fixtures/teaching-v1.json --output evals/reports/teaching-mock.json
 
 eval-teaching-adversarial-mock:
-	$(UV) run --project $(API_PROJECT) --locked --no-env-file python -m math_tutor.reading_evaluation --fixtures evals/fixtures/teaching-adversarial-v2.json --output evals/reports/teaching-adversarial-mock.json
+	$(UV) run --locked --no-env-file python -m math_tutor.reading_evaluation --fixtures evals/fixtures/teaching-adversarial-v2.json --output evals/reports/teaching-adversarial-mock.json
 
 eval-teaching-live:
-	$(UV) run --project $(API_PROJECT) --locked --no-env-file python -m math_tutor.reading_evaluation --fixtures evals/fixtures/teaching-v1.json --output /tmp/shepherd-teaching-live.json --live-active-tutor --authorize-synthetic-calls --max-calls $(if $(MAX_CALLS),$(MAX_CALLS),3)
+	$(UV) run --locked --no-env-file python -m math_tutor.reading_evaluation --fixtures evals/fixtures/teaching-v1.json --output /tmp/shepherd-teaching-live.json --live-active-tutor --authorize-synthetic-calls --max-calls $(if $(MAX_CALLS),$(MAX_CALLS),3)
 
 eval-live:
 	@test -n "$(PROVIDER)" || { echo "Set PROVIDER to an explicitly configured provider ID."; exit 1; }
-	$(UV) run --project $(API_PROJECT) --locked python -m math_tutor.evaluation --fixtures evals/fixtures/rational-v1.json --output evals/reports/live-synthetic.json --live-provider "$(PROVIDER)" --authorize-synthetic-calls --max-calls 3
+	$(UV) run --locked --no-env-file python -m math_tutor.evaluation --fixtures evals/fixtures/rational-v1.json --output evals/reports/live-synthetic.json --live-provider "$(PROVIDER)" --authorize-synthetic-calls --max-calls 3
 
 start:
 	$(LOCAL_COMMAND) --make "$(MAKE)"
@@ -158,7 +147,7 @@ serve:
 	$(LOCAL_COMMAND) --make "$(MAKE)" --gateway
 
 demo: build
-	$(UV) run --project $(API_PROJECT) --locked python scripts/serve-demo.py --port 8000
+	$(UV) run --locked --no-env-file python scripts/serve-demo.py --port 8000
 
 worker:
 	$(LOCAL_COMMAND) --command worker
@@ -175,7 +164,7 @@ restore:
 
 .PHONY: seed-demo down
 seed-demo:
-	$(UV) run --project $(API_PROJECT) --locked python -m math_tutor.demo
+	$(UV) run --locked --no-env-file python -m math_tutor.demo
 
 down:
 	docker compose -f infra/docker/compose.yaml down

@@ -23,8 +23,9 @@ See [TASKS](docs/TASKS.md) for the current checkpoint and
 ## Start the app
 
 Use Git, GNU Make, Node **>=26.11.1**, pnpm **>=12.11.2** and uv **>=0.13.0**.
-uv installs Python **3.15.0** for the app and Python **3.14.8** for the isolated
-CloudFormation checker if needed. Minimum requirements allow newer stable
+uv installs Python **3.15.0** into the root `.venv` for the app and development
+tools, including CloudFormation validation. The root `pyproject.toml` and
+`uv.lock` own all Python dependencies. Minimum requirements allow newer stable
 tools; installers and lockfiles retain exact reproducible versions. Compatibility
 exceptions are recorded in [DEPENDENCIES](docs/DEPENDENCIES.md).
 

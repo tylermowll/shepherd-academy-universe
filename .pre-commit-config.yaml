@@ -1,4 +1,4 @@
-minimum_pre_commit_version: '4.6.2'
+minimum_pre_commit_version: "4.6.2"
 default_stages: [pre-commit]
 fail_fast: true
 
@@ -22,46 +22,46 @@ repos:
           )
       - id: detect-private-key
         name: Detect private key material
-        entry: uv run --project apps/api --locked detect-private-key
+        entry: uv run --locked --no-env-file detect-private-key
         language: system
         types: [text]
       - id: check-added-large-files
         name: Check file sizes (1 MiB maximum)
-        entry: uv run --project apps/api --locked check-added-large-files --maxkb=1024 --enforce-all
+        entry: uv run --locked --no-env-file check-added-large-files --maxkb=1024 --enforce-all
         language: system
       - id: check-merge-conflict
         name: Check merge conflict markers
-        entry: uv run --project apps/api --locked check-merge-conflict --assume-in-merge
+        entry: uv run --locked --no-env-file check-merge-conflict --assume-in-merge
         language: system
         types: [text]
       - id: check-case-conflict
         name: Check filename case conflicts
-        entry: uv run --project apps/api --locked check-case-conflict
+        entry: uv run --locked --no-env-file check-case-conflict
         language: system
       - id: check-yaml
         name: Check YAML
-        entry: uv run --project apps/api --locked check-yaml
+        entry: uv run --locked --no-env-file check-yaml
         language: system
         types: [yaml]
         exclude: ^pnpm-lock\.yaml$
       - id: check-pnpm-lock-yaml
         name: Check pnpm's multi-document lockfile
-        entry: uv run --project apps/api --locked check-yaml --allow-multiple-documents
+        entry: uv run --locked --no-env-file check-yaml --allow-multiple-documents
         language: system
         files: ^pnpm-lock\.yaml$
       - id: check-toml
         name: Check TOML
-        entry: uv run --project apps/api --locked check-toml
+        entry: uv run --locked --no-env-file check-toml
         language: system
         types: [toml]
       - id: end-of-file-fixer
         name: Fix final newlines
-        entry: uv run --project apps/api --locked end-of-file-fixer
+        entry: uv run --locked --no-env-file end-of-file-fixer
         language: system
         types: [text]
       - id: trailing-whitespace
         name: Trim trailing whitespace
-        entry: uv run --project apps/api --locked trailing-whitespace-fixer --markdown-linebreak-ext=md
+        entry: uv run --locked --no-env-file trailing-whitespace-fixer --markdown-linebreak-ext=md
         language: system
         types: [text]
       - id: project-check

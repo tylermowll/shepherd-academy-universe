@@ -51,7 +51,7 @@ jobs:
       - name: Report synthetic browser failure context
         if: failure()
         run: |
-          python - <<'PYTHON'
+          uv run --locked --no-env-file python - <<'PYTHON'
           from pathlib import Path
           for path in Path("test-results").glob("*/error-context.md"):
               print(path)

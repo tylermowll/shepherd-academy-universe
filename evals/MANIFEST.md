@@ -32,7 +32,7 @@ ambiguity for review, without a photo-confirmation or hint-level requirement.
 Regenerate with:
 
 ```sh
-uv run --project apps/api --locked --no-env-file python scripts/generate-eval-fixtures.py
+uv run --locked --no-env-file python scripts/generate-eval-fixtures.py
 ```
 
 Pillow's bundled font retains its applicable distribution license; the fixture

@@ -18,7 +18,7 @@ from math_tutor.adapters.providers.config import ProviderConfig
 from math_tutor.adapters.providers.contracts import ModelRequest, ProviderError
 from math_tutor.providers import complete
 config = ProviderConfig(adapter="compatible", model="synthetic-disabled-v1")
-request = ModelRequest(operation_id=uuid4(), stage="tutor", model_id=config.model,
+request = ModelRequest(operation_id=uuid4(), stage="tutor", purpose="review", model_id=config.model,
     system_instruction="Synthetic process check", ordered_messages=[], response_schema={},
     timeout_seconds=5)
 try:

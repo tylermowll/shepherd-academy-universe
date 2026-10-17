@@ -69,7 +69,7 @@ def repository_root() -> Path:
     """
 
     for parent in Path(__file__).resolve().parents:
-        if (parent / "apps/api/pyproject.toml").is_file() and (parent / "Makefile").is_file():
+        if (parent / "pyproject.toml").is_file() and (parent / "Makefile").is_file():
             return parent
     raise ValueError(
         "Outside a checkout, configure an absolute MATH_TUTOR_DATA_DIR or DATABASE_URL."

@@ -18,6 +18,9 @@ then explicitly run `make migrate start`. Ctrl+C stops both services and preserv
 the persistent data. `make demo` is different: its temporary data is deleted when
 it stops. `make start` supports loopback HTTP or a configured private HTTPS
 gateway; `make dev` is loopback-only, and `make serve` requires the gateway.
+Run native commands from the repository root. `make bootstrap` installs the
+root Python manifest/lock into `.venv`, including development and CloudFormation
+validation tools on the same Python 3.15 runtime.
 `make dev-api` alone is a development API reload process;
 `make dev-web` alone is a frontend development server. Use the combined same-origin
 application for end-to-end practice. `/health/live` reports process liveness;
@@ -253,7 +256,7 @@ Account for exported downloads and old backups when fulfilling deletion requests
 Optional encrypted S3 transfer is an explicit operator CLI:
 
 ```bash
-uv run --project apps/api --locked python -m math_tutor.cloud_archive put --bucket YOUR_PRIVATE_BUCKET --region YOUR_REGION --key YOUR_BACKUP_UUID --file /private/backup/tutor.enc
+uv run --locked python -m math_tutor.cloud_archive put --bucket YOUR_PRIVATE_BUCKET --region YOUR_REGION --key YOUR_BACKUP_UUID --file /private/backup/tutor.enc
 ```
 
 `get` requires a new output file; `delete` removes the current key. Transfers are

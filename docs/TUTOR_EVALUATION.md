@@ -63,7 +63,7 @@ There is no adversarial live Make target. The evaluator supports an explicitly
 authorized staged run through its CLI:
 
 ```bash
-uv run --project apps/api --locked --no-env-file \
+uv run --locked --no-env-file \
   python -m math_tutor.reading_evaluation \
   --fixtures evals/fixtures/teaching-adversarial-v2.json \
   --output /tmp/shepherd-teaching-adversarial-live.json \
@@ -91,7 +91,7 @@ sends at most three synthetic math concept questions and writes
 directory and an explicit 1–30 call budget:
 
 ```bash
-uv run --project apps/api --locked --no-env-file \
+uv run --locked --no-env-file \
   python -m math_tutor.evaluation \
   --fixtures evals/fixtures/rational-v1.json \
   --output /tmp/shepherd-vision-diagnostic.json \

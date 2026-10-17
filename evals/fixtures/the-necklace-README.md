@@ -34,7 +34,7 @@ learner-facing answer keys or a model grading rubric.
 Run the contract rehearsal without inference:
 
 ```sh
-UV_NO_ENV_FILE=1 uv run --project apps/api --locked --no-env-file \
+UV_NO_ENV_FILE=1 uv run --locked --no-env-file \
   python -m math_tutor.reading_evaluation \
   --fixtures evals/fixtures/reading-necklace-v1.json \
   --output /tmp/shepherd-necklace-mock.json
