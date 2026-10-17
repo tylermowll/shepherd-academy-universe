@@ -137,7 +137,7 @@ test("long science material has independent section pacing, saved navigation and
   await expect(position).toHaveText(/Section 1 of \d+/);
   await expect(
     page.getByRole("region", { name: "Activity goal" }).first(),
-  ).toContainText("A sufficient response");
+  ).toContainText("What a complete response should include");
   const first = await passage.innerText();
   expect(first).toContain("Observation 1:");
   expect(first).not.toContain("Observation 36:");

@@ -155,8 +155,8 @@ export function PhoneCapture({ token }: { token: string }) {
           )}
           {pending && (
             <p className="notice">
-              Your photo is held on this screen while sending. Please do not
-              reload or close it.
+              Keep this screen open while your photo is sending. Reloading or
+              closing it can lose the photo.
             </p>
           )}
         </>

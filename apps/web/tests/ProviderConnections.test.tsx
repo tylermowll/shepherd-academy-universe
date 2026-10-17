@@ -205,7 +205,7 @@ describe("adult connection setup", () => {
     ["output_limit", "response token limit"],
     ["incomplete_output", "stopped without a complete response"],
     ["refusal", "declined the sample request"],
-    ["adapter_failure", "adapter error"],
+    ["adapter_failure", "could not process the model server's response"],
     ["unknown-provider-error", "No successful test was confirmed"],
     ["toString", "No successful test was confirmed"],
   ])(
@@ -811,7 +811,7 @@ describe("adult connection setup", () => {
       expect(
         screen.getByText(`Ready for ${role}.`, { exact: false }),
       ).toBeVisible();
-      expect(screen.getByText(/Other roles still need testing/)).toBeVisible();
+      expect(screen.getByText(/The other test is still needed/)).toBeVisible();
       fireEvent.click(screen.getByRole("button", { name: "Active models" }));
       expect(view.onSectionChange).toHaveBeenLastCalledWith("roles", true);
       view.showSection("tests");

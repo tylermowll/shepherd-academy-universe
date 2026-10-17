@@ -1,9 +1,9 @@
 # Computer tutor with an iPhone camera
 
 Run the tutor on one computer and send photos from an iPhone through an expiring
-QR link. The computer shows the model's reading before feedback and continues
-usable readings automatically. You can also sign in for full practice on the
-phone. Both workflows use the same private HTTPS address; no native iPhone app
+QR link. The computer shows the model's reading before feedback. If the reading
+is usable, feedback follows automatically. You can also sign in for full practice
+on the phone. Both workflows use the same private HTTPS address; no native iPhone app
 or public deployment is required.
 
 ## 1. Prepare the computer once
@@ -20,13 +20,13 @@ make start
 8000; otherwise it starts the native app. Keep any printed first-account setup
 link private. Existing accounts sign in at the printed app address.
 
-For an existing installation, stop all app/worker writes and back up retained
+For an existing installation, stop the API and worker and back up saved
 data before upgrading. If startup reports an old database schema, run
 `make migrate start` for a native app. For Docker, follow the
 [container upgrade instructions](RUNBOOK.md#container-package).
 
-Configuration/key entry below is for you to perform in your trusted local app,
-not for a coding agent to read. Never paste private files or keys into chat.
+Enter the settings and keys below in your trusted local app. Coding agents must
+not read them. Never paste private files or keys into chat.
 
 ## 2. Give the phone a reachable HTTPS address
 
@@ -46,8 +46,9 @@ those resets sign out the affected learners' browsers.
 ### Tailscale private access
 
 Install Tailscale on the computer and iPhone and join your private network.
-Review its current plan/terms, enable HTTPS for your tailnet, then run this on the
-computer to proxy the application privately:
+Review its current plan and terms, enable HTTPS for your private Tailscale network
+(tailnet), then run this on the computer to forward private HTTPS requests to
+the app:
 
 ```bash
 tailscale serve --bg --https=443 http://127.0.0.1:8000
@@ -56,8 +57,8 @@ tailscale serve --bg --https=443 http://127.0.0.1:8000
 Use the exact HTTPS URL reported by Tailscale (without a trailing slash) as
 `APP_PUBLIC_ORIGIN` in your local `.env`, for example
 `https://your-computer.your-tailnet.ts.net`. This setting's name does not make the
-application publicly accessible. Use **Serve**, which is private to your network;
-Funnel is a different, public feature and is not needed. Keep Tailscale connected
+application publicly accessible. Use **Serve**, which is private to your network.
+Funnel provides public access and is not needed. Keep Tailscale connected
 on the iPhone. The API still binds only to computer loopback, and both devices
 need access to the configured Tailscale host. Do not expose vLLM to the internet.
 
@@ -68,8 +69,9 @@ and [HTTPS setup](https://tailscale.com/docs/how-to/set-up-https-certificates).
 ### Entirely local Wi-Fi
 
 Use the existing [Caddy LAN setup](RUNBOOK.md#private-https-and-phones): a stable
-LAN address/name, `tls internal`, and your local CA installed and trusted on the
-computer and iPhone. Allow the gateway port on your private network. No domain
+local network address or name, `tls internal`, and your local certificate
+authority (CA) installed and trusted on the computer and iPhone. Allow the
+gateway port on your private network. No domain
 purchase, AWS, Cloudflare, or router port forwarding is required. Guests on an
 isolated Wi-Fi network may not be able to reach the computer. Open the HTTPS app
 successfully in Safari before trying its QR links; do not bypass certificate errors.
@@ -89,7 +91,7 @@ docker compose -f infra/docker/compose.yaml up -d --force-recreate
 make start
 ```
 
-`make start` detects and attaches to the standard running Docker app; it does
+`make start` detects and connects to the standard running Docker app; it does
 not start a second API or worker. Leave the containers running behind the HTTPS
 gateway. Do not run `make serve` while Docker owns port 8000.
 
@@ -102,7 +104,7 @@ Then run:
 make serve
 ```
 
-This loads your existing private settings, builds the app and supervises one API
+This loads your existing private settings, builds the app and runs one API
 on `127.0.0.1:8000` and one worker behind the gateway. Ctrl+C stops the app/worker
 and preserves data; it does not stop Tailscale Serve or Caddy. For computer-only
 HTTP use `make start`.
@@ -113,15 +115,15 @@ administrator before continuing.
 ## 4. Configure actual tutoring and handwriting models
 
 Follow [provider setup](PROVIDER_STATUS.md#test-and-select-the-tutor-and-photo-reader)
-in administrator **Settings**: save the exact connection and data policy,
+in administrator **Settings**: save the connection details and data policy,
 explicitly test **Tutor** and **Photo reader**, then select both under
 **Active models**. The provider guide includes native/Docker endpoint examples.
 Saving or testing a connection does not activate it. Tests use synthetic data,
 may incur charges and require explicit authorization.
 
-The image-capable model can serve both roles. The default `demo` mock cannot
+A model that supports images can serve both roles. The default `demo` mock cannot
 teach or recognize arbitrary handwriting. A cloud tutor receives photo
-transcriptions even if the reader is local; review both roles' data boundaries.
+transcriptions even if the reader is local; review where each role sends data.
 The app computer must reach the model server. The iPhone never calls it directly.
 
 ## 5. Create a learner account and start practice
@@ -130,10 +132,11 @@ Create a learner account under **Learners**, record its username and password
 securely, then sign out. Sign in with that learner account and open **Practice**.
 Enter a topic; **Tutor options** controls how much the tutor leads. Choose
 **Start session** to create both the session and its first practice activity. No
-grade level or skill catalog is required.
+grade level or predefined skill list is required.
 
 To study from homework, paste it or use the reference-photo option. The tutor
-creates distinct practice rather than answering the original.
+creates different practice on the same concepts rather than answering the
+original.
 
 ## 6. Use your iPhone
 
@@ -150,12 +153,13 @@ account sign-in is separate from sending a photo through the QR link.
 
 The in-app **Help → Phone setup** page also explains these workflows.
 
-Return to the computer. Within the normal polling interval, the photo's processing
-status appears in session history. The app displays the full reading and any
+Return to the computer. The photo's processing status appears in session history
+when the app next checks for updates. The app displays the full reading and any
 necessary readability advice. A usable reading proceeds to guidance
 automatically—do not wait for a confirmation control. If the model reports
 essential unreadable content, automatic photo tutoring stops and asks for a
-specific clarification. Incidental uncertainty does not block useful feedback.
+specific clarification. Uncertainty about a detail that does not affect feedback
+does not block it.
 You can ask why the reader rejected the photo in the same conversation; its
 report remains available as explicitly uncertain context. Clarify the relevant
 line or send a clearer section when needed. Model confidence is not
@@ -164,18 +168,19 @@ or submit a corrected response.
 
 Read the guidance, revise on paper and send another photo, or discuss the concepts
 in text. Request a next activity when ready; the tutor uses recent work and your
-initiative setting. It explains and uses different relevant examples rather than
-giving the current answer or finishing your homework.
+setting for how much the tutor leads. It explains and uses different relevant
+examples rather than giving the current answer or finishing your homework.
 
 Links last two hours and accept one photo. Keep the phone page open while an
 upload is pending; its retry button resends the same photo without creating a
 second operation. If you reload or close it, rescan the original QR to check its
 receipt, or choose **New QR code** on the computer if it expired. A new link cancels
-the previous link. Logout/revocation, deletion, changed processing settings, or
-finishing/changing the problem invalidates unused links. Links expose neither
-history nor grading/admin actions; nevertheless, keep the QR private.
+the previous link. Signing out, revoking access, deleting data, changing
+processing settings, or finishing or changing the problem invalidates unused
+links. Links give no access to history, grading or administrator actions. Keep
+the QR private.
 
-The photo selector sends the original to your computer for private normalization
+The photo selector sends the original to your computer for private image conversion
 before preview; the model receives only the submitted preview/crop. The current
 limit is 8 MiB and 25 million decoded pixels (allowing 24 MP-class photos).
 If the original is too large, use a lower-resolution camera image; 48 MP and RAW
@@ -185,18 +190,19 @@ photos expire within 24 hours; the worker must be running to perform cleanup.
 
 ## If something is unavailable
 
-- No phone-photo button: check the worker, configured vision route, probe, learner
-  eligibility, and the status message above the photo controls. Demo mode blocks
+- No phone-photo button: check that the worker is running, a photo reader is selected,
+  its connection test is current, and it permits this learner. Read the status
+  message above the photo controls. Demo mode blocks
   uploads; use private mode. An active operation must finish or be canceled first.
 - QR opens localhost or cannot connect: reopen the computer app at the configured
   HTTPS address. Check the phone's network/Tailscale connection and trusted certificate.
-- Synthetic/unreadable message mentioning mock: select a real, successfully
-  probed vision route. Mock tests do not measure handwriting quality.
-- Photo accepted but reading fails: inspect the safe operation error and provider
-  settings, then use the computer's operation retry. Cloud fallback is never automatic.
-- Reading rejected: follow the legibility/organization advice and retake it.
-  Do not repeatedly retry inference on a genuinely unreadable image.
-- Generic or poor guidance: confirm a real tutor route is selected. The application
+- Synthetic/unreadable message mentioning mock: select a real photo reader with
+  a passing connection test. Mock tests do not measure handwriting quality.
+- Photo accepted but reading fails: read the error shown by the app and check provider
+  settings, then retry from the computer. Cloud fallback is never automatic.
+- Reading rejected: follow the advice about unclear or disordered work and retake it.
+  Do not repeatedly ask the model to read an unreadable image.
+- Generic or poor guidance: confirm a real tutor is selected. The application
   does not limit you to fixed math templates, but models differ in subject,
   handwriting, and teaching quality. Evaluate the exact configured model.
 

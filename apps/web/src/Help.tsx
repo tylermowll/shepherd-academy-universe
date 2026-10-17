@@ -78,8 +78,8 @@ export function HelpPage({
                 <li>
                   Enter a topic, such as “writing a persuasive paragraph.” Start
                   the session to create your first activity from that topic or
-                  reference material. Choose Easier, Standard, or Harder to set
-                  the level; you can change it during the session.
+                  reference material. Choose Easier, Standard, or Harder for
+                  activity difficulty; you can change it during the session.
                 </li>
                 <li>
                   Write your work or question and choose <strong>Send</strong>.
@@ -108,18 +108,17 @@ export function HelpPage({
               <ContextHelp topic="How do I practice reading comprehension?">
                 <p>
                   Choose a pasted or photographed passage, let the tutor write
-                  an original passage, or load an offered published story or
-                  news passage. The passage is saved separately from its
-                  question. Next activity options keep using that text; choose
-                  different practice material to change it. Published text has a
-                  preview and source attribution. A book title alone cannot
-                  supply its text.
+                  an original passage, or choose Published story or news. Review
+                  the preview and source details before starting. Next activity
+                  options keep using the same text; choose different practice
+                  material to change it. Include the passage itself; a book
+                  title alone does not give the tutor its text.
                 </p>
               </ContextHelp>
               <ContextHelp topic="Why is Start session unavailable?">
                 <p>
-                  The demo cannot accept personal work. A private app and an
-                  enabled tutor are needed. Follow{" "}
+                  The demo cannot accept personal work. A private app and a
+                  selected AI tutor are needed. Follow{" "}
                   {link("help", "Set up the app", "setup")}; an adult can check
                   the selected model in {link("settings", "Settings")}.
                 </p>
@@ -151,8 +150,8 @@ export function HelpPage({
               <h3>If you also want to study</h3>
               <p>
                 Create one learner account for your own saved work. Sign out of
-                the administrator account, then sign in with those learner
-                credentials.
+                the administrator account, then sign in with that learner's
+                username and password.
               </p>
               <h3>Passwords and signed-in browsers</h3>
               <p>
@@ -204,13 +203,13 @@ export function HelpPage({
                 {link("learners", "Learners")}.
               </p>
               <p>
-                A learner sign-in opens their practice and history. The photo QR
-                only connects the camera; it does not open an account or give
+                Signing in opens the learner's practice and history. The photo
+                QR code allows one photo upload; it does not sign you in or give
                 access to saved work.
               </p>
               <ContextHelp topic="Set up a shared HTTPS address">
                 <p>
-                  The app must run in private mode first. If you started it with{" "}
+                  Start your own private app first. If you started it with{" "}
                   <code>make demo</code>, follow{" "}
                   {link("help", "Set up the app", "setup")} before continuing.
                 </p>
@@ -255,8 +254,8 @@ export function HelpPage({
                   >
                     HTTPS setup
                   </a>
-                  . A LAN-only Caddy alternative is documented in{" "}
-                  <code>docs/PHONE_SETUP.md</code> in your checkout.
+                  . For a Caddy alternative on your local network, see{" "}
+                  <code>docs/PHONE_SETUP.md</code> in the project folder.
                 </p>
               </ContextHelp>
             </>
@@ -264,14 +263,14 @@ export function HelpPage({
           {selected[0] === "setup" && (
             <>
               <p>
-                <code>make demo</code> is a disposable preview. It deliberately
-                blocks tutoring and personal photos. Follow these steps for a
-                private workspace.
+                <code>make demo</code> previews the app with sample data. It
+                blocks tutoring and personal photos. Follow these steps to start
+                your own private app.
               </p>
               <h3>First setup on your computer</h3>
               <p>
                 Stop the demo with Ctrl+C. In the project folder, after
-                installing the prerequisites in README:
+                installing the required tools listed in README:
               </p>
               <pre>
                 <code>{"make bootstrap\nmake start"}</code>
@@ -279,7 +278,7 @@ export function HelpPage({
               <p>
                 The first start prints a{" "}
                 <strong>Create administrator account</strong> link. Open that
-                link and choose your login and password here in the browser.
+                link and choose your username and password here in the browser.
                 Localhost needs at least six characters; phone or HTTPS access
                 needs twelve. No uppercase or symbol rules apply. Invalid input
                 stays on the form so you can correct it.
@@ -304,7 +303,7 @@ export function HelpPage({
               </p>
               <h3>Finish setup</h3>
               <p>
-                The default model returns synthetic test responses.{" "}
+                The default model returns sample responses for testing.{" "}
                 {link("help", "Connect an AI model", "providers")} for actual
                 tutoring. To add your phone, follow{" "}
                 {link("help", "Phone setup", "phone")}.
@@ -320,7 +319,7 @@ export function HelpPage({
               </p>
               <ol className="steps">
                 <li>
-                  Open {link("settings", "Settings")} and use the{" "}
+                  Open {link("settings", "Settings")} and choose{" "}
                   <strong>Add new AI connection</strong>. Select Ollama, vLLM,
                   or your API type. Enter the server URL, exact model name, and
                   an API key if required, then save. Saving does not activate
@@ -339,36 +338,37 @@ export function HelpPage({
                 </li>
                 <li>
                   Open <strong>Active models</strong>. Choose the tutor and
-                  photo reader for future learner work, authorize the
-                  destinations, and save. Then open{" "}
-                  {link("learners", "Learners")}
-                  and create a learner account. That learner signs in separately
-                  to practice.
+                  photo reader for future learner work, approve where that work
+                  will be sent, and save. Then open{" "}
+                  {link("learners", "Learners")} and create a learner account.
+                  That learner signs in separately to practice.
                 </li>
               </ol>
               <p>
                 A saved connection can be selected before it is ready; the
-                assignment step then names each missing permission or test and
-                links to the step that fixes it. Demo cannot teach or read
+                selection form names each missing permission or test and links
+                to the step that fixes it. The demo cannot teach or read
                 handwriting. The app does not install or download models.
               </p>
               <ContextHelp topic="What is the model context limit?">
                 <p>
-                  It is the model server&apos;s documented total context window,
-                  including input and output tokens—not the desired response
-                  length and not memory reserved by this app. Enter the value
-                  supported by the exact model/server combination. Million-token
-                  windows are accepted; ordinary tutoring requests remain much
-                  smaller and separately bounded.
+                  This is the maximum amount the model can handle in one
+                  request, including the input and its reply. It is measured in
+                  tokens, the units a model uses to count input and output.
+                  Enter the limit documented for your exact model and server.
+                  This setting does not reserve memory or set the reply length.
+                  The app accepts limits of a million tokens, while keeping
+                  ordinary tutoring requests much smaller.
                 </p>
               </ContextHelp>
               <ContextHelp topic="Where do I enter an API key?">
                 <p>
-                  In the adult <strong>Add new AI connection</strong> form in{" "}
-                  {link("settings", "Settings")}. Saved keys are encrypted on
-                  the app server and are never returned to the browser. Editing
-                  lets you keep, replace, or remove a key. Keep keys out of chat
-                  and source control; only enter them into your own trusted app.
+                  In the administrator's <strong>Add new AI connection</strong>{" "}
+                  form in {link("settings", "Settings")}. Saved keys are
+                  encrypted on the app server and are never returned to the
+                  browser. Editing lets you keep, replace, or remove a key. Keep
+                  keys out of chat and source control; only enter them into your
+                  own trusted app.
                 </p>
               </ContextHelp>
               <ContextHelp topic="What server URL and model name do I use?">
@@ -384,21 +384,21 @@ export function HelpPage({
                 </p>
                 <p>
                   These addresses are reached from the app server, not from your
-                  phone. A host model used from Docker must listen on an
-                  interface Docker can reach; keep it behind the computer
-                  firewall and do not expose it to the public Internet. If the
-                  model runs elsewhere, use its reachable private address. A
-                  text-only model cannot read photos; enable photo support only
-                  for an image-capable model and test it.
+                  phone. A host model used from Docker must listen on a network
+                  address Docker can reach; keep it behind the computer firewall
+                  and do not expose it to the public Internet. If the model runs
+                  elsewhere, use its reachable private address. A text-only
+                  model cannot read photos; enable photo support only for an
+                  image-capable model and test it.
                 </p>
               </ContextHelp>
               <ContextHelp topic="Can children use a Meta or Llama model?">
                 <p>
                   For Meta&apos;s hosted API, choose the allowed users only
                   after checking the current age and data terms for your
-                  account. The app records and enforces your selection, but does
-                  not certify that a provider permits it. The hosted location is
-                  fixed to cloud processing.
+                  account. The app enforces your selection but cannot confirm
+                  that the provider permits those age groups. Meta's hosted API
+                  always uses cloud processing.
                 </p>
                 <p>
                   To serve a Meta/Llama model on your own computer or private
@@ -408,32 +408,33 @@ export function HelpPage({
               </ContextHelp>
               <ContextHelp topic="Why is a setting managed by the server?">
                 <p>
-                  An operator can lock cloud access or audience policy in the
-                  deployment environment. Settings shows those restrictions and
-                  cannot bypass them. Connections from an operator-managed
-                  provider file are read-only here; add a separate connection to
-                  manage one in the app. Bedrock continues to use the
-                  operator&apos;s workload credentials and provider file.
+                  The person running the server can restrict cloud access and
+                  allowed age groups in the server settings. Settings shows
+                  those restrictions and cannot bypass them. Connections loaded
+                  from a server configuration file cannot be edited here; add a
+                  separate connection to manage it in the app. Bedrock uses the
+                  AWS credentials and provider file configured on the server.
                 </p>
               </ContextHelp>
               <ContextHelp topic="What happens to keys after a restore?">
                 <p>
-                  Keep your deployment secret backed up privately with your
-                  operational settings. Saved API keys need that same secret to
-                  be decrypted. If it changes or is lost, edit each affected
+                  Keep your server's session secret backed up privately with its
+                  settings. Saved API keys need that same secret to be
+                  decrypted. If it changes or is lost, edit each affected
                   connection and enter its key again, then retest it. Never
                   paste your settings file into chat.
                 </p>
               </ContextHelp>
               <ContextHelp topic="Why is a model unavailable for a learner?">
                 <p>
-                  The server checks the learner’s age category, the provider’s
-                  allowed audience, image support, and whether cloud processing
-                  was enabled by the adult. Check those settings and the failed
-                  test message before choosing a model. Tests expire after seven
-                  days. After editing a connection, retest it and save your
-                  tutor/photo selections again to approve the changed settings
-                  before new learner requests use them.
+                  The server checks the learner’s age group, the age groups
+                  allowed by the connection, image support, and whether cloud
+                  processing was enabled by the administrator. Check those
+                  settings and the failed test message before choosing a model.
+                  Tests expire after seven days. After editing a connection,
+                  retest it and save your tutor/photo selections again to
+                  approve the changed settings before new learner requests use
+                  them.
                 </p>
               </ContextHelp>
             </>
@@ -458,9 +459,9 @@ export function HelpPage({
               </ContextHelp>
               <ContextHelp topic="An activity or photo is stuck">
                 <p>
-                  Check that the computer’s API and worker are running.
-                  Reconnect and reopen the session in History. Use the retry
-                  button on the failed request; it keeps the original
+                  Check that the app server and its background worker are
+                  running. Reconnect and reopen the session in History. Use the
+                  retry button on the failed request; it keeps the original
                   submission. If a provider test fails, check Settings and its
                   server configuration.
                 </p>
@@ -475,19 +476,20 @@ export function HelpPage({
               </ContextHelp>
               <ContextHelp topic="My photo is rejected">
                 <p>
-                  Use JPEG, PNG, WebP, HEIC, or HEIF under 8 MiB and 25 million
-                  pixels. Crop to the work or use a lower-resolution photo. PDFs
-                  and screenshots containing unreadably small writing will need
-                  a new image.
+                  Use JPEG, PNG, WebP, HEIC, or HEIF, up to 8 MiB and 25 million
+                  pixels. Crop to the work or use a smaller photo. PDFs and
+                  screenshots containing unreadably small writing will need a
+                  new image.
                 </p>
               </ContextHelp>
-              <ContextHelp topic="I forgot the adult password">
+              <ContextHelp topic="I forgot the administrator password">
                 <p>
                   The person running the app can run <code>make admin</code> in
                   the terminal and enter the existing login name to reset its
                   password. Saved settings load automatically. This signs that
-                  adult out on other browsers without deleting learners or work.
-                  This recovery step is separate from first-time browser setup.
+                  administrator out on other browsers without deleting learners
+                  or work. This recovery step is separate from first-time
+                  browser setup.
                 </p>
               </ContextHelp>
               <ContextHelp topic="My local password stops phone access">
@@ -514,21 +516,21 @@ export function HelpPage({
                 Photos are removed after processing. Failed or unprocessed
                 photos expire within 24 hours by default. Later review uses the
                 saved text. Session history is kept for 30 days by default; the
-                operator may change retention.
+                person running the server can change how long work is kept.
               </p>
               <p>
-                Troubleshooting records keep the model, operation, outcome,
+                Troubleshooting records keep the model, request type, outcome,
                 timing, and available token counts. They do not copy your
                 questions, answers, photos, or API keys. Submitted conversation
-                content remains in session history under the retention rules
+                content remains in session history for the period described
                 above. The app does not make special copies of concerning
                 messages or send safety alerts.
               </p>
               <p>
                 Practice shows where text and photos are processed. A cloud
-                model receives the selected content only after the adult enables
-                that service. Provider retention and existing backups have their
-                own rules.
+                model receives the selected content only after the administrator
+                enables that service. The provider and existing backups have
+                separate rules for how long they keep data.
               </p>
               <p>
                 AI feedback can be wrong. It is guidance, not a verified grade.

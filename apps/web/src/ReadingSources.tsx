@@ -28,7 +28,7 @@ export function ReadingSources({
       .catch(() => {
         if (revision.current === current)
           setError(
-            "Published sources could not be listed. Reopen this source option to try again.",
+            "Published sources could not be loaded. Choose another Practice source, then choose Published story or news again to retry.",
           );
       });
     return () => {
@@ -57,8 +57,9 @@ export function ReadingSources({
         </select>
       </label>
       <p className="fine">
-        Load public text from the selected source. This sends no learner work to
-        that website. Starting practice then uses your configured tutor.
+        Load a passage from the selected website. Your work is not sent to that
+        website. When you start practice, the passage is sent to the tutor
+        selected for this app.
       </p>
       <button
         type="button"

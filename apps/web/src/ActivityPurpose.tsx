@@ -18,7 +18,7 @@ export function ActivityPurpose({
       {criteria.length > 0 && (
         <>
           <p>
-            <strong>A sufficient response:</strong>
+            <strong>What a complete response should include:</strong>
           </p>
           <ul>
             {criteria.map((criterion, index) => (

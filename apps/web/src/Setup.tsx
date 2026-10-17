@@ -9,13 +9,13 @@ const setupErrors: Record<string, string> = {
   setup_unavailable:
     "Account setup is not available with this link. Open a new link from the app’s terminal.",
   setup_session_expired:
-    "Setup permission has ended. Open a new setup link from the app’s terminal.",
+    "Your time to finish setup has expired. Open a new setup link from the app’s terminal.",
   setup_claimed:
     "An administrator account already exists. Sign in with that account.",
   password_mismatch:
     "The passwords do not match. Enter the same password in both fields.",
   invalid_credentials:
-    "Check the login name and password requirements, then try again.",
+    "Check the username and password requirements, then try again.",
   setup_rate_limited:
     "Too many setup attempts. Wait a few minutes, then try again.",
 };
@@ -118,11 +118,11 @@ export function Setup({
     const length = Array.from(password).length;
     const next = {
       login: !login.trim()
-        ? "Enter a login name."
+        ? "Enter a username."
         : Array.from(login.trim()).length > 64
-          ? "Use no more than 64 characters for the login name."
+          ? "Use no more than 64 characters for the username."
           : /\p{C}/u.test(login)
-            ? "Remove invisible or control characters from the login name."
+            ? "Remove invisible or control characters from the username."
             : "",
       password: !password
         ? "Enter a password."
@@ -190,7 +190,7 @@ export function Setup({
         code && Object.hasOwn(setupErrors, code)
           ? (setupErrors[code] ?? "Could not create the account. Try again.")
           : cause instanceof ApiError && cause.status === 403
-            ? "Could not confirm setup permission. Try creating the account again."
+            ? "Could not confirm access to setup. Try creating the account again."
             : "Could not create the account. Check that the app is running, then try again.",
       );
       if (
@@ -273,8 +273,8 @@ export function Setup({
             stop that run first. Choose your password here in the browser.
           </p>
           <p className="fine">
-            Keep the link private. Once opened, setup permission survives
-            refreshes and app restarts in this browser.
+            Keep the link private. After opening it, you can refresh the page or
+            restart the app and continue setup in this browser.
           </p>
         </div>
       ) : (
@@ -361,8 +361,8 @@ export function Setup({
             </p>
           )}
           <p className="fine">
-            Your password is not saved in browser storage. Help keeps this form
-            open; reloading or closing the tab clears unsent entries.
+            Your password is not saved in browser storage. Opening Help keeps
+            this form open; reloading or closing the tab clears unsent entries.
           </p>
           <div className="actions">
             <button className="primary" disabled={busy}>

@@ -56,7 +56,9 @@ it("keeps later photo uncertainty notes out of an earlier guided section", () =>
       }}
     />,
   );
-  expect(screen.getByText(/photo reader reported uncertainty/)).toBeVisible();
+  expect(
+    screen.getByText(/Some words in the photo may have been misread/),
+  ).toBeVisible();
   expect(screen.queryByText(/later surprising result/i)).toBeNull();
 });
 

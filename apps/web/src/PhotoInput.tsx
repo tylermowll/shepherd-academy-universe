@@ -178,8 +178,8 @@ export function PhotoInput({
           ? "Photograph the reference material. The tutor will create related practice and will not solve the original assignment."
           : "Include the whole page, use good lighting, and keep your writing in focus. You will see the photo reading before the feedback."}{" "}
         {companionToken
-          ? "If camera access is unavailable, return to your computer to enter an answer."
-          : "Typed answers remain available if camera access is denied."}
+          ? "If you cannot use the camera, return to your computer to type your work."
+          : "You can also type your work if you cannot use the camera."}
       </p>
       <fieldset disabled={disabled || working || pending !== null}>
         <div
@@ -317,8 +317,9 @@ export function PhotoInput({
       {pending && !working && (
         <div role="status" className="notice">
           <p>
-            The server has not acknowledged your photograph. Retry the saved
-            photograph to recover its submission.
+            Your photo may have reached the server. Choose Retry saved
+            photograph to check or send the same photo without creating a
+            duplicate.
           </p>
           <button
             onClick={() => void act(() => sendPhoto(pending))}

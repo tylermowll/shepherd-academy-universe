@@ -321,8 +321,8 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
       />
       {offline && (
         <p role="status" className="notice">
-          You are offline. Server tutoring and uploads are unavailable. Saved
-          operations continue on the server.
+          You are offline. Reconnect to use the tutor or upload photos. Requests
+          already saved on the server can keep running.
         </p>
       )}
       {error && (

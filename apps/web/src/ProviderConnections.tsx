@@ -84,7 +84,7 @@ function saveError(cause: unknown, draft: Draft) {
     : "Could not save this connection. ";
   if (cause instanceof ApiError) {
     if (cause.status === 401 || cause.status === 403)
-      return `${prefix}Your administrator sign-in is no longer authorized. Sign in again, then retry.`;
+      return `${prefix}Your administrator sign-in is no longer valid. Sign in again, then retry.`;
     if (cause.status === 404)
       return `${prefix}This connection was deleted. Cancel this editor, choose Add new AI connection, and add it again.`;
     if (cause.status === 409) {
@@ -114,7 +114,7 @@ function connectionActionError(
     : `${provider.enabled ? "disable" : "enable"} ${provider.id}`;
   if (cause instanceof ApiError) {
     if (cause.status === 401 || cause.status === 403)
-      return `Could not ${action}. Your administrator sign-in is no longer authorized.`;
+      return `Could not ${action}. Your administrator sign-in is no longer valid. Sign in again, then retry.`;
     if (cause.status === 404)
       return `Could not ${action}. That connection no longer exists; refresh Saved connections.`;
     if (knownSafeConnectionDetails.has(cause.message))
@@ -143,7 +143,7 @@ const probeMessages = {
   invalid_endpoint:
     "The server address is blocked or does not match its network setting. Check Server address and Where this model runs; hosted services need the cloud setting.",
   unsupported_modality:
-    "This model does not support the selected test. For photos, use a vision-capable model and enable This model supports photo input.",
+    "This model does not support the selected test. For photos, use a model that can read images and enable This model supports photo input.",
   throttled:
     "The model server is limiting requests. Wait before testing again, and check the provider's usage limits.",
   probe_reading_failed:
@@ -155,7 +155,7 @@ const probeMessages = {
   refusal:
     "The model declined the sample request. The test did not pass; no automatic retry was made.",
   adapter_failure:
-    "The app could not process the model server's response. This is an adapter error; the provider may have completed and charged for the request.",
+    "The app could not process the model server's response. The provider may have completed and charged for the request.",
 } as const;
 
 function probeError(cause: unknown) {
@@ -170,7 +170,7 @@ function probeError(cause: unknown) {
     if (cause.code && Object.hasOwn(probeMessages, cause.code))
       return `${step}${probeMessages[cause.code as keyof typeof probeMessages]} (HTTP ${cause.status}; ${cause.code})`;
     if (cause.status === 401 || cause.status === 403)
-      return "Your adult sign-in is no longer authorized. Sign in again before testing this connection.";
+      return "Your administrator sign-in is no longer valid. Sign in again before testing this connection.";
     if (cause.status === 409)
       return "The connection or data & privacy settings changed during the test. Refresh connections, then test the current settings again.";
     if (cause.status === 429)
@@ -497,7 +497,7 @@ export function ProviderConnections({
               </h3>
               <p className="fine">
                 Saving stores the connection on your server. It does not call
-                the model or change the providers used for practice. Leaving
+                the model or change the active models used for practice. Leaving
                 Settings discards unsaved entries, including the API key.
               </p>
               <fieldset disabled={busy}>
@@ -855,10 +855,11 @@ export function ProviderConnections({
                     />
                   </label>
                   <p className="fine">
-                    Enter the model server&apos;s total context window in
-                    tokens. Million-token windows are supported. This is a
-                    budgeting limit, not a response length or a memory
-                    allocation.
+                    Enter the model server&apos;s total context limit in tokens,
+                    the small pieces of text a model processes. This limit
+                    covers the request and response together. Limits of a
+                    million tokens are supported. Changing this setting does not
+                    allocate memory on the model server.
                   </p>
                   <label>
                     Model response limit
@@ -912,8 +913,9 @@ export function ProviderConnections({
                         Provider default leaves the choice to Meta; it does not
                         mean High. More thinking can take longer and use more
                         output tokens. This does not change practice difficulty.
-                        Save, retest both roles, and assign active connections
-                        after changing it.
+                        After changing it, save, rerun the tutor and
+                        photo-reader tests, then save your choices in Active
+                        models.
                       </p>
                     </>
                   )}
@@ -1080,7 +1082,7 @@ export function ProviderConnections({
                         {needsTest && (
                           <>
                             {" "}
-                            Other roles still need testing.{" "}
+                            The other test is still needed.{" "}
                             <button onClick={() => openSection("tests")}>
                               Test this connection
                             </button>
@@ -1268,8 +1270,8 @@ export function ProviderConnections({
                     (provider.tutor_probed ||
                       (provider.image_input && provider.vision_probed)) && (
                       <p className="notice">
-                        Assign this connection to a role whose test has passed
-                        in the final step.{" "}
+                        Use this connection as the tutor or photo reader once
+                        its matching test has passed. Select it in{" "}
                         <button onClick={() => openSection("roles")}>
                           Active models
                         </button>
@@ -1318,7 +1320,7 @@ export function ProviderConnections({
                               setErrorSection("tests");
                               setError(
                                 tested
-                                  ? "The test completed, but its results could not be refreshed. Refresh status before assigning active connections."
+                                  ? "The test completed, but its results could not be refreshed. Refresh status before choosing active models."
                                   : `${provider.id} test failed. ${probeError(cause)}`,
                               );
                               if (!tested) {
@@ -1367,8 +1369,7 @@ export function ProviderConnections({
               </h2>
               <p>
                 Choose whether learner work may go to cloud AI, and which age
-                groups use this installation. These settings apply to every
-                connection.
+                groups use this app. These settings apply to every connection.
               </p>
             </div>
           </div>
@@ -1419,7 +1420,7 @@ function ProviderPolicy({
             await onChanged();
           } catch {
             setError(
-              "Data & privacy could not be changed. Check your adult sign-in and the server-managed restrictions, then retry.",
+              "Data & privacy could not be changed. Check your administrator sign-in and any restrictions set by the person running the server, then retry.",
             );
           } finally {
             setBusy(false);
@@ -1446,8 +1447,8 @@ function ProviderPolicy({
       </label>
       {policy.audience_locked && (
         <p className="fine">
-          The server administrator has locked the app audience. Contact them to
-          change it.
+          The server administrator has locked the age-group setting. Contact
+          them to change it.
         </p>
       )}
       <label className="check">
@@ -1468,9 +1469,10 @@ function ProviderPolicy({
         </p>
       )}
       <p className="fine">
-        Cloud providers receive the content for their selected role. A cloud
-        tutor receives text read from photos, even if a local model reads the
-        image. Enabling this permission alone sends no requests.
+        A cloud tutor receives the conversation. A cloud photo reader receives
+        submitted images. A cloud tutor also receives text read from photos,
+        even if a local model reads the image. Enabling this permission alone
+        sends no requests.
       </p>
       <button disabled={busy || policy.demo_mode}>
         Save data & privacy settings

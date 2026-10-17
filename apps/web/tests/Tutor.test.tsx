@@ -523,7 +523,9 @@ describe("AI learning conversation", () => {
       difficulty: "introductory",
     });
     expect(
-      screen.getByText(/Supplied homework is used for related practice only/),
+      screen.getByText(
+        /Homework is used to create different practice on the same concepts/,
+      ),
     ).toBeVisible();
     expect(screen.queryByRole("button", { name: /Full solution/ })).toBeNull();
   });
@@ -1833,7 +1835,9 @@ it("keeps an unaccepted request blocked until server resolution prevents a late 
   });
   vi.stubGlobal("fetch", fetcher);
   render(<Tutor learner={learner} offline={false} act={run} />);
-  await screen.findByText(/The interrupted request has no saved receipt yet/);
+  await screen.findByText(
+    /The server has not confirmed whether your request was saved/,
+  );
   expect(screen.getByLabelText("Topic or learning goal")).toBeDisabled();
   expect(screen.getByRole("button", { name: "Start session" })).toBeDisabled();
   expect(
@@ -1854,7 +1858,7 @@ it("keeps an unaccepted request blocked until server resolution prevents a late 
   fireEvent.click(
     screen.getByRole("button", { name: "Resolve interrupted request" }),
   );
-  await screen.findByText(/was not saved and cannot arrive later/);
+  await screen.findByText(/The server will reject it if it arrives later/);
   expect(resolutions).toBe(1);
   expect(screen.getByLabelText("Topic or learning goal")).toBeEnabled();
   expect(

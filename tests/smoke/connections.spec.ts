@@ -349,7 +349,7 @@ test("a saved connection stays selectable while setup blockers point to their ex
     await expect(photoReader).toHaveValue(id);
     await expect(
       page.getByText(
-        "Its Allowed users setting does not match the app-wide audience.",
+        "Its Allowed users setting does not match who uses the app.",
       ),
     ).toHaveCount(2);
     await expect(
@@ -366,7 +366,7 @@ test("a saved connection stays selectable while setup blockers point to their ex
     ).toHaveCount(2);
     await page
       .getByLabel(
-        "I authorize these app-wide connections to process future learner text and photos.",
+        "I authorize these connections to process future text and photos from every learner.",
         { exact: true },
       )
       .check();
@@ -396,7 +396,7 @@ test("a saved connection stays selectable while setup blockers point to their ex
     });
     await expect(appAudience).toHaveValue("mixed");
     await expect(appAudience).toBeDisabled();
-    await expect(page.getByText(/locked the app audience/i)).toBeVisible();
+    await expect(page.getByText(/locked the age-group setting/i)).toBeVisible();
 
     const settings = await page.request.get("/api/v1/admin/providers");
     const body = (await settings.json()) as {
@@ -585,7 +585,7 @@ for (const adapter of ["vllm", "ollama", "compatible"] as const) {
         .selectOption(id);
       await page
         .getByLabel(
-          "I authorize these app-wide connections to process future learner text and photos.",
+          "I authorize these connections to process future text and photos from every learner.",
           { exact: true },
         )
         .check();
@@ -596,9 +596,7 @@ for (const adapter of ["vllm", "ollama", "compatible"] as const) {
         })
         .click();
       await expect(
-        page
-          .getByRole("status")
-          .filter({ hasText: "Active connections saved" }),
+        page.getByRole("status").filter({ hasText: "Active models saved" }),
       ).toBeVisible();
 
       await page.reload();

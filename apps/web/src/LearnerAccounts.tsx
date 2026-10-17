@@ -259,7 +259,7 @@ export function LearnerAccounts({
                     if (current()) {
                       setMessage(
                         password
-                          ? "Password changed. Previous learner sign-ins have ended."
+                          ? "Password changed. This learner's browsers are signed out."
                           : "Username saved.",
                       );
                       setDeviceRefresh((value) => value + 1);
@@ -302,8 +302,8 @@ export function LearnerAccounts({
                 <h3>Signed-in browsers</h3>
                 <p>
                   These browsers can access {chosen.alias}'s practice and
-                  history. The phone photo QR does not sign a browser into this
-                  account.
+                  history. Scanning the photo QR code does not sign a browser
+                  into this account.
                 </p>
                 <button
                   disabled={busy}

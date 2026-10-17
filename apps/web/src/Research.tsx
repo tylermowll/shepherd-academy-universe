@@ -180,14 +180,14 @@ export default function Research() {
     <section className="card">
       <h2>Browser model research</h2>
       <p>
-        This separate text-only experiment uses synthetic questions and never
-        changes server practice results. No device has been certified.
-        Small-model output can be wrong.
+        This text-only experiment uses sample questions and keeps its results
+        separate from learner practice. Performance on real devices still needs
+        testing. The model's answers can be wrong.
       </p>
       <p>
         {manifest.model_id}; approximately {Math.ceil(bytes / 1024 / 1024)} MiB
-        of pinned artifacts. The publisher estimates about 360 MB of GPU memory;
-        actual device use still needs measurement.
+        of files from fixed versions. The publisher estimates about 360 MB of
+        GPU memory; actual device use still needs measurement.
       </p>
       <p>
         Downloads contact Hugging Face and GitHub. Content hashes are checked.

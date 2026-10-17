@@ -50,7 +50,7 @@ test("administrator prevents duplicate accounts and resets a learner's password 
       .getByRole("button", { name: "Save sign-in details", exact: true })
       .click();
     await expect(page.getByRole("status")).toContainText(
-      "Previous learner sign-ins have ended",
+      "This learner's browsers are signed out",
     );
     await expect(page.getByLabel("New password", { exact: true })).toHaveValue(
       "",

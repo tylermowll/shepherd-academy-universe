@@ -10,8 +10,8 @@ A task is complete only after its requirements and exit checks pass.
 
 The application is implemented through T44, with the October 11 dependency
 refresh, T45 documentation consolidation, T46 legacy cleanup and T47 root Python
-project consolidation. The schema head
-is `0020_request_recovery`. The last recorded private
+project consolidation. T48 below reviews documentation and help wording. The
+schema head is `0020_request_recovery`. The last recorded private
 deployment used runtime source `e9bf42c`, Python 3.15.0 and pillow-heif 1.8.1 on
 **October 11, 2026**. Image, HTTPS, served-asset and authorization checks are in
 the [release record](history/TASKS.md#release-publication-2026-10-11).
@@ -24,9 +24,98 @@ CloudFormation validator. October 11's deployment evidence still describes the
 older installation.
 
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
-T47 below is the maintainer-approved Python project consolidation. T46 records
-the earlier cleanup and publication checks. Browser-model research and AWS
-hosting remain optional.
+T47 records the Python project consolidation. T46 records the earlier cleanup
+and publication checks. Browser-model research and AWS hosting remain optional.
+
+## T48 — Clarify documentation and help text (2026-10-17)
+
+**Status:** Complete; wording review and local checks passed. Authorized by the
+maintainer's request to review and clean up written wording.
+
+**Scope:** Review current documentation, in-app help and screen text. Replace
+unexplained jargon, awkward phrasing and invented terms with clear, concise
+language. Preserve requirements, commands, identifiers, historical evidence and
+application behavior.
+
+**Contracts:** SPECIFICATION sections 1–4, 12–13 and 16; consistent screen labels,
+accessible names and help instructions; accurate setup, provider, privacy,
+photo-reading and recovery guidance. No API, schema, workflow or policy change.
+
+**Validation plan:** Review edited wording against the implementation and
+requirements. Update existing UI assertions only where displayed wording changes;
+keep behavior and authorization coverage. Run focused component checks, Markdown
+formatting, local link/heading and Make-target checks, then `make check`. Review
+the final diff and record actual outcomes. Live-provider calls and deployment
+are outside this wording task.
+
+**Changes:** Replaced unexplained shorthand with direct descriptions, explained
+necessary technical terms, and made setup, privacy, photo and recovery
+instructions easier to follow. Activity criteria now appear under **What a
+complete response should include**. Help consistently uses **administrator** and
+**username**. Existing tests check the revised text with the same behavior and
+permission assertions.
+
+Changed files:
+
+- Guides: `README.md`; `docs/ACCEPTANCE.md`, `DEPENDENCIES.md`, `HANDOFF.md`,
+  `PHONE_SETUP.md`, `PROVIDER_STATUS.md`, `RUNBOOK.md`, `SPECIFICATION.md`,
+  `THREAT_MODEL.md`, `TUTOR_EVALUATION.md`; `evals/MANIFEST.md`,
+  `evals/incoming/README.md`, `evals/fixtures/the-necklace-README.md`.
+- Screen text in `apps/web/src`: `ActivityPurpose.tsx`, `AdultPanel.tsx`,
+  `App.tsx`, `Help.tsx`, `LearnerAccounts.tsx`, `PhoneCapture.tsx`,
+  `PhotoInput.tsx`, `ProviderConnections.tsx`, `ReadingPassage.tsx`,
+  `ReadingSources.tsx`, `Research.tsx`, `Setup.tsx`, `Tutor.tsx`,
+  `TutorConversation.tsx`.
+- Existing assertions in `apps/web/tests`: `AdultPanel.test.tsx`,
+  `ProviderConnections.test.tsx`, `Reading.test.tsx`, `Setup.test.tsx`,
+  `Tutor.test.tsx`; in `tests/smoke`: `accounts.spec.ts`, `connections.spec.ts`,
+  `reading.spec.ts`, `request-recovery.spec.ts`.
+- This task record in `docs/TASKS.md`.
+
+**Validation (2026-10-17):** Commands use the existing
+`/tmp/shepherd-cleanup-toolchain/run` runner with Node 26.11.1, pnpm 12.11.2,
+uv 0.13.1 and Python 3.15.0. It clears operator/provider settings and disables
+env-file loading. Synthetic subprocess/browser checks run outside the restricted
+sandbox where required.
+
+- Focused learner checks with `pnpm --filter @math-tutor/web test` on App, Tutor,
+  Reading, PhotoInput, PhoneCapture, Entry and UpdateNotice: **76 passed**.
+  Setup, AdultPanel, ProviderConnections and Research: **95 passed**. A final
+  Help wording check reran App: **11 passed**. Initial stale text assertions were
+  updated; one existing text-selection timing failure passed on rerun without
+  changing its assertions.
+- `make check`: passed locks, lint/format, Python/TypeScript types, builds,
+  generated API consistency, credential scan and CloudFormation lint.
+  **303 backend unit, 11 toolchain and 187 frontend tests passed.** The gate was
+  rerun successfully after the final text corrections. The first
+  sandboxed attempt could not start pnpm; the isolated external run passed.
+  Existing build warnings about the uv_build upper bound and bundle size remain.
+- `pnpm smoke tests/smoke/accounts.spec.ts tests/smoke/connections.spec.ts
+tests/smoke/reading.spec.ts tests/smoke/request-recovery.spec.ts`: **26 passed**;
+  two desktop/mobile assertions still expected the old “app audience” wording.
+  Updated that assertion to “age-group setting” and ran
+  `pnpm smoke tests/smoke/connections.spec.ts --grep 'a saved connection stays selectable'`
+  against the final build: **2 passed**. All **28 affected browser scenarios**
+  passed across these runs, with no retry or workflow assertion removed.
+- Markdown formatting with `node node_modules/prettier/bin/prettier.cjs --check
+README.md docs/*.md evals/MANIFEST.md evals/incoming/README.md
+evals/fixtures/the-necklace-README.md`: passed. Static comparison confirmed
+  unchanged fenced command/configuration examples in all 13 edited guides.
+- `python3 /tmp/shepherd-cleanup-doccheck.py`: passed **204 local links/headings**
+  across 22 Markdown files and **339 Make-target references** against 46 targets;
+  all ten historical task/report files match HEAD byte for byte.
+- Final formatting and `git diff --check`: passed. Independent reviews found no
+  unresolved requirement conflicts. All 37 changed files are listed above;
+  runtime edits affect displayed text only.
+
+No failures remain in this task. Integration, live-provider and physical-device
+tests were not run for these wording-only changes. No model download, private
+data inspection, migration or deployment was performed. The remaining release
+checks in ACCEPTANCE are unchanged.
+
+**Publication:** The maintainer authorized committing and pushing T48 to `main`
+after review. A fresh fetch confirmed that local `main` matched `origin/main`
+at `34b9938` before the commit.
 
 ## T47 — Consolidate the Python project and runtime (2026-10-17)
 

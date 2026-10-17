@@ -66,8 +66,9 @@ export function ReadingPassage({
       {onAsk && (
         <div className="sentence-help">
           <p className="fine">
-            For a dense sentence or paragraph, select up to 1,500 characters
-            here to prepare a question. You can also type your question below.
+            Select a sentence or paragraph, up to 1,500 characters, then choose
+            Ask about selected text to draft a question. You can edit it before
+            sending, or type your own question below.
           </p>
           {selectionLength > 1500 && (
             <p role="status" className="notice">
@@ -96,7 +97,7 @@ export function ReadingPassage({
           Photo reading notes:{" "}
           {focus?.mode === "guided" &&
           focus.section_index + 1 < focus.section_count
-            ? "The photo reader reported uncertainty in this material. Ask about any unclear wording in the current section."
+            ? "Some words in the photo may have been misread. Ask about any unclear wording in this section."
             : passage.uncertainties.join(" ")}
         </p>
       )}

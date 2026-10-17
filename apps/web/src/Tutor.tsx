@@ -204,7 +204,7 @@ export function Tutor({
     async (receipt: Schema<"TutorRequestReceiptPublic">) => {
       if (!recovery || receipt.kind !== recovery.kind)
         throw new Error(
-          "The interrupted request could not be matched. Check its saved receipt again.",
+          "The interrupted request could not be matched. Choose Check saved request to try again.",
         );
       await load(receipt.session_id);
       if (!mounted.current || selectedSession.current !== receipt.session_id)
@@ -213,7 +213,7 @@ export function Tutor({
       setRecovery(null);
       setNewSession(false);
       setRecoveryNotice(
-        "Your interrupted request was saved. Its session is open below; it has not been sent again.",
+        "Your interrupted request was saved. Its session is open below. Your work has not been sent again.",
       );
     },
     [load, recovery],
@@ -231,8 +231,8 @@ export function Tutor({
       if (mounted.current) {
         setRecoveryNotice(
           cause instanceof ApiError && cause.status === 404
-            ? "The interrupted request has no saved receipt yet. Recheck it, or resolve it safely before starting another request. This browser kept only its identity; unsent text and photographs are not stored."
-            : "Your interrupted request could not be checked. Reconnect and check its saved receipt before continuing.",
+            ? "The server has not confirmed whether your request was saved. Choose Check saved request to try again. Resolve interrupted request will reopen saved work or clear the request so you can continue. After a reload, this tab remembers which request to check, but loses unsent text and photos."
+            : "Your interrupted request could not be checked. Reconnect and choose Check saved request before continuing.",
         );
       }
       if (!(cause instanceof ApiError && cause.status === 404)) throw cause;
@@ -257,7 +257,7 @@ export function Tutor({
         forgetRequest(recovery);
         setRecovery(null);
         setRecoveryNotice(
-          "The interrupted request was not saved and cannot arrive later. Re-enter any lost text or photograph when you are ready.",
+          "The interrupted request was not saved. The server will reject it if it arrives later. Re-enter any lost text or photo when you are ready.",
         );
       }
     } finally {
@@ -603,8 +603,8 @@ export function Tutor({
         <button disabled={disabled}>Save session settings</button>
         <p className="fine">
           Difficulty changes future activities and guidance. Tutor style changes
-          how much the tutor suggests next steps. Supplied homework is used for
-          related practice only.
+          how often the tutor suggests next steps. Homework is used to create
+          different practice on the same concepts.
         </p>
       </form>
       <button
@@ -665,7 +665,7 @@ export function Tutor({
       {(source === "reference_text" || source === "reference_photo") && (
         <p className="notice">
           The tutor uses your material to create different practice on the same
-          concepts. It does not answer the supplied assignment. For reading
+          concepts. It does not answer the original assignment. For reading
           practice, include the passage; the tutor cannot access a book from its
           title.
         </p>
@@ -979,8 +979,9 @@ export function Tutor({
               </select>
             </label>
             <p className="fine">
-              Choose Easier for foundational concepts or Harder for deeper,
-              multi-step reasoning. You can change this during the session.
+              Choose Easier to work on the basics or Harder for questions that
+              need more steps and explanation. You can change this during the
+              session.
             </p>
             <fieldset className="tutor-preferences">
               <legend>Tutor style</legend>
@@ -997,7 +998,7 @@ export function Tutor({
                 </select>
               </label>
               <p className="fine">
-                “Suggest what to do next” gives regular prompts. “Decide
+                “Suggest what to do next” suggests next steps regularly. “Decide
                 together” offers a suggestion and lets you choose. “Follow my
                 questions” waits for you to ask for help. All three give
                 feedback on your work.
@@ -1041,7 +1042,7 @@ export function Tutor({
           <div role="status" className="notice">
             <p>
               {recoveryNotice ||
-                "Checking the saved receipt for your interrupted request…"}
+                "Checking whether the server saved your interrupted request…"}
             </p>
             {recovery && (
               <div className="actions">

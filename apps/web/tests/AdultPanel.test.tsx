@@ -131,7 +131,7 @@ describe("learner accounts", () => {
       await screen.findByText("No browsers are signed in as Orbit."),
     ).toBeVisible();
     expect(
-      screen.getByText(/phone photo QR does not sign a browser/),
+      screen.getByText(/Scanning the photo QR code does not sign a browser/),
     ).toBeVisible();
     expect(
       screen.queryByRole("button", { name: "Create my practice profile" }),
@@ -293,7 +293,7 @@ describe("learner accounts", () => {
       screen.getByRole("button", { name: "Save sign-in details" }),
     );
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Previous learner sign-ins have ended",
+      "This learner's browsers are signed out",
     );
     expect(fetcher).toHaveBeenCalledWith(
       `/api/v1/admin/learners/${learner.id}/account`,
@@ -411,7 +411,7 @@ describe("AI settings page", () => {
     ).toBeVisible();
     fireEvent.click(
       screen.getByRole("checkbox", {
-        name: "I authorize these app-wide connections to process future learner text and photos.",
+        name: "I authorize these connections to process future text and photos from every learner.",
       }),
     );
     expect(
@@ -449,12 +449,12 @@ describe("AI settings page", () => {
     ).toBeVisible();
     fireEvent.click(
       screen.getByRole("checkbox", {
-        name: "I authorize these app-wide connections to process future learner text and photos.",
+        name: "I authorize these connections to process future text and photos from every learner.",
       }),
     );
     fireEvent.click(screen.getByRole("button", { name: "Save active models" }));
     await screen.findByText(
-      "Active connections saved. Future learner work will use these app-wide choices.",
+      "Active models saved. These choices apply to future work from every learner.",
     );
     const status = screen.getByRole("status");
     expect(status).toHaveClass("settings-toast");
@@ -497,7 +497,7 @@ describe("AI settings page", () => {
     });
     expect(save).toBeDisabled();
     const consent = screen.getByRole("checkbox", {
-      name: "I authorize these app-wide connections to process future learner text and photos.",
+      name: "I authorize these connections to process future text and photos from every learner.",
     });
     fireEvent.click(consent);
     expect(save).toBeEnabled();
@@ -507,7 +507,7 @@ describe("AI settings page", () => {
     fireEvent.click(consent);
     fireEvent.click(save);
     await screen.findByText(
-      "Active connections saved. Future learner work will use these app-wide choices.",
+      "Active models saved. These choices apply to future work from every learner.",
     );
     expect(fetch).toHaveBeenCalledWith(
       "/api/v1/admin/providers/routes",

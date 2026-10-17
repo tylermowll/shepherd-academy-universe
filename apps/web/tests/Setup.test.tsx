@@ -301,7 +301,7 @@ describe("browser first-account setup", () => {
     mount();
     await screen.findByRole("button", { name: "Create account" });
     submit();
-    expect(screen.getByText("Enter a login name.")).toBeVisible();
+    expect(screen.getByText("Enter a username.")).toBeVisible();
     expect(screen.getByText("Enter a password.")).toBeVisible();
     expect(screen.getByText("Enter the password again.")).toBeVisible();
     await fill("short");
@@ -370,7 +370,7 @@ describe("browser first-account setup", () => {
     ).toBeVisible();
     expect(
       screen.getByText(
-        "Remove invisible or control characters from the login name.",
+        "Remove invisible or control characters from the username.",
       ),
     ).toBeVisible();
     expect(

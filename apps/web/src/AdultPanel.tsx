@@ -166,7 +166,7 @@ export function AdultPanel({
       providers?.policy.app_audience !== "adult_only"
     )
       issues.push({
-        text: "Its Allowed users setting does not match the app-wide audience.",
+        text: "Its Allowed users setting does not match who uses the app.",
         section: "policy",
       });
     if (stage === "vision" && !provider.image_input)
@@ -279,7 +279,7 @@ export function AdultPanel({
                         routesDirty.current = false;
                         await refreshProviders();
                         setMessage(
-                          "Active connections saved. Future learner work will use these app-wide choices.",
+                          "Active models saved. These choices apply to future work from every learner.",
                         );
                       });
                     }}
@@ -352,15 +352,15 @@ export function AdultPanel({
                             <p className="fine" id={`${stage}-provider-help`}>
                               {stage === "tutor"
                                 ? "Creates activities and gives feedback on text, including text read from photos."
-                                : "Reads submitted photos before the tutor gives feedback. Connections without photo input cannot fill this role."}{" "}
+                                : "Reads submitted photos before the tutor gives feedback. Choose a connection that supports photos."}{" "}
                               Processing: {processingLocation(selected)}.
                             </p>
                             {issues.length > 0 ? (
                               <div className="notice route-readiness">
                                 <p>
                                   <strong>
-                                    {selected?.id ?? "This role"} is not ready
-                                    yet:
+                                    {selected?.id ?? "This connection"} is not
+                                    ready yet:
                                   </strong>
                                 </p>
                                 <ul>
@@ -416,8 +416,8 @@ export function AdultPanel({
                         checked={acknowledged}
                         onChange={(e) => setAcknowledged(e.target.checked)}
                       />
-                      I authorize these app-wide connections to process future
-                      learner text and photos.
+                      I authorize these connections to process future text and
+                      photos from every learner.
                     </label>
                     <button
                       className="primary"
@@ -431,11 +431,12 @@ export function AdultPanel({
                     </button>
                     <ContextHelp topic="Where does learner work go?">
                       <p>
-                        A cloud provider receives the content for its selected
-                        role. A cloud tutor also receives text read by a local
-                        photo reader. Changing these choices does not resend
-                        earlier requests. The app never switches connections
-                        automatically when one fails.
+                        The selected tutor receives the conversation, and the
+                        photo reader receives submitted images. A cloud tutor
+                        also receives text read by a local photo reader.
+                        Changing these choices does not resend earlier requests.
+                        The app never switches connections automatically when
+                        one fails.
                       </p>
                     </ContextHelp>
                   </form>

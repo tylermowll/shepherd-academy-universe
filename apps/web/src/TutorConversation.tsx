@@ -158,7 +158,7 @@ function TutorMessage({
               <h5>Reading from your photo</h5>
             </summary>
             <p className="user-text">
-              {operation.interpretation || "No usable reading was recovered."}
+              {operation.interpretation || "The photo could not be read."}
             </p>
           </details>
           {(ambiguities.length > 0 ||
@@ -187,7 +187,7 @@ function TutorMessage({
               <p>
                 {reading.rejection_reason ||
                   ambiguities[0] ||
-                  "The reader could not identify enough of the work to give reliable feedback. Type the relevant line or send a closer photo of it."}
+                  "The tutor could not read enough of your work to give useful feedback. Type the unclear line or send a closer photo of it."}
               </p>
               <p>
                 You can ask about this reading below, clarify the uncertain

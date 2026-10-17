@@ -158,7 +158,9 @@ test("an unaccepted interrupted request stays blocked until resolution also reje
   page.once("dialog", (dialog) => void dialog.accept());
   await page.reload();
   await expect(
-    page.getByText(/The interrupted request has no saved receipt yet/),
+    page.getByText(
+      /The server has not confirmed whether your request was saved/,
+    ),
   ).toBeVisible();
   await expect(
     page.getByRole("textbox", { name: "Topic or learning goal", exact: true }),
@@ -170,7 +172,7 @@ test("an unaccepted interrupted request stays blocked until resolution also reje
     .getByRole("button", { name: "Resolve interrupted request", exact: true })
     .click();
   await expect(
-    page.getByText(/was not saved and cannot arrive later/),
+    page.getByText(/The server will reject it if it arrives later/),
   ).toBeVisible();
   await expect(
     page.getByRole("textbox", { name: "Topic or learning goal", exact: true }),

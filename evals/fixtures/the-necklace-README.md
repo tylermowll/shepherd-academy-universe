@@ -31,7 +31,7 @@ the two necklaces, and a supported alternative interpretation of Mathilde.
 Review notes stay out of model prompts. They are evaluator criteria, not
 learner-facing answer keys or a model grading rubric.
 
-Run the contract rehearsal without inference:
+Check the expected response formats with the mock provider:
 
 ```sh
 UV_NO_ENV_FILE=1 uv run --locked --no-env-file \
@@ -40,7 +40,7 @@ UV_NO_ENV_FILE=1 uv run --locked --no-env-file \
   --output /tmp/shepherd-necklace-mock.json
 ```
 
-This mock command cannot establish tutoring quality. Follow
+This command does not call a real model or establish tutoring quality. Follow
 [TUTOR_EVALUATION](../../docs/TUTOR_EVALUATION.md) for live authorization, budgets
-and human review. Historical Muse CLI reports record a prompt rehearsal;
+and human review. Historical Muse CLI reports record tests of the prompts;
 they do not test the web app's configured provider or worker.

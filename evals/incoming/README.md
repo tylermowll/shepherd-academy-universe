@@ -1,6 +1,6 @@
 # Local evaluation candidates
 
-This directory documents private evaluation intake. Internet-sourced candidates
+This directory describes how to review private evaluation candidates. Files from the Internet
 under ignored `internet-examples/` are excluded from CI and the public dataset.
 Their source URLs, authors and redistribution permissions have not been supplied;
 the repository's MIT license does not cover those downloads.
