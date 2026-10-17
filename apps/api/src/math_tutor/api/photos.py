@@ -1,4 +1,4 @@
-"""Authorize before upload; confirm exactly one interpretation revision before grading."""
+"""Owned photo intake; clear readings continue automatically in the worker."""
 
 import asyncio
 import hashlib
@@ -7,12 +7,10 @@ from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
-from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from math_tutor.adapters.db.models import Interpretation, Job, ProblemInstance, Submission
-from math_tutor.adapters.db.types import utcnow
+from math_tutor.adapters.db.models import Job, ProblemInstance, Submission
 from math_tutor.adapters.images import (
     MAX_BYTES,
     NORMALIZED_IMAGE_MIME_TYPE,
@@ -37,13 +35,6 @@ from math_tutor.retention import photo_expired
 
 router = APIRouter(prefix="/api/v1", tags=["photos"])
 _decode_slots = asyncio.Semaphore(2)
-
-
-class Confirmation(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    version: int = Field(ge=1)
-    transcription: str = Field(min_length=1, max_length=4000)
-    final_answer: str | None = Field(default=None, max_length=128)
 
 
 async def receive_image(request: Request) -> tuple[bytes, str]:
@@ -76,7 +67,7 @@ def enqueue_photo(
     from math_tutor.providers import authorize_route, effective_configuration
 
     assert_available(db, problem, version)
-    if problem.template_id.startswith("ai-") and problem.parameters.get("activity_state") not in {
+    if problem.parameters.get("activity_state") not in {
         "ready",
         "reference_capture",
     }:
@@ -122,13 +113,10 @@ async def upload_photo(
     problem = owned_problem(db, actor, problem_id)
     session = owned_session(db, actor, problem.session_id)
     learner_id, key = session.learner_id, request_key(request)
-    if session.mode == "ai_tutor":
-        require_uncancelled(db, learner_id, key)
+    require_uncancelled(db, learner_id, key)
     from math_tutor.providers import authorize_route, effective_configuration
 
     authorize_route(db, effective_configuration(db), "vision", learner_id)
-    if problem.template_id == "external-photo" and not problem.parameters.get("confirmed"):
-        kind = "question"
     # Release the authentication transaction before receiving/decoding the image.
     db.commit()
     image, checksum = await receive_image(request)
@@ -144,8 +132,7 @@ async def upload_photo(
     db.expire_all()
     actor = principal(request, db)
     problem = owned_problem(db, actor, problem_id)
-    if problem.template_id.startswith("ai-"):
-        require_uncancelled(db, learner_id, key)
+    require_uncancelled(db, learner_id, key)
     old = db.scalar(
         select(Submission).where(Submission.learner_id == learner_id, Submission.request_key == key)
     )
@@ -177,68 +164,6 @@ def photo(submission_id: UUID, db: Database, actor: Principal) -> Response:
         media_type=NORMALIZED_IMAGE_MIME_TYPE,
         headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
     )
-
-
-@router.post(
-    "/submissions/{submission_id}/confirm-interpretation",
-    response_model=OperationPublic,
-    status_code=202,
-)
-def confirm(
-    submission_id: UUID, body: Confirmation, db: Database, actor: Principal
-) -> OperationPublic:
-    row = owned_operation(db, actor, submission_id)
-    problem = owned_problem(db, actor, row.problem_id)
-    if problem.template_id.startswith("ai-"):
-        raise HTTPException(
-            409,
-            "AI tutoring does not require approval. Clear readings continue automatically; retake unclear work.",
-        )
-    latest = db.scalar(
-        select(Interpretation)
-        .where(Interpretation.submission_id == submission_id)
-        .order_by(Interpretation.version.desc())
-        .limit(1)
-    )
-    if latest is None:
-        raise HTTPException(409, "Interpretation is not ready.")
-    if (
-        latest.confirmed_at is not None
-        and latest.version == body.version + 1
-        and latest.transcription == body.transcription
-        and latest.final_answer == body.final_answer
-    ):
-        return operation_public(db, row)
-    if (
-        row.status != "awaiting_confirmation"
-        or latest.version != body.version
-        or latest.confirmed_at is not None
-    ):
-        raise HTTPException(409, "Interpretation changed. Refresh before confirming.")
-    db.add(
-        Interpretation(
-            submission_id=row.id,
-            version=latest.version + 1,
-            transcription=body.transcription,
-            final_answer=body.final_answer,
-            ambiguities=[],
-            confirmed_at=utcnow(),
-        )
-    )
-    problem = owned_problem(db, actor, row.problem_id)
-    if problem.template_id == "external-photo" and not problem.parameters.get("confirmed"):
-        problem.problem_text = body.transcription
-        problem.parameters = {"confirmed": True}
-    job = db.scalar(select(Job).where(Job.submission_id == row.id))
-    assert job is not None
-    job.state, job.stage, job.lease_token = (
-        "queued",
-        "checking" if row.kind == "answer" else "tutoring",
-        None,
-    )
-    row.status = "queued"
-    db.flush()
-    return operation_public(db, row)
 
 
 @router.post("/images/preview")

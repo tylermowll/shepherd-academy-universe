@@ -77,6 +77,37 @@ never generated. Review reports before publishing; reported latency/tokens and
 provider billing are separate from quality. Dated reports retain their original
 prompt and transport metadata; they are not evidence of a new live run.
 
+## Adapter diagnostic
+
+The lower-level `math_tutor.evaluation` command retains 33 exact-answer/parser
+regressions and 30 rendered vision fixtures. Its mock run, included in
+`make eval-mock`, verifies that the mock reports unreadable images with specific
+limitations rather than inventing a transcription. These checks do not assess
+recognition accuracy.
+
+For separately authorized adapter calls, `make eval-live PROVIDER=YOUR_CONFIGURED_ID`
+sends at most three synthetic math concept questions and writes
+`evals/reports/live-synthetic.json`. A vision diagnostic uses the same fixture
+directory and an explicit 1–30 call budget:
+
+```bash
+uv run --project apps/api --locked --no-env-file \
+  python -m math_tutor.evaluation \
+  --fixtures evals/fixtures/rational-v1.json \
+  --output /tmp/shepherd-vision-diagnostic.json \
+  --live-provider YOUR_CONFIGURED_ID --authorize-synthetic-calls \
+  --stage vision --max-calls 3
+```
+
+Text calls use `purpose=review` with `FeedbackPayload`; images use `purpose=read`
+with `ReadingPayload`. Reports record `prompt_version=adapter-diagnostic-v2`,
+model/configuration, sample size and raw validated synthetic results. A successful
+command means the adapter returned the requested schema; `human_review` remains
+required. These prompts bypass the application's teaching context, HTTP,
+worker and browser. Use the tutor suites above for production teaching-handler
+rehearsals. Rendered images do not represent handwriting or camera noise; reserve
+vision cases 25–30 for final human review.
+
 ## Application and physical-photo rehearsal
 
 Use a current tested tutor and photo reader, then sign in as a learner on the

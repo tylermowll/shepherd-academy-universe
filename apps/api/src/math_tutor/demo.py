@@ -1,15 +1,11 @@
 """Synthetic data only; refuse to seed an existing administrator database."""
 
-from uuid import uuid4
-
 from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from math_tutor import auth
-from math_tutor.adapters.db.models import Administrator, Learner, TutorProfileVersion
-from math_tutor.api.profiles import ProfileSettings
-from math_tutor.domain.math import SKILLS
+from math_tutor.adapters.db.models import Administrator, Learner
 
 DEMO_PASSWORD = "synthetic-demo-password-only"
 
@@ -21,7 +17,7 @@ def seed(engine: Engine) -> None:
             or db.scalar(select(Learner.id)) is not None
         ):
             raise ValueError("Synthetic seed requires an empty database.")
-        admin = auth.create_or_reset_admin(db, "demo", DEMO_PASSWORD)
+        auth.create_or_reset_admin(db, "demo", DEMO_PASSWORD)
         db.add_all(
             [
                 Learner(
@@ -35,16 +31,6 @@ def seed(engine: Engine) -> None:
                     password_hash=auth.hash_password(DEMO_PASSWORD),
                 ),
             ]
-        )
-        db.add(
-            TutorProfileVersion(
-                profile_id=uuid4(),
-                version=1,
-                author_id=admin.id,
-                settings=ProfileSettings(
-                    name="All supported skills", topics=list(SKILLS)
-                ).model_dump(),
-            )
         )
         db.commit()
 

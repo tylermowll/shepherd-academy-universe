@@ -12,7 +12,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from math_tutor.adapters.db.models import (
-    DEFAULT_PROFILE,
     CancelledTutorRequest,
     Job,
     PracticeSession,
@@ -289,7 +288,7 @@ def create_session(
         mode="ai_tutor",
         topic=body.topic.strip(),
         initiative=body.initiative,
-        profile_settings={**DEFAULT_PROFILE, "difficulty": body.difficulty},
+        profile_settings={"difficulty": body.difficulty},
         request_key=key,
         payload_hash=payload,
     )

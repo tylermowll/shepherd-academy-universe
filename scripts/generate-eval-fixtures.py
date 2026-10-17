@@ -37,10 +37,8 @@ for index in range(30):
             "file": file,
             "transcription": transcription,
             "final_answer": f"2/{denominator}",
-            "must_confirm": True,
             "must_flag_ambiguity": category == "ambiguous",
             "split": "holdout" if index >= 24 else "development",
-            "maximum_help_level": 1,
         }
     )
 (root / "vision-v1.json").write_text(json.dumps(records, indent=2) + "\n")

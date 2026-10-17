@@ -1,7 +1,8 @@
 # Current handoff
 
 Start with [TASKS](TASKS.md) for the current checkpoint, work queue and validation
-evidence. The application is implemented through T44; T45 reviews documentation.
+evidence. The application is implemented through T44; T45 consolidates
+documentation and T46 retires catalog-era runtime code and redundant checks.
 The last recorded private deployment was October 11, 2026. That record does not
 establish today's runtime, selected models or teaching quality.
 

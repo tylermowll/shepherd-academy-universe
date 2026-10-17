@@ -47,22 +47,6 @@ class Message(BaseModel):
     content: str = Field(max_length=MAX_TUTOR_MESSAGE_LENGTH)
 
 
-class TutorPayload(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
-    schema_version: Literal["1"] = "1"
-    message_kind: Literal["hint", "explanation", "worked_example", "solution", "question_response"]
-    message_markdown: str = Field(min_length=1, max_length=6000)
-    suggested_next_action: Literal["revise_answer", "ask_question", "continue"]
-    uncertainty_note: str | None = Field(default=None, max_length=500)
-
-
-class InterpretationPayload(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
-    transcription: str = Field(max_length=4000)
-    final_answer: str | None = Field(default=None, max_length=128)
-    ambiguities: list[str] = Field(max_length=20)
-
-
 class ActivityPayload(BaseModel):
     """A new practice activity, never an answer key or a solved reference."""
 
@@ -151,7 +135,7 @@ class ModelRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     operation_id: UUID
     stage: Literal["tutor", "vision"]
-    purpose: Literal["legacy", "generate", "read", "review"] = "legacy"
+    purpose: Literal["generate", "read", "review"]
     model_id: str
     system_instruction: str = Field(max_length=6000)
     ordered_messages: list[Message] = Field(max_length=32)
@@ -162,9 +146,7 @@ class ModelRequest(BaseModel):
 
 
 class ModelResult(BaseModel):
-    validated_payload: (
-        TutorPayload | InterpretationPayload | ActivityPayload | ReadingPayload | FeedbackPayload
-    )
+    validated_payload: ActivityPayload | ReadingPayload | FeedbackPayload
     provider_request_id: str | None = None
     model_id: str
     reported_usage: dict[str, int] = Field(default_factory=dict)

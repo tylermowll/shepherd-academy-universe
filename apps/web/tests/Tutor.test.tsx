@@ -19,7 +19,6 @@ const capabilities = {
   tutoring_available: true,
   tutor_status: "Synthetic test provider, not a live quality claim.",
   text_processing: "local",
-  external_problems: false,
 };
 const activity = (operations: unknown[] = [], state = "ready") => ({
   id: problemId,
@@ -1176,7 +1175,7 @@ describe("AI learning conversation", () => {
     expect(screen.getByLabelText("Your work or question")).toHaveValue("");
   });
 
-  it("explains unavailable tutoring and refreshes capabilities after setup", async () => {
+  it("guides learners to setup help and refreshes capabilities when returning", async () => {
     let available = false;
     const navigate = vi.fn();
     const fetcher = vi.fn((url: string) => {
@@ -1196,7 +1195,6 @@ describe("AI learning conversation", () => {
       learner,
       offline: false,
       act: run,
-      isAdult: true,
       onNavigate: navigate,
     };
     const view = render(<Tutor {...props} />);
@@ -1209,13 +1207,17 @@ describe("AI learning conversation", () => {
     expect(
       screen.getByRole("button", { name: "Start session" }),
     ).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "Open Settings" }));
-    expect(navigate).toHaveBeenLastCalledWith("settings");
+    expect(
+      screen.getByText(
+        "Ask the adult who manages this app to check its setup.",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Open Settings" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Setup help" }));
     expect(navigate).toHaveBeenLastCalledWith("help", "setup");
     view.rerender(<Tutor {...props} active={false} />);
     available = true;
-    view.rerender(<Tutor {...props} active settingsVersion={1} />);
+    view.rerender(<Tutor {...props} active />);
     await vi.waitFor(() =>
       expect(
         screen.getByRole("button", { name: "Start session" }),
@@ -1713,7 +1715,7 @@ it("stages sentence help in the existing composer without sending or discarding 
   ).toBe(false);
 });
 
-it("clearly labels a selected mock tutor in private installations", async () => {
+it("labels a mock tutor and directs learners to the adult managing the app", async () => {
   vi.stubGlobal(
     "fetch",
     vi.fn((url: string) =>
@@ -1724,20 +1726,21 @@ it("clearly labels a selected mock tutor in private installations", async () => 
   );
   const navigate = vi.fn();
   render(
-    <Tutor
-      learner={learner}
-      offline={false}
-      act={run}
-      isAdult
-      onNavigate={navigate}
-    />,
+    <Tutor learner={learner} offline={false} act={run} onNavigate={navigate} />,
   );
   await screen.findByText("Demo tutor — sample responses only");
   expect(screen.getByRole("status")).toHaveTextContent(
     "Demo tutor — sample responses only",
   );
-  fireEvent.click(screen.getByRole("button", { name: "Open model settings" }));
-  expect(navigate).toHaveBeenCalledWith("settings");
+  expect(
+    screen.getByText(
+      /Ask the adult who manages this app to connect an AI model/,
+    ),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole("button", { name: "Open model settings" }),
+  ).toBeNull();
+  expect(navigate).not.toHaveBeenCalled();
 });
 
 it("recovers an accepted session after a lost receipt and reload without storing or replaying its text", async () => {

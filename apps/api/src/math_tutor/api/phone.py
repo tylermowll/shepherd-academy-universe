@@ -119,7 +119,7 @@ def create_link(
     private_mode()
     problem = owned_problem(db, actor, problem_id)
     session = owned_session(db, actor, problem.session_id)
-    if session.status != "open" or problem.template_id == "external-photo":
+    if session.status != "open" or session.mode != "ai_tutor":
         raise HTTPException(409, "Choose an active app-assigned problem for phone capture.")
     key = request_key(request)
     old = db.scalar(

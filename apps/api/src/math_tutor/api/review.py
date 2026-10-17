@@ -12,7 +12,6 @@ from math_tutor.adapters.db.models import (
     DeletionTombstone,
     PracticeSession,
     ProblemInstance,
-    ProgressEvent,
 )
 from math_tutor.api.access import Adult, Database, Principal, owned_learner
 from math_tutor.api.learners import Acknowledged, LearnerPublic
@@ -21,33 +20,6 @@ from math_tutor.api.tutoring import TutoringSessionPublic, public_session
 from math_tutor.retention import purge_learner, record_deletion
 
 router = APIRouter(prefix="/api/v1", tags=["review"])
-
-
-class ProgressPublic(BaseModel):
-    checked_answers: int
-    correct_without_help: int
-    correct_with_help: int
-    incorrect: int
-    note: str = "Counts describe recorded answers, not mastery or measured learning gains."
-
-
-@router.get("/learners/{learner_id}/progress", response_model=ProgressPublic)
-def progress(learner_id: UUID, db: Database, actor: Principal) -> ProgressPublic:
-    owned_learner(db, actor, learner_id)
-    rows = list(
-        db.scalars(
-            select(ProgressEvent)
-            .where(ProgressEvent.learner_id == learner_id)
-            .order_by(ProgressEvent.created_at.desc())
-            .limit(10000)
-        )
-    )
-    return ProgressPublic(
-        checked_answers=len(rows),
-        correct_without_help=sum(r.outcome == "correct" and r.assistance_level == 0 for r in rows),
-        correct_with_help=sum(r.outcome == "correct" and r.assistance_level > 0 for r in rows),
-        incorrect=sum(r.outcome == "incorrect" for r in rows),
-    )
 
 
 class ReferenceMaterialPublic(BaseModel):
@@ -116,7 +88,6 @@ def delete_learner(learner_id: UUID, db: Database, actor: Adult) -> Acknowledged
 class Features(BaseModel):
     photos_available: bool
     photo_status: str
-    external_problems: bool
     tutoring_available: bool
     tutor_status: str
     text_processing: str
@@ -164,7 +135,6 @@ def features(learner_id: UUID, db: Database, actor: Principal) -> Features:
     return Features(
         photos_available=available and os.getenv("APP_MODE", "private") != "demo",
         photo_status=status,
-        external_problems=os.getenv("ENABLE_EXTERNAL_PROBLEMS", "false") == "true",
         tutoring_available=tutoring_available and os.getenv("APP_MODE", "private") != "demo",
         tutor_status=tutor_status,
         text_processing=text_processing,

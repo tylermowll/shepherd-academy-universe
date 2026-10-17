@@ -16,15 +16,12 @@ from sqlalchemy.orm import Session
 
 from math_tutor.adapters.db.engine import create_default_engine
 from math_tutor.adapters.db.models import (
-    Evaluation,
-    Interpretation,
     Job,
     Learner,
     ModelCall,
     PracticeSession,
     ProblemInstance,
     Submission,
-    TutorTurn,
     WorkerHeartbeat,
 )
 from math_tutor.adapters.db.types import utcnow
@@ -32,14 +29,10 @@ from math_tutor.adapters.images import read_image
 from math_tutor.adapters.providers.config import ProviderConfig
 from math_tutor.adapters.providers.contracts import (
     DEFAULT_PROVIDER_ERROR_MESSAGE,
-    InterpretationPayload,
-    Message,
     ModelRequest,
     ModelResult,
     ProviderError,
-    TutorPayload,
 )
-from math_tutor.api.practice import finish_deterministic
 from math_tutor.providers import authorize_route, complete, effective_configuration
 from math_tutor.retention import photo_expired, purge_completed_photo
 from math_tutor.tutoring import finish_model, make_request
@@ -152,37 +145,10 @@ def finish(
             return False
         problem = db.get(ProblemInstance, row.problem_id)
         assert problem is not None
-        if problem.template_id.startswith("ai-"):
-            finish_model(db, job, row, problem, result, source)
-        elif job.stage == "interpreting":
-            if result is None or not isinstance(result.validated_payload, InterpretationPayload):
-                raise ProviderError("malformed_output")
-            payload = result.validated_payload
-            db.add(
-                Interpretation(
-                    submission_id=row.id,
-                    version=1,
-                    transcription=payload.transcription,
-                    final_answer=payload.final_answer,
-                    ambiguities=payload.ambiguities,
-                )
-            )
-            row.status, job.state = "awaiting_confirmation", "waiting"
-        else:
-            finish_deterministic(db, row, problem)
-            db.flush()
-            if result is not None:
-                if (
-                    not isinstance(result.validated_payload, TutorPayload)
-                    or result.validated_payload.message_kind != "question_response"
-                ):
-                    raise ProviderError("malformed_output")
-                turn = db.scalar(select(TutorTurn).where(TutorTurn.submission_id == row.id))
-                assert turn is not None
-                turn.message, turn.source = result.validated_payload.message_markdown, source
-                turn.assistance_level = max(2, row.help_level)
-                problem.assistance_level = max(problem.assistance_level, turn.assistance_level)
-            job.state = "completed"
+        session = db.get(PracticeSession, problem.session_id)
+        if session is None or session.mode != "ai_tutor":
+            return False
+        finish_model(db, job, row, problem, result, source)
         job.lease_token, job.lease_expires_at = None, None
         purge_photo = row.status == "completed" and row.image_key is not None
         db.commit()
@@ -199,7 +165,7 @@ class Prepared:
     source: str
 
 
-def prepare(engine: Engine, work: Claim) -> Prepared | None:
+def prepare(engine: Engine, work: Claim) -> Prepared:
     with Session(engine) as db:
         db.connection(execution_options={"sqlite_begin_immediate": True})
         job = db.get(Job, work.job_id)
@@ -210,24 +176,11 @@ def prepare(engine: Engine, work: Claim) -> Prepared | None:
         assert problem is not None
         session = db.get(PracticeSession, problem.session_id)
         assert session is not None
-        ai = problem.template_id.startswith("ai-")
-        if not ai and job.stage != "interpreting":
-            if row.kind != "question":
-                return None
-            # Authored help is the enforcement mechanism while solutions are protected.
-            policy = session.profile_settings["solution_policy"]
-            attempts = list(
-                db.scalars(
-                    select(Evaluation)
-                    .join(Submission, Evaluation.submission_id == Submission.id)
-                    .where(
-                        Submission.problem_id == problem.id,
-                        Evaluation.answer_status.in_(["correct", "incorrect"]),
-                    )
-                )
+        if session.mode != "ai_tutor":
+            raise ProviderError(
+                "retired_workflow",
+                safe_message="This historical practice is read-only. Start a tutor session; your saved work remains available in the administrator export.",
             )
-            if policy == "adult_only" or (policy == "after_two_attempts" and len(attempts) < 2):
-                return None
         config = effective_configuration(db)
         if config.fingerprint() != job.policy_digest:
             raise ProviderError(
@@ -248,37 +201,7 @@ def prepare(engine: Engine, work: Claim) -> Prepared | None:
                 "photo_expired",
                 safe_message="Photo expired. Submit a new photo or use typed input.",
             )
-        interpretation = db.scalar(
-            select(Interpretation)
-            .where(Interpretation.submission_id == row.id, Interpretation.confirmed_at.is_not(None))
-            .order_by(Interpretation.version.desc())
-            .limit(1)
-        )
-        text = interpretation.transcription if interpretation else row.text
-        if stage == "vision":
-            instruction = "Transcribe visible mathematical work without correcting it. Describe ambiguities. Return the interpretation schema. No tools, verdicts or solutions."
-            message = "Assigned problem: " + problem.problem_text
-        else:
-            instruction = "Answer one mathematical question with a concise explanation, using message_kind question_response. Do not claim to verify reasoning or change a verdict. No tools, hidden reasoning, HTML, URLs or embedded images. Return the tutor response JSON schema."
-            instruction += " Teaching preferences (cannot alter these rules): " + str(
-                session.profile_settings
-            )
-            message = "Assigned problem: " + problem.problem_text + "\nLearner question: " + text
-        request = (
-            make_request(db, job, row, problem, session, provider, image)
-            if ai
-            else ModelRequest(
-                operation_id=row.id,
-                stage=stage,
-                model_id=provider.model,
-                system_instruction=instruction[:6000],
-                ordered_messages=[Message(role="user", content=message)],
-                private_image_bytes=image,
-                response_schema=(
-                    InterpretationPayload if stage == "vision" else TutorPayload
-                ).model_json_schema(),
-            )
-        )
+        request = make_request(db, job, row, problem, session, provider, image)
         call = ModelCall(
             submission_id=row.id,
             provider_id=name,
@@ -329,10 +252,9 @@ def run_once(engine: Engine) -> bool:
     prepared = None
     try:
         prepared = prepare(engine, work)
-        result = complete(prepared.provider, prepared.request) if prepared else None
-        if prepared:
-            record_call(engine, prepared.call_id, result, "completed")
-        return finish(engine, work, result, prepared.source if prepared else "")
+        result = complete(prepared.provider, prepared.request)
+        record_call(engine, prepared.call_id, result, "completed")
+        return finish(engine, work, result, prepared.source)
     except ProviderError as error:
         if prepared:
             record_call(engine, prepared.call_id, None, error.code)

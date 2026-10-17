@@ -28,7 +28,6 @@ from math_tutor.api.limits import BoundedBodies
 from math_tutor.api.phone import router as phone_router
 from math_tutor.api.photos import router as photo_router
 from math_tutor.api.practice import router as practice_router
-from math_tutor.api.profiles import router as profile_router
 from math_tutor.api.providers import ProbeFailure, ProbeFailurePublic
 from math_tutor.api.providers import router as provider_router
 from math_tutor.api.reading import router as reading_router
@@ -81,7 +80,6 @@ def create_app(engine: Engine | None = None) -> FastAPI:
     application.include_router(practice_router)
     application.include_router(tutoring_router)
     application.include_router(reading_router)
-    application.include_router(profile_router)
     application.include_router(photo_router)
     application.include_router(phone_router)
     application.include_router(provider_router)

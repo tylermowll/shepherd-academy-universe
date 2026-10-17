@@ -16,11 +16,11 @@ from math_tutor.adapters.providers.config import Configuration, ProviderConfig, 
 from math_tutor.adapters.providers.contracts import (
     MAX_CONFIGURED_CONTEXT_LIMIT,
     Capabilities,
-    InterpretationPayload,
+    FeedbackPayload,
     Message,
     ModelRequest,
     ProviderError,
-    TutorPayload,
+    ReadingPayload,
 )
 from math_tutor.adapters.providers.transports import (
     BedrockProvider,
@@ -31,11 +31,27 @@ from math_tutor.adapters.providers.transports import (
 )
 
 PAYLOAD = {
-    "schema_version": "1",
-    "message_kind": "question_response",
-    "message_markdown": "Use equal-sized parts.",
-    "suggested_next_action": "revise_answer",
+    "teaching_action": "coach",
+    "learning_observation": {
+        "assessment": "developing",
+        "evidence": "The synthetic response compares fractional parts.",
+        "resolved_points": [],
+        "open_points": ["Explain why parts must have equal sizes."],
+    },
+    "strengths": [],
+    "guidance": ["Use equal-sized parts."],
+    "next_step": "Explain why equal-sized parts help.",
+    "concepts": ["Fractions"],
     "uncertainty_note": None,
+}
+
+READING = {
+    "transcription": "2/5",
+    "quality": "clear",
+    "confidence": 1.0,
+    "ambiguities": [],
+    "organization_feedback": [],
+    "rejection_reason": None,
 }
 
 
@@ -53,12 +69,22 @@ def request(image: bool = False) -> ModelRequest:
     return ModelRequest(
         operation_id=uuid4(),
         stage="vision" if image else "tutor",
+        purpose="read" if image else "review",
         model_id="synthetic-model-v1",
         system_instruction="Return the JSON schema.",
         ordered_messages=[Message(role="user", content="Synthetic fraction question")],
         private_image_bytes=b"synthetic-png-bytes" if image else None,
-        response_schema=(InterpretationPayload if image else TutorPayload).model_json_schema(),
+        response_schema=(ReadingPayload if image else FeedbackPayload).model_json_schema(),
     )
+
+
+@pytest.mark.parametrize("purpose", [None, "legacy"])
+def test_requests_require_an_explicit_current_purpose(purpose: str | None) -> None:
+    body = request().model_dump(exclude={"purpose"})
+    if purpose is not None:
+        body["purpose"] = purpose
+    with pytest.raises(ValidationError):
+        ModelRequest.model_validate(body)
 
 
 @pytest.mark.parametrize("effort", ["default", "minimal", "low", "medium", "high", "xhigh"])
@@ -164,7 +190,7 @@ def test_transport_maps_roles_schema_and_private_image(adapter: str) -> None:
                 json={
                     "done": True,
                     "done_reason": "stop",
-                    "message": {"content": json.dumps({"transcription": "2/5", "ambiguities": []})},
+                    "message": {"content": json.dumps(READING)},
                     "eval_count": 4,
                 },
             )
@@ -181,9 +207,7 @@ def test_transport_maps_roles_schema_and_private_image(adapter: str) -> None:
                 "choices": [
                     {
                         "finish_reason": "stop",
-                        "message": {
-                            "content": json.dumps({"transcription": "2/5", "ambiguities": []})
-                        },
+                        "message": {"content": json.dumps(READING)},
                     }
                 ],
                 "usage": {"completion_tokens": 4},
@@ -192,7 +216,7 @@ def test_transport_maps_roles_schema_and_private_image(adapter: str) -> None:
 
     with httpx.Client(transport=httpx.MockTransport(respond)) as client:
         result = HTTPProvider(config, client).complete(request(True))
-    assert isinstance(result.validated_payload, InterpretationPayload)
+    assert isinstance(result.validated_payload, ReadingPayload)
     assert result.validated_payload.transcription == "2/5"
     assert len(captured) == 1
 
@@ -247,6 +271,13 @@ def test_schema_does_not_accept_model_verdict_or_prose() -> None:
     for output in (
         "Here is JSON: " + json.dumps(PAYLOAD),
         json.dumps({**PAYLOAD, "answer_status": "correct"}),
+        json.dumps(
+            {
+                "message_kind": "solution",
+                "message_markdown": "Retired authored-solution response.",
+                "suggested_next_action": "continue",
+            }
+        ),
         "{}",
     ):
         with pytest.raises(ProviderError):
@@ -280,7 +311,7 @@ def test_bedrock_converse_uses_sdk_schema_and_image_blocks() -> None:
                 "output": {
                     "message": {
                         "role": "assistant",
-                        "content": [{"text": '{"transcription":"2/5","ambiguities":[]}'}],
+                        "content": [{"text": json.dumps(READING)}],
                     }
                 },
                 "stopReason": "end_turn",
@@ -647,8 +678,8 @@ def test_pinned_connections_preserve_authority_and_only_retry_connect_failures(
     )
     if expected_error is None:
         result = HTTPProvider(config).complete(request())
-        assert isinstance(result.validated_payload, TutorPayload)
-        assert result.validated_payload.message_markdown == PAYLOAD["message_markdown"]
+        assert isinstance(result.validated_payload, FeedbackPayload)
+        assert result.validated_payload.guidance == PAYLOAD["guidance"]
     else:
         with pytest.raises(ProviderError, match=expected_error):
             HTTPProvider(config).complete(request())

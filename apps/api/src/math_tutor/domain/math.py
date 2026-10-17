@@ -112,30 +112,3 @@ def generate(skill: str, seed: int, difficulty: str = "standard") -> Problem:
     return Problem(
         skill, seed, f"{left} {symbol} {right}", str(result), {"a": a, "b": b, "c": c, "d": d}
     )
-
-
-def help_text(skill: str, level: int, question: str, expected: str) -> str:
-    if level == 4:
-        return f"For {question}, the exact answer is {expected}. Substitute or compare equal-sized parts to check it."
-    if level == 3:
-        for seed in (2027, 2028, 2029):
-            example = generate(skill, seed)
-            if example.text != question:
-                break
-        if skill == "equations.linear":
-            a, b, c = (int(example.parameters[k]) for k in ("a", "b", "c"))
-            return f"Different example: {example.text}. Subtract {b} from both sides: {a}x = {c - b}. Divide both sides by {a}: x = {example.expected}."
-        return f"Different example: {example.text}. {help_text(skill, 2, example.text, example.expected)} The exact result is {example.expected}."
-    if skill == "equations.linear":
-        return "Undo the constant term on both sides, then divide both sides by the nonzero coefficient of x. Substitute your value to check."
-    if skill.endswith("multiply"):
-        return "Multiply the numerators, then multiply the denominators. Reduce common factors."
-    if skill.endswith("divide"):
-        return "Division by a nonzero fraction is multiplication by its reciprocal."
-    if skill.endswith("simplify") or skill.endswith("equivalent"):
-        return "Divide the numerator and denominator by the same common factor; the value stays the same."
-    return (
-        "Find a common denominator so the parts have the same size."
-        if level == 1
-        else "Rewrite both fractions with a common denominator, add or subtract the numerators, keep the denominator, then reduce common factors."
-    )

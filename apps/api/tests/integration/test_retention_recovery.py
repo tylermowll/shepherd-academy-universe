@@ -85,8 +85,8 @@ async def test_deleted_content_is_purged_and_photos_retry_after_storage_recovery
             if cause == "learner":
                 assert db.get(Learner, UUID(learner)) is None
         assert (await adult.get(f"/api/v1/submissions/{operation}/image")).status_code == 404
-        assert (await adult.get(f"/api/v1/sessions/{session_id}")).status_code == 404
-        assert session_id not in (await adult.get("/api/v1/sessions")).text
+        assert (await adult.get(f"/api/v1/tutor/sessions/{session_id}")).status_code == 404
+        assert session_id not in (await adult.get("/api/v1/tutor/sessions")).text
 
         # Another learner's work still completes while one object cannot be removed.
         _, other_problem = await start(adult, other)

@@ -30,8 +30,6 @@ type Props = {
   act: (action: () => Promise<void>) => Promise<void>;
   page?: "practice" | "history";
   active?: boolean;
-  isAdult?: boolean;
-  settingsVersion?: number;
   onBusyChange?: (busy: boolean) => void;
   onDraftChange?: (draft: boolean) => void;
   onNavigate?: (
@@ -92,8 +90,6 @@ export function Tutor({
   act,
   page = "practice",
   active: pageActive = true,
-  isAdult = false,
-  settingsVersion = 0,
   onBusyChange,
   onDraftChange,
   onNavigate,
@@ -285,16 +281,7 @@ export function Tutor({
         await load(selectedSession.current || undefined);
         if (recovery) await recoverSavedRequest();
       });
-  }, [
-    act,
-    load,
-    offline,
-    page,
-    pageActive,
-    settingsVersion,
-    recovery,
-    recoverSavedRequest,
-  ]);
+  }, [act, load, offline, page, pageActive, recovery, recoverSavedRequest]);
 
   const sessionId = session?.id;
   useEffect(() => {
@@ -894,16 +881,9 @@ export function Tutor({
             <div className="notice" role="status">
               <strong>Demo tutor — sample responses only</strong>
               <p>
-                An actual AI model is needed for tutoring.{" "}
-                {isAdult
-                  ? "Choose a tested connection in Settings → Active models."
-                  : "Ask the adult who manages this app to connect an AI model."}
+                An actual AI model is needed for tutoring. Ask the adult who
+                manages this app to connect an AI model.
               </p>
-              {isAdult && (
-                <button onClick={() => onNavigate?.("settings")}>
-                  Open model settings
-                </button>
-              )}
             </div>
           ) : (
             <p className="fine">
@@ -920,17 +900,8 @@ export function Tutor({
           <div className="notice" role="status">
             <h3>Tutoring is not available yet</h3>
             <p>{features.tutor_status}</p>
-            <p>
-              {isAdult
-                ? "Use Settings to check the selected AI providers. For a demo installation, follow the private setup steps in Help."
-                : "Ask the adult who manages this app to check its setup."}
-            </p>
+            <p>Ask the adult who manages this app to check its setup.</p>
             <div className="actions">
-              {isAdult && (
-                <button onClick={() => onNavigate?.("settings")}>
-                  Open Settings
-                </button>
-              )}
               <button onClick={() => onNavigate?.("help", "setup")}>
                 Setup help
               </button>

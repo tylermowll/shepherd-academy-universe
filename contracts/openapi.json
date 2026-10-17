@@ -12,46 +12,8 @@
         "title": "Acknowledged",
         "type": "object"
       },
-      "Confirmation": {
-        "additionalProperties": false,
-        "properties": {
-          "final_answer": {
-            "anyOf": [
-              {
-                "maxLength": 128,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Final Answer"
-          },
-          "transcription": {
-            "maxLength": 4000,
-            "minLength": 1,
-            "title": "Transcription",
-            "type": "string"
-          },
-          "version": {
-            "minimum": 1.0,
-            "title": "Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "version",
-          "transcription"
-        ],
-        "title": "Confirmation",
-        "type": "object"
-      },
       "Features": {
         "properties": {
-          "external_problems": {
-            "title": "External Problems",
-            "type": "boolean"
-          },
           "photo_status": {
             "title": "Photo Status",
             "type": "string"
@@ -76,7 +38,6 @@
         "required": [
           "photos_available",
           "photo_status",
-          "external_problems",
           "tutoring_available",
           "tutor_status",
           "text_processing"
@@ -755,53 +716,6 @@
         "title": "PhoneUploadLink",
         "type": "object"
       },
-      "Presentation": {
-        "additionalProperties": false,
-        "properties": {
-          "compact_explanations": {
-            "default": false,
-            "title": "Compact Explanations",
-            "type": "boolean"
-          },
-          "font_scale": {
-            "default": 1,
-            "maximum": 1.5,
-            "minimum": 1.0,
-            "title": "Font Scale",
-            "type": "number"
-          },
-          "reduced_motion": {
-            "default": true,
-            "title": "Reduced Motion",
-            "type": "boolean"
-          }
-        },
-        "title": "Presentation",
-        "type": "object"
-      },
-      "Preview": {
-        "properties": {
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "problem": {
-            "title": "Problem",
-            "type": "string"
-          },
-          "source": {
-            "default": "built-in explanation",
-            "title": "Source",
-            "type": "string"
-          }
-        },
-        "required": [
-          "problem",
-          "message"
-        ],
-        "title": "Preview",
-        "type": "object"
-      },
       "ProbeFailurePublic": {
         "properties": {
           "code": {
@@ -983,18 +897,6 @@
         "title": "ProbeResultPublic",
         "type": "object"
       },
-      "ProblemInput": {
-        "additionalProperties": false,
-        "properties": {
-          "skill_id": {
-            "default": "fractions.add",
-            "title": "Skill Id",
-            "type": "string"
-          }
-        },
-        "title": "ProblemInput",
-        "type": "object"
-      },
       "ProblemPublic": {
         "properties": {
           "activity_state": {
@@ -1161,278 +1063,6 @@
           "operations"
         ],
         "title": "ProblemPublic",
-        "type": "object"
-      },
-      "ProfileInput": {
-        "additionalProperties": false,
-        "properties": {
-          "custom_instructions": {
-            "default": "",
-            "maxLength": 2000,
-            "title": "Custom Instructions",
-            "type": "string"
-          },
-          "difficulty": {
-            "default": "standard",
-            "enum": [
-              "introductory",
-              "standard",
-              "challenge"
-            ],
-            "title": "Difficulty",
-            "type": "string"
-          },
-          "hint_policy": {
-            "const": "progressive",
-            "default": "progressive",
-            "title": "Hint Policy",
-            "type": "string"
-          },
-          "language": {
-            "const": "en",
-            "default": "en",
-            "title": "Language",
-            "type": "string"
-          },
-          "name": {
-            "maxLength": 64,
-            "minLength": 1,
-            "title": "Name",
-            "type": "string"
-          },
-          "presentation": {
-            "$ref": "#/components/schemas/Presentation"
-          },
-          "profile_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id"
-          },
-          "question_pacing": {
-            "const": 1,
-            "default": 1,
-            "title": "Question Pacing",
-            "type": "integer"
-          },
-          "session_problem_limit": {
-            "default": 5,
-            "maximum": 20.0,
-            "minimum": 1.0,
-            "title": "Session Problem Limit",
-            "type": "integer"
-          },
-          "solution_policy": {
-            "default": "after_two_attempts",
-            "enum": [
-              "on_request",
-              "after_two_attempts",
-              "adult_only"
-            ],
-            "title": "Solution Policy",
-            "type": "string"
-          },
-          "teaching_style": {
-            "default": "guided",
-            "enum": [
-              "guided",
-              "direct",
-              "worked_example"
-            ],
-            "title": "Teaching Style",
-            "type": "string"
-          },
-          "topics": {
-            "items": {
-              "type": "string"
-            },
-            "maxItems": 7,
-            "minItems": 1,
-            "title": "Topics",
-            "type": "array"
-          },
-          "verbosity": {
-            "default": "standard",
-            "enum": [
-              "brief",
-              "standard",
-              "detailed"
-            ],
-            "title": "Verbosity",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "title": "ProfileInput",
-        "type": "object"
-      },
-      "ProfilePublic": {
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "profile_id": {
-            "format": "uuid",
-            "title": "Profile Id",
-            "type": "string"
-          },
-          "settings": {
-            "$ref": "#/components/schemas/ProfileSettings"
-          },
-          "version": {
-            "title": "Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "id",
-          "profile_id",
-          "version",
-          "settings"
-        ],
-        "title": "ProfilePublic",
-        "type": "object"
-      },
-      "ProfileSettings": {
-        "additionalProperties": false,
-        "properties": {
-          "custom_instructions": {
-            "default": "",
-            "maxLength": 2000,
-            "title": "Custom Instructions",
-            "type": "string"
-          },
-          "difficulty": {
-            "default": "standard",
-            "enum": [
-              "introductory",
-              "standard",
-              "challenge"
-            ],
-            "title": "Difficulty",
-            "type": "string"
-          },
-          "hint_policy": {
-            "const": "progressive",
-            "default": "progressive",
-            "title": "Hint Policy",
-            "type": "string"
-          },
-          "language": {
-            "const": "en",
-            "default": "en",
-            "title": "Language",
-            "type": "string"
-          },
-          "name": {
-            "maxLength": 64,
-            "minLength": 1,
-            "title": "Name",
-            "type": "string"
-          },
-          "presentation": {
-            "$ref": "#/components/schemas/Presentation"
-          },
-          "question_pacing": {
-            "const": 1,
-            "default": 1,
-            "title": "Question Pacing",
-            "type": "integer"
-          },
-          "session_problem_limit": {
-            "default": 5,
-            "maximum": 20.0,
-            "minimum": 1.0,
-            "title": "Session Problem Limit",
-            "type": "integer"
-          },
-          "solution_policy": {
-            "default": "after_two_attempts",
-            "enum": [
-              "on_request",
-              "after_two_attempts",
-              "adult_only"
-            ],
-            "title": "Solution Policy",
-            "type": "string"
-          },
-          "teaching_style": {
-            "default": "guided",
-            "enum": [
-              "guided",
-              "direct",
-              "worked_example"
-            ],
-            "title": "Teaching Style",
-            "type": "string"
-          },
-          "topics": {
-            "items": {
-              "type": "string"
-            },
-            "maxItems": 7,
-            "minItems": 1,
-            "title": "Topics",
-            "type": "array"
-          },
-          "verbosity": {
-            "default": "standard",
-            "enum": [
-              "brief",
-              "standard",
-              "detailed"
-            ],
-            "title": "Verbosity",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "title": "ProfileSettings",
-        "type": "object"
-      },
-      "ProgressPublic": {
-        "properties": {
-          "checked_answers": {
-            "title": "Checked Answers",
-            "type": "integer"
-          },
-          "correct_with_help": {
-            "title": "Correct With Help",
-            "type": "integer"
-          },
-          "correct_without_help": {
-            "title": "Correct Without Help",
-            "type": "integer"
-          },
-          "incorrect": {
-            "title": "Incorrect",
-            "type": "integer"
-          },
-          "note": {
-            "default": "Counts describe recorded answers, not mastery or measured learning gains.",
-            "title": "Note",
-            "type": "string"
-          }
-        },
-        "required": [
-          "checked_answers",
-          "correct_without_help",
-          "correct_with_help",
-          "incorrect"
-        ],
-        "title": "ProgressPublic",
         "type": "object"
       },
       "ProviderConnectionCreate": {
@@ -2152,33 +1782,6 @@
         "title": "SelectRoutes",
         "type": "object"
       },
-      "SessionInput": {
-        "additionalProperties": false,
-        "properties": {
-          "learner_id": {
-            "format": "uuid",
-            "title": "Learner Id",
-            "type": "string"
-          },
-          "profile_version_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Version Id"
-          }
-        },
-        "required": [
-          "learner_id"
-        ],
-        "title": "SessionInput",
-        "type": "object"
-      },
       "SessionPublic": {
         "properties": {
           "id": {
@@ -2199,7 +1802,9 @@
             "type": "array"
           },
           "profile": {
-            "$ref": "#/components/schemas/ProfileSettings"
+            "additionalProperties": true,
+            "title": "Profile",
+            "type": "object"
           },
           "status": {
             "title": "Status",
@@ -2276,37 +1881,6 @@
           "csrf_token"
         ],
         "title": "SessionStatus",
-        "type": "object"
-      },
-      "SessionSummary": {
-        "properties": {
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "learner_id": {
-            "format": "uuid",
-            "title": "Learner Id",
-            "type": "string"
-          },
-          "status": {
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "learner_id",
-          "status",
-          "created_at"
-        ],
-        "title": "SessionSummary",
         "type": "object"
       },
       "SetupRequest": {
@@ -3612,111 +3186,6 @@
         ]
       }
     },
-    "/api/v1/admin/tutor-profiles": {
-      "get": {
-        "operationId": "admin_profiles_api_v1_admin_tutor_profiles_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ProfilePublic"
-                  },
-                  "title": "Response Admin Profiles Api V1 Admin Tutor Profiles Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Admin Profiles",
-        "tags": [
-          "profiles"
-        ]
-      },
-      "post": {
-        "operationId": "save_profile_api_v1_admin_tutor_profiles_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProfileInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProfilePublic"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Save Profile",
-        "tags": [
-          "profiles"
-        ]
-      }
-    },
-    "/api/v1/admin/tutor-profiles/preview": {
-      "post": {
-        "operationId": "preview_api_v1_admin_tutor_profiles_preview_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProfileSettings"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Preview"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Preview",
-        "tags": [
-          "profiles"
-        ]
-      }
-    },
     "/api/v1/admin/usage": {
       "get": {
         "operationId": "usage_api_v1_admin_usage_get",
@@ -3944,31 +3413,6 @@
         ]
       }
     },
-    "/api/v1/catalog": {
-      "get": {
-        "operationId": "catalog_api_v1_catalog_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Response Catalog Api V1 Catalog Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Catalog",
-        "tags": [
-          "practice"
-        ]
-      }
-    },
     "/api/v1/images/preview": {
       "post": {
         "operationId": "preview_image_api_v1_images_preview_post",
@@ -4026,49 +3470,6 @@
           }
         },
         "summary": "Features",
-        "tags": [
-          "review"
-        ]
-      }
-    },
-    "/api/v1/learners/{learner_id}/progress": {
-      "get": {
-        "operationId": "progress_api_v1_learners__learner_id__progress_get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "learner_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Learner Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProgressPublic"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Progress",
         "tags": [
           "review"
         ]
@@ -4426,59 +3827,6 @@
         ]
       }
     },
-    "/api/v1/problems/{problem_id}/skip": {
-      "post": {
-        "operationId": "skip_api_v1_problems__problem_id__skip_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "problem_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Problem Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VersionInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Acknowledged"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Skip",
-        "tags": [
-          "practice"
-        ]
-      }
-    },
     "/api/v1/problems/{problem_id}/submissions": {
       "post": {
         "operationId": "submit_api_v1_problems__problem_id__submissions_post",
@@ -4598,156 +3946,6 @@
         ]
       }
     },
-    "/api/v1/sessions": {
-      "get": {
-        "operationId": "sessions_api_v1_sessions_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/SessionSummary"
-                  },
-                  "title": "Response Sessions Api V1 Sessions Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Sessions",
-        "tags": [
-          "practice"
-        ]
-      },
-      "post": {
-        "operationId": "start_session_api_v1_sessions_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SessionInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionPublic"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Start Session",
-        "tags": [
-          "practice"
-        ]
-      }
-    },
-    "/api/v1/sessions/{session_id}": {
-      "get": {
-        "operationId": "read_session_api_v1_sessions__session_id__get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "session_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Session Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SessionPublic"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Read Session",
-        "tags": [
-          "practice"
-        ]
-      }
-    },
-    "/api/v1/sessions/{session_id}/external-problem": {
-      "post": {
-        "operationId": "external_problem_api_v1_sessions__session_id__external_problem_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "session_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Session Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemPublic"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "External Problem",
-        "tags": [
-          "practice"
-        ]
-      }
-    },
     "/api/v1/sessions/{session_id}/finish": {
       "post": {
         "operationId": "finish_session_api_v1_sessions__session_id__finish_post",
@@ -4791,112 +3989,6 @@
         ]
       }
     },
-    "/api/v1/sessions/{session_id}/problems": {
-      "post": {
-        "operationId": "next_problem_api_v1_sessions__session_id__problems_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "session_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Session Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProblemInput"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemPublic"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Next Problem",
-        "tags": [
-          "practice"
-        ]
-      }
-    },
-    "/api/v1/submissions/{submission_id}/confirm-interpretation": {
-      "post": {
-        "operationId": "confirm_api_v1_submissions__submission_id__confirm_interpretation_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "submission_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Submission Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Confirmation"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "202": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OperationPublic"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Confirm",
-        "tags": [
-          "photos"
-        ]
-      }
-    },
     "/api/v1/submissions/{submission_id}/image": {
       "get": {
         "operationId": "photo_api_v1_submissions__submission_id__image_get",
@@ -4935,31 +4027,6 @@
         "summary": "Photo",
         "tags": [
           "photos"
-        ]
-      }
-    },
-    "/api/v1/tutor-profiles": {
-      "get": {
-        "operationId": "profiles_api_v1_tutor_profiles_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ProfilePublic"
-                  },
-                  "title": "Response Profiles Api V1 Tutor Profiles Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Profiles",
-        "tags": [
-          "profiles"
         ]
       }
     },

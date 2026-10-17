@@ -7,7 +7,6 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../src/App";
-import { checkOffline } from "../src/offline-math";
 import { Tutor } from "../src/Tutor";
 import { SafeText } from "../src/SafeText";
 
@@ -31,7 +30,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-describe("entry and offline practice", () => {
+describe("entry", () => {
   it("offers administrator and learner sign-in with a CSRF bootstrap", async () => {
     render(<App />);
     expect(screen.getByRole("main")).toBeVisible();
@@ -94,14 +93,6 @@ describe("entry and offline practice", () => {
       name: "Phone setup",
     });
     await vi.waitFor(() => expect(topic).toHaveFocus());
-  });
-  it("retains bounded arithmetic utilities without exposing a template practice UI", () => {
-    expect(checkOffline("10/12", 5n, 6n)).toMatch("Correct value");
-    expect(checkOffline("1/0", 5n, 6n)).toMatch("cannot be zero");
-    expect(checkOffline("1+1", 2n, 1n)).toMatch("Use an integer");
-    expect(checkOffline("999999999/999999998", 999999999n, 999999998n)).toMatch(
-      "Correct value",
-    );
   });
   it("renders untrusted output without HTML, external images, or links", () => {
     const { container } = render(
@@ -317,19 +308,8 @@ it("keeps the selected session when a previous session response arrives late", a
       return Promise.resolve(response(session(second)));
     if (url.endsWith("/sessions"))
       return Promise.resolve(response([first, second].map(session)));
-    if (url.endsWith("/progress"))
-      return Promise.resolve(
-        response({
-          checked_answers: 0,
-          correct_without_help: 0,
-          correct_with_help: 0,
-          incorrect: 0,
-        }),
-      );
     if (url.endsWith("/features"))
-      return Promise.resolve(
-        response({ photos_available: false, external_problems: false }),
-      );
+      return Promise.resolve(response({ photos_available: false }));
     return Promise.resolve(response([]));
   });
   vi.stubGlobal("fetch", fetcher);
@@ -379,12 +359,6 @@ it("rejects a URL session belonging to a different selected learner", async () =
           initiative: "balanced",
           difficulty: "standard",
         });
-      if (url.endsWith("/progress"))
-        return response({
-          correct_without_help: 0,
-          correct_with_help: 0,
-          incorrect: 0,
-        });
       if (url.endsWith("/features"))
         return response({ photos_available: false });
       return response([]);
@@ -417,16 +391,6 @@ it("does not restore an old learner's URL when its request completes after switc
     "fetch",
     vi.fn((url: string) => {
       if (url.endsWith(`/sessions/${oldSession}`)) return oldResponse;
-      if (url.endsWith("/progress"))
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              correct_without_help: 0,
-              correct_with_help: 0,
-              incorrect: 0,
-            }),
-          ),
-        );
       if (url.endsWith("/features"))
         return Promise.resolve(
           new Response('{"photos_available":false,"tutoring_available":true}'),
@@ -495,16 +459,6 @@ it("allows a corrected request after its first attempt is definitively rejected"
       }
       if (url.endsWith(`/sessions/${session.id}`))
         return Promise.resolve(new Response(JSON.stringify(session)));
-      if (url.endsWith("/progress"))
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              correct_without_help: 0,
-              correct_with_help: 0,
-              incorrect: 0,
-            }),
-          ),
-        );
       if (url.endsWith("/features"))
         return Promise.resolve(
           new Response('{"photos_available":false,"tutoring_available":true}'),

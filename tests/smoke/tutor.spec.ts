@@ -110,7 +110,7 @@ test("the tutor continues from a phone photo through guidance, revision, discuss
     expect(await phone.evaluate(() => Object.keys(localStorage))).toEqual([]);
     expect(
       (
-        await mobile.request.get("http://127.0.0.1:4173/api/v1/sessions")
+        await mobile.request.get("http://127.0.0.1:4173/api/v1/tutor/sessions")
       ).status(),
     ).toBe(401);
     expect(external).toEqual([]);

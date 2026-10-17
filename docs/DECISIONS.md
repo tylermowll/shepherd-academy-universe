@@ -316,3 +316,18 @@ condition in SQLite. Existing accounts close setup regardless of cookie state.
 Success or cancellation clears the cookie. Refresh anonymous CSRF before form
 submission. No password, owner token or setup cookie enters localStorage or
 sessionStorage; no alternate account-creation protocol or setup table is added.
+
+## D015 — Retire catalog-era runtime workflows (2026-10-17)
+
+The maintainer authorized removing the legacy bloat identified after T45.
+Complete D009's product cutover by removing the catalog-only APIs, authored
+answer delivery, manual photo confirmation and old model payload/worker branches.
+Current tutoring keeps its ownership, automatic reading, retry and recovery
+contracts; exact arithmetic remains independent domain/evaluation support.
+
+Keep existing migrations and stored historical records. Administrator exports
+retain historical work and recorded verdicts; old practice cannot accept new
+work or invoke a provider. This avoids destructive data changes while removing
+the second teaching implementation. No compatibility route, schema bridge or
+new infrastructure is introduced. Explicitly optional browser-model research
+remains outside learner navigation.

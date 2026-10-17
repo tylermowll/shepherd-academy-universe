@@ -280,6 +280,13 @@ reasoning. Deterministic answer/format verdicts remain separate from model
 observations; transcription failures, questions and provider errors are not
 incorrect learner attempts.
 
+The catalog-era session creation, fixed-skill profiles, authored hints/solutions,
+progress counters, external-problem intake and photo-confirmation APIs are
+retired. Exact utilities remain isolated domain/evaluation support. Retained
+catalog records remain available in administrator exports; they cannot create
+new work or invoke providers. Existing migrations and retention/deletion
+guarantees continue to protect those records.
+
 If the selected AI backend is unavailable, preserve the work and show an
 actionable retry/configuration error. Do not substitute a template or authored
 hint and call it tutoring. A configured mock is explicitly synthetic and cannot

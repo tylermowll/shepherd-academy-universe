@@ -90,7 +90,6 @@ const props = () => ({
   onRefresh: vi.fn(() => Promise.resolve()),
   page: "learners" as const,
   onNavigate: vi.fn(),
-  onProvidersChanged: vi.fn(),
   act: run,
 });
 
@@ -521,7 +520,11 @@ describe("AI settings page", () => {
         }),
       }),
     );
-    expect(handlers.onProvidersChanged).toHaveBeenCalledOnce();
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.filter(([url]) => url === "/api/v1/admin/providers"),
+    ).toHaveLength(2);
   });
 
   it("does not call a live provider without approving the individual test", async () => {

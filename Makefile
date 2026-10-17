@@ -14,7 +14,7 @@ LOCAL_COMMAND = $(UV) run --project $(API_PROJECT) --locked --no-env-file python
 
 .PHONY: bootstrap setup toolchain-check lock lock-check db migrate admin dev-api dev-web test \
 	test-integration lint format format-check typecheck build check hooks-install \
-	hooks-check pre-commit-check smoke
+	hooks-check hooks-files-check pre-commit-check smoke smoke-built
 
 bootstrap: toolchain-check
 	$(UV) sync $(UV_PROJECT_ARGS) --locked
@@ -30,6 +30,10 @@ hooks-install:
 
 hooks-check:
 	$(UV) run --project $(API_PROJECT) --locked pre-commit run --all-files
+
+# CI runs the project gate separately; skip only that duplicate hook.
+hooks-files-check:
+	SKIP=project-check $(UV) run --project $(API_PROJECT) --locked pre-commit run --all-files
 
 lock:
 	$(UV) lock $(UV_PROJECT_ARGS)
@@ -92,6 +96,9 @@ pre-commit-check: toolchain-check lock-check lint format-check typecheck test
 check: pre-commit-check build contracts-check secret-check infra-check
 
 smoke: build
+
+# CI already built the app in `check`; standalone `smoke` still builds first.
+smoke smoke-built:
 	$(PNPM) smoke
 
 .PHONY: contracts contracts-check secret-check audit eval-mock eval-live eval-reading-mock eval-reading-live eval-teaching-mock eval-teaching-live eval-teaching-adversarial-mock start dev serve demo worker test-e2e infra-check backup restore

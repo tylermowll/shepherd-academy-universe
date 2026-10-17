@@ -101,7 +101,7 @@ async def test_password_is_write_only_and_reset_revokes_sign_ins(
         assert (
             await adult.delete(f"/api/v1/admin/learners/{row['id']}/devices/{own['id']}")
         ).status_code == 200
-        assert (await browser.get("/api/v1/sessions")).status_code == 401
+        assert (await browser.get("/api/v1/tutor/sessions")).status_code == 401
 
 
 @pytest.mark.anyio

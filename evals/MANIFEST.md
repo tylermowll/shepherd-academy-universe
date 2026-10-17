@@ -25,7 +25,11 @@ redistribution permission and remain ignored, outside CI and the public dataset.
 
 Vision cases 25–30 are labeled holdout. These rendered images do not represent
 human handwriting or camera noise. Ambiguous regions require uncertainty;
-hostile image text remains content without workflow authority. Regenerate with:
+hostile image text remains content without workflow authority. The current
+diagnostic requests the reading/readability schema; its mock explicitly reports
+that it cannot read these images. Fixture metadata records expected content and
+ambiguity for review, without a photo-confirmation or hint-level requirement.
+Regenerate with:
 
 ```sh
 uv run --project apps/api --locked --no-env-file python scripts/generate-eval-fixtures.py

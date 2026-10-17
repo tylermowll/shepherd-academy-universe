@@ -140,13 +140,13 @@ separate maintainer authorization and may be billed. Historical Muse CLI
 rehearsals used additional system context and bypassed the app's HTTP adapters
 and browser/worker loop; see [implementation history](history/TASKS.md).
 
-The lower-level math/vision evaluator remains an adapter diagnostic:
-`make eval-live PROVIDER=YOUR_CONFIGURED_ID` permits at most three synthetic text
-calls. Its CLI also accepts `--stage vision --max-calls N` for 1–30 calls against
-`evals/fixtures/rational-v1.json`, with `--live-provider`,
-`--authorize-synthetic-calls`, `--fixtures` and `--output` supplied explicitly.
-Those images are rendered typeset exercises. Reserve the six held-out images for
-final review; they do not establish handwriting performance.
+The lower-level math/vision evaluator remains an
+[adapter diagnostic](TUTOR_EVALUATION.md#adapter-diagnostic). It uses the current
+reading/feedback schemas with `adapter-diagnostic-v2` prompts, independent of the
+application's teaching context. `make eval-live PROVIDER=YOUR_CONFIGURED_ID`
+permits at most three synthetic text calls; the vision CLI permits 1–30 rendered
+image calls. Its reports require human review and do not establish teaching or
+handwriting quality.
 
 The browser-model prototype is not exposed in the current app. Its modules and
 runtime/model hashes remain under `apps/web/src`, including

@@ -23,10 +23,10 @@ from pydantic import SecretStr
 
 from math_tutor.adapters.providers.config import ProviderConfig
 from math_tutor.adapters.providers.contracts import (
+    FeedbackPayload,
     Message,
     ModelRequest,
     ProviderError,
-    TutorPayload,
 )
 from math_tutor.providers import complete
 
@@ -57,9 +57,17 @@ def loopback() -> Iterator[LoopbackProvider]:
             if self.path.startswith("/unicode/"):
                 message = "\U0001f4d0" * 6000
             payload = {
-                "message_kind": "question_response",
-                "message_markdown": message,
-                "suggested_next_action": "revise_answer",
+                "teaching_action": "coach",
+                "learning_observation": {
+                    "assessment": "developing",
+                    "evidence": "Synthetic fraction question.",
+                    "resolved_points": [],
+                    "open_points": ["Explain equal-sized parts."],
+                },
+                "strengths": [],
+                "guidance": [message],
+                "next_step": "Explain equal-sized parts.",
+                "concepts": ["Fractions"],
             }
             body = {
                 "choices": [
@@ -124,10 +132,11 @@ def request(timeout_seconds: int = 5) -> ModelRequest:
     return ModelRequest(
         operation_id=uuid4(),
         stage="tutor",
+        purpose="review",
         model_id="synthetic-execution-v1",
         system_instruction="Answer the synthetic fraction question.",
         ordered_messages=[Message(role="user", content="Why do the parts need equal sizes?")],
-        response_schema=TutorPayload.model_json_schema(),
+        response_schema=FeedbackPayload.model_json_schema(),
         timeout_seconds=timeout_seconds,
     )
 
@@ -143,8 +152,8 @@ def test_provider_result_round_trips_from_child(
             result = pool.submit(complete, config, work).result(timeout=8)
     else:
         result = complete(config, work)
-    assert isinstance(result.validated_payload, TutorPayload)
-    assert result.validated_payload.message_markdown == (
+    assert isinstance(result.validated_payload, FeedbackPayload)
+    assert result.validated_payload.guidance[0] == (
         "Use equal-sized parts before adding fractions."
     )
     assert result.model_id == work.model_id
@@ -161,8 +170,8 @@ def test_provider_result_round_trips_from_child(
 
 def test_unicode_result_fits_bounded_child_channel(loopback: LoopbackProvider) -> None:
     result = complete(provider(loopback, "unicode"), request())
-    assert isinstance(result.validated_payload, TutorPayload)
-    assert result.validated_payload.message_markdown == "\U0001f4d0" * 6000
+    assert isinstance(result.validated_payload, FeedbackPayload)
+    assert result.validated_payload.guidance[0] == "\U0001f4d0" * 6000
 
 
 def test_write_only_key_reaches_real_http_child_without_serialization_leak(
@@ -196,8 +205,8 @@ def test_malformed_response_does_not_poison_the_next_call(loopback: LoopbackProv
     assert caught.value.code == "malformed_output"
     assert {child.pid for child in multiprocessing.active_children()} <= existing_children
     result = complete(provider(loopback), request())
-    assert isinstance(result.validated_payload, TutorPayload)
-    assert result.validated_payload.message_kind == "question_response"
+    assert isinstance(result.validated_payload, FeedbackPayload)
+    assert result.validated_payload.teaching_action == "coach"
     assert loopback.requests.qsize() == 2
     assert {child.pid for child in multiprocessing.active_children()} <= existing_children
 

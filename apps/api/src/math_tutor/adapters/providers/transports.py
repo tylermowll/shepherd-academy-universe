@@ -27,13 +27,11 @@ from math_tutor.adapters.providers.config import ProviderConfig, blocked_destina
 from math_tutor.adapters.providers.contracts import (
     ActivityPayload,
     FeedbackPayload,
-    InterpretationPayload,
     LearningObservation,
     ModelRequest,
     ModelResult,
     ProviderError,
     ReadingPayload,
-    TutorPayload,
 )
 from math_tutor.reading import OriginalPassage
 
@@ -168,7 +166,7 @@ def local_destination(host: str) -> bool:
 
 def validate_payload(
     request: ModelRequest, text: str
-) -> TutorPayload | InterpretationPayload | ActivityPayload | ReadingPayload | FeedbackPayload:
+) -> ActivityPayload | ReadingPayload | FeedbackPayload:
     if len(text) > 16000:
         raise ProviderError("malformed_output")
     try:
@@ -176,11 +174,7 @@ def validate_payload(
             return ActivityPayload.model_validate_json(text)
         if request.purpose == "read":
             return ReadingPayload.model_validate_json(text)
-        if request.purpose == "review":
-            return FeedbackPayload.model_validate_json(text)
-        if request.stage == "vision":
-            return InterpretationPayload.model_validate_json(text)
-        return TutorPayload.model_validate_json(text)
+        return FeedbackPayload.model_validate_json(text)
     except ValidationError:
         raise ProviderError(
             "malformed_output",
@@ -217,13 +211,7 @@ def check_request(config: ProviderConfig, request: ModelRequest) -> None:
 
 class MockProvider:
     def complete(self, request: ModelRequest) -> ModelResult:
-        payload: (
-            TutorPayload
-            | InterpretationPayload
-            | ActivityPayload
-            | ReadingPayload
-            | FeedbackPayload
-        )
+        payload: ActivityPayload | ReadingPayload | FeedbackPayload
         if request.purpose == "generate":
             payload = ActivityPayload(
                 problem_text="Synthetic practice: Two groups each observe a seedling for a week. One receives light and one stays in shade. Describe one observation you would record and explain how it could support a comparison.",
@@ -281,19 +269,6 @@ class MockProvider:
                 next_step="Revise one sentence to connect your evidence and explanation.",
                 concepts=["Evidence and explanation"],
                 uncertainty_note="Synthetic mock response, not an assessment of your work.",
-            )
-        elif request.stage == "vision":
-            payload = InterpretationPayload(
-                transcription="",
-                ambiguities=[
-                    "The mock provider does not read handwriting. Type the transcription to exercise confirmation."
-                ],
-            )
-        else:
-            payload = TutorPayload(
-                message_kind="question_response",
-                message_markdown="Synthetic tutor response: use equal-sized parts when comparing fractions.",
-                suggested_next_action="revise_answer",
             )
         return ModelResult(validated_payload=payload, model_id=request.model_id)
 

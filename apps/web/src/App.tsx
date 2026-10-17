@@ -49,7 +49,6 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
   const leavingAccount = useRef(false);
   const [location, setLocation] = useState(readLocation);
   const [learners, setLearners] = useState<Schema<"LearnerPublic">[]>([]);
-  const [settingsVersion, setSettingsVersion] = useState(0);
   const learnerSequence = useRef(0);
   const workspace = useRef<HTMLDivElement>(null);
   const scrollToTop = useRef(false);
@@ -457,9 +456,6 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                 onRefresh={refreshLearners}
                 page={page}
                 onNavigate={navigate}
-                onProvidersChanged={() =>
-                  setSettingsVersion((version) => version + 1)
-                }
                 act={act}
               />
             )}
@@ -472,9 +468,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                   offline={offline}
                   page={page === "history" ? "history" : "practice"}
                   active={tutorVisible}
-                  isAdult={isAdult}
                   onNavigate={navigate}
-                  settingsVersion={settingsVersion}
                   onBusyChange={setTutorBusy}
                   onDraftChange={setTutorDraft}
                 />

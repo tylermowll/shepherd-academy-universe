@@ -164,9 +164,11 @@ The [Makefile](Makefile) is authoritative.
 | `make bootstrap`, `make hooks-install`                                   | Locked installation and local commit checks                                                     |
 | `make check`                                                             | Locks, lint, format, types, unit/component tests, builds, contracts, secret scan and IaC checks |
 | `make test-integration`                                                  | On-disk migration, ownership, recovery, policy and retention checks                             |
-| `make smoke` / `make test-e2e`                                           | Isolated desktop/mobile Chromium workflows                                                      |
+| `make smoke` / `make test-e2e`                                           | Build and run isolated desktop/mobile Chromium workflows                                        |
+| `make smoke-built`                                                       | Run browser workflows against an already-built app                                              |
 | `make eval-mock`                                                         | Math/vision, reading, cross-subject and adversarial synthetic contracts                         |
 | `make audit`, `make hooks-check`                                         | Locked dependency audit and repository checks                                                   |
+| `make hooks-files-check`                                                 | Repository file hygiene; pair with `make check` for full project gates                          |
 | `make contracts` / `make contracts-check`                                | Regenerate OpenAPI/TypeScript or reject drift                                                   |
 | `make format`, `make lint`, `make typecheck`                             | Focused developer checks                                                                        |
 | `make start`, `make dev`, `make serve`, `make worker`                    | Persistent start, loopback start, configured HTTPS gateway or worker alone                      |

@@ -9,7 +9,8 @@ A task is complete only after its requirements and exit checks pass.
 ## Current checkpoint
 
 The application is implemented through T44, with the October 11 dependency
-refresh. The schema head is `0020_request_recovery`. The last recorded private
+refresh, T45 documentation consolidation and T46 legacy cleanup. The schema head
+is `0020_request_recovery`. The last recorded private
 deployment used runtime source `e9bf42c`, Python 3.15.0 and pillow-heif 1.8.1 on
 **October 11, 2026**. Image, HTTPS, served-asset and authorization checks are in
 the [release record](history/TASKS.md#release-publication-2026-10-11).
@@ -21,8 +22,99 @@ publication checks below validate that unchanged lockfile for the authorized pus
 to `main`; October 11's deployment evidence still describes the older installation.
 
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
-No additional feature task is queued. Browser-model research and AWS hosting
-remain optional.
+T46 below records the maintainer-approved cleanup and publication checks. No
+feature task is queued. Browser-model research and AWS hosting remain optional.
+
+## T46 — Retire catalog-era workflows and redundant checks (2026-10-17)
+
+**Status:** Complete; all local exit checks passed. The maintainer authorized
+cleanup and publication to `main`, including the separately staged API lock refresh.
+
+**Scope:** Remove catalog-only creation/profile/progress/photo-confirmation APIs,
+authored answer delivery and the old worker/provider payload branches. Preserve
+current tutor submissions, photos, automatic reading, recovery, ownership,
+retention, historical record export and exact-math domain utilities. Remove
+unreachable administrator tutoring controls, dead offline utilities/styles,
+obsolete fixture metadata and repeated CI gates. Keep the explicitly optional
+browser-model prototype and infrastructure tooling. No destructive schema change,
+live inference, deployment or model download is authorized by this task.
+
+**Contracts:** SPECIFICATION sections 1, 4, 9–13 and 16; D005/D009; generated
+OpenAPI/TypeScript; current worker generation/reading/guidance payloads; learner
+and administrator separation; retained-data export and migration integrity.
+
+**Validation plan:** Update transport/execution tests to current payloads; retain
+authorization, idempotency, worker recovery, photo ordering, retention and
+on-disk migration coverage while removing tests for retired product behavior.
+Add endpoint-removal/current-path regression checks. Run targeted checks, then
+`make check`, `make test-integration`, mock evaluations, `make smoke-built`, dependency
+audits and repository hooks. Regenerate contracts, inspect the complete staged
+diff and record exact outcomes before committing and pushing `main`.
+
+**Lockfile:** Preserve the maintainer's staged updates to filelock 4.2.1,
+platformdirs 4.13.4 and virtualenv 21.14.10. Initial API lock SHA-256:
+`6a5f6e9e79e4ca93e94e52abf9ec07b0e24eb6d8f916d8b570d04e57ae7d95d7`.
+The API and isolated infrastructure locks remain beside their owning manifests;
+this task does not introduce a Python workspace.
+
+**Implementation:** Removed the catalog/profile/progress/skip/external-problem
+and manual-confirmation routes, authored hint/answer helper and legacy provider
+schemas/worker branches. Primary session settings now store difficulty alone;
+current operations no longer query catalog evaluations. Historical sessions,
+readings, feedback and verdicts remain exportable, with no hidden answer keys;
+old queued jobs fail safely without provider calls. No table or migration changed.
+
+Removed unreachable administrator controls and provider-refresh synchronization
+from learner tutoring, the unused offline arithmetic helper and obsolete CSS.
+Updated current learner guidance and security tests, generated OpenAPI and
+TypeScript, and migrated evaluation diagnostics to current reading/feedback
+schemas. Fixture images, holdout labels and historical reports are unchanged.
+CI now runs repository hygiene plus one project gate, then tests the built app;
+standalone hooks and smoke commands retain their complete behavior. D015 records
+the runtime cutover, and DEPENDENCIES explains lockfile ownership.
+
+**Validation (2026-10-17, before publication):**
+
+Checks used checksum-verified Node 26.11.1 and registry-integrity-verified pnpm
+12.11.2 under `/tmp/shepherd-cleanup-toolchain`, uv 0.13.1, application Python
+3.15.0 / SQLite 3.53.1 and isolated infrastructure Python 3.14.8. A temporary
+runner cleared operator/provider configuration variables, disabled env-file
+loading and isolated tool caches. Tests requiring localhost sockets ran outside
+the restricted sandbox against synthetic temporary data.
+
+- `make bootstrap`: passed frozen JavaScript and locked Python installations.
+- `make contracts`: regenerated OpenAPI and TypeScript. The initial attempt
+  found an incomplete preinstalled generator; frozen bootstrap restored it.
+- `make check`: passed locks, lint/format, Python/TypeScript types, builds,
+  contracts, credential scan and IaC lint. **300 backend unit, 11 toolchain and
+  187 component tests passed.** An earlier gate caught implicit test imports;
+  those were corrected before the successful complete run.
+- `make test-integration`: **346 passed in 57.69 seconds**, including the final
+  positive feedback-publication assertions for competing workers/expired leases.
+- `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome make smoke-built`:
+  **80 desktop/mobile browser tests passed in 12.5 minutes**, with Chrome
+  155.0.8059.84, zero retries and the production login rate limit unchanged.
+- `make audit`: API Python, isolated infrastructure Python and pnpm reported
+  **no known vulnerabilities**.
+- All four mock evaluation CLI commands used the Makefile's fixtures and wrote
+  `/tmp/shepherd-cleanup-*.json`: **33 exact cases and 30 vision fixtures** passed;
+  reading and teaching passed **36 stages each**, adversarial teaching **20**.
+  No historical report was rewritten.
+- `make hooks-files-check` and `make hooks-check`: passed repository hygiene and
+  the complete hook gate. The CI-only hygiene target skips the duplicate project
+  hook because CI runs `make check` separately.
+- `python3 /tmp/shepherd-cleanup-doccheck.py`: passed **202 local links/headings**
+  across 22 Markdown files and every documented Make reference against **46
+  targets**. Verified the historical task archive and all nine reports against HEAD.
+  Revised Markdown formatting and `git diff --check` passed.
+- Final staged credential/whitespace scans passed. Worktree and staged API lock
+  hashes match the maintainer's original update above. A fetch confirmed the
+  starting local `main` matched `origin/main` before publication.
+
+All local publication gates passed. No live inference, model download,
+private-data inspection, destructive migration or application
+deployment was performed. Container packaging/scanning remains CI work for the
+pushed revision; human/device/provider acceptance remains open.
 
 ## T45 — Documentation review and consolidation (2026-10-17)
 

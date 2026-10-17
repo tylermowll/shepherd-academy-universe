@@ -167,7 +167,7 @@ async def test_any_topic_generates_without_level_or_answer_key(
             json={"skill_id": "fractions.add"},
             headers={"Idempotency-Key": str(uuid4())},
         )
-    ).status_code == 409
+    ).status_code == 404
 
 
 @pytest.mark.anyio
@@ -233,7 +233,7 @@ async def test_photo_guidance_revision_context_and_next_activity(
             f"/api/v1/submissions/{reading['id']}/confirm-interpretation",
             json={"version": 1, "transcription": "altered"},
         )
-    ).status_code == 409
+    ).status_code == 404
     assert worker.run_once(engine)
     problem = await latest(adult, session)
     review = problem["operations"][-1]
@@ -443,7 +443,7 @@ async def test_settings_export_ownership_and_demo_boundaries(
                 f"/api/v1/tutor/sessions/{session['id']}/settings", json={"initiative": "balanced"}
             )
         ).status_code == 401
-    assert (await adult.get("/api/v1/sessions")).json() == []
+    assert (await adult.get("/api/v1/sessions")).status_code == 404
     monkeypatch.setenv("APP_MODE", "demo")
     features = (await adult.get(f"/api/v1/learners/{session['learner_id']}/features")).json()
     assert features["tutoring_available"] is False
@@ -499,7 +499,7 @@ async def test_legacy_external_api_cannot_put_homework_in_tutor_session(
         f"/api/v1/sessions/{session['id']}/external-problem",
         headers={"Idempotency-Key": str(uuid4())},
     )
-    assert response.status_code == 409
+    assert response.status_code == 404
     with Session(engine) as db:
         assert db.scalar(select(func.count()).select_from(ProblemInstance)) == 0
 

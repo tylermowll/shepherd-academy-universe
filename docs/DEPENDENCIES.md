@@ -26,6 +26,12 @@ second package inventory in prose:
 Lockfile updates need fresh validation. See [TASKS](TASKS.md) for changes made
 after the last recorded release gates.
 
+Each Python lockfile belongs beside its project's `pyproject.toml`. The API and
+infrastructure checker are independent projects with different Python baselines;
+the repository root is not a uv workspace. Keep `apps/api/uv.lock` and
+`tools/infra/uv.lock` in their current locations and use the root Make targets
+to operate them. Directory depth does not affect the lock's scope.
+
 ## Runtime and installer pins
 
 | Tool                  | Repository pin                                 | Authority                                                                                     |

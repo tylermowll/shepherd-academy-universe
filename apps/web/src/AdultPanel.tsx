@@ -15,7 +15,6 @@ type Props = {
   onRefresh: () => Promise<void>;
   page: "learners" | "settings";
   onNavigate: Navigate;
-  onProvidersChanged?: () => void;
   act: (action: () => Promise<void>) => Promise<void>;
 };
 
@@ -61,7 +60,6 @@ export function AdultPanel({
   onRefresh,
   page,
   onNavigate,
-  onProvidersChanged,
   act,
 }: Props) {
   const [providers, setProviders] = useState<Schema<"ProvidersPublic"> | null>(
@@ -260,10 +258,7 @@ export function AdultPanel({
                   onSectionChange={chooseSettingsSection}
                   onNavigate={onNavigate}
                   act={act}
-                  onChanged={async () => {
-                    await refreshProviders();
-                    onProvidersChanged?.();
-                  }}
+                  onChanged={refreshProviders}
                 />
                 {settingsSection === "roles" && (
                   <form
@@ -283,7 +278,6 @@ export function AdultPanel({
                         });
                         routesDirty.current = false;
                         await refreshProviders();
-                        onProvidersChanged?.();
                         setMessage(
                           "Active connections saved. Future learner work will use these app-wide choices.",
                         );
