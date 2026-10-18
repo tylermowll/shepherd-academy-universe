@@ -12,10 +12,12 @@ The application is implemented through T44, with the October 11 dependency
 refresh, T45 documentation consolidation, T46 legacy cleanup and T47 root Python
 project consolidation. T48 reviewed documentation and help wording; T49
 closed process gaps found in the subsequent flow review. T50 records the
-independent adversarial review and its bounded corrections. The
+independent adversarial review and its bounded corrections. T51 records the
+initial October 18 deployment; T52 links learning/administration and deploys the
+maintainer's subsequent lock update. The
 schema head is `0020_request_recovery`. The latest private deployment uses
-runtime source `4e9f5fa`, Python 3.15.0 and pillow-heif 1.8.1, verified on
-**October 18, 2026**. T51 below records the image, encrypted backup/isolated
+runtime source `f0fb127`, Python 3.15.0, FastAPI 0.145.0 and pillow-heif 1.8.1,
+verified on **October 18, 2026**. T52 below records the image, encrypted backup/isolated
 restore, HTTPS, served-asset and authorization checks. The earlier installation
 is preserved in the [October 11 release record](history/TASKS.md#release-publication-2026-10-11).
 This is dated evidence; current provider selections and live teaching quality
@@ -23,7 +25,7 @@ have not been verified.
 
 The maintainer refreshed the former `apps/api/uv.lock` before T46 publication.
 T47 preserves those versions and artifacts in the root `uv.lock`, adding the
-CloudFormation validator. T51 verifies the consolidated project's current
+CloudFormation validator. T51/T52 verify the consolidated project's current
 container packaging and private installation; October 11's evidence is historical.
 
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
@@ -32,8 +34,8 @@ and publication checks. Browser-model research and AWS hosting remain optional.
 
 ## T52 — Link learning and administration (2026-10-18)
 
-**Status:** Implementation and final source/browser gates passed; publication
-and private deployment pending. The maintainer requested obvious links between
+**Status:** Complete; implementation, final source/browser/package gates,
+publication and private deployment passed. The maintainer requested obvious links between
 learning and administration within the same app, with administrator sign-in
 required when entering administration. Publish to `main`, include the
 maintainer's `uv.lock` updates, and deploy the private installation.
@@ -74,7 +76,7 @@ README, Help and SPECIFICATION describe the shared navigation and sign-in rules.
 and dependency declarations are preserved; only those package versions/artifacts
 changed. Locked installation confirmed the new versions.
 
-**Validation so far (2026-10-18):**
+**Validation (2026-10-18):**
 
 - `make audit`: Python and pnpm audits reported no known vulnerabilities.
 - `make test-integration`: **376 passed in 66.21s** on synthetic on-disk SQLite.
@@ -115,11 +117,65 @@ CycloneDX SBOM. Final package verification will use the committed runtime source
 and its exact OCI revision before private cutover. No paid provider inference,
 private-data inspection or model download was performed by these checks.
 
-**Publication:** The maintainer authorized publishing the navigation,
-documentation/tests and their three-package lock update together. The installed
-commit hooks run the required project gate again. Final source hash, image,
-backup/restore, deployment and remote-equality results are recorded after the
-controlled release.
+**Publication and final installation (2026-10-18):**
+
+- The installed commit hooks passed all applicable file checks and the full
+  project pre-commit gate. Published
+  **`f0fb127ce4d1896d594b684e65aea68c64f11576`** to `main`, including all three
+  maintainer lock updates. A fresh fetch before publication confirmed the
+  `150936f` base; the push advanced it without force.
+- Built `math-practice-tutor:release-20261018-f0fb127` from a clean
+  `git archive HEAD` context. The exact final image is
+  **`sha256:78af08b19c02f6440fdde28bf3c1a717a1b4f85cebf11b950078f9d2d222e79a`**,
+  labeled with the full committed source. The checked-in
+  `scripts/container-smoke.sh` passed again for this image: Python/HEIF/crypto,
+  installer removal, typed provider rejection without inference, real synthetic
+  migrations/SQLite settings, non-root/read-only API and worker, built UI and
+  browser owner-setup protections.
+- Final Trivy **0.76.0** `image --image-src docker --scanners vuln,secret
+--severity HIGH,CRITICAL --ignore-unfixed=false --ignorefile /dev/null
+--exit-code 1` passed with **zero HIGH/CRITICAL vulnerabilities or secrets**.
+  Generated CycloneDX **1.7**, **52 components**; SBOM SHA-256
+  `706540c81d2c0db564896a8df9f9f1ff2297a73a10a35ddf09fa0ab1fc680601`.
+- `/tmp/shepherd-t52-release-20261018/final/cutover.py` retained the prior image
+  as `math-practice-tutor:rollback-20261018-4e9f5fa`, stopped API/worker with
+  Compose `stop --timeout 100`, and verified both writers were stopped. The
+  offline, network-disabled backup container used the prior image and a
+  read-only original data mount. Native encrypted backup and isolated restore
+  passed integrity, foreign keys, retained-object checksums, deletion handling
+  and schema validation; live data was never restored or replaced.
+- The encrypted backup is `backups/deploy-20261018-f0fb127/snapshot.enc`, SHA-256
+  `02697d76089d88fbf3e4a575ccc66588b31e91ddf8cc20a344c959eb4cedfe78`.
+  Directory/file modes are **700/600**. Its generated mode-600 passphrase file is
+  stored separately under
+  `~/.local/share/shepherd-academy-universe/backup-keys/`; its contents were never
+  displayed or passed through command arguments/environment variables.
+- Tagged the tested image as `math-practice-tutor:local`, ran controlled
+  `alembic -c alembic.ini upgrade head`, and Compose
+  `up -d --no-build --pull never --no-deps api worker`. Both running services
+  match the exact tested image and unchanged **`0020_request_recovery (head)`**.
+  Original accounts, data mount, operator settings and session secret were
+  preserved.
+- `python3 /tmp/shepherd-t52-release-20261018/final/verify.py` passed private
+  HTTPS readiness, a heartbeat newer than the replacement worker's start,
+  exact HTML/service-worker and **2/2** JS/CSS asset hashes, cache headers and
+  service-worker scope. **3/3** anonymous protected requests returned `401` and
+  `no-store`; protected response bodies were never read. **3/3** runtime API
+  documentation routes returned `404`.
+- `verify-navigation.mjs`, using a fresh anonymous mobile browser over the
+  deployed private HTTPS origin, passed both visible area links and both
+  labeled sign-in destinations, absence of administrator controls, viewport
+  overflow and page-error checks. It never signed in or viewed learner work.
+- Final scan/SBOM and deployment verification metadata are retained beside the
+  ignored encrypted backup. This documentation-only completion record is
+  published after deployment; it changes no runtime inputs.
+
+**Changed files:** App/navigation/styles and Help; App component and dedicated
+browser regressions; README/SPECIFICATION/this evidence; the maintainer's
+`uv.lock`. No failures remain. Live provider teaching/handwriting quality,
+physical devices, manual accessibility and full restored-host sign-in/key
+recovery remain separate acceptance work. No paid inference, model download,
+private-data inspection or new hosting infrastructure was used for this task.
 
 ## T51 — Deploy the current private installation (2026-10-18)
 
