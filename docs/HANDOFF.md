@@ -5,6 +5,8 @@ evidence. The application is implemented through T44; T45 consolidates
 documentation, T46 retires catalog-era runtime code and redundant checks, and
 T47 consolidates Python into one root project and Python 3.15 environment.
 T48 clarifies current documentation, help and screen text.
+T49 closes photo clarification, retry, age-group correction and session-flow
+gaps; its current validation and publication status is in TASKS.
 The last recorded private deployment was October 11, 2026. That record does not
 verify the current installation, selected models or teaching quality.
 

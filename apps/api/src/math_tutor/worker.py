@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 def safe_failure_message(error: ProviderError, stage: str) -> str:
     if error.safe_message != DEFAULT_PROVIDER_ERROR_MESSAGE:
         return error.safe_message
-    subject = "photo reader" if stage == "interpreting" else "tutor"
+    subject = "photo reader" if stage in {"interpreting", "interpreting_reference"} else "tutor"
     details = {
         "authentication": f"The {subject} rejected its saved credentials. Ask an adult to check the active connection. Your work is saved.",
         "invalid_request": f"The {subject} rejected the request. Ask an adult to check the model and connection settings. Your work is saved.",
@@ -113,7 +113,10 @@ def claim(engine: Engine) -> Claim | None:
         row.attempts += 1
         row.state, row.lease_token = "running", secrets.token_urlsafe(24)
         row.lease_expires_at = utcnow() + timedelta(seconds=120)
-        submission.status = row.stage
+        submission.status = {
+            "reference_discussion": "tutoring",
+            "interpreting_reference": "interpreting",
+        }.get(row.stage, row.stage)
         result = Claim(row.id, row.submission_id, row.lease_token)
         db.commit()
         return result
@@ -187,7 +190,9 @@ def prepare(engine: Engine, work: Claim) -> Prepared:
                 "policy_changed",
                 safe_message="Provider policy changed. Existing work will not be replayed to a new route.",
             )
-        stage: Literal["vision", "tutor"] = "vision" if job.stage == "interpreting" else "tutor"
+        stage: Literal["vision", "tutor"] = (
+            "vision" if job.stage in {"interpreting", "interpreting_reference"} else "tutor"
+        )
         name, provider = authorize_route(db, config, stage, row.learner_id)
         if job.call_count >= 6:
             raise ProviderError("call_budget")

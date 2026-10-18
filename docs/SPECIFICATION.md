@@ -166,6 +166,13 @@ from account sign-in, explains private HTTPS, and gives a path out of demo or
 unconfigured states. Page changes preserve drafts and pending request IDs in
 memory; account changes must not restore another learner's content.
 
+Choose practice material by purpose (topic practice, passage study or assignment
+concepts), then show the relevant input methods. Keep assignment references
+separate from passages and learner work. Finish session is available with the
+activity controls, guarded against pending work and unsent drafts. A finished
+session shows a recap of saved activities and messages and its latest saved
+guidance, without additional inference or a claim of mastery.
+
 Settings has four sections: **Connections**, **Data & privacy**, **Connection
 tests** and **Active models**. Connection saving, explicitly authorized
 synthetic testing and selection of the tutor or photo reader are separate
@@ -178,6 +185,11 @@ Learner usernames are unique after Unicode, whitespace and case normalization,
 and cannot conflict with the administrator username. The administrator creates
 accounts, sets/resets write-only passwords, and manages each learner's signed-in
 browsers. The common sign-in form accepts either account type (D013).
+Administrators can correct age eligibility on the same account. Preserve saved
+work and identity; on an actual change, atomically cancel pending submissions
+and jobs and invalidate their leases so late results cannot bypass the updated
+policy. Unchanged saves do not interrupt work. Already-sent provider requests
+cannot be recalled; new processing must recheck the current eligibility.
 
 ### Tutor preferences
 
@@ -691,6 +703,17 @@ feedback. A clear reference photo resumes generation of a distinct activity
 instead of reviewing the original. The reading persists and is displayed before
 feedback. There is no approval gate.
 
+After a rejected reference-photo reading, the learner can discuss the uncertain
+report before an activity exists. Accept only owned, versioned text questions in
+that capture state and only when a rejected report exists. Pin the report as
+explicitly uncertain context, never as verified work or an assignment to solve.
+Discussion does not assess learning, accept the reading or start generation.
+The learner can retake the photo or explicitly edit its uncertain transcription
+as typed material and request practice through the ordinary material flow.
+Persist source-reading and source-discussion job stages separately from learner
+work. A later clear retake must not reclassify earlier failed or canceled source
+discussions as evidence of the learner's work.
+
 ```text
 Activity:        queued -> generating -> assigned
 Typed work:      queued -> tutoring -> completed
@@ -704,6 +727,9 @@ Failed/canceled stages preserve accepted work and safe errors. Permitted retries
 resume the saved stage within the operation's budget. Reading rejection requires
 cleaner/clarified work rather than repeatedly rereading the same unusable photo.
 A provider failure never becomes a learner's wrong-answer verdict.
+Advertise retry availability only when the job's retry and call budgets, current
+activity/version, open session and absence of a conflicting operation permit the
+transition. The retry endpoint enforces the same conditions.
 
 Poll while the page is visible and reconnect by operation ID. Browser session
 storage may retain only opaque pending command IDs, learner IDs and command

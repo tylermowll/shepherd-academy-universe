@@ -218,7 +218,6 @@ test("Help and History preserve unsent work and saved sessions reopen through Hi
   await expect(page.locator(".tutor-feedback")).toHaveCount(1);
   expect(await page.evaluate(() => location.hash)).toBe(sessionHash);
   await openSessionTools(page);
-  await page.getByText("Session settings", { exact: true }).click();
   await page
     .getByRole("button", { name: "Finish session", exact: true })
     .click();

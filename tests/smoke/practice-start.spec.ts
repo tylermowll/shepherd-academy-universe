@@ -11,7 +11,10 @@ test("starting with reference text creates exactly one activity without a second
     .getByLabel("Topic or learning goal", { exact: true })
     .fill("Synthetic supporting evidence");
   await page
-    .getByRole("combobox", { name: "Practice source", exact: true })
+    .getByRole("combobox", { name: "Practice purpose", exact: true })
+    .selectOption("assignment");
+  await page
+    .getByRole("combobox", { name: "Material input", exact: true })
     .selectOption("reference_text");
   await page
     .getByLabel("Reference material", { exact: true })

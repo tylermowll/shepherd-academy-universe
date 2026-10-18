@@ -799,6 +799,7 @@ async def test_failed_provider_retry_budget_and_stale_retry(
     assert worker.run_once(engine)
     result = (await adult.get(f"/api/v1/operations/{op['id']}")).json()
     assert result["status"] == "failed" and result["verdict"] is None
+    assert result["retryable"] is True
     with Session(engine) as db:
         job = db.scalar(select(Job).where(Job.submission_id == UUID(op["id"])))
         assert job is not None
@@ -806,9 +807,53 @@ async def test_failed_provider_retry_budget_and_stale_retry(
         assert db.scalar(select(func.count()).select_from(ProgressEvent)) == 0
     problem = await read_problem(adult, session_id)
     await send(adult, problem, "", "hint", 1)
+    during = (await adult.get(f"/api/v1/operations/{op['id']}")).json()
+    assert during["retryable"] is False
+    assert (await adult.post(f"/api/v1/operations/{op['id']}/retry")).status_code == 409
     monkeypatch.undo()
     worker.run_once(engine)
+    stale = (await adult.get(f"/api/v1/operations/{op['id']}")).json()
+    assert stale["retryable"] is False
     assert (await adult.post(f"/api/v1/operations/{op['id']}/retry")).status_code == 409
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("reason", ["finished", "moved_on", "attempts", "calls", "job_state"])
+async def test_retry_affordance_matches_closed_or_exhausted_operation(
+    adult: AsyncClient, engine: Engine, monkeypatch: pytest.MonkeyPatch, reason: str
+) -> None:
+    session_id, problem = await start(adult, (await learner_ids(adult))[0])
+
+    def unavailable(*_args: object) -> None:
+        raise ProviderError("timeout", True)
+
+    monkeypatch.setattr(worker, "complete", unavailable)
+    operation = await send(adult, problem, "Explain the idea.", "question", 0)
+    assert worker.run_once(engine)
+    path = f"/api/v1/operations/{operation['id']}"
+    assert (await adult.get(path)).json()["retryable"] is True
+    if reason == "finished":
+        assert (await adult.post(f"/api/v1/sessions/{session_id}/finish")).status_code == 200
+    elif reason == "moved_on":
+        response = await adult.post(
+            f"/api/v1/tutor/sessions/{session_id}/activities",
+            json={"source": "topic"},
+            headers={"Idempotency-Key": str(uuid4())},
+        )
+        assert response.status_code == 201
+    else:
+        with Session(engine) as db:
+            job = db.scalar(select(Job).where(Job.submission_id == UUID(operation["id"])))
+            assert job is not None
+            if reason == "attempts":
+                job.attempts = 6
+            elif reason == "calls":
+                job.call_count = 6
+            else:
+                job.state = "canceled"
+            db.commit()
+    assert (await adult.get(path)).json()["retryable"] is False
+    assert (await adult.post(path + "/retry")).status_code == 409
 
 
 @pytest.mark.anyio

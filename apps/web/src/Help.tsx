@@ -90,6 +90,8 @@ export function HelpPage({
                   Read the feedback. Revise your response, ask a question, or
                   ask for a hint from <strong>Help</strong>. Choose from{" "}
                   <strong>Next activity options</strong> when you are ready.
+                  Choose <strong>Finish session</strong> to stop and review your
+                  saved work and latest guidance.
                 </li>
               </ol>
               <p>
@@ -159,6 +161,12 @@ export function HelpPage({
                 password. Resetting a password signs out their browsers. You can
                 also end one browser's access or sign out all of that learner's
                 browsers without changing their password.
+              </p>
+              <p>
+                You can also correct the learner's age group without replacing
+                their account or losing saved work. Changing it stops pending
+                requests so the updated AI restrictions apply. Requests already
+                sent to a provider cannot be recalled.
               </p>
               <p>
                 Older profiles keep their saved work. Set a password before

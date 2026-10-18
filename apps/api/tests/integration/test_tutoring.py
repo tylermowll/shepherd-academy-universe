@@ -18,6 +18,7 @@ from test_workflows import engine as engine
 from math_tutor import worker
 from math_tutor.adapters.db.models import (
     Evaluation,
+    Interpretation,
     Job,
     PracticeSession,
     ProblemInstance,
@@ -699,6 +700,304 @@ async def test_followup_receives_rejected_reading_and_specific_reason_without_re
         assert db.scalar(select(func.count()).select_from(Evaluation)) == 0
         row = db.get(Submission, UUID(rejected["id"]))
         assert row is not None and row.status == ("canceled" if cancel else "failed")
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("source", ["reference_photo", "reading_photo"])
+async def test_rejected_reference_discussion_preserves_uncertainty_through_retry_and_history(
+    adult: AsyncClient, engine: Engine, monkeypatch: pytest.MonkeyPatch, source: str
+) -> None:
+    reference = "UNCERTAIN ORIGINAL: Explain why the twelve plants lost mass."
+    requests = install_tutor(monkeypatch, quality="uncertain", reference=reference)
+    session = await tutor_session(adult)
+    problem = await activity(adult, session, source=source)
+    path = f"/api/v1/problems/{problem['id']}/submissions"
+    body = {"version": problem["version"], "kind": "question", "text": "Which line is unclear?"}
+    assert (
+        await adult.post(path, json=body, headers={"Idempotency-Key": str(uuid4())})
+    ).status_code == 409
+    uploaded = await adult.post(
+        f"/api/v1/problems/{problem['id']}/photos?version={problem['version']}",
+        content=photo_bytes(),
+        headers={"Idempotency-Key": str(uuid4())},
+    )
+    assert uploaded.status_code == 202 and worker.run_once(engine)
+    report = (await latest(adult, session))["operations"][-1]
+    assert report["reading"]["can_continue"] is False
+    headers = {"Idempotency-Key": str(uuid4())}
+    first = await adult.post(path, json=body, headers=headers)
+    duplicate = await adult.post(path, json=body, headers=headers)
+    assert first.status_code == 202 and duplicate.json()["id"] == first.json()["id"]
+    assert (
+        await adult.post(path, json=body, headers={"Idempotency-Key": str(uuid4())})
+    ).status_code == 409
+
+    def unavailable(*_args: object) -> ModelResult:
+        raise ProviderError("timeout", True)
+
+    with monkeypatch.context() as outage:
+        outage.setattr(worker, "complete", unavailable)
+        assert worker.run_once(engine)
+    failed = (await adult.get(f"/api/v1/operations/{first.json()['id']}")).json()
+    assert failed["retryable"] is True
+    assert (await adult.post(f"/api/v1/operations/{failed['id']}/retry")).status_code == 202
+    with Session(engine) as db:
+        job = db.scalar(select(Job).where(Job.submission_id == UUID(failed["id"])))
+        assert job is not None
+        job.available_at = utcnow() - timedelta(seconds=1)
+        db.commit()
+    assert worker.run_once(engine)
+    duplicate = await adult.post(path, json=body, headers=headers)
+    assert duplicate.status_code == 202 and duplicate.json()["id"] == failed["id"]
+    assert duplicate.json()["feedback"]["learning_observation"]["assessment"] == "not_assessed"
+    changed = await adult.post(path, json={**body, "text": "Changed request"}, headers=headers)
+    assert changed.status_code == 409
+    assert (
+        await adult.post(path, json=body, headers={"Idempotency-Key": str(uuid4())})
+    ).status_code == 409
+
+    # The source report must survive after it falls outside the 12-turn history.
+    for index in range(13):
+        current = await latest(adult, session)
+        sent = await adult.post(
+            path,
+            json={
+                "version": current["version"],
+                "kind": "question",
+                "text": f"Clarify line {index}.",
+            },
+            headers={"Idempotency-Key": str(uuid4())},
+        )
+        assert sent.status_code == 202 and worker.run_once(engine)
+    request = requests[-1]
+    assert request.purpose == "review" and request.private_image_bytes is None
+    assert reference in request.ordered_messages[-1].content
+    assert "REJECTED/UNCERTAIN" in request.ordered_messages[-1].content
+    assert "overlapping lines" in request.ordered_messages[-1].content
+    assert "no assigned practice task" in request.system_instruction
+    assert "without solving" in request.system_instruction
+    current = await latest(adult, session)
+    assert current["activity_state"] == "reference_capture" and current["passage"] is None
+    assert current["operations"][0]["status"] == "failed"
+    assert all(
+        operation["feedback"]["learning_observation"]["assessment"] == "not_assessed"
+        for operation in current["operations"][1:]
+    )
+    with Session(engine) as db:
+        row = db.get(ProblemInstance, UUID(problem["id"]))
+        assert row is not None and row.parameters.get("reference", "") == ""
+        assert row.expected_result == {}
+        assert db.scalar(select(func.count()).select_from(Evaluation)) == 0
+        assert db.scalar(select(func.count()).select_from(ProgressEvent)) == 0
+
+
+@pytest.mark.anyio
+async def test_reference_discussion_rejects_work_and_other_learners(
+    adult: AsyncClient, engine: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    install_tutor(monkeypatch, quality="uncertain")
+    session = await tutor_session(adult)
+    problem = await activity(adult, session, source="reference_photo")
+    uploaded = await adult.post(
+        f"/api/v1/problems/{problem['id']}/photos?version={problem['version']}",
+        content=photo_bytes(),
+        headers={"Idempotency-Key": str(uuid4())},
+    )
+    assert uploaded.status_code == 202 and worker.run_once(engine)
+    path = f"/api/v1/problems/{problem['id']}/submissions"
+    body = {"version": problem["version"], "kind": "question", "text": "Explain the uncertainty."}
+    for invalid in (
+        {"kind": "answer"},
+        {"kind": "hint"},
+        {"text": " "},
+        {"work_text": "This is my answer."},
+        {"help_level": 1},
+    ):
+        rejected = await adult.post(
+            path, json={**body, **invalid}, headers={"Idempotency-Key": str(uuid4())}
+        )
+        assert rejected.status_code == 409
+    async with client(engine) as other:
+        await sign_in_learner(adult, other, (await learner_ids(adult))[1])
+        rejected = await other.post(path, json=body, headers={"Idempotency-Key": str(uuid4())})
+        assert rejected.status_code == 404
+        assert (await other.get(f"/api/v1/operations/{uploaded.json()['id']}")).status_code == 404
+    assert (await adult.post(f"/api/v1/sessions/{session['id']}/finish")).status_code == 200
+    assert (
+        await adult.post(path, json=body, headers={"Idempotency-Key": str(uuid4())})
+    ).status_code == 409
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("stage", ["interpreting_reference", "reference_discussion"])
+async def test_source_retry_closes_when_clear_retake_advances_to_failed_generation(
+    adult: AsyncClient, engine: Engine, monkeypatch: pytest.MonkeyPatch, stage: str
+) -> None:
+    install_tutor(monkeypatch, quality="uncertain")
+    session = await tutor_session(adult)
+    problem = await activity(adult, session, source="reference_photo")
+    photo_path = f"/api/v1/problems/{problem['id']}/photos?version={problem['version']}"
+    uploaded = await adult.post(
+        photo_path, content=photo_bytes(), headers={"Idempotency-Key": str(uuid4())}
+    )
+    assert uploaded.status_code == 202
+
+    def unavailable(*_args: object) -> ModelResult:
+        raise ProviderError("timeout", True)
+
+    if stage == "reference_discussion":
+        assert worker.run_once(engine)
+        discussion = await adult.post(
+            f"/api/v1/problems/{problem['id']}/submissions",
+            json={
+                "version": problem["version"],
+                "kind": "question",
+                "text": "Which line is unclear?",
+            },
+            headers={"Idempotency-Key": str(uuid4())},
+        )
+        assert discussion.status_code == 202
+        original = discussion.json()
+    else:
+        original = uploaded.json()
+    with monkeypatch.context() as outage:
+        outage.setattr(worker, "complete", unavailable)
+        assert worker.run_once(engine)
+    original_path = f"/api/v1/operations/{original['id']}"
+    assert (await adult.get(original_path)).json()["retryable"] is True
+    install_tutor(monkeypatch, quality="clear")
+    retake = await adult.post(
+        photo_path, content=photo_bytes(), headers={"Idempotency-Key": str(uuid4())}
+    )
+    assert retake.status_code == 202 and worker.run_once(engine)
+    generating = await latest(adult, session)
+    assert generating["activity_state"] == "generating"
+    assert generating["version"] == problem["version"]
+    with monkeypatch.context() as outage:
+        outage.setattr(worker, "complete", unavailable)
+        assert worker.run_once(engine)
+    generation = (await adult.get(f"/api/v1/operations/{retake.json()['id']}")).json()
+    assert generation["status"] == "failed" and generation["retryable"] is True
+    assert (await adult.get(original_path)).json()["retryable"] is False
+    assert (await adult.post(original_path + "/retry")).status_code == 409
+
+
+@pytest.mark.anyio
+async def test_reference_discussion_retry_requires_retained_rejected_report(
+    adult: AsyncClient, engine: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    install_tutor(monkeypatch, quality="uncertain")
+    session = await tutor_session(adult)
+    problem = await activity(adult, session, source="reference_photo")
+    uploaded = await adult.post(
+        f"/api/v1/problems/{problem['id']}/photos?version={problem['version']}",
+        content=photo_bytes(),
+        headers={"Idempotency-Key": str(uuid4())},
+    )
+    assert uploaded.status_code == 202 and worker.run_once(engine)
+    sent = await adult.post(
+        f"/api/v1/problems/{problem['id']}/submissions",
+        json={"version": problem["version"], "kind": "question", "text": "Which line is unclear?"},
+        headers={"Idempotency-Key": str(uuid4())},
+    )
+    assert sent.status_code == 202
+
+    def unavailable(*_args: object) -> ModelResult:
+        raise ProviderError("timeout", True)
+
+    monkeypatch.setattr(worker, "complete", unavailable)
+    assert worker.run_once(engine)
+    path = f"/api/v1/operations/{sent.json()['id']}"
+    assert (await adult.get(path)).json()["retryable"] is True
+    with Session(engine) as db:
+        report = db.scalar(
+            select(Interpretation).where(
+                Interpretation.submission_id == UUID(uploaded.json()["id"])
+            )
+        )
+        assert report is not None
+        db.delete(report)
+        db.commit()
+    assert (await adult.get(path)).json()["retryable"] is False
+    assert (await adult.post(path + "/retry")).status_code == 409
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("repair", ["typed", "retake"])
+async def test_source_discussion_never_enters_later_practice_review(
+    adult: AsyncClient, engine: Engine, monkeypatch: pytest.MonkeyPatch, repair: str
+) -> None:
+    reference = "ORIGINAL SOURCE ASSIGNMENT: Explain why the twelve plants lost mass."
+    install_tutor(monkeypatch, quality="uncertain", reference=reference)
+    session = await tutor_session(adult)
+    problem = await activity(adult, session, source="reference_photo")
+    uploaded = await adult.post(
+        f"/api/v1/problems/{problem['id']}/photos?version={problem['version']}",
+        content=photo_bytes(),
+        headers={"Idempotency-Key": str(uuid4())},
+    )
+    assert uploaded.status_code == 202 and worker.run_once(engine)
+
+    def unavailable(*_args: object) -> ModelResult:
+        raise ProviderError("timeout", True)
+
+    for outcome in ("completed", "failed", "canceled"):
+        current = await latest(adult, session)
+        discussion = await adult.post(
+            f"/api/v1/problems/{problem['id']}/submissions",
+            json={
+                "version": current["version"],
+                "kind": "question",
+                "text": f"SOURCE CORRECTION {outcome}: the assignment actually says fourteen plants.",
+            },
+            headers={"Idempotency-Key": str(uuid4())},
+        )
+        assert discussion.status_code == 202
+        if outcome == "canceled":
+            assert (
+                await adult.post(f"/api/v1/operations/{discussion.json()['id']}/cancel")
+            ).status_code == 200
+        elif outcome == "failed":
+            with monkeypatch.context() as outage:
+                outage.setattr(worker, "complete", unavailable)
+                assert worker.run_once(engine)
+        else:
+            assert worker.run_once(engine)
+        assert (await latest(adult, session))["operations"][-1]["status"] == outcome
+    requests = install_tutor(monkeypatch, quality="clear", reference=reference)
+    if repair == "typed":
+        await activity(adult, session, source="reference_text", reference_text=reference)
+    else:
+        current = await latest(adult, session)
+        retake = await adult.post(
+            f"/api/v1/problems/{problem['id']}/photos?version={current['version']}",
+            content=photo_bytes(),
+            headers={"Idempotency-Key": str(uuid4())},
+        )
+        assert retake.status_code == 202 and worker.run_once(engine)
+        assert (await latest(adult, session))["activity_state"] == "generating"
+    assert worker.run_once(engine)
+    current = await latest(adult, session)
+    assert current["activity_state"] == "ready"
+    work = await adult.post(
+        f"/api/v1/problems/{current['id']}/submissions",
+        json={
+            "version": current["version"],
+            "text": "CURRENT LEARNER WORK: I record equal-time observations.",
+        },
+        headers={"Idempotency-Key": str(uuid4())},
+    )
+    assert work.status_code == 202 and worker.run_once(engine)
+    request = requests[-1]
+    assert request.purpose == "review"
+    context = "\n".join(message.content for message in request.ordered_messages)
+    assert "CURRENT LEARNER WORK" in context
+    assert "SOURCE CORRECTION" not in context and reference not in context
+    assert all(
+        turn["feedback"]["learning_observation"]["assessment"] == "not_assessed"
+        for turn in (await latest(adult, session))["operations"]
+        if turn["feedback"] and turn["text"].startswith("SOURCE CORRECTION")
+    )
 
 
 @pytest.mark.anyio

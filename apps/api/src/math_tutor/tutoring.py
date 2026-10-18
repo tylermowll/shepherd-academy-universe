@@ -91,6 +91,22 @@ def latest_reading(db: Session, row: Submission) -> Interpretation | None:
     )
 
 
+def rejected_reference_reading(db: Session, problem: ProblemInstance) -> Interpretation | None:
+    """Keep the unresolved source report available beyond the dialogue window."""
+    if problem.parameters.get("activity_state") != "reference_capture" or problem.parameters.get(
+        "reference_source"
+    ) not in {"reference_photo", "reading_photo"}:
+        return None
+    reading = db.scalar(
+        select(Interpretation)
+        .join(Submission, Interpretation.submission_id == Submission.id)
+        .where(Submission.problem_id == problem.id)
+        .order_by(Submission.created_at.desc(), Interpretation.version.desc())
+        .limit(1)
+    )
+    return reading if reading and (reading.reading or {}).get("can_continue") is False else None
+
+
 def bounded_messages(
     messages: list[Message],
     instruction: str,
@@ -118,22 +134,27 @@ def bounded_messages(
     return selected
 
 
-def discussion(db: Session, problem: ProblemInstance, current: Submission) -> list[Message]:
-    rows = list(
-        db.scalars(
-            select(Submission)
-            .join(ProblemInstance, Submission.problem_id == ProblemInstance.id)
-            .where(
-                ProblemInstance.session_id == problem.session_id,
-                Submission.learner_id == current.learner_id,
-                Submission.id != current.id,
-                Submission.status.in_(["completed", "failed", "canceled"]),
-                ~Submission.request_key.startswith("activity:"),
-            )
-            .order_by(Submission.created_at.desc())
-            .limit(12)
+def discussion(
+    db: Session,
+    problem: ProblemInstance,
+    current: Submission,
+    *,
+    current_activity_only: bool = False,
+) -> list[Message]:
+    query = (
+        select(Submission)
+        .join(ProblemInstance, Submission.problem_id == ProblemInstance.id)
+        .where(
+            ProblemInstance.session_id == problem.session_id,
+            Submission.learner_id == current.learner_id,
+            Submission.id != current.id,
+            Submission.status.in_(["completed", "failed", "canceled"]),
+            ~Submission.request_key.startswith("activity:"),
         )
     )
+    if current_activity_only:
+        query = query.where(Submission.problem_id == problem.id)
+    rows = list(db.scalars(query.order_by(Submission.created_at.desc()).limit(12)))
     result: list[Message] = []
     for row in reversed(rows):
         turn = db.scalar(select(TutorTurn).where(TutorTurn.submission_id == row.id))
@@ -144,6 +165,15 @@ def discussion(db: Session, problem: ProblemInstance, current: Submission) -> li
         reading = latest_reading(db, row)
         previous = db.get(ProblemInstance, row.problem_id)
         assert previous is not None
+        prior_job = db.scalar(select(Job).where(Job.submission_id == row.id))
+        if not current_activity_only and (
+            previous.parameters.get("activity_state") == "reference_capture"
+            or (prior_job and prior_job.stage in {"reference_discussion", "interpreting_reference"})
+            or (turn and turn.prompt_version.startswith("reference-discussion-"))
+        ):
+            # Source clarification is reference material, including attempts with
+            # no response. It must not become learner work after practice starts.
+            continue
         if not history_allowed(
             problem.passage, problem.parameters, previous.passage, previous.parameters
         ):
@@ -154,7 +184,9 @@ def discussion(db: Session, problem: ProblemInstance, current: Submission) -> li
         text += "Learner message: " + row.text
         if row.work_text:
             text += "\nWritten work: " + row.work_text
-        if reading and previous.parameters.get("activity_state") == "ready":
+        if reading and (
+            previous.parameters.get("activity_state") == "ready" or current_activity_only
+        ):
             text += "\n" + reading_context(reading)
         elif row.kind == "hint":
             text += "\nLearner requested help with this activity."
@@ -389,7 +421,7 @@ def make_request(
 ) -> ModelRequest:
     messages: list[Message] = []
     purpose: Literal["generate", "read", "review"]
-    if job.stage == "interpreting":
+    if job.stage in {"interpreting", "interpreting_reference"}:
         purpose = "read"
         schema = ReadingPayload.model_json_schema()
         instruction = (
@@ -414,6 +446,36 @@ def make_request(
             else "Student's work for this practice activity:\n" + problem.problem_text
         )
         messages = [Message(role="user", content=content)]
+    elif job.stage == "reference_discussion":
+        purpose = "review"
+        schema = FeedbackPayload.model_json_schema()
+        reading = rejected_reference_reading(db, problem)
+        if reading is None:
+            raise ProviderError(
+                "reading_uncertain", safe_message="Attach a photo of the source material first."
+            )
+        instruction = TEACHING + (
+            " Discuss only the learner's question about the uncertain reference-photo reading. "
+            "There is no assigned practice task yet. You have a reader report, not the original image. "
+            "Explain its specific uncertainty and useful ways to clarify the source, without solving or "
+            "answering the reference assignment. Do not assume rejected text or later clarification is a "
+            "verified transcription. Discussion cannot approve the reading, create an activity, or change "
+            "the saved source; the learner may send another photo or explicitly use edited text as material. "
+            "Use teaching_action=clarify or explain and learning_observation.assessment=not_assessed, "
+            "resolved_points=[], open_points=[]: this is source discussion, not demonstrated learner work. "
+            "Return a natural concise response in guidance; strengths=[] and concepts=[] unless useful. "
+            "next_step may be empty. Do not invent an assigned task, success criteria, grades or mastery."
+        )
+        messages = discussion(db, problem, row, current_activity_only=True)
+        messages.append(
+            Message(
+                role="user",
+                content="Unresolved reference reading; no practice task is assigned.\n"
+                + reading_context(reading)
+                + "\nLearner question:\n"
+                + row.text,
+            )
+        )
     elif problem.parameters.get("activity_state") == "generating":
         purpose = "generate"
         schema = ActivityPayload.model_json_schema()
@@ -592,7 +654,7 @@ def make_request(
                 safe_message="Choose guided sections or submit a shorter section of work; your input was not clipped.",
             )
         messages.append(Message(role="user", content=content))
-    if purpose != "read":
+    if purpose != "read" and problem.parameters.get("activity_state") != "reference_capture":
         memory = learning_memory(db, session, problem)
         if memory:
             messages.insert(
@@ -636,7 +698,7 @@ def finish_model(
     if result is None:
         raise ProviderError("malformed_output")
     payload = result.validated_payload
-    if job.stage == "interpreting":
+    if job.stage in {"interpreting", "interpreting_reference"}:
         if not isinstance(payload, ReadingPayload):
             raise ProviderError("malformed_output")
         clear = can_read(payload)
@@ -738,7 +800,20 @@ def finish_model(
             raise ProviderError("malformed_output")
         provider_observation: dict[str, object] | None = None
         prior: tuple[Submission, LearningObservation] | None = None
-        reassurance = bool(
+        reference_discussion = job.stage == "reference_discussion"
+        if reference_discussion:
+            provider_observation = payload.learning_observation.model_dump()
+            payload = payload.model_copy(
+                update={
+                    "learning_observation": LearningObservation(
+                        assessment="not_assessed",
+                        evidence="This discusses an uncertain source reading, not learner work or an assigned practice activity.",
+                        resolved_points=[],
+                        open_points=[],
+                    ),
+                }
+            )
+        reassurance = not reference_discussion and bool(
             not row.work_text and latest_reading(db, row) is None and sufficiency_question(row.text)
         )
         if reassurance:
@@ -794,8 +869,8 @@ def finish_model(
                 submission_id=row.id,
                 message=message,
                 source=source,
-                assistance_level=min(3, max(1, row.help_level)),
-                prompt_version="guidance-v4",
+                assistance_level=0 if reference_discussion else min(3, max(1, row.help_level)),
+                prompt_version="reference-discussion-v1" if reference_discussion else "guidance-v4",
                 feedback={
                     **payload.model_dump(),
                     "evidence_link": link,
@@ -807,8 +882,11 @@ def finish_model(
                 },
             )
         )
-        problem.assistance_level = max(problem.assistance_level, min(3, max(1, row.help_level)))
-        if row.kind == "hint" or row.help_level > 0 or payload.teaching_action != "acknowledge":
+        if not reference_discussion:
+            problem.assistance_level = max(problem.assistance_level, min(3, max(1, row.help_level)))
+        if not reference_discussion and (
+            row.kind == "hint" or row.help_level > 0 or payload.teaching_action != "acknowledge"
+        ):
             problem.parameters = {**problem.parameters, "tutor_help_received": True}
     row.status, job.state = "completed", "completed"
     problem.version += 1

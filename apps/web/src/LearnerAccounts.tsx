@@ -298,6 +298,50 @@ export function LearnerAccounts({
                 </p>
                 <button disabled={busy}>Save sign-in details</button>
               </form>
+              <form
+                key={`${chosen.id}-${chosen.eligibility}`}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const data = new FormData(event.currentTarget);
+                  const eligibility = field(data, "eligibility") as NonNullable<
+                    Schema<"LearnerAccountUpdate">["eligibility"]
+                  >;
+                  run(async (current) => {
+                    await api(`/admin/learners/${chosen.id}/account`, "PATCH", {
+                      alias: chosen.alias,
+                      eligibility,
+                    } satisfies Schema<"LearnerAccountUpdate">);
+                    await onRefresh();
+                    if (current())
+                      setMessage(
+                        eligibility === chosen.eligibility
+                          ? "Age group saved."
+                          : "Age group saved. Pending requests were stopped; saved work is kept. New requests use this age group.",
+                      );
+                  });
+                }}
+              >
+                <h3>Age group</h3>
+                <label>
+                  Age group
+                  <select
+                    name="eligibility"
+                    defaultValue={chosen.eligibility}
+                    disabled={busy}
+                  >
+                    <option value="unknown">Not specified</option>
+                    <option value="minor">Under 18</option>
+                    <option value="adult">18 or older</option>
+                  </select>
+                </label>
+                <p className="fine">
+                  Used to enforce the age restrictions for AI connections.
+                  Changing it stops this learner&apos;s pending requests and
+                  keeps their saved work. A request already sent to a provider
+                  cannot be recalled.
+                </p>
+                <button disabled={busy}>Save age group</button>
+              </form>
               <section aria-label="Signed-in browsers">
                 <h3>Signed-in browsers</h3>
                 <p>

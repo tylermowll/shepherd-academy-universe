@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from math_tutor import auth
 from math_tutor.account_names import account_key, display_name
-from math_tutor.adapters.db.models import Administrator, DeviceSession, Learner
+from math_tutor.adapters.db.models import Administrator, DeviceSession, Job, Learner, Submission
 from math_tutor.api.access import Adult, Database, owned_learner
 
 router = APIRouter(prefix="/api/v1", tags=["learners"])
@@ -37,6 +37,7 @@ class LearnerPublic(BaseModel):
 class LearnerAccountUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     alias: str = Field(min_length=1, max_length=64)
+    eligibility: Literal["adult", "minor", "unknown"] | None = None
     password: str | None = Field(
         default=None, min_length=1, max_length=auth.MAX_ADMIN_PASSWORD_LENGTH, repr=False
     )
@@ -106,6 +107,28 @@ def update_account(
 ) -> Learner:
     row = owned_learner(db, actor, learner_id)
     name = available_name(db, body.alias, learner_id)
+    if body.eligibility is not None and body.eligibility != row.eligibility:
+        row.eligibility = body.eligibility
+        pending = select(Submission.id).where(
+            Submission.learner_id == learner_id,
+            Submission.status.not_in(("completed", "failed", "canceled")),
+        )
+        # Revoke running leases in the same transaction as the policy correction.
+        # A provider may already be processing a request, but its late result
+        # must not be accepted under the previous age group.
+        db.execute(
+            update(Job)
+            .where(Job.submission_id.in_(pending))
+            .values(state="canceled", lease_token=None, lease_expires_at=None, retryable=False)
+        )
+        db.execute(
+            update(Submission)
+            .where(Submission.id.in_(pending))
+            .values(
+                status="canceled",
+                safe_error="Your administrator changed your age group. This pending request was stopped. Your submitted work is saved.",
+            )
+        )
     if body.password is not None:
         row.password_hash = checked_password(name, body.password)
         row.local_only_password = len(body.password) < auth.MIN_ADMIN_PASSWORD_LENGTH

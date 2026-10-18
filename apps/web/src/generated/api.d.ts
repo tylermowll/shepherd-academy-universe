@@ -834,6 +834,8 @@ export interface components {
     LearnerAccountUpdate: {
       /** Alias */
       alias: string;
+      /** Eligibility */
+      eligibility?: ("adult" | "minor" | "unknown") | null;
       /** Password */
       password?: string | null;
     };

@@ -748,6 +748,12 @@ main:has(.tutor-workspace) {
 .reading-workspace > .chat-column {
   grid-column: 2;
 }
+@media (min-width: 521px) {
+  .reading-workspace > .chat-column {
+    /* Reserve conversation space when reading controls wrap on desktop/tablet. */
+    min-height: 736px;
+  }
+}
 .activity-brief {
   flex: none;
   margin: 0;

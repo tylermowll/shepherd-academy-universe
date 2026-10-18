@@ -184,6 +184,22 @@
             "title": "Alias",
             "type": "string"
           },
+          "eligibility": {
+            "anyOf": [
+              {
+                "enum": [
+                  "adult",
+                  "minor",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eligibility"
+          },
           "password": {
             "anyOf": [
               {

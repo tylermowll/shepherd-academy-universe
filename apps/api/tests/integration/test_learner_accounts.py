@@ -1,20 +1,23 @@
 """Account identity, reset races, authorization, and private credential boundaries."""
 
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from httpx2 import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from test_provider_connections import add, record_probes
 from test_workflows import adult as adult
 from test_workflows import anyio_backend as anyio_backend
-from test_workflows import client
+from test_workflows import client, read_problem, send, start
 from test_workflows import engine as engine
 
-from math_tutor import auth
-from math_tutor.adapters.db.models import Learner
+from math_tutor import auth, worker
+from math_tutor.adapters.db.models import Job, Learner, PracticeSession, Submission
+from math_tutor.adapters.providers.transports import MockProvider
 
 PASSWORD = "synthetic-learner-password"
 REPLACEMENT = "synthetic-replacement-password"
@@ -148,3 +151,184 @@ async def test_existing_profile_requires_explicit_password_and_rename_keeps_iden
         assert (await login(browser, "Renamed profile", PASSWORD)).json()[
             "learner_id"
         ] == identifier
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("eligibility", ["adult", "minor", "unknown"])
+async def test_age_correction_preserves_password_session_and_saved_work(
+    adult: AsyncClient, engine: Engine, eligibility: str
+) -> None:
+    row = await create(adult)
+    session_id, problem = await start(adult, row["id"])
+    completed = await send(adult, problem, "I compared the equal-sized parts.")
+    assert worker.run_once(engine)
+    with Session(engine) as db:
+        learner = db.get(Learner, UUID(row["id"]))
+        assert learner
+        old_hash = learner.password_hash
+        # Exercise adult -> minor/unknown as well as minor -> adult.
+        learner.eligibility = "minor" if eligibility == "adult" else "adult"
+        db.commit()
+    async with client(engine) as browser:
+        assert (await login(browser, "River", PASSWORD)).status_code == 200
+        changed = await adult.patch(
+            f"/api/v1/admin/learners/{row['id']}/account",
+            json={"alias": "River", "eligibility": eligibility},
+        )
+        assert changed.status_code == 200, changed.text
+        assert changed.json()["eligibility"] == eligibility
+        assert changed.json()["id"] == row["id"]
+        assert (await browser.get("/api/v1/auth/session")).json()["authenticated"]
+        saved = (await read_problem(browser, session_id))["operations"][0]
+        assert saved["id"] == completed["id"] and saved["status"] == "completed"
+        assert saved["feedback"]
+    with Session(engine) as db:
+        learner = db.get(Learner, UUID(row["id"]))
+        submission = db.get(Submission, UUID(completed["id"]))
+        session = db.get(PracticeSession, UUID(session_id))
+        assert learner and learner.password_hash == old_hash
+        assert submission and submission.learner_id == learner.id
+        assert submission.text == "I compared the equal-sized parts."
+        assert session and session.learner_id == learner.id
+
+
+@pytest.mark.anyio
+async def test_only_administrator_can_correct_age_and_invalid_values_leave_it_unchanged(
+    adult: AsyncClient, engine: Engine
+) -> None:
+    row = await create(adult)
+    other = await create(adult, "Sky")
+    async with client(engine) as learner, client(engine) as guest:
+        assert (await login(learner, "River", PASSWORD)).status_code == 200
+        for target in (row, other):
+            assert (
+                await learner.patch(
+                    f"/api/v1/admin/learners/{target['id']}/account",
+                    json={"alias": target["alias"], "eligibility": "adult"},
+                )
+            ).status_code == 403
+        assert (
+            await guest.patch(
+                f"/api/v1/admin/learners/{row['id']}/account",
+                json={"alias": "River", "eligibility": "adult"},
+            )
+        ).status_code == 401
+    assert (
+        await adult.patch(
+            f"/api/v1/admin/learners/{row['id']}/account",
+            json={"alias": "River", "eligibility": "unrestricted"},
+        )
+    ).status_code == 422
+    assert (
+        await adult.patch(
+            f"/api/v1/admin/learners/{uuid4()}/account",
+            json={"alias": "Missing", "eligibility": "adult"},
+        )
+    ).status_code == 404
+    with Session(engine) as db:
+        for item in (row, other):
+            stored = db.get(Learner, UUID(item["id"]))
+            assert stored and stored.eligibility == "minor"
+
+
+async def adult_only_tutor(
+    adult: AsyncClient, engine: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("APP_AUDIENCE", "adult_only")
+    await add(adult, "age-restricted", audience="adult_only")
+    record_probes(engine, "age-restricted")
+    response = await adult.post(
+        "/api/v1/admin/providers/routes",
+        json={"tutor": "age-restricted", "vision": "demo", "acknowledge_data_boundary": True},
+    )
+    assert response.status_code == 200, response.text
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("eligibility", ["minor", "unknown"])
+@pytest.mark.parametrize("phase", ["queued", "prepared"])
+async def test_age_change_stops_pending_work_and_discards_late_results(
+    adult: AsyncClient,
+    engine: Engine,
+    monkeypatch: pytest.MonkeyPatch,
+    eligibility: str,
+    phase: str,
+) -> None:
+    row = await create(adult)
+    changed = await adult.patch(
+        f"/api/v1/admin/learners/{row['id']}/account",
+        json={"alias": "River", "eligibility": "adult"},
+    )
+    assert changed.status_code == 200
+    session_id, problem = await start(adult, row["id"])
+    other = await create(adult, "Sky")
+    _, other_problem = await start(adult, other["id"])
+    assert (
+        await adult.patch(
+            f"/api/v1/admin/learners/{other['id']}/account",
+            json={"alias": "Sky", "eligibility": "adult"},
+        )
+    ).status_code == 200
+    await adult_only_tutor(adult, engine, monkeypatch)
+    pending = await send(adult, problem, "A synthetic pending explanation.")
+    # Saving the same age group must leave existing requests untouched.
+    assert (
+        await adult.patch(
+            f"/api/v1/admin/learners/{row['id']}/account",
+            json={"alias": "River", "eligibility": "adult"},
+        )
+    ).status_code == 200
+    assert (await read_problem(adult, session_id))["operations"][0]["status"] == "queued"
+    claim = worker.claim(engine) if phase == "prepared" else None
+    if phase == "prepared":
+        assert claim is not None
+    prepared = worker.prepare(engine, claim) if claim else None
+    # The other learner's queued work must be preserved by the correction.
+    other_pending = await send(adult, other_problem, "Another learner's explanation.")
+    changed = await adult.patch(
+        f"/api/v1/admin/learners/{row['id']}/account",
+        json={"alias": "River", "eligibility": eligibility},
+    )
+    assert changed.status_code == 200
+    if claim and prepared:
+        late_result = MockProvider().complete(prepared.request)
+        assert worker.finish(engine, claim, late_result, prepared.source) is False
+    with Session(engine) as db:
+        job = db.scalar(select(Job).where(Job.submission_id == UUID(pending["id"])))
+        submission = db.get(Submission, UUID(pending["id"]))
+        untouched = db.get(Submission, UUID(other_pending["id"]))
+        assert job and job.state == "canceled" and job.lease_token is None
+        assert job.lease_expires_at is None and not job.retryable
+        assert submission and submission.status == "canceled" and submission.safe_error
+        assert submission.text == "A synthetic pending explanation."
+        assert untouched and untouched.status == "queued"
+    blocked = await adult.post(
+        "/api/v1/tutor/sessions",
+        json={"learner_id": row["id"], "topic": "Scientific evidence"},
+        headers={"Idempotency-Key": str(uuid4())},
+    )
+    assert blocked.status_code == 422 and blocked.json()["code"] == "audience_blocked"
+
+
+@pytest.mark.anyio
+async def test_correcting_age_to_adult_allows_the_existing_account_to_use_adult_route(
+    adult: AsyncClient, engine: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    row = await create(adult)
+    await adult_only_tutor(adult, engine, monkeypatch)
+    body = {"learner_id": row["id"], "topic": "Scientific evidence"}
+    blocked = await adult.post(
+        "/api/v1/tutor/sessions", json=body, headers={"Idempotency-Key": str(uuid4())}
+    )
+    assert blocked.status_code == 422 and blocked.json()["code"] == "audience_blocked"
+    assert (
+        await adult.patch(
+            f"/api/v1/admin/learners/{row['id']}/account",
+            json={"alias": "River", "eligibility": "adult"},
+        )
+    ).status_code == 200
+    allowed = await adult.post(
+        "/api/v1/tutor/sessions", json=body, headers={"Idempotency-Key": str(uuid4())}
+    )
+    assert allowed.status_code == 201, allowed.text
+    assert allowed.json()["learner_id"] == row["id"]

@@ -10,6 +10,8 @@ import { TutorConversation } from "./TutorConversation";
 import { ReadingPassage } from "./ReadingPassage";
 import { ReadingSources } from "./ReadingSources";
 import { ActivityPurpose } from "./ActivityPurpose";
+import { PracticeSource } from "./PracticeSource";
+import { SessionReview } from "./SessionReview";
 import { characterCount } from "./text-limits";
 import {
   forgetRequest,
@@ -110,6 +112,10 @@ export function Tutor({
       section_size: "standard",
     });
   const composer = useRef<HTMLTextAreaElement>(null);
+  const materialComposer = useRef<HTMLTextAreaElement>(null);
+  const materialTools = useRef<HTMLDetailsElement>(null);
+  const sourceTools = useRef<HTMLDetailsElement>(null);
+  const [photoRepair, setPhotoRepair] = useState("");
   const [published, setPublished] = useState<Schema<"ImportedPassage"> | null>(
     null,
   );
@@ -330,6 +336,14 @@ export function Tutor({
       .map((operation) => `${operation.id}:${operation.status}`)
       .join("|") ?? "";
   const active = Boolean(activeOperation);
+  const rejectedCapture =
+    problem?.activity_state === "reference_capture"
+      ? [...problem.operations]
+          .reverse()
+          .find(
+            (operation) => operation.reading && !operation.reading.can_continue,
+          )
+      : undefined;
   const disabled =
     blocked ||
     active ||
@@ -564,6 +578,22 @@ export function Tutor({
     } satisfies Schema<"SubmissionInput">);
   };
 
+  const repairPhoto = (copyReading: boolean) => {
+    if (!problem || !rejectedCapture || disabled || hasResponseDraft) return;
+    setSource(
+      problem.reference_source === "reading_photo"
+        ? "reading_text"
+        : "reference_text",
+    );
+    setPublished(null);
+    if (copyReading && !reference.trim())
+      setReference(rejectedCapture.interpretation ?? "");
+    setPhotoRepair(problem.id);
+    if (materialTools.current) materialTools.current.open = true;
+    if (sourceTools.current) sourceTools.current.open = true;
+    window.requestAnimationFrame(() => materialComposer.current?.focus());
+  };
+
   const sessionSettings = session?.status === "open" && (
     <details className="session-settings">
       <summary>Session settings</summary>
@@ -607,43 +637,26 @@ export function Tutor({
           different practice on the same concepts.
         </p>
       </form>
-      <button
-        disabled={disabled || hasResponseDraft}
-        onClick={() =>
-          void act(() =>
-            command("finish", `/sessions/${session.id}/finish`, {}),
-          )
-        }
-      >
-        Finish session
-      </button>
     </details>
   );
   const sourceFields = (
     <>
-      <label>
-        Practice source
-        <select
-          value={source}
-          onChange={(event) => {
-            setSource(event.target.value as Source);
-            setPublished(null);
-          }}
-          disabled={blocked || active}
-        >
-          <option value="topic">My topic</option>
-          <option value="reading_text">Paste reading or study material</option>
-          <option value="reading_photo">Photograph a reading passage</option>
-          <option value="reading_generated">
-            Let the tutor write a passage
-          </option>
-          <option value="published">Published story or news</option>
-          <option value="reference_text">Pasted assignment or reference</option>
-          <option value="reference_photo">
-            Photo of an assignment or reference
-          </option>
-        </select>
-      </label>
+      <PracticeSource
+        source={source}
+        onChange={(nextSource) => {
+          setSource(nextSource);
+          setPublished(null);
+        }}
+        disabled={blocked || active}
+      />
+      {photoRepair === problem?.id &&
+        ["reading_text", "reference_text"].includes(source) && (
+          <p className="notice">
+            The photo reading is uncertain. Check and correct the material, then
+            choose Create practice activity. The original report stays uncertain
+            in the conversation.
+          </p>
+        )}
       {[
         "reading_text",
         "reading_photo",
@@ -708,6 +721,7 @@ export function Tutor({
               ? "Reading passage"
               : "Reference material"}
             <textarea
+              ref={materialComposer}
               value={reference}
               onChange={(event) => setReference(event.target.value)}
               required
@@ -740,7 +754,11 @@ export function Tutor({
   );
   const sessionControls = session?.status === "open" && (
     <>
-      <details className="activity-source" open={!problem || undefined}>
+      <details
+        ref={sourceTools}
+        className="activity-source"
+        open={!problem || undefined}
+      >
         <summary>
           {problem
             ? "Use different practice material"
@@ -1089,12 +1107,7 @@ export function Tutor({
                 session.
               </p>
             )}
-            {session.status !== "open" && (
-              <p className="notice">
-                This session is finished. You can review it below or start a new
-                session.
-              </p>
-            )}
+            {session.status !== "open" && <SessionReview session={session} />}
             <div
               className={`tutor-workspace${problem?.passage ? " reading-workspace" : ""}`}
             >
@@ -1136,7 +1149,7 @@ export function Tutor({
                     />
                   )}
                   {session.status === "open" && (
-                    <details open={!problem || undefined}>
+                    <details ref={materialTools} open={!problem || undefined}>
                       <summary>Session &amp; material</summary>
                       {sessionControls}
                     </details>
@@ -1193,143 +1206,236 @@ export function Tutor({
                     </p>
                   )}
                   {problem?.activity_state === "reference_capture" && (
-                    <p>
-                      Attach a photo of your reference material to create
-                      related practice.
-                    </p>
-                  )}
-                  {problem?.activity_state === "ready" && (
-                    <form
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        void act(() => submit("answer"));
-                      }}
-                    >
-                      <label>
-                        Your work or question
-                        <textarea
-                          ref={composer}
-                          value={text}
-                          onChange={(event) => setText(event.target.value)}
-                          aria-invalid={responseLength > 8000 || undefined}
-                          rows={2}
-                          readOnly={disabled}
-                          placeholder="Share your thinking, ask a question, or discuss a photo…"
-                        />
-                      </label>
-                      {responseLength > 8000 && (
-                        <p role="status" className="notice">
-                          Your response contains{" "}
-                          {responseLength.toLocaleString()} characters. Your
-                          full text is still here. Shorten it to 8,000
-                          characters before sending.
-                        </p>
+                    <div>
+                      <p>
+                        {problem.reference_source === "reading_photo"
+                          ? "Attach a photo of the passage to study it."
+                          : "Attach a photo of your reference material to create related practice."}
+                      </p>
+                      {rejectedCapture && (
+                        <>
+                          <p>
+                            Ask about the uncertain reading below, send a
+                            clearer photo, or type corrected material to create
+                            an activity. Sending a question keeps this photo
+                            step open.
+                          </p>
+                          <div className="actions">
+                            <button
+                              disabled={disabled || hasResponseDraft}
+                              onClick={() => repairPhoto(false)}
+                            >
+                              Type corrected material
+                            </button>
+                            {rejectedCapture.interpretation && (
+                              <button
+                                disabled={disabled || hasResponseDraft}
+                                onClick={() => repairPhoto(true)}
+                              >
+                                Edit uncertain reading as text
+                              </button>
+                            )}
+                          </div>
+                        </>
                       )}
-                      <div className="composer-actions">
-                        <button
-                          type="button"
-                          aria-expanded={attachmentsVisible}
-                          aria-controls="tutor-attachments"
-                          disabled={blocked}
-                          onClick={() => {
-                            const next = !attachmentsVisible;
-                            setAttachmentsOpen(next);
-                            if (next)
-                              setAttachmentsOpenedAt(photoOperationRevision);
-                          }}
-                        >
-                          Attach photo
-                        </button>
-                        <ComposerMenu
-                          title="Help"
-                          disabled={blocked}
-                          onOpen={() => setAttachmentsOpen(false)}
-                        >
-                          <div className="composer-options">
-                            <button
-                              type="button"
-                              disabled={disabled}
-                              onClick={() => void act(() => submit("hint", 1))}
-                            >
-                              Give me a hint
-                            </button>
-                            <button
-                              type="button"
-                              disabled={disabled}
-                              onClick={() => void act(() => submit("hint", 2))}
-                            >
-                              Explain the concept
-                            </button>
-                            <button
-                              type="button"
-                              disabled={disabled}
-                              onClick={() => void act(() => submit("hint", 3))}
-                            >
-                              Show a different example
-                            </button>
-                          </div>
-                        </ComposerMenu>
-                        <ComposerMenu
-                          title="Next activity options"
-                          className="next-menu"
-                          disabled={blocked}
-                          onOpen={() => setAttachmentsOpen(false)}
-                        >
-                          <div className="composer-options">
-                            <button
-                              type="button"
-                              disabled={disabled || hasResponseDraft}
-                              onClick={() =>
-                                void act(() =>
-                                  activity(
-                                    problem.passage ? "same_passage" : "topic",
-                                  ),
-                                )
-                              }
-                            >
-                              Next activity
-                            </button>
-                            <button
-                              type="button"
-                              disabled={disabled || hasResponseDraft}
-                              onClick={() =>
-                                void act(() =>
-                                  activity(
-                                    problem.passage ? "same_passage" : "topic",
-                                    "introductory",
-                                  ),
-                                )
-                              }
-                            >
-                              Easier next activity
-                            </button>
-                            <button
-                              type="button"
-                              disabled={disabled || hasResponseDraft}
-                              onClick={() =>
-                                void act(() =>
-                                  activity(
-                                    problem.passage ? "same_passage" : "topic",
-                                    "challenge",
-                                  ),
-                                )
-                              }
-                            >
-                              Harder next activity
-                            </button>
-                          </div>
-                        </ComposerMenu>
-                        <button
-                          className="primary send-message"
-                          disabled={
-                            disabled || !text.trim() || responseLength > 8000
-                          }
-                        >
-                          Send
-                        </button>
-                      </div>
-                    </form>
+                    </div>
                   )}
+                  {problem &&
+                    (problem.activity_state === "ready" || rejectedCapture) && (
+                      <form
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          void act(() =>
+                            submit(rejectedCapture ? "question" : "answer"),
+                          );
+                        }}
+                      >
+                        <label>
+                          {rejectedCapture
+                            ? "Your question or clarification"
+                            : "Your work or question"}
+                          <textarea
+                            ref={composer}
+                            value={text}
+                            onChange={(event) => setText(event.target.value)}
+                            aria-invalid={responseLength > 8000 || undefined}
+                            rows={2}
+                            readOnly={disabled}
+                            placeholder={
+                              rejectedCapture
+                                ? "Ask about the uncertain reading or explain the unclear part…"
+                                : "Share your thinking, ask a question, or discuss a photo…"
+                            }
+                          />
+                        </label>
+                        {responseLength > 8000 && (
+                          <p role="status" className="notice">
+                            Your response contains{" "}
+                            {responseLength.toLocaleString()} characters. Your
+                            full text is still here. Shorten it to 8,000
+                            characters before sending.
+                          </p>
+                        )}
+                        <div className="composer-actions">
+                          {!rejectedCapture && (
+                            <button
+                              type="button"
+                              aria-expanded={attachmentsVisible}
+                              aria-controls="tutor-attachments"
+                              disabled={blocked}
+                              onClick={() => {
+                                const next = !attachmentsVisible;
+                                setAttachmentsOpen(next);
+                                if (next)
+                                  setAttachmentsOpenedAt(
+                                    photoOperationRevision,
+                                  );
+                              }}
+                            >
+                              Attach photo
+                            </button>
+                          )}
+                          {!rejectedCapture && (
+                            <ComposerMenu
+                              title="Help"
+                              disabled={blocked}
+                              onOpen={() => setAttachmentsOpen(false)}
+                            >
+                              <div className="composer-options">
+                                <button
+                                  type="button"
+                                  disabled={disabled}
+                                  onClick={() =>
+                                    void act(() => submit("hint", 1))
+                                  }
+                                >
+                                  Give me a hint
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={disabled}
+                                  onClick={() =>
+                                    void act(() => submit("hint", 2))
+                                  }
+                                >
+                                  Explain the concept
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={disabled}
+                                  onClick={() =>
+                                    void act(() => submit("hint", 3))
+                                  }
+                                >
+                                  Show a different example
+                                </button>
+                              </div>
+                            </ComposerMenu>
+                          )}
+                          {!rejectedCapture && (
+                            <ComposerMenu
+                              title="Next activity options"
+                              className="next-menu"
+                              disabled={blocked}
+                              onOpen={() => setAttachmentsOpen(false)}
+                            >
+                              <div className="composer-options">
+                                <button
+                                  type="button"
+                                  disabled={disabled || hasResponseDraft}
+                                  onClick={() =>
+                                    void act(() =>
+                                      activity(
+                                        problem.passage
+                                          ? "same_passage"
+                                          : "topic",
+                                      ),
+                                    )
+                                  }
+                                >
+                                  Next activity
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={disabled || hasResponseDraft}
+                                  onClick={() =>
+                                    void act(() =>
+                                      activity(
+                                        problem.passage
+                                          ? "same_passage"
+                                          : "topic",
+                                        "introductory",
+                                      ),
+                                    )
+                                  }
+                                >
+                                  Easier next activity
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={disabled || hasResponseDraft}
+                                  onClick={() =>
+                                    void act(() =>
+                                      activity(
+                                        problem.passage
+                                          ? "same_passage"
+                                          : "topic",
+                                        "challenge",
+                                      ),
+                                    )
+                                  }
+                                >
+                                  Harder next activity
+                                </button>
+                              </div>
+                            </ComposerMenu>
+                          )}
+                          {session.status === "open" && (
+                            <button
+                              type="button"
+                              disabled={disabled || hasResponseDraft}
+                              onClick={() =>
+                                void act(() =>
+                                  command(
+                                    "finish",
+                                    `/sessions/${session.id}/finish`,
+                                    {},
+                                  ),
+                                )
+                              }
+                            >
+                              Finish session
+                            </button>
+                          )}
+                          <button
+                            className="primary send-message"
+                            disabled={
+                              disabled || !text.trim() || responseLength > 8000
+                            }
+                          >
+                            Send
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  {session.status === "open" &&
+                    problem?.activity_state !== "ready" &&
+                    !rejectedCapture && (
+                      <button
+                        disabled={disabled || hasResponseDraft}
+                        onClick={() =>
+                          void act(() =>
+                            command(
+                              "finish",
+                              `/sessions/${session.id}/finish`,
+                              {},
+                            ),
+                          )
+                        }
+                      >
+                        Finish session
+                      </button>
+                    )}
                   {problem && (
                     <div
                       id="tutor-attachments"

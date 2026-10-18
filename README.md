@@ -88,18 +88,25 @@ storage and recovery.
 
 Open **Learners** to create learner usernames, passwords and age groups. Each
 learner signs in through the common sign-in page and sees only their own work.
+Administrators can correct an existing learner's age group without losing saved
+work. Changing it stops pending requests so the updated provider restrictions
+apply before more work is processed.
 Administrators who also study create a separate learner account. Administrator
 pages manage accounts, connections, exports, revocation and deletion; learner
 pages show **Practice**, **History** and **Help**.
 
 ## Practice and reading
 
-As a learner, enter a topic and choose **Start session**. The first activity is
-created automatically. Use **Send** for work or questions, **Attach photo** for
+As a learner, enter a topic and choose whether to practice a topic, study a
+passage or practice assignment concepts. For passages and assignments, choose
+how to supply the material. **Start session** creates the first activity
+automatically. Use **Send** for work or questions, **Attach photo** for
 upload or a phone QR link, **Help** for suggestions and **Next activity options**
 to continue. **Session & material** holds reference material and preferences.
 Activity difficulty and how much the tutor takes the lead are separate controls.
-Students choose when to move on.
+Students choose when to move on. **Finish session** is available alongside the
+activity controls and opens a recap of saved work and the latest tutor guidance.
+The recap is a record of the session, not a grade or mastery assessment.
 
 Activities show their learning goal and what a complete response should include.
 Feedback explains what went well, what needs attention and what to try next.
@@ -134,6 +141,9 @@ The server resizes them when needed, converts them to JPEG and removes metadata.
 The phone QR page needs no learner login and grants only temporary upload access. It shows an
 upload receipt; the computer shows the reading and feedback. If a photo reading
 is rejected, the tutor can still discuss that report, clearly marked as uncertain.
+For a reference photo, ask what needs clarification, retake the photo, or edit
+the uncertain reading as text and use the corrected material to create practice.
+Discussing a rejected report does not automatically accept its reading.
 
 ## Recovery, privacy and operation
 

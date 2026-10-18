@@ -88,7 +88,15 @@ def enqueue_photo(
         )
         db.add(row)
         db.flush()
-        db.add(Job(submission_id=row.id, stage="interpreting", policy_digest=config.fingerprint()))
+        db.add(
+            Job(
+                submission_id=row.id,
+                stage="interpreting_reference"
+                if problem.parameters.get("activity_state") == "reference_capture"
+                else "interpreting",
+                policy_digest=config.fingerprint(),
+            )
+        )
         db.flush()
     except Exception:
         delete_image(image_key)

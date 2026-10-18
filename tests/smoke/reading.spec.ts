@@ -15,7 +15,10 @@ for (const source of ["reading_text", "reading_generated", "reading_photo"]) {
       .getByLabel("Topic or learning goal", { exact: true })
       .fill("Reading comprehension: inference and evidence");
     await page
-      .getByRole("combobox", { name: "Practice source", exact: true })
+      .getByRole("combobox", { name: "Practice purpose", exact: true })
+      .selectOption("study");
+    await page
+      .getByRole("combobox", { name: "Material input", exact: true })
       .selectOption(source);
     if (source === "reading_text") {
       await page.getByLabel("Passage title (optional)").fill("Mira's seedling");
@@ -116,7 +119,10 @@ test("long science material has independent section pacing, saved navigation and
     .getByLabel("Topic or learning goal", { exact: true })
     .fill("Science: interpreting an investigation of heat transfer");
   await page
-    .getByRole("combobox", { name: "Practice source", exact: true })
+    .getByRole("combobox", { name: "Practice purpose", exact: true })
+    .selectOption("study");
+  await page
+    .getByRole("combobox", { name: "Material input", exact: true })
     .selectOption("reading_text");
   await page
     .getByLabel("Passage title (optional)")
@@ -210,7 +216,10 @@ test("literal material and Unicode input survive intact with explicit overflow a
     .getByRole("textbox", { name: "Topic or learning goal", exact: true })
     .fill("Reading: compare the stated costs and symbols");
   await page
-    .getByRole("combobox", { name: "Practice source", exact: true })
+    .getByRole("combobox", { name: "Practice purpose", exact: true })
+    .selectOption("study");
+  await page
+    .getByRole("combobox", { name: "Material input", exact: true })
     .selectOption("reading_text");
   const input = page.getByRole("textbox", {
     name: "Reading passage",

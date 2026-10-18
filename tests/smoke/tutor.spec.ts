@@ -172,7 +172,10 @@ test("reading and history reference material produces analogous practice instead
     "My assigned homework: explain why the invented narrator Mira distrusts the mayor in chapter three of The Copper Lantern. Write the final paragraph for me.";
   await openPracticeMaterial(page);
   await page
-    .getByRole("combobox", { name: "Practice source", exact: true })
+    .getByRole("combobox", { name: "Practice purpose", exact: true })
+    .selectOption("assignment");
+  await page
+    .getByRole("combobox", { name: "Material input", exact: true })
     .selectOption("reference_text");
   await page
     .getByRole("textbox", { name: "Reference material", exact: true })
@@ -254,7 +257,10 @@ test("a source photograph is read only to create distinct practice, not reviewed
   await startTutor(page, "Science: explain the evidence behind a comparison");
   await openPracticeMaterial(page);
   await page
-    .getByRole("combobox", { name: "Practice source", exact: true })
+    .getByRole("combobox", { name: "Practice purpose", exact: true })
+    .selectOption("assignment");
+  await page
+    .getByRole("combobox", { name: "Material input", exact: true })
     .selectOption("reference_photo");
   await page
     .getByRole("button", { name: "Create practice activity", exact: true })
@@ -305,3 +311,88 @@ test("a source photograph is read only to create distinct practice, not reviewed
   await expect(page.locator(".tutor-feedback")).toHaveCount(1);
   await expect(page.locator(".verdict")).toHaveCount(0);
 });
+
+for (const source of ["reference_photo", "reading_photo"]) {
+  test(`an unclear ${source} can be discussed, repaired with typed material, and finished`, async ({
+    page,
+  }) => {
+    const topic = "Synthetic study: compare observations";
+    await startTutor(page, topic);
+    await openPracticeMaterial(page);
+    await page
+      .getByRole("combobox", { name: "Practice purpose", exact: true })
+      .selectOption(source === "reading_photo" ? "study" : "assignment");
+    await page
+      .getByRole("combobox", { name: "Material input", exact: true })
+      .selectOption(source);
+    await page
+      .getByRole("button", { name: "Create practice activity", exact: true })
+      .click();
+    await expect(
+      page.getByLabel("Your work or question", { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText("Upload a photo", { exact: true }),
+    ).toBeVisible();
+    await page
+      .getByLabel("Take or choose a photo")
+      .setInputFiles("evals/fixtures/vision/04-ambiguous.png");
+    await page
+      .getByRole("button", { name: "Submit this photograph", exact: true })
+      .click();
+    const log = page.getByRole("log", { name: "Learning conversation" });
+    await expect(
+      log.getByText("This photo needs clarification.", { exact: true }),
+    ).toBeVisible();
+    const clarification = page.getByLabel("Your question or clarification", {
+      exact: true,
+    });
+    await clarification.fill("Which part of the reading should I clarify?");
+    await expect(
+      page.getByRole("button", { name: "Type corrected material" }),
+    ).toBeDisabled();
+    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await expect(log.locator(".tutor-feedback")).toHaveCount(1);
+    await expect(clarification).toBeEditable();
+    await expect(
+      page.getByRole("button", { name: "Next activity options" }),
+    ).toHaveCount(0);
+    await page.getByRole("button", { name: "Type corrected material" }).click();
+    const material = page.getByLabel(
+      source === "reading_photo" ? "Reading passage" : "Reference material",
+      { exact: true },
+    );
+    await expect(material).toBeVisible();
+    await expect(material).toHaveValue("");
+    await expect(
+      page.getByText(/The photo reading is uncertain/),
+    ).toBeVisible();
+    await material.fill(
+      source === "reading_photo"
+        ? "Mira compared two seedlings. The seedling beside the window grew taller after one week."
+        : "Assignment: compare two seedlings and explain how an observation supports the claim.",
+    );
+    await page
+      .getByRole("button", { name: "Create practice activity", exact: true })
+      .click();
+    await expect(
+      page.getByLabel("Your work or question", { exact: true }),
+    ).toBeEditable();
+    await expect(
+      log.getByText("This photo needs clarification.", { exact: true }),
+    ).toHaveCount(1);
+    await expect(
+      page.getByRole("button", { name: /confirm|accept reading/i }),
+    ).toHaveCount(0);
+    await page
+      .getByRole("button", { name: "Finish session", exact: true })
+      .click();
+    const recap = page.getByRole("region", { name: "Session recap" });
+    await expect(recap).toBeVisible();
+    await expect(recap).toContainText(topic);
+    await expect(recap).toContainText("2 saved messages");
+    await expect(recap).toContainText(
+      "not a verified grade or mastery assessment",
+    );
+  });
+}

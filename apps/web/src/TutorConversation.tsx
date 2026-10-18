@@ -87,6 +87,12 @@ export function TutorConversation(props: Props) {
                 key={operation.id}
                 {...props}
                 operation={operation}
+                referencePhoto={
+                  problem.activity_state === "reference_capture" &&
+                  ["reference_photo", "reading_photo"].includes(
+                    problem.reference_source ?? "",
+                  )
+                }
               />
             ))}
           </section>
@@ -119,12 +125,14 @@ export function TutorConversation(props: Props) {
 
 function TutorMessage({
   operation,
+  referencePhoto,
   offline,
   disabled,
   act,
   refresh,
 }: Props & {
   operation: Schema<"OperationPublic">;
+  referencePhoto: boolean;
 }) {
   const reading = operation.reading;
   const feedback = operation.feedback;
@@ -190,8 +198,10 @@ function TutorMessage({
                   "The tutor could not read enough of your work to give useful feedback. Type the unclear line or send a closer photo of it."}
               </p>
               <p>
-                You can ask about this reading below, clarify the uncertain
-                part, or attach another photo.
+                This reading is uncertain.{" "}
+                {referencePhoto
+                  ? "Ask about it below, attach a clearer photo, or use the material controls to type corrected text."
+                  : "You can ask about this reading below, clarify the uncertain part, or attach another photo."}
               </p>
             </div>
           )}

@@ -10,7 +10,8 @@ A task is complete only after its requirements and exit checks pass.
 
 The application is implemented through T44, with the October 11 dependency
 refresh, T45 documentation consolidation, T46 legacy cleanup and T47 root Python
-project consolidation. T48 below reviews documentation and help wording. The
+project consolidation. T48 reviewed documentation and help wording; T49 below
+closes the process gaps found in the subsequent flow review. The
 schema head is `0020_request_recovery`. The last recorded private
 deployment used runtime source `e9bf42c`, Python 3.15.0 and pillow-heif 1.8.1 on
 **October 11, 2026**. Image, HTTPS, served-asset and authorization checks are in
@@ -26,6 +27,131 @@ older installation.
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
+
+## T49 — Close tutoring and account process gaps (2026-10-17)
+
+**Status:** Complete; implementation and final local gates passed. The maintainer
+authorized fixing the reviewed gaps and committing and pushing the finished
+changes to `main`.
+
+**Scope:** Support discussion and typed repair after an unclear reference photo;
+advertise retries only while the operation can actually be retried; allow an
+administrator to correct a learner's age group without replacing the account;
+make session completion visible with a recap of saved work; organize practice
+material by learning purpose and then input method. Preserve automatic clear-photo
+continuation, learner-controlled progression and separation of assignments from
+practice. No new service, dependency, migration, live inference or deployment.
+
+**Contracts:** SPECIFICATION sections 1, 3–4, 9–10 and 12–13; owned/versioned
+submissions and request recovery; uncertain reading context and non-assessment;
+`OperationPublic.retryable`; administrator-only `LearnerAccountUpdate` and
+provider eligibility; generated OpenAPI/TypeScript definitions; accessible
+practice controls, draft preservation and History.
+
+**Validation plan:** Add focused integration/component tests for supported
+clarification, retry and age-correction paths and their authorization, stale,
+active and failure cases. Exercise changed browser journeys with synthetic data.
+Regenerate contracts, run focused checks, `make check`, `make test-integration`,
+`make eval-mock` and `make smoke-built`, then review the complete diff and
+repository hooks. Record actual results before completion and publication.
+
+**Changes:** Rejected reference photos now allow text questions while preserving
+the uncertain report and capture state. Explicit typed repair uses the existing
+material flow; clear photos still continue automatically. Internal source-reading
+and source-discussion job stages keep successful, failed and canceled source
+attempts out of subsequent learner-work review. Source discussion is never
+assessed learning evidence. Retry responses and commands share the current
+state/version/budget checks, including the intermediate state after a clear retake.
+
+Administrators can edit age group on the same learner account. Actual changes
+atomically stop unfinished jobs and invalidate leases; saved history and identity
+remain intact, and unchanged saves preserve pending requests. Practice now selects
+purpose before input method. Finish session is visible beside activity actions,
+respects pending work/drafts and shows a recap from saved records without another
+model request or a verified-grade claim.
+
+Changed files:
+
+- Backend: `apps/api/src/math_tutor/api/learners.py`, `photos.py`, `practice.py`;
+  `apps/api/src/math_tutor/tutoring.py`, `worker.py`.
+- Backend regression tests: `apps/api/tests/integration/test_learner_accounts.py`,
+  `test_tutoring.py`, `test_workflows.py`.
+- Frontend: `apps/web/src/Help.tsx`, `LearnerAccounts.tsx`, `PracticeSource.tsx`,
+  `SessionReview.tsx`, `Tutor.tsx`, `TutorConversation.tsx`, `styles.css`.
+- Component tests: `apps/web/tests/LearnerAccounts.test.tsx`, `Tutor.test.tsx`.
+- Browser tests: `tests/smoke/bootstrap.spec.ts`, `navigation.spec.ts`,
+  `practice-start.spec.ts`, `reading.spec.ts`, `tutor.spec.ts`.
+- Regenerated contracts: `contracts/openapi.json`,
+  `apps/web/src/generated/api.d.ts`.
+- Guides and evidence: `README.md`; `docs/ACCEPTANCE.md`, `HANDOFF.md`,
+  `SPECIFICATION.md`, `TASKS.md`.
+
+**Validation (2026-10-17):** Commands use
+`/tmp/shepherd-t49-toolchain/run` with checksum-verified Node 26.11.1, pnpm
+12.11.2, uv 0.13.1 and Python 3.15.0. The runner clears operator/provider
+environment settings and disables env-file loading. Synthetic ASGI, subprocess
+and browser checks run outside the restricted sandbox where required.
+
+- `make contracts`: regenerated OpenAPI and TypeScript definitions; the only
+  schema addition is optional administrator age eligibility on account updates.
+- Focused account integration: **13 passed**. Final focused tutor/workflow
+  integration before the final retry guard: **91 passed**; the source retry and
+  discussion selection after that guard: **7 passed**. Ruff and scoped mypy
+  passed. `make test-integration` on the final backend: **368 passed in 231.92s**.
+- Focused Tutor/Reading components: **61 passed**; LearnerAccounts/AdultPanel:
+  **17 passed**. TypeScript and focused ESLint passed. All **12 tutor browser
+  journeys** passed across targeted runs, including **4 new desktop/mobile
+  reference/passage clarification, typed repair and session-recap journeys**.
+- `make eval-mock`: passed **33 deterministic**, **12 reading**, **12 teaching**
+  and **4 adversarial** cases. This establishes mock contracts, not live model
+  quality. Rerun reports are archived in `/tmp/shepherd-t49-eval-evidence`;
+  checked-in historical reports were preserved.
+- `make check`: passed locks, lint/format, Python/TypeScript types, builds,
+  generated-contract consistency, credential scan and CloudFormation validation.
+  **303 backend unit, 11 toolchain and 201 frontend tests passed.** The existing
+  `uv_build` upper-bound and JavaScript bundle-size warnings remain.
+- After the reading-layout correction, `make check && make smoke-built` passed
+  against the frozen final source: **303 unit, 11 toolchain, 201 component and
+  84 desktop/mobile browser tests passed**. Browser checks used Google Chrome
+  **155.0.8059.84** through the supported executable override and took **14.2m**;
+  retries remained disabled.
+- `make hooks-files-check`: passed all repository file hooks, paired with the
+  completed project gate. `make secret-check` also passed after staging the new
+  public files.
+- Formatting of the edited guides and **89 local Markdown links/headings** passed;
+  `git diff --check` passed.
+
+Initial runs exposed new-fixture issues with retry backoff, browser locators,
+capture-state synchronization and an intentionally empty uncertain reading.
+The tests now advance the synthetic job's availability explicitly, locate the
+accessible controls, wait for capture and exercise blank typed repair. No
+workflow, ownership or uncertainty assertion was removed. An existing streaming
+timeout test failed during concurrent suites (**302 unit tests passed**); the
+unchanged test passed in the final serialized `make check`. Sandboxed ASGI runs
+stalled and were interrupted; isolated runs passed. An intermediate integration
+run was restarted to include the final retry-state regressions.
+The first full browser run found a real reading-layout regression: the extra
+Finish control wrapped the composer and reduced the conversation to 225 pixels,
+below the existing greater-than-240-pixel check. That run stopped with **25
+passed, 3 failed and 1 interrupted** while the layout was corrected; the existing
+height and workflow assertions remain intact.
+The scoped reading layout reserves space for wrapped controls above phone widths.
+`node /tmp/shepherd-t49-toolchain/reading-geometry.mjs` through the isolated runner
+measured widths **1280, 1100, 961, 960, 768, 521 and 393** pixels: conversation
+heights were **321, 278, 278, 333, 278, 278 and 389** pixels, respectively, with
+no horizontal overflow and touch targets of at least **44 pixels**.
+The final focused reading browser run (`pnpm smoke tests/smoke/reading.spec.ts`)
+passed all **10 desktop/mobile cases**, including the unchanged height checks,
+long-section navigation and Unicode/overflow scenarios.
+
+No failures remain in T49. Live-provider, physical-device and deployment checks
+were not run; the existing maintainer acceptance work remains in ACCEPTANCE.
+No model download, migration or private-data inspection was performed.
+
+**Publication:** The maintainer explicitly authorized committing and pushing to
+`main`. A fresh fetch before publication confirmed local `main` and `origin/main`
+both at `85ff928`. Final commit hooks and the Git push outcome are reported with
+the publication result.
 
 ## T48 — Clarify documentation and help text (2026-10-17)
 

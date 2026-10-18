@@ -29,6 +29,7 @@ from math_tutor.api.learners import Acknowledged
 from math_tutor.api.schemas import ProblemInstancePublic
 from math_tutor.reading import ActivitySource, MaterialFocus, ReadingPassage, material_focus
 from math_tutor.request_recovery import require_uncancelled
+from math_tutor.tutoring import rejected_reference_reading
 
 router = APIRouter(prefix="/api/v1", tags=["practice"])
 ACTIVE = {"queued", "tutoring", "interpreting"}
@@ -139,6 +140,53 @@ def owned_operation(db: Session, actor: DeviceSession, operation_id: UUID) -> Su
     return row
 
 
+def can_retry(db: Session, row: Submission, job: Job | None) -> bool:
+    """Expose the same retry transition that the command can actually accept."""
+    if (
+        row.status != "failed"
+        or job is None
+        or job.state != "failed"
+        or not job.retryable
+        or job.attempts >= 6
+        or job.call_count >= 6
+        or job.stage
+        not in {
+            "interpreting",
+            "interpreting_reference",
+            "tutoring",
+            "reference_discussion",
+        }
+    ):
+        return False
+    problem = db.get(ProblemInstance, row.problem_id)
+    session = db.get(PracticeSession, problem.session_id) if problem else None
+    if (
+        problem is None
+        or problem.status != "assigned"
+        or problem.version != row.assignment_version
+        or session is None
+        or session.mode != "ai_tutor"
+        or session.status != "open"
+        or session.learner_id != row.learner_id
+    ):
+        return False
+    if (
+        job.stage in {"interpreting_reference", "reference_discussion"}
+        and problem.parameters.get("activity_state") != "reference_capture"
+    ):
+        return False
+    if job.stage == "reference_discussion" and rejected_reference_reading(db, problem) is None:
+        return False
+    return (
+        db.scalar(
+            select(Submission.id).where(
+                Submission.problem_id == problem.id, Submission.status.in_(ACTIVE)
+            )
+        )
+        is None
+    )
+
+
 def operation_public(
     db: Session, row: Submission, *, include_verdict: bool = False
 ) -> OperationPublic:
@@ -175,7 +223,7 @@ def operation_public(
         status=row.status,
         safe_error=row.safe_error,
         error_code=error_code,
-        retryable=bool(row.status == "failed" and job and job.retryable and job.attempts < 6),
+        retryable=can_retry(db, row, job),
         created_at=row.created_at,
         verdict=VerdictPublic.model_validate(evaluation) if evaluation else None,
         message=turn.message if turn else None,
@@ -277,7 +325,16 @@ def submit(
             raise HTTPException(409, "Request key already used with different input.")
         return operation_public(db, old)
     assert_available(db, problem, body.version)
-    if session.status != "open" or problem.parameters.get("activity_state") != "ready":
+    reference_question = bool(
+        body.kind == "question"
+        and body.text.strip()
+        and not body.work_text.strip()
+        and body.help_level == 0
+        and rejected_reference_reading(db, problem) is not None
+    )
+    if session.status != "open" or (
+        problem.parameters.get("activity_state") != "ready" and not reference_question
+    ):
         raise HTTPException(409, "Wait for the new practice activity before submitting work.")
     if body.help_level == 4:
         raise HTTPException(403, "The tutor guides your work; it does not supply final answers.")
@@ -304,7 +361,7 @@ def submit(
     db.add(
         Job(
             submission_id=row.id,
-            stage="tutoring",
+            stage="reference_discussion" if reference_question else "tutoring",
             policy_digest=effective_configuration(db).fingerprint(),
         )
     )
@@ -356,10 +413,9 @@ def cancel_operation(operation_id: UUID, db: Database, actor: Principal) -> Oper
 def retry_operation(operation_id: UUID, db: Database, actor: Principal) -> OperationPublic:
     row = owned_operation(db, actor, operation_id)
     job = db.scalar(select(Job).where(Job.submission_id == row.id))
-    if row.status != "failed" or job is None or not job.retryable or job.attempts >= 6:
+    if not can_retry(db, row, job):
         raise HTTPException(409, "Operation cannot be retried.")
-    problem = owned_problem(db, actor, row.problem_id)
-    assert_available(db, problem, row.assignment_version)
+    assert job is not None
     row.status, row.safe_error = "queued", None
     job.state, job.lease_token = "queued", None
     return operation_public(db, row)

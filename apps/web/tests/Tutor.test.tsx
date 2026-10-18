@@ -92,6 +92,22 @@ function installSession(value: ReturnType<typeof session>) {
   return fetcher;
 }
 
+function selectSource(source: string) {
+  fireEvent.change(screen.getByLabelText("Practice purpose"), {
+    target: {
+      value: source.startsWith("reference_")
+        ? "assignment"
+        : source === "topic"
+          ? "topic"
+          : "study",
+    },
+  });
+  if (source !== "topic")
+    fireEvent.change(screen.getByLabelText("Material input"), {
+      target: { value: source },
+    });
+}
+
 beforeEach(() => {
   window.history.replaceState(null, "", "/");
 });
@@ -99,6 +115,262 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   window.history.replaceState(null, "", "/");
+});
+
+it("separates the practice purpose from its relevant material inputs", async () => {
+  installSession(session());
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  await screen.findByText("Choose practice material");
+  const purpose = screen.getByLabelText("Practice purpose");
+  expect(within(purpose).getAllByRole("option")).toHaveLength(3);
+  expect(screen.queryByLabelText("Material input")).toBeNull();
+  fireEvent.change(purpose, { target: { value: "study" } });
+  expect(
+    within(screen.getByLabelText("Material input")).getAllByRole("option"),
+  ).toHaveLength(4);
+  expect(
+    screen.queryByRole("option", { name: /assignment or reference/ }),
+  ).toBeNull();
+  fireEvent.change(purpose, { target: { value: "assignment" } });
+  expect(
+    within(screen.getByLabelText("Material input")).getAllByRole("option"),
+  ).toHaveLength(2);
+  expect(
+    screen.queryByRole("option", { name: "Published story or news" }),
+  ).toBeNull();
+});
+
+it.each(["reference_photo", "reading_photo"])(
+  "lets a rejected %s be discussed and explicitly repaired with typed material",
+  async (source) => {
+    const rejected = operation({
+      kind: "reference_photo",
+      status: "failed",
+      feedback: null,
+      interpretation:
+        "Uncertain synthetic material: the second line is unclear.",
+      reading: {
+        quality: "uncertain",
+        confidence: 0.4,
+        can_continue: false,
+        organization_feedback: [],
+        rejection_reason: "Please clarify the second line.",
+      },
+    });
+    const capture = {
+      ...activity([rejected], "reference_capture"),
+      reference_source: source,
+    };
+    const fetcher = installSession(session([capture]));
+    render(<Tutor learner={learner} offline={false} act={run} />);
+    const composer = await screen.findByLabelText(
+      "Your question or clarification",
+    );
+    expect(screen.queryByLabelText("Reference material")).toBeNull();
+    expect(screen.queryByLabelText("Reading passage")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Give me a hint" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Attach photo" })).toBeNull();
+    fireEvent.change(composer, {
+      target: { value: "Which line needs a clearer photograph?" },
+    });
+    expect(
+      screen.getByRole("button", { name: "Edit uncertain reading as text" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Finish session" }),
+    ).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    await vi.waitFor(() => {
+      const sent = fetcher.mock.calls.find(([url]) =>
+        url.endsWith("/submissions"),
+      );
+      expect(JSON.parse(sent![1].body as string)).toEqual({
+        version: 1,
+        kind: "question",
+        text: "Which line needs a clearer photograph?",
+        help_level: 0,
+        work_text: "",
+      });
+      expect(composer).toHaveValue("");
+    });
+    expect(
+      screen.getByLabelText("Your question or clarification"),
+    ).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit uncertain reading as text" }),
+    );
+    const material = screen.getByLabelText(
+      source === "reading_photo" ? "Reading passage" : "Reference material",
+    );
+    expect(material).toBeVisible();
+    expect(material).toHaveValue(rejected.interpretation);
+    expect(screen.getByText(/The photo reading is uncertain/)).toBeVisible();
+    expect(
+      fetcher.mock.calls.some(([url]) => url.endsWith("/activities")),
+    ).toBe(false);
+    const limit = source === "reading_photo" ? 50000 : 8000;
+    fireEvent.change(material, { target: { value: "A".repeat(limit + 1) } });
+    expect(
+      screen.getByRole("button", { name: "Create practice activity" }),
+    ).toBeDisabled();
+    fireEvent.change(material, {
+      target: {
+        value: "Corrected synthetic material supplied by the learner.",
+      },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Create practice activity" }),
+    );
+    await vi.waitFor(() => {
+      const sent = fetcher.mock.calls.find(([url]) =>
+        url.endsWith("/activities"),
+      );
+      expect(JSON.parse(sent![1].body as string)).toMatchObject({
+        source: source === "reading_photo" ? "reading_text" : "reference_text",
+        reference_text: "Corrected synthetic material supplied by the learner.",
+      });
+    });
+    expect(screen.getByText(rejected.interpretation)).toBeVisible();
+    expect(screen.getByText("This photo needs clarification.")).toBeVisible();
+  },
+);
+
+it("preserves an existing typed material draft when opening a photo repair", async () => {
+  const rejected = operation({
+    status: "failed",
+    feedback: null,
+    reading: {
+      quality: "uncertain",
+      confidence: 0.3,
+      can_continue: false,
+      organization_feedback: [],
+      rejection_reason: "The second line is unreadable.",
+    },
+  });
+  installSession(
+    session([
+      {
+        ...activity([rejected], "reference_capture"),
+        reference_source: "reference_photo",
+      },
+    ]),
+  );
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  await screen.findByLabelText("Your question or clarification");
+  selectSource("reference_text");
+  fireEvent.change(screen.getByLabelText("Reference material"), {
+    target: { value: "My typed material draft." },
+  });
+  selectSource("topic");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Edit uncertain reading as text" }),
+  );
+  expect(screen.getByLabelText("Reference material")).toHaveValue(
+    "My typed material draft.",
+  );
+});
+
+it.each(["reading_photo", "reference_photo"])(
+  "keeps rejected work photos in the work composer after an accepted %s source",
+  async (source) => {
+    const rejected = operation({
+      kind: "answer",
+      status: "failed",
+      feedback: null,
+      reading: {
+        quality: "uncertain",
+        confidence: 0.3,
+        can_continue: false,
+        organization_feedback: [],
+        rejection_reason: "Please clarify your second sentence.",
+      },
+    });
+    installSession(
+      session([{ ...activity([rejected]), reference_source: source }]),
+    );
+    render(<Tutor learner={learner} offline={false} act={run} />);
+    expect(await screen.findByLabelText("Your work or question")).toBeVisible();
+    expect(
+      screen.getByText(/You can ask about this reading below/),
+    ).toBeVisible();
+    expect(screen.queryByText(/use the material controls/)).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Edit uncertain reading as text" }),
+    ).toBeNull();
+  },
+);
+
+it("finishes beside the activity controls and recaps only saved work and guidance", async () => {
+  let current = session([
+    activity([
+      operation({
+        reading: null,
+        interpretation: null,
+        text: "My saved response.",
+      }),
+      operation({
+        id: "empty-guidance-follow-up",
+        kind: "question",
+        reading: null,
+        interpretation: null,
+        text: "A saved follow-up.",
+        feedback: { ...guidance, guidance: [], next_step: "" },
+      }),
+    ]),
+  ]);
+  window.location.hash = `tutor=${sessionId}`;
+  const fetcher = vi.fn((url: string) => {
+    if (url.endsWith("/features")) return response(capabilities);
+    if (url.endsWith(`/sessions/${sessionId}/finish`)) {
+      current = { ...current, status: "finished" };
+      return response({});
+    }
+    if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(current);
+    if (url.endsWith("/tutor/sessions")) return response([current]);
+    throw new Error(url);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  const composer = await screen.findByLabelText("Your work or question");
+  const finish = screen.getByRole("button", { name: "Finish session" });
+  expect(finish).toBeVisible();
+  fireEvent.change(composer, { target: { value: "Unsent draft" } });
+  expect(finish).toBeDisabled();
+  fireEvent.change(composer, { target: { value: "" } });
+  fireEvent.click(finish);
+  const recap = await screen.findByRole("region", { name: "Session recap" });
+  expect(recap).toHaveTextContent("Persuasive writing");
+  expect(recap).toHaveTextContent("1 saved activity · 2 saved messages");
+  expect(recap).toHaveTextContent(guidance.next_step);
+  expect(recap).toHaveTextContent("not a verified grade or mastery assessment");
+  expect(
+    fetcher.mock.calls.filter(([url]) => url.endsWith("/finish")),
+  ).toHaveLength(1);
+});
+
+it.each(["reference_capture", "generating"])(
+  "offers Finish session after an idle %s step",
+  async (state) => {
+    installSession(session([activity([], state)]));
+    render(<Tutor learner={learner} offline={false} act={run} />);
+    expect(
+      await screen.findByRole("button", { name: "Finish session" }),
+    ).toBeEnabled();
+  },
+);
+
+it("keeps Finish session disabled while a response is active", async () => {
+  installSession(
+    session([
+      activity([
+        operation({ status: "tutoring", feedback: null, reading: null }),
+      ]),
+    ]),
+  );
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  expect(
+    await screen.findByRole("button", { name: "Finish session" }),
+  ).toBeDisabled();
 });
 
 describe("AI learning conversation", () => {
@@ -266,9 +538,7 @@ describe("AI learning conversation", () => {
     const fetcher = installSession(session());
     render(<Tutor learner={learner} offline={false} act={run} />);
     await screen.findByText("Choose practice material");
-    fireEvent.change(await screen.findByLabelText("Practice source"), {
-      target: { value: "reference_text" },
-    });
+    selectSource("reference_text");
     expect(screen.getByText(/The tutor uses your material/)).toHaveTextContent(
       "create different practice",
     );
@@ -792,22 +1062,21 @@ describe("AI learning conversation", () => {
     await screen.findByLabelText("Your work or question");
     fireEvent.click(screen.getByText("Session & material"));
     fireEvent.click(screen.getByText("Use different practice material"));
-    const source = screen.getByLabelText("Practice source");
-    fireEvent.change(source, { target: { value: "reference_text" } });
+    selectSource("reference_text");
     fireEvent.change(screen.getByLabelText("Reference material"), {
       target: { value: "A reference draft to preserve." },
     });
     expect(screen.getByRole("button", { name: "New session" })).toBeDisabled();
     expect(draftChanged).toHaveBeenLastCalledWith(true);
 
-    fireEvent.change(source, { target: { value: "topic" } });
+    selectSource("topic");
     expect(screen.queryByLabelText("Reference material")).toBeNull();
     expect(screen.getByRole("button", { name: "New session" })).toBeEnabled();
     await vi.waitFor(() =>
       expect(draftChanged).toHaveBeenLastCalledWith(false),
     );
 
-    fireEvent.change(source, { target: { value: "reference_text" } });
+    selectSource("reference_text");
     expect(screen.getByLabelText("Reference material")).toHaveValue(
       "A reference draft to preserve.",
     );
@@ -1325,13 +1594,11 @@ it.each(["reading_text", "reading_photo", "reading_generated"])(
     });
     vi.stubGlobal("fetch", fetcher);
     render(<Tutor learner={learner} offline={false} act={run} />);
-    await screen.findByLabelText("Practice source");
+    await screen.findByLabelText("Practice purpose");
     fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
       target: { value: "Reading comprehension" },
     });
-    fireEvent.change(screen.getByLabelText("Practice source"), {
-      target: { value: source },
-    });
+    selectSource(source);
     if (source !== "reading_generated")
       fireEvent.change(screen.getByLabelText("Passage title (optional)"), {
         target: { value: "Original synthetic passage" },
@@ -1394,13 +1661,11 @@ it("starts published reading only after a selected preview supplies its source t
   });
   vi.stubGlobal("fetch", fetcher);
   render(<Tutor learner={learner} offline={false} act={run} />);
-  await screen.findByLabelText("Practice source");
+  await screen.findByLabelText("Practice purpose");
   fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
     target: { value: "Reading inference" },
   });
-  fireEvent.change(screen.getByLabelText("Practice source"), {
-    target: { value: "published" },
-  });
+  selectSource("published");
   await screen.findByRole("option", { name: "Synthetic source" });
   expect(screen.getByRole("button", { name: "Start session" })).toBeDisabled();
   expect(
@@ -1625,10 +1890,8 @@ it("allows long science material while retaining the assignment-reference limit"
   });
   vi.stubGlobal("fetch", fetcher);
   render(<Tutor learner={learner} offline={false} act={run} />);
-  await screen.findByLabelText("Practice source");
-  fireEvent.change(screen.getByLabelText("Practice source"), {
-    target: { value: "reference_text" },
-  });
+  await screen.findByLabelText("Practice purpose");
+  selectSource("reference_text");
   expect(screen.getByLabelText("Reference material")).not.toHaveAttribute(
     "maxlength",
   );
@@ -1643,9 +1906,7 @@ it("allows long science material while retaining the assignment-reference limit"
     screen.getByText(/This material exceeds 8,000 characters/),
   ).toBeVisible();
   expect(screen.getByRole("button", { name: "Start session" })).toBeDisabled();
-  fireEvent.change(screen.getByLabelText("Practice source"), {
-    target: { value: "reading_text" },
-  });
+  selectSource("reading_text");
   expect(screen.getByLabelText("Reading passage")).not.toHaveAttribute(
     "maxlength",
   );
