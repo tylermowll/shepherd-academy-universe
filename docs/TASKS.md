@@ -14,10 +14,11 @@ project consolidation. T48 reviewed documentation and help wording; T49
 closed process gaps found in the subsequent flow review. T50 records the
 independent adversarial review and its bounded corrections. T51 records the
 initial October 18 deployment; T52 links learning/administration and deploys the
-maintainer's subsequent lock update. The
+maintainer's subsequent lock update. T53 applies the maintainer's six-character
+account password minimum on both HTTP and HTTPS. The
 schema head is `0020_request_recovery`. The latest private deployment uses
-runtime source `f0fb127`, Python 3.15.0, FastAPI 0.145.0 and pillow-heif 1.8.1,
-verified on **October 18, 2026**. T52 below records the image, encrypted backup/isolated
+runtime source `93f93de`, Python 3.15.0, FastAPI 0.145.0 and pillow-heif 1.8.1,
+verified on **October 18, 2026**. T53 below records the image, encrypted backup/isolated
 restore, HTTPS, served-asset and authorization checks. The earlier installation
 is preserved in the [October 11 release record](history/TASKS.md#release-publication-2026-10-11).
 This is dated evidence; current provider selections and live teaching quality
@@ -25,7 +26,7 @@ have not been verified.
 
 The maintainer refreshed the former `apps/api/uv.lock` before T46 publication.
 T47 preserves those versions and artifacts in the root `uv.lock`, adding the
-CloudFormation validator. T51/T52 verify the consolidated project's current
+CloudFormation validator. T51–T53 verify the consolidated project's current
 container packaging and private installation; October 11's evidence is historical.
 
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
@@ -34,7 +35,7 @@ and publication checks. Browser-model research and AWS hosting remain optional.
 
 ## T53 — Six-character account passwords (2026-10-18)
 
-**Status:** Implementation validated; publication/deployment pending. The maintainer requested a minimum above five
+**Status:** Complete; source, browser, package and private deployment checks passed. The maintainer requested a minimum above five
 characters. This explicitly replaces D011's twelve-character HTTPS requirement
 with one six-character minimum for administrator and learner accounts.
 
@@ -95,7 +96,52 @@ tests/smoke/setup.spec.ts tests/smoke/accounts.spec.ts`: **10 desktop/mobile
 The full 88-case browser suite was not repeated; the changed account/setup
 workflows were covered by the ten focused journeys above. No live inference,
 model download, private credential inspection or operator account reset was performed.
-Publication, final image checks and private deployment remain pending.
+**Publication and package verification:** Published
+`93f93de665cb6c9040b4a540139cb05ae8b86502` to `main` after the installed commit
+hooks passed the complete project gate. A fresh fetch confirmed the base before
+the non-force push. The maintainer's previously published lock updates are
+preserved; this task changes no dependency lock or schema.
+
+Built `math-practice-tutor:release-20261018-93f93de` from that commit's clean Git
+archive. Exact image
+`sha256:925a2533146814dc9fcf14a2273ac3bde0b88375f08a4594a61815b73243dc64`
+has the full committed OCI revision. The checked-in container smoke passed its
+runtime, restricted-provider/no-inference, migration/SQLite, non-root/read-only
+API/worker, UI and owner-setup checks. A separate network-disabled, read-only
+container accepted six and rejected five characters with an HTTPS origin.
+
+Trivy 0.76.0's HIGH/CRITICAL vulnerability and secret scan passed with zero
+findings, including unfixed vulnerabilities and no exclusions. Generated
+CycloneDX 1.7 with 52 components; SBOM SHA-256
+`1ec707f7d6b45b6a9b05abc42d6630f4a5e85d82a8b533e0829c37f8b1c090e3`.
+
+**Private deployment and verification:** The reviewed
+`/tmp/shepherd-t53-release-20261018/final/cutover.py` preserved the previous
+`f0fb127` image as `math-practice-tutor:rollback-20261018-f0fb127`, stopped both
+writers, and created a native encrypted backup with a verified isolated restore.
+SQLite integrity, foreign keys, retained-object checksums, deletion handling and
+schema validation passed; the original data mount was read-only during backup.
+No live restore or credential rewrite occurred.
+
+Backup `backups/deploy-20261018-93f93de/snapshot.enc` has SHA-256
+`00bbfffd874ef3e5e233bb8aa78dde5dc04a005315002e0a52e2c5eb20a40e0f`.
+Directory/file permissions are 700/600. Its generated mode-600 passphrase file
+is stored separately under
+`~/.local/share/shepherd-academy-universe/backup-keys/`; its value was never
+displayed or passed through command arguments/environment variables.
+
+Compose restarted the API and worker with the exact tested image above, retained
+the existing loopback binding/data mount and confirmed unchanged schema
+`0020_request_recovery (head)`. Final private HTTPS checks passed readiness, a
+fresh heartbeat from the new worker, exact HTML/service-worker/JS/CSS hashes,
+cache headers, three anonymous protected-route rejections and three disabled API
+documentation routes. The anonymous setup API reports minimum **6**, maximum
+**256**, no obsolete local-only field and `no-store`. A fresh anonymous mobile
+browser passed both app-area links and labeled sign-in destinations with no
+administrator controls, overflow or page errors. No actual account was used.
+
+No failures remain. The final evidence-only commit changes this task record;
+the running image's application source remains `93f93de`.
 
 ## T52 — Link learning and administration (2026-10-18)
 
