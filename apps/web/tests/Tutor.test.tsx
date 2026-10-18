@@ -42,6 +42,10 @@ const session = (problems: unknown[] = []) => ({
   status: "open",
   problems,
 });
+const summary = (value: ReturnType<typeof session>) => {
+  const { problems, ...metadata } = value;
+  return { ...metadata, activity_count: problems.length };
+};
 const guidance = {
   strengths: ["You stated a clear position."],
   guidance: [
@@ -84,7 +88,7 @@ function installSession(value: ReturnType<typeof session>) {
   const fetcher = vi.fn((url: string, options: RequestInit) => {
     if (url.endsWith("/features")) return response(capabilities);
     if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(value);
-    if (url.endsWith("/tutor/sessions")) return response([value]);
+    if (url.endsWith("/tutor/sessions")) return response([summary(value)]);
     if (options.method === "POST") return response({});
     throw new Error(`Unexpected request: ${url}`);
   });
@@ -115,6 +119,90 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   window.history.replaceState(null, "", "/");
+});
+
+it("refreshes current work and processing disclosures without downloading unrelated history again", async () => {
+  const secondId = "911c9abc-4e8e-424d-a914-4338187ba00e";
+  let current = session([activity()]);
+  let processing = "local";
+  const fetcher = vi.fn((url: string) => {
+    if (url.endsWith("/features"))
+      return response({ ...capabilities, text_processing: processing });
+    if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(current);
+    if (url.endsWith("/tutor/sessions"))
+      return response([
+        summary(current),
+        { ...summary(session()), id: secondId, topic: "Another saved topic" },
+      ]);
+    throw new Error(url);
+  });
+  window.location.hash = `tutor=${sessionId}`;
+  vi.stubGlobal("fetch", fetcher);
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  await screen.findByLabelText("Your work or question");
+  const historyLoads = () =>
+    fetcher.mock.calls.filter(([url]) => url.endsWith("/tutor/sessions"))
+      .length;
+  expect(historyLoads()).toBe(1);
+
+  current = session([
+    {
+      ...activity([operation({ text: "Saved on another device." })]),
+      status: "completed",
+    },
+    { ...activity(), id: secondId },
+  ]);
+  processing = "cloud";
+  fireEvent(window, new Event("online"));
+  expect(await screen.findByText("Saved on another device.")).toBeVisible();
+  expect(screen.getByText("Text processing: cloud provider.")).toBeVisible();
+  expect(screen.getByText("In progress · 2 activities")).toBeInTheDocument();
+  expect(historyLoads()).toBe(1);
+  expect(
+    fetcher.mock.calls.some(([url]) =>
+      url.endsWith(`/tutor/sessions/${secondId}`),
+    ),
+  ).toBe(false);
+});
+
+it("renders activity counts from history summaries without fetching their conversations", async () => {
+  const saved = { ...summary(session([activity()])), activity_count: 12 };
+  const fetcher = vi.fn((url: string) => {
+    if (url.endsWith("/features")) return response(capabilities);
+    if (url.endsWith("/tutor/sessions")) return response([saved]);
+    throw new Error(url);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  render(<Tutor learner={learner} offline={false} page="history" act={run} />);
+  expect(await screen.findByText("In progress · 12 activities")).toBeVisible();
+  expect(
+    fetcher.mock.calls.some(([url]) =>
+      url.endsWith(`/tutor/sessions/${sessionId}`),
+    ),
+  ).toBe(false);
+});
+
+it("explains the history limit when the most recent 100 summaries are shown", async () => {
+  const saved = Array.from({ length: 100 }, (_, index) => ({
+    ...summary(session()),
+    id: `911c9abc-4e8e-424d-a914-${String(index).padStart(12, "0")}`,
+    topic: `Saved topic ${index}`,
+  }));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string) =>
+      response(url.endsWith("/features") ? capabilities : saved),
+    ),
+  );
+  render(<Tutor learner={learner} offline={false} page="history" act={run} />);
+  expect(
+    await screen.findByText(
+      "Showing the 100 most recent sessions. Older retained work is available through your administrator’s data export.",
+    ),
+  ).toBeVisible();
+  expect(
+    screen.getAllByRole("button", { name: "Continue session" }),
+  ).toHaveLength(100);
 });
 
 it("separates the practice purpose from its relevant material inputs", async () => {
@@ -326,7 +414,7 @@ it("finishes beside the activity controls and recaps only saved work and guidanc
       return response({});
     }
     if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(current);
-    if (url.endsWith("/tutor/sessions")) return response([current]);
+    if (url.endsWith("/tutor/sessions")) return response([summary(current)]);
     throw new Error(url);
   });
   vi.stubGlobal("fetch", fetcher);
@@ -430,7 +518,8 @@ describe("AI learning conversation", () => {
           currentLoads += 1;
           return response(current);
         }
-        if (url.endsWith("/tutor/sessions")) return response([current]);
+        if (url.endsWith("/tutor/sessions"))
+          return response([summary(current)]);
         if (url.endsWith("/images/preview"))
           return Promise.resolve(
             new Response(new Blob(["preview"], { type: "image/png" })),
@@ -606,7 +695,8 @@ describe("AI learning conversation", () => {
           currentLoads += 1;
           return response(current);
         }
-        if (url.endsWith("/tutor/sessions")) return response([current]);
+        if (url.endsWith("/tutor/sessions"))
+          return response([summary(current)]);
         if (url.endsWith("/images/preview"))
           return Promise.resolve(
             new Response(new Blob(["preview"], { type: "image/png" })),
@@ -927,7 +1017,7 @@ describe("AI learning conversation", () => {
         return response(created, 201);
       }
       if (url.endsWith("/tutor/sessions"))
-        return response(saved ? [created] : []);
+        return response(saved ? [summary(created)] : []);
       throw new Error(url);
     });
     vi.stubGlobal("fetch", fetcher);
@@ -1097,7 +1187,8 @@ describe("AI learning conversation", () => {
       vi.fn((url: string) => {
         if (url.endsWith("/features")) return response(capabilities);
         if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(own);
-        if (url.endsWith("/tutor/sessions")) return response([own, other]);
+        if (url.endsWith("/tutor/sessions"))
+          return response([summary(own), summary(other)]);
         throw new Error(url);
       }),
     );
@@ -1139,7 +1230,8 @@ describe("AI learning conversation", () => {
           otherLoads += 1;
           return Promise.reject(new TypeError("Synthetic session load loss"));
         }
-        if (url.endsWith("/tutor/sessions")) return response([current, other]);
+        if (url.endsWith("/tutor/sessions"))
+          return response([summary(current), summary(other)]);
         throw new Error(url);
       }),
     );
@@ -1199,7 +1291,8 @@ describe("AI learning conversation", () => {
           otherLoads += 1;
           return otherRequest;
         }
-        if (url.endsWith("/tutor/sessions")) return response([current, other]);
+        if (url.endsWith("/tutor/sessions"))
+          return response([summary(current), summary(other)]);
         throw new Error(url);
       }),
     );
@@ -1258,7 +1351,8 @@ describe("AI learning conversation", () => {
           otherLoads += 1;
           return otherRequest;
         }
-        if (url.endsWith("/tutor/sessions")) return response([current, other]);
+        if (url.endsWith("/tutor/sessions"))
+          return response([summary(current), summary(other)]);
         throw new Error(url);
       }),
     );
@@ -1328,7 +1422,8 @@ describe("AI learning conversation", () => {
           return response(first);
         if (url.endsWith(`/tutor/sessions/${secondId}`))
           return response(second);
-        if (url.endsWith("/tutor/sessions")) return response([first, second]);
+        if (url.endsWith("/tutor/sessions"))
+          return response([summary(first), summary(second)]);
         throw new Error(url);
       }),
     );
@@ -1356,7 +1451,8 @@ describe("AI learning conversation", () => {
     const fetcher = vi.fn((url: string) => {
       if (url.endsWith("/features")) return response(capabilities);
       if (url.endsWith(`/tutor/sessions/${secondId}`)) return response(second);
-      if (url.endsWith("/tutor/sessions")) return response([first, second]);
+      if (url.endsWith("/tutor/sessions"))
+        return response([summary(first), summary(second)]);
       throw new Error(url);
     });
     vi.stubGlobal("fetch", fetcher);
@@ -1391,7 +1487,7 @@ describe("AI learning conversation", () => {
     const fetcher = vi.fn((url: string, options: RequestInit) => {
       if (url.endsWith("/features")) return response(capabilities);
       if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(value);
-      if (url.endsWith("/tutor/sessions")) return response([value]);
+      if (url.endsWith("/tutor/sessions")) return response([summary(value)]);
       if (url.endsWith("/submissions") && options.method === "POST") {
         attempts += 1;
         if (attempts === 1)
@@ -1840,7 +1936,7 @@ it("retries section navigation with the original payload and idempotency key", a
   const fetcher = vi.fn((url: string, options: RequestInit) => {
     if (url.endsWith("/features")) return response(capabilities);
     if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(current);
-    if (url.endsWith("/tutor/sessions")) return response([current]);
+    if (url.endsWith("/tutor/sessions")) return response([summary(current)]);
     if (url.endsWith("/activities")) {
       attempts += 1;
       if (attempts === 1)
@@ -2023,7 +2119,8 @@ it("recovers an accepted session after a lost receipt and reload without storing
         submission_id: null,
       });
     if (url.endsWith("/tutor/sessions")) {
-      if (options.method !== "POST") return response(accepted ? [saved] : []);
+      if (options.method !== "POST")
+        return response(accepted ? [summary(saved)] : []);
       starts += 1;
       requestKey = (options.headers as Record<string, string>)[
         "Idempotency-Key"

@@ -329,6 +329,9 @@ read handwriting.
 Each model call has a typed generation, reading or guidance schema in
 [provider contracts](../apps/api/src/math_tutor/adapters/providers/contracts.py).
 Generated activities carry a learning goal and 1–3 criteria for sufficient work.
+Questions, goals, criteria, guidance and observation evidence must contain
+non-whitespace text; whitespace-only output is a provider failure, preserving the
+submitted request. Optional praise and next steps may remain empty.
 Reading reports carry the visible transcription, readability assessment and
 uncertainty. Guidance carries a teaching action and observations about resolved
 and open points; those observations may be wrong. The server links them to their
@@ -654,6 +657,10 @@ Essential invariants:
 
 The API exposes `/health` and `/health/live` for liveness and `/health/ready`
 for database/worker readiness. Application routes use `/api/v1`. Generate `contracts/openapi.json` from FastAPI and the TypeScript client/types from that file. Treat generated files as read-only and make CI reject drift.
+
+The tutoring-session list returns metadata and activity counts only. Fetch one
+owned session's full activities, readings and conversation by ID. Routine
+conversation polling must not download other saved sessions' content.
 
 [Generated OpenAPI](../contracts/openapi.json) defines exact methods and typed
 schemas. Application route families below use `/api/v1`; health probes do not:

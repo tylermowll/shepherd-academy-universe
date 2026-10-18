@@ -9,13 +9,14 @@ separate evidence. This checklist does not claim production readiness.
 The tutor is implemented through T44. The following results are dated evidence,
 not a claim about the current installation or live model quality:
 
-| Evidence                                                                                        | Recorded result                                                                                                                                                                                                                                 | Limits                                                                                                                                        |
-| ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| [T49 process checks](TASKS.md#t49--close-tutoring-and-account-process-gaps-2026-10-17)          | 303 backend unit, 11 toolchain, 201 component, 368 integration and 84 desktop/mobile browser tests passed; project, contract, mock-evaluation and repository-file checks passed.                                                                | Synthetic checks used Chrome 155; live providers, physical devices and deployment were not tested.                                            |
-| [October 17 publication checks](TASKS.md#publication-checks-2026-10-17)                         | 291 backend unit, 11 toolchain, 188 component, 340 integration and 80 desktop/mobile browser tests passed with the refreshed Python lock, including Pillow 13.0.0. Source/build/contract checks, mock evaluations and dependency audits passed. | Browser tests used Chrome 155 through the supported executable override. Local container packaging and live-provider quality were not tested. |
-| [October 11 private deployment](history/TASKS.md#release-publication-2026-10-11)                | Source `e9bf42c` deployed at `0020_request_recovery`; HTTPS readiness, served assets, cache headers and protected endpoints checked.                                                                                                            | Provider selections and live inference were not inspected or tested.                                                                          |
-| [October 10 phone layouts](history/TASKS.md#private-deployment-and-phone-layouts-2026-10-10)    | 40 mobile Chromium tests and six additional synthetic phone flows passed.                                                                                                                                                                       | Emulation does not establish physical camera, Safari, installation or manual accessibility behavior.                                          |
-| [October 10 offline restore](history/TASKS.md#offline-development-restore-rehearsal-2026-10-10) | Encrypted backup/restore, wrong-passphrase rejection, database integrity, migration, session/job cleanup and retained-object checks passed on disposable copies.                                                                                | The deletion ledger was empty; separately retained settings/secrets, restored startup and sign-in were not tested.                            |
+| Evidence                                                                                                     | Recorded result                                                                                                                                                                                                                                 | Limits                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| [T50 adversarial review](TASKS.md#t50--independent-adversarial-product-and-implementation-review-2026-10-17) | 329 backend unit, 11 toolchain, 204 component, 376 integration and 84 desktop/mobile browser tests passed; project, contract, mock-evaluation, dependency-audit and repository-file gates passed.                                               | Live teaching, physical devices, manual accessibility, full host recovery and local container checks were not performed.                      |
+| [T49 process checks](TASKS.md#t49--close-tutoring-and-account-process-gaps-2026-10-17)                       | 303 backend unit, 11 toolchain, 201 component, 368 integration and 84 desktop/mobile browser tests passed; project, contract, mock-evaluation and repository-file checks passed.                                                                | Synthetic checks used Chrome 155; live providers, physical devices and deployment were not tested.                                            |
+| [October 17 publication checks](TASKS.md#publication-checks-2026-10-17)                                      | 291 backend unit, 11 toolchain, 188 component, 340 integration and 80 desktop/mobile browser tests passed with the refreshed Python lock, including Pillow 13.0.0. Source/build/contract checks, mock evaluations and dependency audits passed. | Browser tests used Chrome 155 through the supported executable override. Local container packaging and live-provider quality were not tested. |
+| [October 11 private deployment](history/TASKS.md#release-publication-2026-10-11)                             | Source `e9bf42c` deployed at `0020_request_recovery`; HTTPS readiness, served assets, cache headers and protected endpoints checked.                                                                                                            | Provider selections and live inference were not inspected or tested.                                                                          |
+| [October 10 phone layouts](history/TASKS.md#private-deployment-and-phone-layouts-2026-10-10)                 | 40 mobile Chromium tests and six additional synthetic phone flows passed.                                                                                                                                                                       | Emulation does not establish physical camera, Safari, installation or manual accessibility behavior.                                          |
+| [October 10 offline restore](history/TASKS.md#offline-development-restore-rehearsal-2026-10-10)              | Encrypted backup/restore, wrong-passphrase rejection, database integrity, migration, session/job cleanup and retained-object checks passed on disposable copies.                                                                                | The deletion ledger was empty; separately retained settings/secrets, restored startup and sign-in were not tested.                            |
 
 The earlier publication checks validate the refreshed lockfile; they do not update the
 private deployment record or establish model quality. See
@@ -38,6 +39,8 @@ test coverage; it does not report a new test run.
 | Browser-first owner setup, separate learner sign-ins, revocation and cross-account isolation                                                                                               | `apps/api/tests/integration/test_browser_setup.py`, `test_owner_setup.py`, `test_auth_sessions.py`; `tests/smoke/setup.spec.ts`, `accounts.spec.ts`         |
 | Rejected reference-photo discussion stays uncertain; retries reflect current activity/version; age-group corrections preserve history and stop pending work                                | `apps/api/tests/integration/test_tutoring.py`, `test_workflows.py`, `test_learner_accounts.py`; `apps/web/tests/Tutor.test.tsx`, `LearnerAccounts.test.tsx` |
 | Practice purpose selects relevant material inputs; visible session completion preserves drafts and shows a recap of saved work                                                             | `apps/web/tests/Tutor.test.tsx`, `Reading.test.tsx`; `tests/smoke/tutor.spec.ts`, `reading.spec.ts`, `navigation.spec.ts`                                   |
+| History lists summaries without transferring retained conversations; selected work and processing disclosures still refresh                                                                | `apps/api/tests/integration/test_tutoring_history.py`; `apps/web/tests/Tutor.test.tsx`                                                                      |
+| Source imports recheck revoked sessions after fetching; expired leases cannot admit model calls, including during request preparation                                                      | `apps/api/tests/integration/test_reading.py`, `test_workflows.py`                                                                                           |
 | Backend enforces provider capability, audience and cloud policy; safe failures and no automatic cloud fallback                                                                             | `apps/api/tests/unit/test_provider_contracts.py`, `test_provider_execution.py`; `apps/api/tests/integration/test_provider_connections.py`                   |
 | Retention, deletion, authenticated exports, migration integrity and deletion records reapplied on restore                                                                                  | `apps/api/tests/integration/test_retention_recovery.py`, `test_db_foundation.py`, `test_workflows.py`                                                       |
 | Public-only PWA caches, account transitions and updates that defer while commands are pending                                                                                              | `tests/smoke/bootstrap.spec.ts`, `navigation.spec.ts`, `request-recovery.spec.ts`; frontend App/UpdateNotice tests                                          |
@@ -94,6 +97,42 @@ events despite exclusion from supplied context.
 Attach only synthetic evidence without credentials or real learner material.
 Live inference, deployment and downloads require explicit authorization; this
 checklist records unfinished work rather than authorizing those actions.
+
+## Decisions raised by the independent review
+
+[T50](TASKS.md#t50--independent-adversarial-product-and-implementation-review-2026-10-17)
+found a coherent private practice workflow, with teaching quality still the
+largest unverified product assumption. Select an initial learner/subject cohort
+and review held-out synthetic work through the actual app/worker before claiming
+readiness across subjects. Include incorrect and sufficient answers, help and
+revision, assignment-answer disclosure, uncertainty and genuine handwriting.
+Set acceptable failure criteria before reviewing results. More adapters or a
+larger mock suite do not close this gap.
+
+Resolve administrator authorship before treating saved work as learner evidence.
+D013 and SPECIFICATION section 9 direct administrators to synthetic probes and
+exports, but the current HTTP ownership helper also permits administrators to
+create and change managed learners' practice. The UI hides those controls;
+the backend and administrator-based integration fixtures permit them. Prefer
+learner-only practice mutations; if adult assistance on behalf of a learner is
+required, specify explicit actor attribution and audit behavior first. Existing
+administrator export and credential-reset authority limits the confidentiality
+impact, but does not resolve evidence attribution.
+
+Review the blanket prohibition on solving the app's own generated practice
+activity. `tutoring.TEACHING` applies it alongside the assignment-reference rule,
+including after a learner has attempted the activity. Different examples are
+useful, but a stuck learner may also need to compare a worked solution with
+their attempt. Decide whether an explicit post-attempt or post-finish comparison
+belongs in practice, while keeping uploaded assignments reference-only. This is
+a teaching-policy decision; the review leaves the current boundary intact.
+
+History currently lists at most 100 recent sessions. Older retained sessions
+remain accessible by saved URL or administrator export; learner pagination is a
+bounded follow-up. A selected session still transfers its complete conversation
+and repeated passage snapshots, so very long sessions can grow large even after
+T50 removes unrelated histories from polling. Measure incremental conversation
+loading before extending session limits.
 
 ## Optional research and hosting
 

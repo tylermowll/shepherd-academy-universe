@@ -38,6 +38,65 @@ from math_tutor.tutoring import finish_model, make_request
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("purpose", ["generate", "review"])
+async def test_blank_model_output_fails_without_losing_the_saved_request(
+    adult: AsyncClient, engine: Engine, monkeypatch: pytest.MonkeyPatch, purpose: str
+) -> None:
+    install_tutor(monkeypatch)
+    session = await tutor_session(adult)
+    await activity(adult, session)
+    if purpose == "review":
+        assert worker.run_once(engine)
+        current = await latest(adult, session)
+        response = await adult.post(
+            f"/api/v1/problems/{current['id']}/submissions",
+            json={"version": current["version"], "text": "Why should the comparison be fair?"},
+            headers={"Idempotency-Key": str(uuid4())},
+        )
+        assert response.status_code == 202
+
+    def blank(_provider: ProviderConfig, request: ModelRequest) -> ModelResult:
+        output = (
+            {
+                "problem_text": " " * 12,
+                "concept_focus": " ",
+                "success_criteria": [" "],
+            }
+            if request.purpose == "generate"
+            else {
+                "teaching_action": "explain",
+                "learning_observation": {
+                    "assessment": "not_assessed",
+                    "evidence": "This is a learner question.",
+                    "resolved_points": [],
+                    "open_points": [],
+                },
+                "strengths": [],
+                "guidance": [" "],
+                "next_step": "",
+                "concepts": [],
+            }
+        )
+        return ModelResult(
+            model_id=request.model_id,
+            validated_payload=validate_payload(request, json.dumps(output)),
+        )
+
+    monkeypatch.setattr(worker, "complete", blank)
+    assert worker.run_once(engine)
+    result = await latest(adult, session)
+    operation = result["operations"][-1]
+    assert operation["status"] == "failed" and operation["error_code"] == "malformed_output"
+    assert operation["feedback"] is None and operation["message"] is None
+    if purpose == "generate":
+        assert result["activity_state"] == "generating"
+        assert result["problem_text"].strip() and result["success_criteria"] == []
+    else:
+        assert operation["text"] == "Why should the comparison be fair?"
+        assert result["activity_state"] == "ready"
+
+
+@pytest.mark.anyio
 @pytest.mark.parametrize(
     "criterion,error",
     [

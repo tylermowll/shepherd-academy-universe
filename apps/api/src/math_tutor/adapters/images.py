@@ -39,11 +39,15 @@ def normalize(data: bytes) -> bytes:
                         "Use one JPEG, PNG, WebP, HEIC or HEIF image at most 25 million pixels."
                     )
                 image.load()
-                oriented = ImageOps.exif_transpose(image).convert("RGB")
+                oriented = ImageOps.exif_transpose(image)
+                transparent = "A" in oriented.getbands() or "transparency" in oriented.info
+                oriented = oriented.convert("RGBA" if transparent else "RGB")
                 oriented.thumbnail((2048, 2048))
                 # Creating a fresh image drops EXIF, ICC profiles, comments and metadata.
                 clean = Image.new("RGB", oriented.size, "white")
-                clean.paste(oriented)
+                # Preserve contrast on transparent scans instead of discarding
+                # alpha and exposing hidden (often black) background pixels.
+                clean.paste(oriented, mask=oriented.getchannel("A") if transparent else None)
                 # A photographic JPEG or HEIC can expand several-fold when
                 # converted to PNG and then again when base64 encoded for a
                 # provider request. Re-encode at a high, fixed JPEG quality so

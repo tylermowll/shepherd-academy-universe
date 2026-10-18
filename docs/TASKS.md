@@ -10,8 +10,9 @@ A task is complete only after its requirements and exit checks pass.
 
 The application is implemented through T44, with the October 11 dependency
 refresh, T45 documentation consolidation, T46 legacy cleanup and T47 root Python
-project consolidation. T48 reviewed documentation and help wording; T49 below
-closes the process gaps found in the subsequent flow review. The
+project consolidation. T48 reviewed documentation and help wording; T49
+closed process gaps found in the subsequent flow review. T50 records the
+independent adversarial review and its bounded corrections. The
 schema head is `0020_request_recovery`. The last recorded private
 deployment used runtime source `e9bf42c`, Python 3.15.0 and pillow-heif 1.8.1 on
 **October 11, 2026**. Image, HTTPS, served-asset and authorization checks are in
@@ -27,6 +28,164 @@ older installation.
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
+
+## T50 — Independent adversarial product and implementation review (2026-10-17)
+
+**Status:** Complete; independent review, bounded fixes and final local gates
+passed. Release acceptance remains open. The maintainer authorized publication
+to `main`; the starting tree was clean at `515dc70`.
+
+**Scope:** Review the complete tutor against its learning goals, privacy and
+operating processes. Reproduce meaningful defects before fixing them; record
+consequential product decisions and release limitations separately. No live
+inference, private-data inspection, model downloads, provisioning or deployment.
+
+**Contracts and validation plan:** SPECIFICATION sections 1, 3–4, 7, 9–13;
+revocation and ownership after external I/O; useful, source-grounded model
+requests and responses; responsive learner history and recovery. Use synthetic
+on-disk integration tests for authorization/state failures and focused component
+and browser checks for affected journeys. Regenerate public contracts if needed.
+Run targeted regressions, `make check`, `make test-integration`, mock evaluations
+and appropriate browser checks; inspect the final diff and repository hooks.
+Record actual commands, outcomes and limits before committing and pushing.
+
+**Findings and changes:**
+
+- **History scaling:** Each 2.5-second refresh fetched up to 100 complete
+  sessions, then fetched the selected session again. A synthetic retained history
+  of 100 sessions (one 47,600-character passage and 7,200-character response each)
+  produced **10,407,691 bytes and 601 SELECTs** with the former list projection.
+  The new typed summary projection uses **21,191 bytes and one SELECT** on the
+  same temporary on-disk database. Polling refreshes the selected conversation
+  and current processing disclosures; history navigation loads summaries.
+  Full owned detail and administrator exports remain available.
+- **Revocation after external I/O:** Both administrator and learner import
+  requests returned `200` with a signed source token after a separate database
+  connection revoked the requesting session during the source fetch. Expiring
+  cached ORM objects before the final authorization now produces `401`.
+- **Expired worker authority:** A worker paused beyond its lease could admit
+  another provider call, although it could never publish the result. Preparation
+  and failure handling now reject expired authority, including expiry during
+  request construction before call admission; the job stays reclaimable and the
+  next valid worker completes once without the stale call.
+- **Valid multilingual output:** A 16,000-serialized-character inner JSON cap
+  rejected schema-valid Unicode readings and generated passages depending on
+  whether the provider escaped characters. Inner JSON now shares the existing
+  262,144-byte transport bound, with decoded field limits unchanged. Oversized
+  output and invalid Unicode still fail safely.
+- **Empty successful responses:** Whitespace-only questions, goals, criteria,
+  guidance and observation evidence could be accepted as successful model work.
+  Required visible output is now validated, while legitimate optional empties
+  and historical feedback remain readable. Invalid new output preserves the
+  request and fails visibly.
+- **Invisible uploaded work:** Normalization discarded alpha before placing
+  PNGs on white, turning transparent black backgrounds into black and hiding
+  black ink. RGBA, grayscale-alpha and palette transparency now composite onto
+  white before producing the bounded, metadata-free JPEG.
+- **Runtime API documentation:** `/docs`, `/redoc` and `/openapi.json` returned
+  unauthenticated `200`, contrary to the default-private documentation contract.
+  Runtime endpoints are disabled; offline contract generation still works.
+
+**Product judgment and unresolved decisions:** The topic → work → guidance →
+revision loop and single-household architecture form a coherent private tutor.
+Provider isolation, durable work and retention support that goal, but broad
+subject support and connection tests do not establish useful teaching. Required
+human model/handwriting review, real-device accessibility and restored startup
+remain release gates. Prioritize a measured initial learner/subject cohort over
+adding providers or browser-model features; expansion needs held-out synthetic
+cases and human review of false corrections, answer disclosure and uncertainty.
+
+The role contract also needs a maintainer decision: D013/SPECIFICATION section 9
+say administrators use synthetic probes rather than learner Practice, but
+`Principal` plus `owned_learner` allows an administrator to create and mutate
+any managed learner's tutoring work through HTTP. Administrator-based integration
+fixtures exercise that behavior. This is not an escalation beyond the adult's
+existing export/password-reset authority; it can nevertheless attribute
+administrator-authored work to learner memory without an explicit actor record.
+Recommend learner-only practice mutations, retaining administrator exports, or
+an explicit audited on-behalf workflow if that is a real product need. Changing
+all role-dependent routes and fixtures deserves its own bounded task; this
+review does not silently redefine the existing privilege model.
+
+The blanket solution prohibition also covers the app's own generated practice,
+even after an attempt. Consider explicit post-attempt/post-finish worked-solution
+comparison for those activities; keep uploaded assignments reference-only.
+That teaching-policy decision is left to the maintainer. History pagination
+beyond the 100 newest sessions and incremental loading of very long selected
+conversations remain bounded follow-ups; administrator exports preserve access
+to older retained work.
+
+**Changed files:** Runtime changes are in
+`apps/api/src/math_tutor/adapters/images.py`, `adapters/providers/contracts.py`,
+`adapters/providers/transports.py`, `api/app.py`, `api/reading.py`,
+`api/tutoring.py`, `worker.py` and `apps/web/src/Tutor.tsx`. Regression evidence
+is in backend integration tests `test_reading.py`,
+`test_teaching_output_boundaries.py`, `test_tutoring_history.py`,
+`test_workflows.py`; backend unit tests `test_health.py`, `test_images.py`,
+`test_provider_contracts.py`, `test_tutoring_contracts.py`; and frontend tests
+`App.test.tsx`, `Tutor.test.tsx`. OpenAPI/TypeScript definitions were regenerated.
+Current requirements, decisions and evidence are updated in SPECIFICATION,
+ACCEPTANCE, HANDOFF and this task.
+
+**Validation (2026-10-17):** Commands use
+`/tmp/shepherd-t49-toolchain/run` (Node 26.11.1, pnpm 12.11.2, uv 0.13.1,
+Python 3.15.0), which clears operator/provider variables and disables env-file
+loading. ASGI/subprocess/browser checks use isolated execution outside the
+restricted sandbox, where ASGI thread scheduling stalls.
+
+- Pre-fix regressions demonstrated two revoked imports returning `200`, three
+  alpha modes hiding black work, thirteen blank/Unicode failures, stale-worker
+  call admission and all three public documentation endpoints returning `200`.
+  A further synthetic-clock reproduction found expiry during request preparation
+  still admitted a call; the final guard covers that boundary too.
+- Focused final checks passed: **5 source-import**, **15 image unit**,
+  **152 provider/teaching unit**, **18 teaching-output integration**,
+  **74 workflow/retention/health**, **2 history integration** and
+  **75 App/Tutor/Reading component** tests. After the final lease guard,
+  **4 expiry/recovery/duplicate integration** tests and scoped Ruff/mypy passed.
+- `make contracts`: regenerated the list summary response and TypeScript types.
+  The new text validation stays local and adds no native-provider schema keywords.
+- `make check` on the final source: passed **329 backend unit, 11 toolchain and
+  204 component tests**, locks, lint/format, types, builds, contract drift,
+  secret scan and infrastructure validation. The earlier complete run passed
+  before the final lease-admission follow-up too. Existing build warnings about
+  the deliberately unbounded `uv_build` requirement and JavaScript chunk size
+  remain.
+- Final `make test-integration`: **376 passed in 140.92s** on temporary on-disk
+  SQLite databases. The earlier 375-case run passed before the final
+  lease-admission guard and its additional regression case.
+- Final `make smoke-built`: **84 desktop/mobile Chromium journeys passed in
+  13.8 minutes**, with retries disabled. The supported installed-Chrome override
+  used Google Chrome 155.0.8059.84. `make check test-integration smoke-built`
+  passed as one serialized run against the frozen final source.
+- `make audit`: Python and pnpm audits reported no known vulnerabilities.
+- `make eval-mock` via `/tmp/shepherd-t50-eval.py`: passed all **33 deterministic
+  cases**, synthetic vision contracts, **36 reading stages**, **36 teaching
+  stages** and **20 adversarial stages**. Fresh reports are in
+  `/tmp/shepherd-t50-eval-evidence`; checked-in dated reports were preserved.
+  These are mock contracts, not measurements of teaching quality.
+- `python3 /tmp/shepherd-t50-docs.py`: **196 local links/headings** validated
+  across 17 Markdown files. Edited Markdown formatting and `git diff --check`
+  passed.
+- `make hooks-files-check secret-check`: repository file hooks and credential
+  scanning passed after staging the new public history regression, paired with
+  the completed project gate. The local commit hook was refreshed to use the
+  consolidated root Python environment.
+
+No failures remain in T50. Initial sandboxed ASGI runs stalled and were stopped;
+the isolated external runs above passed. No workflow/ownership assertion was
+removed or test threshold relaxed. Independent cross-review of the final source
+diff found no further blocking regression.
+
+Live inference, physical phones, manual accessibility,
+restored-host startup/key recovery and local container packaging/scanning have
+not been run. There is no local Docker executable. Source publication does not
+update or validate the private running installation.
+
+**Publication:** A fresh fetch confirmed the starting local `main` matched
+`origin/main` at `515dc70`. The authorized commit runs the installed repository
+hooks; its final hash, push result, remote equality and working-tree status are
+verified in the completion report. No application deployment is included.
 
 ## T49 — Close tutoring and account process gaps (2026-10-17)
 

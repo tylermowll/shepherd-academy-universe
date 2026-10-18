@@ -1780,6 +1780,35 @@ export interface components {
       /** Topic */
       topic: string;
     };
+    /** TutoringSessionSummaryPublic */
+    TutoringSessionSummaryPublic: {
+      /** Activity Count */
+      activity_count: number;
+      /**
+       * Difficulty
+       * @enum {string}
+       */
+      difficulty: "introductory" | "standard" | "challenge";
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Initiative
+       * @enum {string}
+       */
+      initiative: "tutor_led" | "balanced" | "learner_led";
+      /**
+       * Learner Id
+       * Format: uuid
+       */
+      learner_id: string;
+      /** Status */
+      status: string;
+      /** Topic */
+      topic: string;
+    };
     /** UsagePublic */
     UsagePublic: {
       /** Calls */
@@ -3034,7 +3063,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["TutoringSessionPublic"][];
+          "application/json": components["schemas"]["TutoringSessionSummaryPublic"][];
         };
       };
     };

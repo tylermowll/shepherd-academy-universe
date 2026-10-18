@@ -32,6 +32,25 @@ def test_heif_round_trip_and_metadata_stripping() -> None:
     assert b"synthetic metadata" not in normalize(png.getvalue())
 
 
+@pytest.mark.parametrize("mode", ["RGBA", "LA", "P"])
+def test_transparency_is_flattened_on_white_without_hiding_black_work(mode: str) -> None:
+    image = Image.new("RGBA", (80, 40), (0, 0, 0, 0))
+    image.paste((0, 0, 0, 255), (40, 0, 80, 40))
+    if mode == "P":
+        image = image.convert("P", palette=Image.Palette.ADAPTIVE)
+    else:
+        image = image.convert(mode)
+    source = BytesIO()
+    image.save(source, "PNG")
+    with Image.open(BytesIO(normalize(source.getvalue()))) as result:
+        assert result.format == "JPEG" and result.mode == "RGB"
+        background, ink = result.getpixel((10, 20)), result.getpixel((70, 20))
+        assert isinstance(background, tuple) and isinstance(ink, tuple)
+        assert all(channel >= 250 for channel in background)
+        assert all(channel <= 5 for channel in ink)
+        assert "transparency" not in result.info
+
+
 def test_noisy_jpeg_does_not_expand_into_an_oversized_provider_request() -> None:
     source = BytesIO()
     pixels = Random(7).randbytes(2048 * 2048 * 3)

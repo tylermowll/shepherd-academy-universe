@@ -173,7 +173,14 @@ def prepare(engine: Engine, work: Claim) -> Prepared:
         db.connection(execution_options={"sqlite_begin_immediate": True})
         job = db.get(Job, work.job_id)
         row = db.get(Submission, work.submission_id)
-        if job is None or row is None or job.state != "running" or job.lease_token != work.token:
+        if (
+            job is None
+            or row is None
+            or job.state != "running"
+            or job.lease_token != work.token
+            or job.lease_expires_at is None
+            or job.lease_expires_at <= utcnow()
+        ):
             raise ProviderError("canceled")
         problem = db.get(ProblemInstance, row.problem_id)
         assert problem is not None
@@ -207,6 +214,10 @@ def prepare(engine: Engine, work: Claim) -> Prepared:
                 safe_message="Photo expired. Submit a new photo or use typed input.",
             )
         request = make_request(db, job, row, problem, session, provider, image)
+        # Private image I/O and context construction can outlive the lease.
+        # Recheck admission after preparation, before recording or billing a call.
+        if job.lease_expires_at is None or job.lease_expires_at <= utcnow():
+            raise ProviderError("canceled")
         call = ModelCall(
             submission_id=row.id,
             provider_id=name,
@@ -239,7 +250,14 @@ def fail(engine: Engine, work: Claim, error: ProviderError) -> None:
         db.connection(execution_options={"sqlite_begin_immediate": True})
         job = db.get(Job, work.job_id)
         row = db.get(Submission, work.submission_id)
-        if job is None or row is None or job.state != "running" or job.lease_token != work.token:
+        if (
+            job is None
+            or row is None
+            or job.state != "running"
+            or job.lease_token != work.token
+            or job.lease_expires_at is None
+            or job.lease_expires_at <= utcnow()
+        ):
             return
         job.state, job.retryable = "failed", error.retryable
         job.available_at = utcnow() + timedelta(

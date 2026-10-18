@@ -7,6 +7,8 @@ T47 consolidates Python into one root project and Python 3.15 environment.
 T48 clarifies current documentation, help and screen text.
 T49 closes photo clarification, retry, age-group correction and session-flow
 gaps; its current validation and publication status is in TASKS.
+T50 records the independent adversarial review, bounded implementation fixes
+and unresolved product/role decisions in ACCEPTANCE.
 The last recorded private deployment was October 11, 2026. That record does not
 verify the current installation, selected models or teaching quality.
 

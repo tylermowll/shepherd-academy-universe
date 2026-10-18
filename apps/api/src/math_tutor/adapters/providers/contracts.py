@@ -59,6 +59,15 @@ class ActivityPayload(BaseModel):
     passage: OriginalPassage | None = None
 
     @model_validator(mode="after")
+    def required_activity_text_is_not_blank(self) -> Self:
+        if any(
+            not value.strip()
+            for value in [self.problem_text, self.concept_focus, *self.success_criteria]
+        ):
+            raise ValueError("An activity needs a nonblank question, goal and success criteria.")
+        return self
+
+    @model_validator(mode="after")
     def criteria_do_not_supply_a_scalar_answer(self) -> Self:
         if any(
             answer_disclosing_criterion(self.problem_text, item) for item in self.success_criteria
@@ -115,6 +124,16 @@ class FeedbackPayload(FeedbackContent):
 
     teaching_action: TeachingAction
     learning_observation: LearningObservation
+
+    @model_validator(mode="after")
+    def required_feedback_text_is_not_blank(self) -> Self:
+        # Validate new output without making historical FeedbackPublic records
+        # unreadable. Optional praise, concepts and next steps may remain empty.
+        if not self.learning_observation.evidence.strip() or any(
+            not value.strip() for value in self.guidance
+        ):
+            raise ValueError("New feedback needs nonblank guidance and observation evidence.")
+        return self
 
     @model_validator(mode="after")
     def sufficient_work_has_no_extra_assignment(self) -> Self:

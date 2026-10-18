@@ -8,7 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from math_tutor.adapters.db.models import (
@@ -131,6 +131,16 @@ class TutoringSessionPublic(BaseModel):
     initiative: Initiative
     difficulty: Difficulty
     problems: list[ProblemPublic]
+
+
+class TutoringSessionSummaryPublic(BaseModel):
+    id: UUID
+    learner_id: UUID
+    status: str
+    topic: str
+    initiative: Initiative
+    difficulty: Difficulty
+    activity_count: int
 
 
 class TutorRequestReceiptPublic(BaseModel):
@@ -299,17 +309,30 @@ def create_session(
     return public_session(db, row)
 
 
-@router.get("/sessions", response_model=list[TutoringSessionPublic])
-def sessions(db: Database, actor: Principal) -> list[TutoringSessionPublic]:
+@router.get("/sessions", response_model=list[TutoringSessionSummaryPublic])
+def sessions(db: Database, actor: Principal) -> list[TutoringSessionSummaryPublic]:
     query = (
-        select(PracticeSession)
+        select(PracticeSession, func.count(ProblemInstance.id))
+        .outerjoin(ProblemInstance, ProblemInstance.session_id == PracticeSession.id)
         .where(PracticeSession.mode == "ai_tutor")
+        .group_by(PracticeSession.id)
         .order_by(PracticeSession.created_at.desc())
         .limit(100)
     )
     if actor.role != "adult":
         query = query.where(PracticeSession.learner_id == actor.learner_id)
-    return [public_session(db, row) for row in db.scalars(query)]
+    return [
+        TutoringSessionSummaryPublic(
+            id=row.id,
+            learner_id=row.learner_id,
+            status=row.status,
+            topic=row.topic,
+            initiative=cast(Initiative, row.initiative),
+            difficulty=session_difficulty(row),
+            activity_count=count,
+        )
+        for row, count in db.execute(query)
+    ]
 
 
 @router.get("/sessions/{session_id}", response_model=TutoringSessionPublic)

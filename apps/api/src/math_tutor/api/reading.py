@@ -54,6 +54,9 @@ def load_source(
             502,
             "The published source could not be loaded. Try again or paste a passage you have permission to use.",
         ) from None
+    # Dependency sessions retain objects across commit. Refresh the original
+    # principal before rechecking a revocation made while fetching the source.
+    db.expire_all()
     current = principal(request, db)
     owned_learner(db, current, body.learner_id)
     return SourceImportPublic(

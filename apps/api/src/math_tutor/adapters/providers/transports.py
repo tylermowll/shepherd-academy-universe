@@ -35,6 +35,8 @@ from math_tutor.adapters.providers.contracts import (
 )
 from math_tutor.reading import OriginalPassage
 
+MAX_MODEL_RESPONSE_BYTES = 262144
+
 
 class WireObject(BaseModel):
     """Validate consumed fields without rejecting vendor-specific metadata."""
@@ -167,15 +169,18 @@ def local_destination(host: str) -> bool:
 def validate_payload(
     request: ModelRequest, text: str
 ) -> ActivityPayload | ReadingPayload | FeedbackPayload:
-    if len(text) > 16000:
-        raise ProviderError("malformed_output")
+    # Escaped JSON can use twelve ASCII bytes for one allowed Unicode code
+    # point. Keep the existing transport envelope, then enforce decoded field
+    # limits; equivalent literal and escaped text must receive the same result.
     try:
+        if len(text) > MAX_MODEL_RESPONSE_BYTES or len(text.encode()) > MAX_MODEL_RESPONSE_BYTES:
+            raise ProviderError("malformed_output")
         if request.purpose == "generate":
             return ActivityPayload.model_validate_json(text)
         if request.purpose == "read":
             return ReadingPayload.model_validate_json(text)
         return FeedbackPayload.model_validate_json(text)
-    except ValidationError:
+    except ValidationError, UnicodeEncodeError:
         raise ProviderError(
             "malformed_output",
             safe_message="Provider output did not match the required format. Your work is saved.",
@@ -393,7 +398,7 @@ class HTTPProvider:
                 chunks = bytearray()
                 for chunk in response.iter_bytes():
                     chunks.extend(chunk)
-                    if len(chunks) > 262144:
+                    if len(chunks) > MAX_MODEL_RESPONSE_BYTES:
                         raise ProviderError("malformed_output")
             usage: dict[str, int] = {}
             if self.config.adapter == "ollama":

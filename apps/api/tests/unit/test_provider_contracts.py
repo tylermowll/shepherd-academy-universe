@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from math_tutor.adapters.providers.config import Configuration, ProviderConfig, Routes, route
 from math_tutor.adapters.providers.contracts import (
     MAX_CONFIGURED_CONTEXT_LIMIT,
+    ActivityPayload,
     Capabilities,
     FeedbackPayload,
     Message,
@@ -29,6 +30,7 @@ from math_tutor.adapters.providers.transports import (
     strict_response_schema,
     validate_payload,
 )
+from math_tutor.reading import OriginalPassage
 
 PAYLOAD = {
     "teaching_action": "coach",
@@ -282,6 +284,48 @@ def test_schema_does_not_accept_model_verdict_or_prose() -> None:
     ):
         with pytest.raises(ProviderError):
             validate_payload(request(), output)
+
+
+@pytest.mark.parametrize("character", ["科", "🌱", "\u0001"])
+@pytest.mark.parametrize("escaped", [False, True])
+@pytest.mark.parametrize("purpose", ["read", "generate"])
+def test_response_envelope_preserves_allowed_unicode_fields(
+    character: str, escaped: bool, purpose: str
+) -> None:
+    source = character * 8000
+    payload = (
+        ReadingPayload.model_validate({**READING, "transcription": source})
+        if purpose == "read"
+        else ActivityPayload(
+            problem_text="Explain what one detail suggests about the plant.",
+            concept_focus="Textual evidence",
+            success_criteria=["Connect a detail to an interpretation."],
+            passage=OriginalPassage(title="Synthetic source", text=source),
+        )
+    )
+    model_request = request(purpose == "read").model_copy(update={"purpose": purpose})
+    output = json.dumps(payload.model_dump(), ensure_ascii=escaped)
+    assert validate_payload(model_request, output) == payload
+
+
+def test_larger_json_envelope_keeps_field_and_byte_limits() -> None:
+    with pytest.raises(ProviderError, match="malformed_output"):
+        validate_payload(request(True), json.dumps({**READING, "transcription": "科" * 8001}))
+    # Valid JSON plus whitespace remains bounded before deserialization. Count
+    # bytes, including multibyte characters, rather than serialized characters.
+    for output in (
+        json.dumps(READING) + " " * 262144,
+        json.dumps({**READING, "organization_feedback": ["科" * 90000]}, ensure_ascii=False),
+    ):
+        with pytest.raises(ProviderError, match="malformed_output"):
+            validate_payload(request(True), output)
+
+
+@pytest.mark.parametrize("escaped", [False, True])
+def test_invalid_unicode_response_is_a_typed_provider_failure(escaped: bool) -> None:
+    output = json.dumps({**READING, "transcription": "\ud800"}, ensure_ascii=escaped)
+    with pytest.raises(ProviderError, match="malformed_output"):
+        validate_payload(request(True), output)
 
 
 def test_bedrock_converse_uses_sdk_schema_and_image_blocks() -> None:

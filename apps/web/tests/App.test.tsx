@@ -10,6 +10,11 @@ import { App } from "../src/App";
 import { Tutor } from "../src/Tutor";
 import { SafeText } from "../src/SafeText";
 
+function summary<T extends { problems: unknown[] }>(value: T) {
+  const { problems, ...metadata } = value;
+  return { ...metadata, activity_count: problems.length };
+}
+
 beforeEach(() => {
   vi.stubGlobal("scrollTo", vi.fn());
   window.history.replaceState(null, "", "/");
@@ -153,7 +158,7 @@ it("protects an actual learner draft from accidental tab reload and clears the g
                   }
                 : url.endsWith(sessionId)
                   ? saved
-                  : [saved],
+                  : [summary(saved)],
           ),
         ),
       ),
@@ -307,7 +312,9 @@ it("keeps the selected session when a previous session response arrives late", a
     if (url.endsWith(`/sessions/${second}`))
       return Promise.resolve(response(session(second)));
     if (url.endsWith("/sessions"))
-      return Promise.resolve(response([first, second].map(session)));
+      return Promise.resolve(
+        response([first, second].map(session).map(summary)),
+      );
     if (url.endsWith("/features"))
       return Promise.resolve(response({ photos_available: false }));
     return Promise.resolve(response([]));

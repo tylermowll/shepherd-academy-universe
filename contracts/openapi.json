@@ -2445,6 +2445,61 @@
         "title": "TutoringSessionPublic",
         "type": "object"
       },
+      "TutoringSessionSummaryPublic": {
+        "properties": {
+          "activity_count": {
+            "title": "Activity Count",
+            "type": "integer"
+          },
+          "difficulty": {
+            "enum": [
+              "introductory",
+              "standard",
+              "challenge"
+            ],
+            "title": "Difficulty",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "initiative": {
+            "enum": [
+              "tutor_led",
+              "balanced",
+              "learner_led"
+            ],
+            "title": "Initiative",
+            "type": "string"
+          },
+          "learner_id": {
+            "format": "uuid",
+            "title": "Learner Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "topic": {
+            "title": "Topic",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "learner_id",
+          "status",
+          "topic",
+          "initiative",
+          "difficulty",
+          "activity_count"
+        ],
+        "title": "TutoringSessionSummaryPublic",
+        "type": "object"
+      },
       "UsagePublic": {
         "properties": {
           "calls": {
@@ -4159,7 +4214,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/TutoringSessionPublic"
+                    "$ref": "#/components/schemas/TutoringSessionSummaryPublic"
                   },
                   "title": "Response Sessions Api V1 Tutor Sessions Get",
                   "type": "array"

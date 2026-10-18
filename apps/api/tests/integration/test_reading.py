@@ -9,6 +9,7 @@ import pytest
 from fastapi import HTTPException
 from httpx2 import AsyncClient
 from pydantic import HttpUrl
+from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 from test_tutoring import activity, install_tutor, latest, tutor_session
@@ -18,10 +19,12 @@ from test_workflows import client, learner_ids, phone_link, photo_bytes, sign_in
 from test_workflows import engine as engine
 
 from math_tutor import worker
-from math_tutor.adapters.db.models import Learner, PracticeSession, ProblemInstance
+from math_tutor.adapters.db.models import DeviceSession, Learner, PracticeSession, ProblemInstance
+from math_tutor.adapters.db.types import utcnow
 from math_tutor.adapters.providers.config import ProviderConfig
 from math_tutor.adapters.providers.contracts import ActivityPayload, ModelRequest, ModelResult
 from math_tutor.api.practice import digest
+from math_tutor.auth import hash_opaque_token
 from math_tutor.reading import OriginalPassage, ReadingPassage
 from math_tutor.reading_sources import SourceError
 
@@ -286,6 +289,51 @@ async def test_import_checks_auth_ownership_and_csrf_before_fetch(
             )
         ).status_code == 403
     assert not calls
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("role", ["adult", "learner"])
+async def test_import_rechecks_session_revocation_after_fetch(
+    adult: AsyncClient, engine: Engine, monkeypatch: pytest.MonkeyPatch, role: str
+) -> None:
+    learner_id = (await learner_ids(adult))[0]
+    passage = ReadingPassage(
+        title="Synthetic public source",
+        text=PASSAGE,
+        origin="published",
+        author="Synthetic author",
+        source_url=HttpUrl("https://www.nasa.gov/synthetic"),
+        permission="Original synthetic fixture.",
+    )
+    async with client(engine) as device:
+        if role == "learner":
+            await sign_in_learner(adult, device, learner_id)
+        else:
+            device.cookies.update(adult.cookies)
+            device.headers.update(adult.headers)
+        token = device.cookies["mt_session"]
+
+        def revoked_during_fetch(_source_id: str) -> list[ReadingPassage]:
+            # A separate production-configured connection can write while the
+            # request is fetching; the original identity-map entry stays alive.
+            with Session(engine) as concurrent:
+                session = concurrent.scalar(
+                    select(DeviceSession).where(
+                        DeviceSession.token_hash == hash_opaque_token(token)
+                    )
+                )
+                assert session is not None
+                session.revoked_at = utcnow()
+                concurrent.commit()
+            return [passage]
+
+        monkeypatch.setattr("math_tutor.api.reading.import_source", revoked_during_fetch)
+        response = await device.post(
+            "/api/v1/reading/import",
+            json={"learner_id": learner_id, "source_id": "nasa_news"},
+        )
+    assert response.status_code == 401
+    assert "source_token" not in response.text
 
 
 @pytest.mark.anyio

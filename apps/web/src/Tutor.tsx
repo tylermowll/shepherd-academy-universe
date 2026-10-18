@@ -96,7 +96,9 @@ export function Tutor({
   onDraftChange,
   onNavigate,
 }: Props) {
-  const [history, setHistory] = useState<Schema<"TutoringSessionPublic">[]>([]);
+  const [history, setHistory] = useState<
+    Schema<"TutoringSessionSummaryPublic">[]
+  >([]);
   const [session, setSession] =
     useState<Schema<"TutoringSessionPublic"> | null>(null);
   const [features, setFeatures] = useState<Schema<"Features"> | null>(null);
@@ -144,7 +146,7 @@ export function Tutor({
     working || pending !== null || photoPending || recovery !== null;
 
   const commitSession = useCallback(
-    (loaded: Schema<"TutoringSessionPublic">) => {
+    (loaded: Schema<"TutoringSessionPublic">, addToHistory = false) => {
       if (loaded.learner_id !== learner) {
         selectedSession.current = "";
         setSession(null);
@@ -157,6 +159,22 @@ export function Tutor({
       }
       selectedSession.current = loaded.id;
       setSession(loaded);
+      setHistory((current) => {
+        const summary: Schema<"TutoringSessionSummaryPublic"> = {
+          id: loaded.id,
+          learner_id: loaded.learner_id,
+          status: loaded.status,
+          topic: loaded.topic,
+          initiative: loaded.initiative,
+          difficulty: loaded.difficulty,
+          activity_count: loaded.problems.length,
+        };
+        return current.some((item) => item.id === loaded.id)
+          ? current.map((item) => (item.id === loaded.id ? summary : item))
+          : addToHistory
+            ? [summary, ...current].slice(0, 100)
+            : current;
+      });
       window.history.replaceState(
         null,
         "",
@@ -168,17 +186,20 @@ export function Tutor({
   );
 
   const load = useCallback(
-    async (id?: string) => {
+    async (id?: string, includeHistory = true) => {
       const sequence = ++loadSequence.current;
       const [sessions, capabilities, loaded] = await Promise.all([
-        api<Schema<"TutoringSessionPublic">[]>("/tutor/sessions"),
+        includeHistory
+          ? api<Schema<"TutoringSessionSummaryPublic">[]>("/tutor/sessions")
+          : Promise.resolve(null),
         api<Schema<"Features">>(`/learners/${learner}/features`),
         id
           ? api<Schema<"TutoringSessionPublic">>(`/tutor/sessions/${id}`)
           : Promise.resolve(null),
       ]);
       if (!mounted.current || sequence !== loadSequence.current) return;
-      setHistory(sessions.filter((item) => item.learner_id === learner));
+      if (sessions)
+        setHistory(sessions.filter((item) => item.learner_id === learner));
       setFeatures(capabilities);
       setConnectionError("");
       if (loaded) commitSession(loaded);
@@ -301,7 +322,7 @@ export function Tutor({
       )
         return;
       polling.current = true;
-      void load(selectedSession.current)
+      void load(selectedSession.current, false)
         .catch((cause: unknown) => {
           if (mounted.current)
             setConnectionError(
@@ -325,7 +346,7 @@ export function Tutor({
   }, [sessionId, load, pageActive]);
 
   const refresh = useCallback(async () => {
-    if (selectedSession.current) await load(selectedSession.current);
+    if (selectedSession.current) await load(selectedSession.current, false);
   }, [load]);
   const problem = session?.problems.find((item) => item.status === "assigned");
   const activeOperation = problem?.operations.find((operation) =>
@@ -493,16 +514,12 @@ export function Tutor({
             ?.source === "published"
         )
           setSource("topic");
-        if (!commitSession(created)) {
+        if (!commitSession(created, true)) {
           setConnectionError(
             "The saved session could not be opened for this learner. Reconnect to refresh your sessions.",
           );
           return;
         }
-        setHistory((current) => [
-          created,
-          ...current.filter((item) => item.id !== created.id),
-        ]);
         try {
           await load(created.id);
         } catch {
@@ -817,6 +834,12 @@ export function Tutor({
       >
         <h2 id="saved-sessions-heading">Saved sessions</h2>
         <p>Open a saved session to review your work or keep practicing.</p>
+        {history.length === 100 && (
+          <p className="fine">
+            Showing the 100 most recent sessions. Older retained work is
+            available through your administrator’s data export.
+          </p>
+        )}
         {hasDraft && (
           <p className="notice">
             You have an unsent draft in Practice. Send or clear it before
@@ -844,8 +867,8 @@ export function Tutor({
               <h3>{item.topic}</h3>
               <p className="fine">
                 {item.status === "open" ? "In progress" : "Finished"} ·{" "}
-                {item.problems.length}{" "}
-                {item.problems.length === 1 ? "activity" : "activities"}
+                {item.activity_count}{" "}
+                {item.activity_count === 1 ? "activity" : "activities"}
               </p>
               <button
                 disabled={

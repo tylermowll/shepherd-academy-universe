@@ -26,6 +26,7 @@ from math_tutor.adapters.db.models import (
     Interpretation,
     Job,
     Learner,
+    ModelCall,
     PhoneUpload,
     PracticeSession,
     ProblemInstance,
@@ -48,6 +49,7 @@ from math_tutor.api.app import create_app
 from math_tutor.demo import DEMO_PASSWORD, seed
 from math_tutor.providers import complete as provider_complete
 from math_tutor.retention import sweep
+from math_tutor.tutoring import make_request
 
 ORIGIN = "http://127.0.0.1:8000"
 
@@ -602,6 +604,54 @@ async def test_duplicate_canonical_payload_and_stale_versions(
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("expiry_stage", ["before_preparation", "during_preparation"])
+async def test_expired_worker_cannot_start_inference_or_fail_reclaimable_work(
+    adult: AsyncClient, engine: Engine, monkeypatch: pytest.MonkeyPatch, expiry_stage: str
+) -> None:
+    _, problem = await start(adult, (await learner_ids(adult))[0])
+    await send(adult, problem)
+    work = worker.claim(engine)
+    assert work is not None
+    with Session(engine) as db:
+        job = db.get(Job, work.job_id)
+        assert job is not None and job.lease_expires_at is not None
+        expired_at = job.lease_expires_at + timedelta(seconds=1)
+    now = expired_at if expiry_stage == "before_preparation" else utcnow()
+    monkeypatch.setattr(worker, "utcnow", lambda: now)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(worker, "claim", lambda _engine: work)
+        if expiry_stage == "during_preparation":
+
+            def expire_while_preparing(*args: Any, **kwargs: Any) -> ModelRequest:
+                nonlocal now
+                request = make_request(*args, **kwargs)
+                now = expired_at
+                return request
+
+            patch.setattr(worker, "make_request", expire_while_preparing)
+
+        def forbidden(*_args: object) -> None:
+            pytest.fail("An expired worker must not start a provider request")
+
+        patch.setattr(worker, "complete", forbidden)
+        assert worker.run_once(engine)
+    with Session(engine) as db:
+        job = db.get(Job, work.job_id)
+        assert job is not None and job.state == "running" and job.call_count == 0
+        assert db.scalar(select(func.count()).select_from(ModelCall)) == 0
+        assert db.scalar(select(func.count()).select_from(TutorTurn)) == 0
+
+    assert worker.run_once(engine)
+    with Session(engine) as db:
+        job = db.get(Job, work.job_id)
+        submitted = db.get(Submission, work.submission_id)
+        assert job is not None and job.state == "completed" and job.call_count == 1
+        assert submitted is not None and submitted.status == "completed"
+        assert db.scalar(select(func.count()).select_from(TutorTurn)) == 1
+
+
+@pytest.mark.anyio
 async def test_worker_expired_lease_cannot_publish_twice(
     adult: AsyncClient, engine: Engine
 ) -> None:
@@ -1143,15 +1193,14 @@ def finish_claim(engine: Engine, claim: worker.Claim) -> bool:
     ],
 )
 async def test_retired_catalog_endpoints_are_absent(
-    adult: AsyncClient, monkeypatch: pytest.MonkeyPatch, method: str, path: str
+    adult: AsyncClient, engine: Engine, monkeypatch: pytest.MonkeyPatch, method: str, path: str
 ) -> None:
     monkeypatch.setenv("ENABLE_EXTERNAL_PROBLEMS", "true")
     actual_path = path.replace("{id}", str(uuid4()))
     response = await adult.request(method, actual_path, json={})
     assert response.status_code == 404, response.text
     published_paths = {
-        re.sub(r"\{[^}]+\}", "{id}", item)
-        for item in (await adult.get("/openapi.json")).json()["paths"]
+        re.sub(r"\{[^}]+\}", "{id}", item) for item in create_app(engine).openapi()["paths"]
     }
     assert path not in published_paths
 

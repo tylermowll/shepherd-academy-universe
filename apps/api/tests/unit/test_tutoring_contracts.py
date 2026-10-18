@@ -15,6 +15,7 @@ from math_tutor.adapters.providers.contracts import (
     ActivityPayload,
     Capabilities,
     FeedbackPayload,
+    FeedbackPublic,
     LearningObservation,
     Message,
     ModelRequest,
@@ -143,7 +144,7 @@ def test_structured_teaching_fields_are_required(field: str) -> None:
             FeedbackPayload.model_validate(changed)
 
 
-@pytest.mark.parametrize("criteria", [None, [], [""], ["x" * 301], ["a"] * 4])
+@pytest.mark.parametrize("criteria", [None, [], [""], [" \n\t"], ["x" * 301], ["a"] * 4])
 def test_success_criteria_are_bounded_and_required(criteria: object) -> None:
     with pytest.raises(ValidationError):
         ActivityPayload.model_validate(
@@ -153,6 +154,37 @@ def test_success_criteria_are_bounded_and_required(criteria: object) -> None:
                 "success_criteria": criteria,
             }
         )
+
+
+@pytest.mark.parametrize("field", ["problem_text", "concept_focus"])
+def test_generated_activity_requires_visible_question_and_goal(field: str) -> None:
+    data = {
+        "problem_text": "Compare two observations and explain one difference.",
+        "concept_focus": "Evidence",
+        "success_criteria": ["Describe one useful comparison."],
+    }
+    with pytest.raises(ValidationError):
+        ActivityPayload.model_validate({**data, field: " \n\t" * 12})
+
+
+@pytest.mark.parametrize("field", ["guidance", "evidence"])
+def test_new_feedback_requires_visible_guidance_and_observation(field: str) -> None:
+    data: dict[str, object] = {
+        "teaching_action": "explain",
+        "learning_observation": observation(assessment="not_assessed").model_dump(),
+        "strengths": [],
+        "guidance": ["A useful direct response."],
+        "next_step": "",
+        "concepts": [],
+    }
+    if field == "guidance":
+        data[field] = [" \n\t"]
+    else:
+        data["learning_observation"] = observation(evidence=" \n\t").model_dump()
+    with pytest.raises(ValidationError):
+        FeedbackPayload.model_validate(data)
+    # Historical feedback remains readable rather than failing the whole session.
+    assert FeedbackPublic.model_validate(data)
 
 
 @pytest.mark.parametrize(

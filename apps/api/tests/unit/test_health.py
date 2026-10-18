@@ -21,3 +21,15 @@ async def test_health_endpoint_reports_ok() -> None:
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("path", ["/docs", "/redoc", "/openapi.json"])
+async def test_runtime_api_documentation_is_not_public(path: str) -> None:
+    application = create_app()
+    transport = ASGITransport(app=application)
+    async with AsyncClient(transport=transport, base_url="http://127.0.0.1:8000") as client:
+        response = await client.get(path)
+    assert response.status_code == 404
+    # Contract generation remains available to the offline export command.
+    assert "/api/v1/auth/session" in application.openapi()["paths"]
