@@ -159,6 +159,14 @@ Keep learner navigation separate from administrator controls. The learner cannot
 
 Administrators see **Learners**, **Settings** and **Help**; learners see
 **Practice**, **History** and **Help**. Practice requires a learner sign-in.
+Both areas are visibly linked through **Learning environment** and
+**Administration** in the same app. Opening the other area shows its labeled
+sign-in screen when a different role is needed, without ending the current
+session or clearing unsent learner work. Canceling returns to that work.
+Successful authentication switches accounts, revokes the preceding session,
+clears prior-account content and session selection, and opens the authenticated
+role's area. Learners still need administrator credentials to enter
+administration; an administrator uses a separate learner account to study.
 Keep provider controls and browser experiments out of Practice. Use clear labels
 and contextual help for topics, reference material, tutor style, photos,
 sign-in, age categories and data processing. Help distinguishes photo QR uploads

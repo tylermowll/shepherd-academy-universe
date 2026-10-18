@@ -4,6 +4,7 @@ import {
   fireEvent,
   render,
   screen,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../src/App";
@@ -111,6 +112,384 @@ describe("entry", () => {
     expect(container.querySelector("a")).toBeNull();
     expect(screen.getByText("Hint").tagName).toBe("STRONG");
     expect(container.querySelector("math")).not.toBeNull();
+  });
+});
+
+describe("linked app areas", () => {
+  const learnerId = "911c9abc-4e8e-424d-a914-4338187ba00a";
+  const adult = {
+    authenticated: true,
+    csrf_token: "synthetic-adult-csrf",
+    login_name: "home-admin",
+    role: "adult",
+    setup_required: false,
+  };
+  const learnerAccount = {
+    authenticated: true,
+    csrf_token: "synthetic-learner-csrf",
+    login_name: "home-learner",
+    role: "learner",
+    learner_id: learnerId,
+    setup_required: false,
+  };
+  const response = (value: unknown, status = 200) =>
+    new Response(JSON.stringify(value), {
+      status,
+      headers: { "Content-Type": "application/json" },
+    });
+  function signIn(login: string, password = "synthetic-password-only") {
+    const submit = screen.getByRole("button", { name: "Sign in" });
+    const fields = within(submit.closest("form")!);
+    fireEvent.change(fields.getByLabelText("Username"), {
+      target: { value: login },
+    });
+    fireEvent.change(fields.getByLabelText("Password"), {
+      target: { value: password },
+    });
+    fireEvent.click(submit);
+  }
+  const features = {
+    tutoring_available: true,
+    photos_available: false,
+    text_processing: "mock",
+  };
+
+  it.each([adult, learnerAccount])(
+    "keeps generic root sign-in at the root for $role accounts and clears the previous selection",
+    async (signedIn) => {
+      window.history.replaceState(
+        null,
+        "",
+        "/?help=setup#tutor=911c9abc-4e8e-424d-a914-4338187ba00b",
+      );
+      vi.stubGlobal(
+        "fetch",
+        vi.fn((url: string) => {
+          if (url.endsWith("/auth/session"))
+            return Promise.resolve(
+              response({ authenticated: false, csrf_token: "synthetic-csrf" }),
+            );
+          if (url.endsWith("/auth/login"))
+            return Promise.resolve(response(signedIn));
+          if (url.endsWith("/features"))
+            return Promise.resolve(response(features));
+          return Promise.resolve(response([]));
+        }),
+      );
+      render(<App />);
+      await vi.waitFor(() =>
+        expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
+      );
+      signIn(signedIn.login_name);
+      expect(
+        await screen.findByLabelText("Signed in account"),
+      ).toHaveTextContent(signedIn.login_name);
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+        signedIn.role === "adult" ? "Learners" : "Practice",
+      );
+      expect(
+        window.location.pathname +
+          window.location.search +
+          window.location.hash,
+      ).toBe("/");
+    },
+  );
+
+  it("offers both sign-in destinations to guests and preserves their URLs on reload and back", async () => {
+    let view = render(<App />);
+    await vi.waitFor(() =>
+      expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
+    );
+    const areas = screen.getByRole("navigation", { name: "App areas" });
+    expect(areas).toHaveTextContent("Learning environment");
+    expect(areas).toHaveTextContent("Administration");
+    fireEvent.click(screen.getByRole("link", { name: "Learning environment" }));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Learner sign-in",
+    );
+    expect(window.location.search).toBe("?page=practice&signin=learner");
+    fireEvent.click(screen.getByRole("link", { name: "Administration" }));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Administrator sign-in",
+    );
+    window.history.back();
+    await vi.waitFor(() =>
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+        "Learner sign-in",
+      ),
+    );
+    view.unmount();
+    view = render(<App />);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Learner sign-in",
+    );
+    fireEvent.click(screen.getByRole("link", { name: "Help" }));
+    expect(new URLSearchParams(window.location.search).has("signin")).toBe(
+      false,
+    );
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Help");
+    view.unmount();
+  });
+
+  it("switches both ways with credentials and discards a late previous-administrator list", async () => {
+    let resolveOld!: (value: Response) => void;
+    const oldList = new Promise<Response>((resolve) => {
+      resolveOld = resolve;
+    });
+    let lists = 0;
+    const fetcher = vi.fn((url: string, options: RequestInit) => {
+      if (url.endsWith("/auth/session"))
+        return Promise.resolve(response(adult));
+      if (url.endsWith("/auth/login")) {
+        const submitted = JSON.parse(options.body as string) as {
+          login_name: string;
+        };
+        return Promise.resolve(
+          response(
+            submitted.login_name === "home-admin" ? adult : learnerAccount,
+          ),
+        );
+      }
+      if (url.endsWith("/admin/learners")) {
+        lists += 1;
+        return lists === 1 ? oldList : Promise.resolve(response([]));
+      }
+      if (url.endsWith("/features")) return Promise.resolve(response(features));
+      return Promise.resolve(response([]));
+    });
+    vi.stubGlobal("fetch", fetcher);
+    render(<App />);
+    await screen.findByLabelText("Signed in account");
+    fireEvent.click(screen.getByRole("link", { name: "Learning environment" }));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Learner sign-in",
+    );
+    expect(screen.getByLabelText("Signed in account")).toHaveTextContent(
+      "home-admin",
+    );
+    signIn("home-learner");
+    await screen.findByRole("heading", { level: 1, name: "Practice" });
+    expect(screen.getByLabelText("Signed in account")).toHaveTextContent(
+      "home-learner",
+    );
+    expect(screen.queryByRole("link", { name: "Learners" })).toBeNull();
+    await act(async () => {
+      resolveOld(
+        response([
+          {
+            id: learnerId,
+            alias: "Old administrator private learner",
+            enabled: true,
+          },
+        ]),
+      );
+      await oldList;
+    });
+    expect(screen.queryByText(/Old administrator private learner/)).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+    await vi.waitFor(() =>
+      expect(screen.getByLabelText("Topic or learning goal")).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("link", { name: "Administration" }));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Administrator sign-in",
+    );
+    expect(screen.queryByRole("link", { name: "Settings" })).toBeNull();
+    signIn("home-admin");
+    await screen.findByRole("heading", { level: 1, name: "Learners" });
+    expect(screen.getByLabelText("Signed in account")).toHaveTextContent(
+      "home-admin",
+    );
+    expect(window.location.search).toBe("?page=learners");
+    expect(window.location.hash).toBe("");
+    const loginCalls = fetcher.mock.calls.filter(([url]) =>
+      url.endsWith("/auth/login"),
+    );
+    expect(loginCalls.map(([, options]) => options.headers)).toEqual([
+      expect.objectContaining({ "X-CSRF-Token": adult.csrf_token }),
+      expect.objectContaining({ "X-CSRF-Token": learnerAccount.csrf_token }),
+    ]);
+    expect(
+      fetcher.mock.calls.some(([url]) => url.endsWith("/auth/logout")),
+    ).toBe(false);
+  });
+
+  it("keeps the learner account and actual draft after failed administrator sign-in and cancellation", async () => {
+    const fetcher = vi.fn((url: string) => {
+      if (url.endsWith("/auth/session"))
+        return Promise.resolve(response(learnerAccount));
+      if (url.endsWith("/auth/login"))
+        return Promise.resolve(
+          response({ detail: "Incorrect username or password." }, 401),
+        );
+      if (url.endsWith("/features")) return Promise.resolve(response(features));
+      return Promise.resolve(response([]));
+    });
+    vi.stubGlobal("fetch", fetcher);
+    render(<App />);
+    const topic = await screen.findByLabelText("Topic or learning goal");
+    fireEvent.change(topic, {
+      target: { value: "Keep my learner's unsent idea." },
+    });
+    fireEvent.click(screen.getByRole("link", { name: "Administration" }));
+    expect(topic).not.toBeVisible();
+    expect(
+      screen.getByText(/A successful sign-in clears unsent text and photos/),
+    ).toBeVisible();
+    await vi.waitFor(() =>
+      expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
+    );
+    signIn("home-admin", "synthetic-wrong-password");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Incorrect username or password.",
+    );
+    expect(screen.getByLabelText("Signed in account")).toHaveTextContent(
+      "home-learner",
+    );
+    expect(topic).toHaveValue("Keep my learner's unsent idea.");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Cancel account switch" }),
+    );
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Practice",
+    );
+    expect(screen.getByLabelText("Topic or learning goal")).toBe(topic);
+    expect(topic).toBeVisible();
+    expect(topic).toHaveValue("Keep my learner's unsent idea.");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(window.location.search).toBe("?page=practice");
+    const guarded = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(guarded);
+    expect(guarded.defaultPrevented).toBe(true);
+    expect(
+      fetcher.mock.calls.some(([url]) => url.endsWith("/auth/logout")),
+    ).toBe(false);
+  });
+
+  it("preserves unsaved administrator settings when a learner switch is canceled", async () => {
+    window.history.replaceState(null, "", "/?page=settings");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) =>
+        Promise.resolve(
+          response(
+            url.endsWith("/auth/session")
+              ? adult
+              : url.endsWith("/admin/providers")
+                ? {
+                    policy: {
+                      allow_cloud_inference: false,
+                      app_audience: "mixed",
+                      cloud_locked: false,
+                      audience_locked: false,
+                      demo_mode: false,
+                    },
+                    routes: { tutor: "", vision: "" },
+                    providers: [],
+                  }
+                : [],
+          ),
+        ),
+      ),
+    );
+    render(<App />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add new AI connection" }),
+    );
+    const name = screen.getByLabelText("Connection name");
+    fireEvent.change(name, { target: { value: "Unsent local connection" } });
+    fireEvent.click(screen.getByRole("link", { name: "Learning environment" }));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Learner sign-in",
+    );
+    expect(name).not.toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Cancel account switch" }),
+    );
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Settings",
+    );
+    expect(screen.getByLabelText("Connection name")).toBe(name);
+    expect(name).toBeVisible();
+    expect(name).toHaveValue("Unsent local connection");
+    expect(window.location.search).toBe("?page=settings");
+  });
+
+  it("waits for account replacement before allowing another login, sign-out or page change", async () => {
+    let finishLogin!: (value: Response) => void;
+    const pendingLogin = new Promise<Response>((resolve) => {
+      finishLogin = resolve;
+    });
+    const fetcher = vi.fn((url: string) => {
+      if (url.endsWith("/auth/session"))
+        return Promise.resolve(response(learnerAccount));
+      if (url.endsWith("/auth/login")) return pendingLogin;
+      if (url.endsWith("/features")) return Promise.resolve(response(features));
+      return Promise.resolve(response([]));
+    });
+    vi.stubGlobal("fetch", fetcher);
+    render(<App />);
+    await screen.findByLabelText("Topic or learning goal");
+    fireEvent.click(screen.getByRole("link", { name: "Administration" }));
+    await vi.waitFor(() =>
+      expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
+    );
+    signIn("home-admin");
+    const submit = screen.getByRole("button", { name: "Sign in" });
+    expect(submit).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Cancel account switch" }),
+    ).toBeDisabled();
+    fireEvent.submit(submit.closest("form")!);
+    fireEvent.click(screen.getByRole("link", { name: "History" }));
+    fireEvent.click(screen.getByRole("link", { name: "Learning environment" }));
+    expect(window.location.search).toBe("?page=learners&signin=adult");
+    expect(
+      fetcher.mock.calls.filter(([url]) => url.endsWith("/auth/login")),
+    ).toHaveLength(1);
+    await act(async () => {
+      finishLogin(response(adult));
+      await pendingLogin;
+    });
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Learners" }),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeEnabled();
+  });
+
+  it("clears old drafts on successful sign-in and honestly opens the authenticated role when it differs from the destination", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.endsWith("/auth/session") || url.endsWith("/auth/login"))
+          return Promise.resolve(response(learnerAccount));
+        if (url.endsWith("/features"))
+          return Promise.resolve(response(features));
+        return Promise.resolve(response([]));
+      }),
+    );
+    render(<App />);
+    const oldTopic = await screen.findByLabelText("Topic or learning goal");
+    fireEvent.change(oldTopic, {
+      target: { value: "Previous account draft." },
+    });
+    fireEvent.click(screen.getByRole("link", { name: "Administration" }));
+    await vi.waitFor(() =>
+      expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
+    );
+    signIn("home-learner");
+    await screen.findByRole("heading", { level: 1, name: "Practice" });
+    expect(screen.getByLabelText("Topic or learning goal")).not.toBe(oldTopic);
+    expect(screen.getByLabelText("Topic or learning goal")).toHaveValue("");
+    expect(screen.getByText(/^Signed in as a learner/)).toHaveTextContent(
+      "Signed in as a learner. Open Administration and sign in with an administrator account",
+    );
+    expect(screen.queryByRole("link", { name: "Settings" })).toBeNull();
+    expect(window.location.search).toBe("?page=practice");
+    const unguarded = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(unguarded);
+    expect(unguarded.defaultPrevented).toBe(false);
   });
 });
 

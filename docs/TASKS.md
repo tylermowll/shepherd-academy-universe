@@ -30,6 +30,97 @@ The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
 
+## T52 — Link learning and administration (2026-10-18)
+
+**Status:** Implementation and final source/browser gates passed; publication
+and private deployment pending. The maintainer requested obvious links between
+learning and administration within the same app, with administrator sign-in
+required when entering administration. Publish to `main`, include the
+maintainer's `uv.lock` updates, and deploy the private installation.
+
+**Scope and contracts:** SPECIFICATION sections 2–3, 9–10, 12–13 and 16–17;
+D013 account ownership and existing cookie/CSRF authentication. Add visible app
+area links in both directions and clearly labeled sign-in destinations. Keep
+the current account until another sign-in succeeds; the existing backend
+already authenticates new credentials before revoking the prior session.
+Opening or canceling a switch must preserve learner drafts; a successful switch
+must clear previous-account data and session selection. No new provider,
+service, privilege, API schema or database migration is planned.
+
+**Validation plan:** Component cases for both roles, sign-in failure/cancel,
+draft preservation and account cleanup; synthetic browser journeys for both
+navigation directions, actual credentials and permission boundaries. Run the
+required Make/hook gates, review the maintainer's lock delta, then publish and
+repeat image smoke/security/SBOM, encrypted backup/restore, private deployment
+and HTTPS/assets/anonymous-access checks. Record actual results and limits.
+
+**Implementation and review:** The app header now links **Learning environment**
+and **Administration**. Targeted URLs retain the destination through reload and
+browser navigation; a different role opens its labeled sign-in in the same app.
+Failed credentials keep the current session. Canceling preserves the exact
+learner draft or unsaved administrator settings form. Successful authentication
+remounts account-owned content, clears the old selection/hash and ignores stale
+requests. Pending sign-in blocks conflicting navigation, logout/reconnect and
+duplicate submission. Unexpected valid account roles open their actual
+workspace with clear guidance. No backend privilege or schema changed.
+
+Independent review found and corrected an administrator Settings remount when
+opening the opposite sign-in, and conflicting actions during a pending login.
+All existing assertions remain; the added regressions cover both behaviors.
+README, Help and SPECIFICATION describe the shared navigation and sign-in rules.
+
+**Maintainer lock updates:** FastAPI **0.143.3 → 0.145.0**, filelock
+**4.2.1 → 4.2.2**, virtualenv **21.14.10 → 21.14.11**. All **97 package names**
+and dependency declarations are preserved; only those package versions/artifacts
+changed. Locked installation confirmed the new versions.
+
+**Validation so far (2026-10-18):**
+
+- `make audit`: Python and pnpm audits reported no known vulnerabilities.
+- `make test-integration`: **376 passed in 66.21s** on synthetic on-disk SQLite.
+- Focused App tests: **19 passed**, including **8** new account-switch cases;
+  frontend types, ESLint and formatting passed.
+- Focused `pnpm smoke tests/smoke/workspace-navigation.spec.ts`: **4 desktop/mobile
+  journeys passed in 1.1 minutes** with real synthetic credentials and unchanged
+  rate limits. The final preservation/pending-action corrections are also
+  covered by component tests and the full browser gate below.
+- Final `make check`: passed **329 backend unit, 11 toolchain and 212 component tests**,
+  locked dependencies, lint/format, types, builds, contract drift, secret scan and
+  infrastructure validation. Existing build-system upper-bound and JavaScript
+  chunk-size warnings remain. `make hooks-files-check secret-check` passed.
+
+The initial full browser run exposed a real generic-login URL regression:
+adding `?page=learners` to root sign-in forced a full document reload when a
+phone opened a root photo-capture fragment. The original same-document assertion
+failed; no assertion was removed. The run was stopped after **29 passed, one
+failed and one interrupted** (the interrupted case was waiting for the real
+login throttle); **57** cases had not run. Generic sign-in now preserves the
+root/current route while clearing stale selection, and explicit area switches
+still open their role's home. New component regressions cover root login for
+both roles; the final project gate above passed after this correction.
+
+Focused `pnpm smoke tests/smoke/phone-navigation.spec.ts
+tests/smoke/workspace-navigation.spec.ts` on the corrected build passed **all six
+desktop/mobile journeys in 2.0 minutes**, including the original phone document
+sentinel, actual account credentials, failed-sign-in authorization, cancellation
+and draft cleanup. Final `make smoke-built` on that frozen build passed **all
+88 desktop/mobile journeys in 14.2 minutes**, with retries disabled and the real
+login rate limit unchanged. The installed Google Chrome executable was used
+through the supported Playwright override.
+
+An independently built candidate with the updated lock passed the checked-in
+container smoke and Trivy **0.76.0** HIGH/CRITICAL vulnerability/secret scan,
+including unfixed findings with no exclusions, and generated a **52-component**
+CycloneDX SBOM. Final package verification will use the committed runtime source
+and its exact OCI revision before private cutover. No paid provider inference,
+private-data inspection or model download was performed by these checks.
+
+**Publication:** The maintainer authorized publishing the navigation,
+documentation/tests and their three-package lock update together. The installed
+commit hooks run the required project gate again. Final source hash, image,
+backup/restore, deployment and remote-equality results are recorded after the
+controlled release.
+
 ## T51 — Deploy the current private installation (2026-10-18)
 
 **Status:** Complete; image checks, encrypted backup/isolated restore, private

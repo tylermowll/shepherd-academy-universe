@@ -151,9 +151,18 @@ export function HelpPage({
               </ol>
               <h3>If you also want to study</h3>
               <p>
-                Create one learner account for your own saved work. Sign out of
-                the administrator account, then sign in with that learner's
-                username and password.
+                Create one learner account for your own saved work. Choose{" "}
+                <strong>Learning environment</strong> at the top of the app,
+                then sign in with that learner's username and password. Choose{" "}
+                <strong>Administration</strong> to return to administrator
+                sign-in. Both areas are part of this app.
+              </p>
+              <p>
+                Opening the other area's sign-in keeps your current account and
+                unsent work available. Choose{" "}
+                <strong>Cancel account switch</strong> to return. Signing in
+                successfully switches the browser's account and clears unsent
+                drafts from the previous account.
               </p>
               <h3>Passwords and signed-in browsers</h3>
               <p>

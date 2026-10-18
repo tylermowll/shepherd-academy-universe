@@ -577,6 +577,33 @@ img {
 [hidden] {
   display: none !important;
 }
+.app-areas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-block: 24px 12px;
+}
+.app-areas a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #668779;
+  border-radius: 10px;
+  background: #fffef8;
+  font-weight: 650;
+  text-decoration: none;
+}
+.app-areas a:hover {
+  background: #e6eee2;
+}
+.app-areas a[aria-current="location"] {
+  background: #173d34;
+  color: white;
+}
+.app-areas a[aria-disabled="true"] {
+  opacity: 0.55;
+}
 .page-tabs {
   display: flex;
   flex-wrap: wrap;

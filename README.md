@@ -95,6 +95,13 @@ Administrators who also study create a separate learner account. Administrator
 pages manage accounts, connections, exports, revocation and deletion; learner
 pages show **Practice**, **History** and **Help**.
 
+Use **Learning environment** and **Administration** at the top of the app to
+move between the two areas. If the other area needs a different account, its
+sign-in form opens in the same app. Your current account stays signed in until
+the new credentials succeed; **Cancel account switch** returns to your work.
+Sign in with a learner account to learn, or the administrator account to manage
+settings and accounts.
+
 ## Practice and reading
 
 As a learner, enter a topic and choose whether to practice a topic, study a
