@@ -15,7 +15,8 @@ closed process gaps found in the subsequent flow review. T50 records the
 independent adversarial review and its bounded corrections. T51 records the
 initial October 18 deployment; T52 links learning/administration and deploys the
 maintainer's subsequent lock update. T53 applies the maintainer's six-character
-account password minimum on both HTTP and HTTPS. The
+account password minimum on both HTTP and HTTPS. T54 records the subsequent
+source-only dependency refresh. The
 schema head is `0020_request_recovery`. The latest private deployment uses
 runtime source `93f93de`, Python 3.15.0, FastAPI 0.145.0 and pillow-heif 1.8.1,
 verified on **October 18, 2026**. T53 below records the image, encrypted backup/isolated
@@ -32,6 +33,64 @@ container packaging and private installation; October 11's evidence is historica
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
+
+## T54 — Publish the maintainer's Python lock refresh (2026-10-18)
+
+**Status:** Source validation complete. The maintainer authorized committing and
+pushing the updated root `uv.lock` to `main` and requested an explanation of its
+relationship to Python 3.15.
+
+**Scope and contracts:** SPECIFICATION sections 6 and 16; locked installation,
+existing API/HTTP-client behavior and dependency compatibility. Preserve the
+maintainer's lock contents. No application, generated API, database schema or
+runtime-version change is required.
+
+**Lock review:** All 97 package identities, dependency declarations and Python
+constraints are unchanged. Only these versions and their distribution artifacts
+changed:
+
+| Package     | Before    | After      |
+| ----------- | --------- | ---------- |
+| certifi     | 2026.7.22 | 2026.10.18 |
+| FastAPI     | 0.145.0   | 0.146.0    |
+| httpcore2   | 2.13.1    | 2.14.0     |
+| httpx2      | 2.13.1    | 2.14.0     |
+| jsonpointer | 3.2.1     | 3.3        |
+| Starlette   | 1.8.0     | 1.9.0      |
+
+The project already pinned Python **3.15.0** and required `>=3.15.0` before this
+refresh. This update changes dependencies for that runtime, not Python itself.
+
+**Validation (2026-10-18):** Commands used
+`/tmp/shepherd-lock-toolchain/run`, with checksum-verified Node 26.11.1, pnpm
+12.11.2, uv 0.13.1 and Python 3.15.0. The runner clears inherited variables and
+disables env-file loading; tests use synthetic data.
+
+- `uv lock --check --offline`: passed; all 97 package identities and dependency
+  declarations were independently compared with the previous lock.
+- `make check`: passed **329 backend unit, 11 toolchain and 214 component tests**,
+  locks, lint/format, strict types, builds, generated-contract consistency,
+  credential scan and infrastructure lint. Existing build-system upper-bound
+  and JavaScript chunk-size warnings remain.
+- `make test-integration`: **378 passed in 228.47s**, including authentication,
+  ownership, SQLite migrations/recovery and tutoring/worker workflows.
+- `make audit`: Python and pnpm reported **no known vulnerabilities**.
+- `make hooks-files-check`: passed repository file hooks; the duplicate project
+  hook was skipped because the full project gate passed separately.
+
+The first `make check` stopped at contract generation because the temporary
+pnpm install's shell launcher lacked a shebang and Python could not execute it
+directly (`ENOEXEC`). A task-local launcher corrected the toolchain; the final
+full run above passed. No application source, test or assertion was changed.
+Independent compatibility review found no actionable blocker.
+
+**Changed files and publication:** `uv.lock`, `docs/DEPENDENCIES.md` and this
+task record. A fresh fetch confirmed the starting local `main` matched
+`origin/main` at `3292ea7`. The final commit, installed commit hooks, non-force
+push and remote equality are verified in the completion report.
+
+No failures remain. Browser/container checks and live provider evaluations were
+not run for this source-only refresh; no deployment or model download occurred.
 
 ## T53 — Six-character account passwords (2026-10-18)
 

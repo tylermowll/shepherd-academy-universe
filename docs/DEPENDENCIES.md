@@ -6,7 +6,7 @@ Newer stable Node and pnpm versions are allowed, including newer majors, but
 package peer-dependency requirements and Python compatibility restrictions still
 apply.
 
-This guide was checked against repository files on October 17, 2026. It describes
+This guide was checked against repository files on October 18, 2026. It describes
 the declared configuration, not the newest upstream releases or the packages in
 a running private installation. Dated verification results are in
 [task history](history/TASKS.md#release-publication-2026-10-11).
@@ -25,6 +25,11 @@ second package inventory in prose:
 
 Lockfile updates need fresh validation. See [TASKS](TASKS.md) for changes made
 after the last recorded release checks.
+
+The October 18 root lock refresh changes six dependency resolutions while
+preserving Python 3.15.0. [T54](TASKS.md#t54--publish-the-maintainers-python-lock-refresh-2026-10-18)
+records their before/after versions and validation separately from the private
+deployment's earlier dependency set.
 
 Python uses one project: the root `pyproject.toml`, `uv.lock`, `.python-version`
 and `.venv`. Run the root Make targets or `uv run --locked` from the repository
