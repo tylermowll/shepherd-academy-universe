@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -138,7 +139,10 @@ it("refreshes current work and processing disclosures without downloading unrela
   });
   window.location.hash = `tutor=${sessionId}`;
   vi.stubGlobal("fetch", fetcher);
-  render(<Tutor learner={learner} offline={false} act={run} />);
+  await act(() => {
+    render(<Tutor learner={learner} offline={false} act={run} />);
+    return Promise.resolve();
+  });
   await screen.findByLabelText("Your work or question");
   const historyLoads = () =>
     fetcher.mock.calls.filter(([url]) => url.endsWith("/tutor/sessions"))

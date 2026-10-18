@@ -13,21 +13,142 @@ refresh, T45 documentation consolidation, T46 legacy cleanup and T47 root Python
 project consolidation. T48 reviewed documentation and help wording; T49
 closed process gaps found in the subsequent flow review. T50 records the
 independent adversarial review and its bounded corrections. The
-schema head is `0020_request_recovery`. The last recorded private
-deployment used runtime source `e9bf42c`, Python 3.15.0 and pillow-heif 1.8.1 on
-**October 11, 2026**. Image, HTTPS, served-asset and authorization checks are in
-the [release record](history/TASKS.md#release-publication-2026-10-11).
+schema head is `0020_request_recovery`. The latest private deployment uses
+runtime source `4e9f5fa`, Python 3.15.0 and pillow-heif 1.8.1, verified on
+**October 18, 2026**. T51 below records the image, encrypted backup/isolated
+restore, HTTPS, served-asset and authorization checks. The earlier installation
+is preserved in the [October 11 release record](history/TASKS.md#release-publication-2026-10-11).
 This is dated evidence; current provider selections and live teaching quality
 have not been verified.
 
 The maintainer refreshed the former `apps/api/uv.lock` before T46 publication.
 T47 preserves those versions and artifacts in the root `uv.lock`, adding the
-CloudFormation validator. October 11's deployment evidence still describes the
-older installation.
+CloudFormation validator. T51 verifies the consolidated project's current
+container packaging and private installation; October 11's evidence is historical.
 
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
+
+## T51 — Deploy the current private installation (2026-10-18)
+
+**Status:** Complete; image checks, encrypted backup/isolated restore, private
+deployment and final installation verification passed. The maintainer authorized
+deploying all current changes to the existing private Compose installation. Runtime source is
+`4e9f5fad5006859208f8efba703624fd7c8f0161`; the starting tree was clean.
+
+**Scope and contracts:** SPECIFICATION sections 2, 5, 12–13 and 16–17;
+D004/D007/D016; RUNBOOK container upgrade and encrypted backup procedures.
+Preserve the existing single API/worker, local data mount, operator settings,
+session secret and browser-managed connections. Keep a rollback image, stop both
+writers before backup/migration, verify an encrypted backup and isolated restore,
+deploy the tested image, and check the private HTTPS application without
+inference or protected response bodies. There are no migration changes from
+`e9bf42c`; the schema remains `0020_request_recovery`.
+
+**Pre-deployment checks and bounded correction:**
+
+- Built `math-practice-tutor:release-20261018-4e9f5fa` using the checked-in
+  Dockerfile and a clean `git archive HEAD` context. `.dockerignore` admitted
+  only public build inputs; private settings/data were excluded. OCI labels
+  record the complete source revision.
+- `sh scripts/container-smoke.sh math-practice-tutor:release-20261018-4e9f5fa`:
+  passed Python 3.15.0, HEIF conversion, cryptography, installer removal,
+  restricted-provider typed rejection without inference, synthetic on-disk
+  migrations, non-root/read-only API/worker readiness and built UI, owner-link
+  renewal/stale rejection, browser setup and claimed-account protection.
+- Trivy **0.76.0**, verified against official release metadata/checksums:
+  `image --image-src docker --scanners vuln,secret --severity HIGH,CRITICAL
+--ignore-unfixed=false --ignorefile /dev/null --exit-code 1` passed with
+  **zero HIGH/CRITICAL vulnerabilities and secrets**. The vulnerability database
+  was updated at `2026-10-18T07:12:07Z`. Generated a CycloneDX **1.7** SBOM with
+  **52 components**. Scan/SBOM evidence is in
+  `/tmp/shepherd-deploy-20261018-4e9f5fa`.
+- The exact source's hosted [package job](https://github.com/tylermowll/shepherd-academy-universe/actions/runs/39086483885)
+  passed build/smoke/scan/SBOM. Its source gate failed one reconnect-refresh
+  component test. An unchanged local full suite passed **204/204**, but an
+  isolated original test failed on repetition 16; temporary synthetic
+  instrumentation reproduced the failure with **zero installed online
+  listeners** when the test emitted its event. The composer could render before
+  the passive effect installed the listener. A test-only `await act` around
+  initial render now flushes those effects. All assertions, timeouts and runtime
+  code are unchanged. The corrected full suite passed **204/204**, the isolated
+  test passed **20/20** runs, and frontend types, scoped formatting and
+  `git diff --check` passed in disposable network-disabled containers.
+- Exercised `/tmp/shepherd-deploy-20261018-4e9f5fa/backup_snapshot.py` on a
+  disposable synthetic database with the old image. The first attempt exposed
+  SQLite's need to initialize WAL read-coordination files on a read-only mount;
+  the corrected helper copies the quiesced database, sidecars and retained
+  directory into private tmpfs before using the native encrypted backup and
+  restore routines. The corrected exercise passed with a read-only original
+  mount, no network, UID 10001 and dropped capabilities. It verifies integrity,
+  foreign keys, retained-object checksums and the current deletion ledger;
+  absence of a ledger is accepted only after proving there are no tombstones.
+
+**Installation evidence (2026-10-18):**
+
+- Verified the existing API and worker both used the October 11 image and the
+  reviewed local `data:/app/data` bind mount. Preserved that image as
+  `math-practice-tutor:rollback-20261018-e9bf42c`.
+- `/tmp/shepherd-deploy-20261018-4e9f5fa/cutover.py` stopped both services with
+  Compose `stop --timeout 100 api worker` and verified neither was running
+  before backup. An offline container using the previous image and the
+  read-only retained-data mount created an app-native authenticated encrypted
+  backup and verified an isolated restore with SQLite integrity/foreign keys,
+  retained-object checksums, current deletion handling and schema checks.
+  Original data was not restored, reset or replaced.
+- The mode-600 backup is `backups/deploy-20261018-4e9f5fa/snapshot.enc` under
+  mode-700 directories; SHA-256 is
+  `b5cb8bd480a271bd66b7f3f4024a4bced7159a926d871321ff0d8d6e215b0234`.
+  The generated passphrase is stored separately in the mode-600
+  `~/.local/share/shepherd-academy-universe/backup-keys/deploy-20261018-4e9f5fa.key`,
+  never displayed or passed through command arguments or environment variables.
+  Existing operator settings and session secret were preserved through Compose.
+- Tagged the tested release as `math-practice-tutor:local`; Compose
+  `run --rm --no-deps -T api alembic -c alembic.ini upgrade head`,
+  `up -d --no-build --pull never --no-deps api worker`, and
+  `exec -T api alembic -c alembic.ini current` passed. The schema stays
+  **`0020_request_recovery (head)`**. Both replacement services use image
+  **`sha256:88c59a36e6d580fe412511bef4ec8e003892c06c347c0673135bd47f1762f029`**,
+  labeled with the complete `4e9f5fa` revision.
+- `/tmp/shepherd-deploy-20261018-4e9f5fa/verify.py` passed private HTTPS
+  readiness, a heartbeat newer than the replacement worker's start, exact
+  served HTML/service-worker and **2/2** referenced JS/CSS hashes, no-cache
+  HTML/service worker and service-worker scope. All **3/3** anonymous
+  administrator/reading/request-receipt GETs rejected access with `401` and
+  `no-store`; protected response bodies were never read. All **3/3** runtime API
+  documentation URLs returned `404`.
+- Deployment/verification metadata, vulnerability report and SBOM are retained
+  beside the ignored encrypted backup. The SBOM SHA-256 is
+  `85c06ade83427b9ba818f14f5d67ea3544dac762c15c6fc8c4bbba7ba2e8b71a`.
+
+**Changed files:** `apps/web/tests/Tutor.test.tsx` contains only the synchronization
+correction; this file records current deployment evidence. Production source
+remains the tested committed runtime. These two follow-up files were left
+uncommitted after deployment; the maintainer subsequently authorized publishing
+them to `main` as a separate follow-up.
+
+No deployment failures remain. The existing T50 source/integration/browser/mock
+gates were not repeated for the unchanged production source; the packaged image
+and corrected component regression were checked as described above. No test
+inference, provider-setting inspection/change, model download, new hosting
+infrastructure or Git push occurred. Physical devices, human teaching review,
+manual accessibility, separately recovered settings/key decryption and restored
+administrator/learner sign-in acceptance remain unverified; the offline restore
+does not claim those operational recovery checks.
+
+**Publication follow-up (2026-10-18):** The maintainer authorized publishing
+the test synchronization and deployment record to `main`. A fresh fetch showed
+local `main` and `origin/main` at `4e9f5fa`. `make check` with isolated Node
+26.11.1, pnpm 12.11.2, uv 0.13.1 and Python 3.15.0 passed **329 backend unit,
+11 toolchain and 204 component tests**, locked dependencies, lint/format,
+types, builds, generated-contract drift, secret scanning and infrastructure
+validation. The initial gate caught the test callback's `require-await` lint
+error; returning a resolved promise preserves the asynchronous React flush and
+satisfies the rule without disabling it. Existing build-system upper-bound and
+JavaScript chunk-size warnings remain. Commit hooks run the required project
+gate again; the final commit/push result and remote equality are reported after
+publication. No runtime change or redeployment is needed for these two files.
 
 ## T50 — Independent adversarial product and implementation review (2026-10-17)
 
