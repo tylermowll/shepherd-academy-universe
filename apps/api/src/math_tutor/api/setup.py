@@ -42,7 +42,6 @@ class SetupStatus(BaseModel):
     available: bool
     minimum_password_length: int
     maximum_password_length: int
-    local_passwords_allowed: bool
 
 
 class SetupSessionRequest(BaseModel):
@@ -79,7 +78,6 @@ def describe_setup(required: bool, available: bool) -> SetupStatus:
         available=required and available,
         minimum_password_length=auth.minimum_admin_password_length(),
         maximum_password_length=auth.MAX_ADMIN_PASSWORD_LENGTH,
-        local_passwords_allowed=auth.local_passwords_allowed(),
     )
 
 
@@ -209,7 +207,7 @@ def create_first_administrator(
         admin = Administrator(
             login_name=name,
             password_hash=password_hash,
-            local_only_password=len(password) < auth.MIN_ADMIN_PASSWORD_LENGTH,
+            local_only_password=len(password) < auth.PASSWORD_DOWNGRADE_GUARD_LENGTH,
         )
         db.add(admin)
         db.flush()

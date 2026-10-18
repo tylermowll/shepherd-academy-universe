@@ -33,15 +33,12 @@ not read them. Never paste private files or keys into chat.
 The computer must stay awake. `localhost` on an iPhone means the iPhone itself.
 Both desktop and phone must open the **same configured HTTPS address**.
 
-HTTP localhost permits six-character passwords; HTTPS requires twelve. If the
-administrator has a shorter local password, stop both app processes, set the
-HTTPS origin and follow [password recovery](RUNBOOK.md#native-local-host) with
-the existing login name. Use the runbook's Docker reset command for containers.
-Network startup rejects local-only administrator passwords.
-
-Learner passwords also need twelve characters for HTTPS. After restarting and
-signing in as administrator, reset any shorter passwords under **Learners**;
-those resets sign out the affected learners' browsers.
+Administrator and learner passwords use the same 6–256-character policy on
+HTTP and HTTPS. Existing passwords of at least six characters work on the phone
+without a reset, and updates preserve stored credentials. For a forgotten
+administrator password, follow [password recovery](RUNBOOK.md#native-local-host);
+learner password resets remain under **Learners** and sign out that learner's
+browsers.
 
 ### Tailscale private access
 

@@ -32,6 +32,71 @@ The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
 
+## T53 — Six-character account passwords (2026-10-18)
+
+**Status:** Implementation validated; publication/deployment pending. The maintainer requested a minimum above five
+characters. This explicitly replaces D011's twelve-character HTTPS requirement
+with one six-character minimum for administrator and learner accounts.
+
+**Scope and contracts:** SPECIFICATION section 12, D011/D013, owner setup,
+interactive administrator reset, learner creation/reset, login and existing
+sessions. SetupStatus retains minimum/maximum lengths and drops the obsolete
+local-only policy field; regenerate OpenAPI and TypeScript. Preserve password
+hashing, the 256-character maximum, validation, rate limits, CSRF and ownership.
+Backup encryption passphrases remain separate and unchanged.
+
+**Validation plan:** Prove five characters are rejected and six accepted on HTTP
+and HTTPS for setup/reset and learner accounts; retain session revocation and
+wrong-password checks. Verify accounts created under the previous local policy
+work over HTTPS without resetting credentials. Run targeted tests, `make check`,
+`make test-integration`, browser account/setup journeys and repository hooks.
+Update current guidance and record actual publication/deployment evidence.
+
+**Implementation:** One shared six-character validator now covers administrator
+setup/reset and learner creation/reset on every origin. Removed the former
+network restrictions from login, session validation and native startup. The
+frontend uses six characters on HTTPS and current Help/README/operations/security
+guidance agrees. Regenerated OpenAPI and TypeScript after removing
+`SetupStatus.local_passwords_allowed`.
+
+No database migration or credential rewrite is needed. Existing administrator
+password-history markers retain their historical meaning for migration 0013's
+downgrade guard; learner markers remain stored metadata. Neither limits current
+access. Existing credential hashes and sessions are preserved, while an explicit
+password reset still revokes sessions. Independent review found no actionable
+defects; hashing, maximum length, account state, CSRF, rate limits and ownership
+checks remain intact.
+
+**Validation (2026-10-18):**
+
+- Focused password/authentication tests: **98 passed in 8.51s** against synthetic
+  data, including HTTP/HTTPS five/six boundaries, existing short credentials,
+  interactive reset, session revocation and migration rollback protection.
+- `make check`: passed **329 backend unit, 11 toolchain and 214 component tests**,
+  lint/format, Python/TypeScript types, builds, generated-contract drift,
+  credential scan and infrastructure lint. Existing build-system upper-bound
+  and JavaScript chunk-size warnings remain.
+- `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome pnpm smoke
+tests/smoke/setup.spec.ts tests/smoke/accounts.spec.ts`: **10 desktop/mobile
+  journeys passed in 36.0s** with retries disabled. Exactly five characters are
+  rejected before a form mutation, exactly six create/reset and authenticate,
+  invalid resets preserve the learner session, and successful resets revoke it
+  without changing the learner identity. Focused ESLint/TypeScript checks passed.
+- The initial integration run had **377 passed and one fixture setup error**:
+  a concurrent native browser startup rebuilt `dist/assets` while the API fixture
+  was mounting it. No application assertion failed. Final `make test-integration`
+  after all browser/native test processes stopped passed **378 tests in 67.25s**,
+  without code or assertion changes to conceal the fixture race.
+- `make hooks-files-check` and the staged whitespace/credential scan passed.
+- Current Markdown formatting, whitespace and independent policy consistency
+  review passed. An earlier temporary documentation-check script was no longer
+  available; it provided no validation result for this task.
+
+The full 88-case browser suite was not repeated; the changed account/setup
+workflows were covered by the ten focused journeys above. No live inference,
+model download, private credential inspection or operator account reset was performed.
+Publication, final image checks and private deployment remain pending.
+
 ## T52 — Link learning and administration (2026-10-18)
 
 **Status:** Complete; implementation, final source/browser/package gates,

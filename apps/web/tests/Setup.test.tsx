@@ -1,3 +1,4 @@
+// @vitest-environment-options {"url":"https://academy.invalid/"}
 import { StrictMode } from "react";
 import {
   act,
@@ -28,7 +29,6 @@ const available: Schema<"SetupStatus"> = {
   available: true,
   minimum_password_length: 6,
   maximum_password_length: 256,
-  local_passwords_allowed: true,
 };
 const reply = (body: unknown, status = 200) =>
   Promise.resolve(new Response(JSON.stringify(body), { status }));
@@ -326,22 +326,14 @@ describe("browser first-account setup", () => {
       ),
     ).toBe(false);
   });
-  it("uses the server's network password policy before entry", async () => {
-    const fetcher = install({
-      status: {
-        ...available,
-        minimum_password_length: 12,
-        local_passwords_allowed: false,
-      },
-    });
+  it("rejects five characters and accepts six for administrator setup on HTTPS", async () => {
+    expect(window.location.protocol).toBe("https:");
+    const fetcher = install();
     mount();
-    await fill();
+    await fill("short");
     submit();
     expect(
-      screen.getByText("Use 12–256 characters for your password."),
-    ).toBeVisible();
-    expect(
-      screen.getByText(/HTTPS or network setup requires at least 12/),
+      screen.getByText("Use 6–256 characters for your password."),
     ).toBeVisible();
     expect(
       fetcher.mock.calls.some(
@@ -349,6 +341,26 @@ describe("browser first-account setup", () => {
           url.endsWith("/auth/setup") && options.method === "POST",
       ),
     ).toBe(false);
+    await fill("simple");
+    submit();
+    await screen.findByRole("heading", { name: "Settings", level: 1 });
+    expect(
+      fetcher.mock.calls.filter(
+        ([url, options]) =>
+          url.endsWith("/auth/setup") && options.method === "POST",
+      ),
+    ).toEqual([
+      [
+        "/api/v1/auth/setup",
+        expect.objectContaining({
+          body: JSON.stringify({
+            login_name: "Synthetic",
+            password: "simple",
+            password_confirmation: "simple",
+          }),
+        }),
+      ],
+    ]);
   });
   it("explains blank and control-character input without posting credentials", async () => {
     const fetcher = install();

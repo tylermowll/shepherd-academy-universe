@@ -1590,8 +1590,6 @@ export interface components {
     SetupStatus: {
       /** Available */
       available: boolean;
-      /** Local Passwords Allowed */
-      local_passwords_allowed: boolean;
       /** Maximum Password Length */
       maximum_password_length: number;
       /** Minimum Password Length */

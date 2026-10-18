@@ -1957,10 +1957,6 @@
             "title": "Available",
             "type": "boolean"
           },
-          "local_passwords_allowed": {
-            "title": "Local Passwords Allowed",
-            "type": "boolean"
-          },
           "maximum_password_length": {
             "title": "Maximum Password Length",
             "type": "integer"
@@ -1978,8 +1974,7 @@
           "required",
           "available",
           "minimum_password_length",
-          "maximum_password_length",
-          "local_passwords_allowed"
+          "maximum_password_length"
         ],
         "title": "SetupStatus",
         "type": "object"

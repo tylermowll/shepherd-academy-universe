@@ -34,11 +34,7 @@ export function LearnerAccounts({
   const chosen = learners.find((item) => item.id === learner);
   const creating = adding || learners.length === 0;
   const chosenId = chosen?.id;
-  const minimumPassword =
-    window.location.protocol === "http:" &&
-    ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname)
-      ? 6
-      : 12;
+  const minimumPassword = 6;
   useEffect(() => {
     return () => {
       version.current += 1;

@@ -36,19 +36,16 @@ account creation finishes. The unopened link expires after thirty minutes;
 Ctrl+C followed by `make start` issues a replacement for a native app.
 No public API issues setup links, and setup cannot reset an existing account.
 
-Passwords of 6–11 characters are accepted only with an HTTP loopback origin;
-the administrator is then flagged local-only. HTTPS needs at least twelve
-characters, without uppercase or symbol requirements. Before enabling the
-gateway, stop the app and worker. For a native installation, use the existing login name with
-`make admin` to replace a short password. For Docker, use the reset command in
-the [container package](#container-package). Startup and backend session/login
-checks reject local-only credentials in network mode, even if a service bypasses
-the native launcher. Recovery never requires deleting the database or changing
-the session secret.
+Administrator and learner passwords require 6–256 characters on both loopback
+HTTP and HTTPS, without uppercase or symbol requirements. Existing passwords of
+at least six characters work over HTTPS without a reset; updates preserve stored
+credentials.
 
-Learner passwords also need twelve characters for HTTPS. After the administrator
-can sign in over HTTPS, reset any shorter learner passwords under **Learners**;
-those resets sign out the affected learners' browsers.
+For administrator recovery in a native installation, use the existing login name
+with `make admin`. For Docker, use the reset command in the
+[container package](#container-package). Recovery never requires deleting the
+database or changing the session secret. Reset learner passwords under
+**Learners**. A password reset signs out that account's browsers.
 
 For unattended use, run the API and worker separately under the host service
 manager, with the same private settings and local data directory. Use a dedicated

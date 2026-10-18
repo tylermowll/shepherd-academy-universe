@@ -1,3 +1,4 @@
+// @vitest-environment-options {"url":"https://academy.invalid/"}
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -36,6 +37,93 @@ function Accounts({
 
 beforeEach(() => setIdentity("synthetic-age-edit-csrf", true));
 afterEach(() => vi.unstubAllGlobals());
+
+describe("learner passwords on HTTPS", () => {
+  it.each(["create", "reset"] as const)(
+    "uses a six-character minimum for %s and preserves rejected input until corrected",
+    async (operation) => {
+      expect(window.location.protocol).toBe("https:");
+      const fetcher = vi.fn((_url: string, init?: RequestInit) => {
+        if (init?.method === "POST" || init?.method === "PATCH") {
+          const body = JSON.parse(init.body as string) as { password: string };
+          return Promise.resolve(
+            body.password.length < 6
+              ? response(
+                  { detail: "Use at least 6 characters for the password." },
+                  422,
+                )
+              : response(learner),
+          );
+        }
+        return Promise.resolve(response([]));
+      });
+      vi.stubGlobal("fetch", fetcher);
+      const refresh = vi.fn(() => Promise.resolve());
+      const choose = vi.fn();
+      render(
+        <LearnerAccounts
+          learner={operation === "reset" ? learner.id : ""}
+          learners={operation === "reset" ? [learner] : []}
+          onLearner={choose}
+          onRefresh={refresh}
+          act={async (action) => action()}
+        />,
+      );
+      const password = screen.getByLabelText(
+        operation === "create" ? "Password" : "New password",
+      );
+      const submit = screen.getByRole("button", {
+        name:
+          operation === "create"
+            ? "Create learner account"
+            : "Save sign-in details",
+      });
+      expect(password).toHaveAttribute("minlength", "6");
+      expect(password).toHaveAttribute("maxlength", "256");
+      expect(screen.getByText(/^At least 6 characters\./)).toBeVisible();
+      fireEvent.change(screen.getByLabelText("Learner username"), {
+        target: { value: learner.alias },
+      });
+      fireEvent.change(password, { target: { value: "short" } });
+      // Submit directly to exercise the backend rejection path as well as the
+      // native minlength contract; browser tests cover native form prevention.
+      fireEvent.submit(submit.closest("form")!);
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Use at least 6 characters for the password.",
+      );
+      expect(password).toHaveValue("short");
+      expect(refresh).not.toHaveBeenCalled();
+      fireEvent.change(password, { target: { value: "simple" } });
+      fireEvent.click(submit);
+      await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+      expect(password).toHaveValue("");
+      expect(screen.queryByRole("alert")).toBeNull();
+      const writes = fetcher.mock.calls.filter(
+        ([, init]) => init?.method === "POST" || init?.method === "PATCH",
+      );
+      expect(writes).toHaveLength(2);
+      expect(writes[1]).toEqual([
+        operation === "create"
+          ? "/api/v1/admin/learners"
+          : `/api/v1/admin/learners/${learner.id}/account`,
+        expect.objectContaining({
+          method: operation === "create" ? "POST" : "PATCH",
+          body: JSON.stringify({
+            alias: learner.alias,
+            password: "simple",
+            ...(operation === "create" ? { eligibility: "unknown" } : {}),
+          }),
+        }),
+      ]);
+      if (operation === "create")
+        expect(choose).toHaveBeenCalledWith(learner.id);
+      else
+        expect(screen.getByRole("status")).toHaveTextContent(
+          "Password changed. This learner's browsers are signed out.",
+        );
+    },
+  );
+});
 
 describe("administrator age-group correction", () => {
   it.each(["minor", "unknown"] as const)(

@@ -67,26 +67,25 @@ def test_password_hashes_use_fresh_salts() -> None:
 
 
 @pytest.mark.parametrize(
-    ("origin", "minimum"),
+    "origin",
     [
-        ("http://localhost:8000", 6),
-        ("http://127.0.0.1:8000", 6),
-        ("http://[::1]:8000", 6),
-        ("https://localhost", 12),
-        ("https://127.0.0.1:8000", 12),
-        ("https://tutor.example", 12),
-        ("http://192.168.0.2:8000", 12),
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://[::1]:8000",
+        "https://localhost",
+        "https://127.0.0.1:8000",
+        "https://tutor.example",
+        "http://192.168.0.2:8000",
     ],
 )
-def test_password_policy_uses_only_configured_exact_loopback_origin(
-    monkeypatch: pytest.MonkeyPatch, origin: str, minimum: int
+def test_password_policy_requires_six_characters_on_every_origin(
+    monkeypatch: pytest.MonkeyPatch, origin: str
 ) -> None:
     monkeypatch.setenv(settings.APP_PUBLIC_ORIGIN_ENV_VAR, origin)
-    assert auth_service.minimum_admin_password_length() == minimum
-    assert auth_service.local_passwords_allowed() is (minimum == 6)
-    assert auth_service.validate_admin_credentials("Owner", "a" * minimum) == "Owner"
-    with pytest.raises(ValueError, match="at least"):
-        auth_service.validate_admin_credentials("Owner", "a" * (minimum - 1))
+    assert auth_service.minimum_admin_password_length() == 6
+    assert auth_service.validate_admin_credentials("Owner", "aaaaaa") == "Owner"
+    with pytest.raises(ValueError, match="at least 6"):
+        auth_service.validate_admin_credentials("Owner", "aaaaa")
 
 
 def test_password_verifier_rejects_malformed_unicode() -> None:

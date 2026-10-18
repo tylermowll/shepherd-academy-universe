@@ -32,7 +32,7 @@ from math_tutor.setup_gate import SETUP_TOKEN_ENV_VAR, SetupGate
 OWNER_TOKEN = "synthetic-local-owner-token-0123456789abcdef"
 NEW_OWNER_TOKEN = "different-synthetic-owner-token-fedcba9876543210"
 PASSWORD = "plain6"
-NETWORK_PASSWORD = "simplepassword12"
+OTHER_PASSWORD = "different-synthetic-password"
 SETUP = "/api/v1/auth/setup"
 EXCHANGE = SETUP + "/session"
 
@@ -200,7 +200,6 @@ async def test_first_owner_setup_signs_in_and_never_exposes_secrets(
             "available": False,
             "minimum_password_length": 6,
             "maximum_password_length": 256,
-            "local_passwords_allowed": True,
         }
         assert status.headers["Cache-Control"] == "no-store"
         initial = await browser.get("/api/v1/auth/session")
@@ -340,8 +339,8 @@ async def test_first_claim_is_atomic_and_replay_cannot_add_or_reset(
                 SETUP,
                 json=body(
                     login_name=winner_name,
-                    password=NETWORK_PASSWORD,
-                    password_confirmation=NETWORK_PASSWORD,
+                    password=OTHER_PASSWORD,
+                    password_confirmation=OTHER_PASSWORD,
                 ),
             )
             assert response.status_code == 409 and response.json()["code"] == "setup_claimed"
@@ -420,7 +419,7 @@ async def test_setup_rate_limit_is_bounded_and_returns_retry_after(app: FastAPI)
 
 
 @pytest.mark.anyio
-async def test_network_setup_requires_twelve_and_ignores_forwarded_local_headers(
+async def test_https_setup_requires_six_and_keeps_secure_cookies(
     engine: Engine, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     origin = "https://tutor.example"
@@ -429,26 +428,25 @@ async def test_network_setup_requires_twelve_and_ignores_forwarded_local_headers
     app = create_app(engine)
     async with client(app, origin) as browser:
         status = (await browser.get(SETUP)).json()
-        assert status["minimum_password_length"] == 12 and not status["local_passwords_allowed"]
+        assert status["minimum_password_length"] == 6
+        assert "local_passwords_allowed" not in status
         await authorize(browser)
         assert next(cookie for cookie in browser.cookies.jar if cookie.name == SETUP_COOKIE).secure
         response = await browser.post(
             SETUP,
-            json=body(),
+            json=body(password="short", password_confirmation="short"),
             headers={"X-Forwarded-Host": "localhost", "X-Forwarded-Proto": "http"},
         )
-        assert response.status_code == 422
-        accepted = await browser.post(
-            SETUP, json=body(password=NETWORK_PASSWORD, password_confirmation=NETWORK_PASSWORD)
-        )
+        assert response.status_code == 422 and "at least 6" in response.text
+        accepted = await browser.post(SETUP, json=body())
         assert accepted.status_code == 200 and "Secure" in accepted.headers["set-cookie"]
     with Session(engine) as db:
         admin = db.scalar(select(Administrator))
-        assert admin is not None and not admin.local_only_password
+        assert admin is not None and auth.verify_password(admin.password_hash, PASSWORD)
 
 
 @pytest.mark.anyio
-async def test_local_only_password_and_existing_session_are_blocked_on_https_until_reset(
+async def test_existing_six_character_password_and_session_work_on_https_without_reset(
     app: FastAPI, engine: Engine, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     async with client(app) as browser:
@@ -459,27 +457,72 @@ async def test_local_only_password_and_existing_session_are_blocked_on_https_unt
     monkeypatch.setenv(settings.APP_PUBLIC_ORIGIN_ENV_VAR, "https://127.0.0.1:8000")
     async with client(app, "https://127.0.0.1:8000") as browser:
         browser.cookies.set(SESSION_COOKIE, old_session)
-        assert (await browser.get("/api/v1/auth/session")).json()["authenticated"] is False
-        assert (await browser.get("/api/v1/admin/learners")).status_code == 401
+        assert (await browser.get("/api/v1/auth/session")).json()["authenticated"] is True
+        assert (await browser.get("/api/v1/admin/learners")).status_code == 200
         await csrf(browser)
         wrong = await browser.post(
             "/api/v1/auth/login", json={"login_name": "Owner", "password": "wrong"}
         )
         assert wrong.status_code == 401 and "local-only" not in wrong.text
-        blocked = await browser.post(
+        accepted = await browser.post(
             "/api/v1/auth/login", json={"login_name": "Owner", "password": PASSWORD}
         )
-        assert blocked.status_code == 403 and "make admin" in blocked.text
+        assert accepted.status_code == 200
+        # An explicit reset still revokes old sessions and checks the new minimum.
         with Session(engine) as db:
-            admin = auth.create_or_reset_admin(db, "Owner", NETWORK_PASSWORD)
-            assert not admin.local_only_password
+            with pytest.raises(ValueError, match="at least 6"):
+                auth.create_or_reset_admin(db, "Owner", "short")
+            auth.create_or_reset_admin(db, "Owner", "reset6")
             db.commit()
+        await csrf(browser)
         accepted = await browser.post(
-            "/api/v1/auth/login", json={"login_name": "Owner", "password": NETWORK_PASSWORD}
+            "/api/v1/auth/login", json={"login_name": "Owner", "password": "reset6"}
         )
         assert accepted.status_code == 200
     with Session(engine) as db:
         assert auth.get_valid_session(db, old_session) is None
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("origin", [TEST_ORIGIN, "https://tutor.example"])
+async def test_learner_creation_and_reset_require_six_on_http_and_https(
+    engine: Engine, monkeypatch: pytest.MonkeyPatch, origin: str
+) -> None:
+    monkeypatch.setenv(settings.APP_PUBLIC_ORIGIN_ENV_VAR, origin)
+    monkeypatch.setenv(SETUP_TOKEN_ENV_VAR, OWNER_TOKEN)
+    app = create_app(engine)
+    async with client(app, origin) as adult, client(app, origin) as learner:
+        await authorize(adult)
+        assert (await adult.post(SETUP, json=body())).status_code == 200
+        await csrf(adult)
+        rejected = await adult.post(
+            "/api/v1/admin/learners", json={"alias": "River", "password": "short"}
+        )
+        assert rejected.status_code == 422 and "at least 6" in rejected.text
+        created = await adult.post(
+            "/api/v1/admin/learners", json={"alias": "River", "password": "plain6"}
+        )
+        assert created.status_code == 201
+        path = f"/api/v1/admin/learners/{created.json()['id']}/account"
+        await csrf(learner)
+        signed = await learner.post(
+            "/api/v1/auth/login", json={"login_name": "River", "password": "plain6"}
+        )
+        assert signed.status_code == 200 and signed.json()["role"] == "learner"
+        assert (await learner.get("/api/v1/auth/session")).json()["authenticated"]
+        assert (await learner.get("/api/v1/admin/learners")).status_code == 403
+        rejected = await adult.patch(path, json={"alias": "River", "password": "short"})
+        assert rejected.status_code == 422 and "at least 6" in rejected.text
+        assert (await learner.get("/api/v1/auth/session")).json()["authenticated"]
+        reset = await adult.patch(path, json={"alias": "River", "password": "reset6"})
+        assert reset.status_code == 200
+        assert not (await learner.get("/api/v1/auth/session")).json()["authenticated"]
+        await csrf(learner)
+        for password, expected in [("plain6", 401), ("reset6", 200)]:
+            response = await learner.post(
+                "/api/v1/auth/login", json={"login_name": "River", "password": password}
+            )
+            assert response.status_code == expected
 
 
 def test_local_password_migration_preserves_existing_accounts_and_refuses_unsafe_downgrade(

@@ -257,8 +257,8 @@ for (const lostReceipt of [false, true]) {
       await page
         .getByLabel("Username", { exact: true })
         .fill("synthetic-owner");
-      await page.getByLabel("Password", { exact: true }).fill("tiny");
-      await page.getByLabel("Confirm password", { exact: true }).fill("tiny");
+      await page.getByLabel("Password", { exact: true }).fill("five5");
+      await page.getByLabel("Confirm password", { exact: true }).fill("five5");
       await page
         .getByRole("button", { name: "Create account", exact: true })
         .click();

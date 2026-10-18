@@ -217,20 +217,6 @@ def owner_setup_token(origin: SplitResult) -> str | None:
     try:
         with Session(engine) as db:
             claimed = db.scalar(select(Administrator.id).limit(1)) is not None
-            if (
-                origin.scheme == "https"
-                and db.scalar(
-                    select(Administrator.id)
-                    .where(Administrator.local_only_password.is_(True))
-                    .limit(1)
-                )
-                is not None
-            ):
-                raise ValueError(
-                    "An administrator has a computer-only password. Before enabling HTTPS "
-                    "or phone access, run `make admin` and replace that account's password "
-                    "with at least 12 characters. No credentials have been changed."
-                )
     finally:
         engine.dispose()
     if not claimed and os.getenv("APP_MODE", "private") != "demo":

@@ -292,18 +292,6 @@ export function Setup({
             {status.maximum_password_length} characters for your password. No
             uppercase letters, numbers, or symbols are required.
           </p>
-          {status.local_passwords_allowed ? (
-            <p className="fine">
-              Six characters are allowed for this computer-only setup. A longer
-              password is safer. Choose at least 12 now to use HTTPS or phone
-              access later without resetting this password.
-            </p>
-          ) : (
-            <p className="fine">
-              This HTTPS or network setup requires at least{" "}
-              {status.minimum_password_length} characters.
-            </p>
-          )}
           <label htmlFor="setup-login">Username</label>
           <input
             id="setup-login"

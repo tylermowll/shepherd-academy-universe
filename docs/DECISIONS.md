@@ -264,12 +264,16 @@ permission rather than keeping the owner token until form submission. Docker
 issuance uses owner-only tmpfs and checks the first-account condition under the
 same database lock. PWA updates defer refresh during setup.
 
-Passwords allow six characters on HTTP loopback and require twelve on HTTPS,
-without composition rules. Short passwords mark accounts local-only and are
-rejected for network use. An explicit local administrator reset can strengthen
-or recover the existing account; no anonymous web reset is added. This is a local
-convenience tradeoff, not a claim that six-character passwords are strong.
-Restarts preserve accounts, settings, encryption and access policy.
+**Amended by T53 (2026-10-18):** The maintainer replaced the original
+origin-dependent password minimum and local-only account restriction with one
+6–256-character policy for administrator and learner accounts on both loopback
+HTTP and HTTPS, without composition rules. Existing accounts with passwords of
+at least six characters work over HTTPS without a reset; the change does not
+rewrite stored credentials. The separate backup passphrase policy is unchanged.
+An explicit operator administrator reset can change or recover the existing
+account; no anonymous web reset is added. The six-character minimum is a
+convenience tradeoff, not a claim of strong password protection. Restarts preserve
+accounts, settings, encryption and access policy.
 
 ## D012 — Operator-selected audience for Meta-hosted inference (2026-09-07)
 

@@ -20,14 +20,12 @@ import time
 import unicodedata
 from datetime import UTC, datetime, timedelta
 from threading import Lock
-from urllib.parse import urlsplit
 
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHash, VerificationError
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from math_tutor import settings
 from math_tutor.account_names import account_key
 from math_tutor.adapters.db.models import Administrator, DeviceSession, Learner
 
@@ -37,9 +35,10 @@ SESSION_LIFETIME = timedelta(hours=24)
 #: Anonymous (pre-login) CSRF bootstrap tokens live one hour.
 ANON_CSRF_LIFETIME_SECONDS = 3600
 
-#: Network-eligible minimum; HTTP loopback permits the explicit local-only policy.
-MIN_ADMIN_PASSWORD_LENGTH = 12
-LOCAL_MIN_ADMIN_PASSWORD_LENGTH = 6
+#: Account password minimum for both HTTP and HTTPS.
+MIN_ADMIN_PASSWORD_LENGTH = 6
+# Preserve the existing schema-downgrade guard, independently of today's policy.
+PASSWORD_DOWNGRADE_GUARD_LENGTH = 12
 MAX_ADMIN_PASSWORD_LENGTH = 256
 
 #: Maximum administrator login name length (matches the column width).
@@ -129,24 +128,8 @@ def normalize_login_name(login_name: str) -> str:
     return login_name.strip()
 
 
-def local_passwords_allowed() -> bool:
-    """Shorter passwords apply only to the configured exact HTTP loopback origin.
-
-    Request Host, forwarded headers, and DNS resolution cannot relax this policy.
-    Invalid configuration is never considered local.
-    """
-
-    try:
-        origin = urlsplit(settings.app_public_origin())
-    except ValueError:
-        return False
-    return origin.scheme == "http" and origin.hostname in {"localhost", "127.0.0.1", "::1"}
-
-
 def minimum_admin_password_length() -> int:
-    return (
-        LOCAL_MIN_ADMIN_PASSWORD_LENGTH if local_passwords_allowed() else MIN_ADMIN_PASSWORD_LENGTH
-    )
+    return MIN_ADMIN_PASSWORD_LENGTH
 
 
 def validate_admin_credentials(login_name: str, password: str) -> str:
@@ -176,15 +159,11 @@ def setup_required(db: Session) -> bool:
     )
 
 
-def administrator_access_allowed(admin: Administrator) -> bool:
-    return not admin.local_only_password or local_passwords_allowed()
-
-
 def create_or_reset_admin(db: Session, login_name: str, password: str) -> Administrator:
     """Create an administrator, or reset the password when the name exists.
 
-    Raises ``ValueError`` for invalid names or a password outside the configured
-    local/network policy. Callers must obtain the
+    Raises ``ValueError`` for invalid names or a password outside the account
+    password policy. Callers must obtain the
     password interactively (never from argv or logs).
     """
 
@@ -196,7 +175,7 @@ def create_or_reset_admin(db: Session, login_name: str, password: str) -> Admini
     existing = db.scalar(select(Administrator).where(Administrator.login_name == name))
     if existing is not None:
         existing.password_hash = password_hash
-        existing.local_only_password = len(password) < MIN_ADMIN_PASSWORD_LENGTH
+        existing.local_only_password = len(password) < PASSWORD_DOWNGRADE_GUARD_LENGTH
         existing.updated_at = utcnow()
         db.execute(
             update(DeviceSession)
@@ -223,7 +202,7 @@ def create_or_reset_admin(db: Session, login_name: str, password: str) -> Admini
     admin = Administrator(
         login_name=name,
         password_hash=password_hash,
-        local_only_password=len(password) < MIN_ADMIN_PASSWORD_LENGTH,
+        local_only_password=len(password) < PASSWORD_DOWNGRADE_GUARD_LENGTH,
         created_at=utcnow(),
         updated_at=utcnow(),
     )
@@ -317,18 +296,11 @@ def get_valid_session(db: Session, token: str) -> DeviceSession | None:
         return None
     if row.expires_at <= utcnow():
         return None
-    if row.role == "adult" and (
-        row.administrator is None or not administrator_access_allowed(row.administrator)
-    ):
+    if row.role == "adult" and row.administrator is None:
         return None
     if row.role == "learner":
         learner = db.get(Learner, row.learner_id)
-        if (
-            learner is None
-            or not learner.enabled
-            or learner.deleted_at is not None
-            or (learner.local_only_password and not local_passwords_allowed())
-        ):
+        if learner is None or not learner.enabled or learner.deleted_at is not None:
             return None
     return row
 

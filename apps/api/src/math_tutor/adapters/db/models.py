@@ -182,6 +182,7 @@ class Administrator(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUIDType, primary_key=True, default=uuid.uuid4)
     login_name: Mapped[str] = mapped_column(String(64), nullable=False)
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    # Historical password marker for migration downgrade safety, not access policy.
     local_only_password: Mapped[bool] = mapped_column(
         nullable=False, default=False, server_default="0"
     )
@@ -258,6 +259,7 @@ class Learner(Base):
     alias: Mapped[str] = mapped_column(String(64), nullable=False)
     alias_key: Mapped[str] = mapped_column(String(256), nullable=False, server_default="")
     password_hash: Mapped[str | None] = mapped_column(Text)
+    # Retained password-history metadata, not current access policy.
     local_only_password: Mapped[bool] = mapped_column(
         nullable=False, default=False, server_default="0"
     )

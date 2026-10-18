@@ -296,9 +296,10 @@ export function HelpPage({
                 The first start prints a{" "}
                 <strong>Create administrator account</strong> link. Open that
                 link and choose your username and password here in the browser.
-                Localhost needs at least six characters; phone or HTTPS access
-                needs twelve. No uppercase or symbol rules apply. Invalid input
-                stays on the form so you can correct it.
+                Administrator and learner passwords need at least six
+                characters, including for phone and HTTPS access. No uppercase
+                or symbol rules apply. Invalid input stays on the form so you
+                can correct it.
               </p>
               <p>
                 Open the private setup link within thirty minutes. This browser
@@ -509,14 +510,12 @@ export function HelpPage({
                   browser setup.
                 </p>
               </ContextHelp>
-              <ContextHelp topic="My local password stops phone access">
+              <ContextHelp topic="Does my password work on my phone?">
                 <p>
-                  Passwords shorter than twelve characters are for HTTP
-                  localhost only. After setting your HTTPS address and stopping
-                  the app, run <code>make admin</code> with your existing login
-                  name and a password of at least twelve characters, then
-                  restart. Do not delete your database or change the session
-                  secret.
+                  Administrator and learner passwords need at least six
+                  characters on both this computer and your private HTTPS
+                  address. Use the same app address on your phone and sign in
+                  with your existing account.
                 </p>
               </ContextHelp>
             </>

@@ -118,10 +118,6 @@ def run_admin() -> int:
     print(
         f"Password: {minimum}–{auth_service.MAX_ADMIN_PASSWORD_LENGTH} characters. No mixed-character rules."
     )
-    if auth_service.local_passwords_allowed():
-        print(
-            "Passwords under 12 characters work only on this computer, not over HTTPS or a phone."
-        )
     engine = create_engine_for_url(url)
     try:
         while True:

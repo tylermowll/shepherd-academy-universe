@@ -94,7 +94,7 @@ def create_learner(body: LearnerInput, db: Database, actor: Adult) -> Learner:
         alias=name,
         eligibility=body.eligibility,
         password_hash=checked_password(name, body.password),
-        local_only_password=len(body.password) < auth.MIN_ADMIN_PASSWORD_LENGTH,
+        local_only_password=len(body.password) < auth.PASSWORD_DOWNGRADE_GUARD_LENGTH,
     )
     db.add(row)
     db.flush()
@@ -131,7 +131,7 @@ def update_account(
         )
     if body.password is not None:
         row.password_hash = checked_password(name, body.password)
-        row.local_only_password = len(body.password) < auth.MIN_ADMIN_PASSWORD_LENGTH
+        row.local_only_password = len(body.password) < auth.PASSWORD_DOWNGRADE_GUARD_LENGTH
         db.execute(
             update(DeviceSession)
             .where(DeviceSession.learner_id == learner_id)

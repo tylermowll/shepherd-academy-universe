@@ -835,18 +835,18 @@ unchanged CSRF token and authenticated state must not invalidate pending
 requests. Discard responses from a previous identity, including responses whose
 body finishes decoding after the identity changes.
 
-HTTP origins with exact loopback hostnames `127.0.0.1`, `localhost` or `::1` allow
-six-character passwords; HTTPS requires twelve. Do not impose composition rules.
-Passwords below twelve mark accounts local-only.
-Network startup, login and adult session use reject local-only credentials.
-Keep the explicit local administrator-reset command for recovery/strengthening,
-not unauthenticated web account recovery. Restarts preserve existing accounts.
+Administrator and learner passwords must contain 6–256 characters on both
+loopback HTTP and HTTPS. Do not impose composition rules. T53 amends D011's
+original origin-dependent policy: existing accounts with passwords of at least
+six characters work over HTTPS without a reset. Updates and restarts preserve
+stored credentials. Keep the explicit operator administrator-reset command for
+recovery or voluntary changes, not unauthenticated web account recovery.
 
-D013 defines administrator-managed learner credentials. Passwords follow the same local/network length policy and Argon2id
-hashing as the administrator. Login rechecks the password hash, enabled/deleted
-state and network eligibility inside the session-creation transaction, preventing
-a concurrent reset from being bypassed. Password reset revokes learner sessions;
-no public account list or password recovery is exposed. The CLI cannot create a
+D013 defines administrator-managed learner credentials. Passwords follow the
+same length policy and Argon2id hashing as the administrator. Login rechecks
+the password hash and enabled/deleted state inside the session-creation
+transaction, preventing a concurrent reset from being bypassed. Password reset
+revokes learner sessions; no public account list or password recovery is exposed. The CLI cannot create a
 second administrator. A learner session cannot become an administrator session by
 switching profiles.
 

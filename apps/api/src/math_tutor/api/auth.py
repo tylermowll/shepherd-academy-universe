@@ -252,11 +252,6 @@ def login(credentials: LoginRequest, request: Request, response: Response) -> Se
             )
         if account is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=_BAD_CREDENTIALS)
-        if account.local_only_password and not auth_service.local_passwords_allowed():
-            raise HTTPException(
-                403,
-                "This account has a local-only password. Set at least 12 characters on the app computer before using HTTPS or phone access. The administrator can reset learner passwords in Learners; use make admin for the administrator account.",
-            )
         # End the read snapshot after password verification. The short write
         # transaction rechecks the hash so a concurrent reset cannot be bypassed.
         account_id, password_hash = account.id, account.password_hash
@@ -277,11 +272,6 @@ def login(credentials: LoginRequest, request: Request, response: Response) -> Se
             )
         ):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=_BAD_CREDENTIALS)
-        if account.local_only_password and not auth_service.local_passwords_allowed():
-            raise HTTPException(
-                403,
-                "This account needs a password reset on the app computer before network access.",
-            )
         previous = request.cookies.get(SESSION_COOKIE)
         if previous:
             old_session = auth_service.get_valid_session(db, previous)

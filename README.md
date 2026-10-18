@@ -48,11 +48,11 @@ restarts. Unsent passwords clear on reload. `make start` renews an expired link
 when no administrator exists; it does not reset an existing account. Keep setup
 links private.
 
-HTTP access on this computer (`localhost`) requires passwords of at least
-**6 characters**; HTTPS requires **12**. Uppercase letters and symbols are
-optional. Use the [runbook](docs/RUNBOOK.md) for password recovery or moving an
-installation with short passwords to HTTPS. Resetting a password signs out that
-account's browsers.
+Administrator and learner passwords require **6–256 characters** on both HTTP
+and HTTPS. Uppercase letters and symbols are optional. Existing passwords work
+over HTTPS without a reset; updates preserve stored credentials. Use the
+[runbook](docs/RUNBOOK.md) for password recovery. Resetting a password signs out
+that account's browsers.
 
 Use `make start` after stopping a native app with Ctrl+C. `make dev` restricts the
 same workflow to loopback HTTP. For desktop practice with an iPhone camera, follow

@@ -155,7 +155,7 @@ def test_demo_never_issues_an_owner_setup_token(
     assert local_start.owner_setup_token(urlsplit(settings.app_public_origin())) is None
 
 
-def test_https_rejects_local_only_password_until_explicit_network_eligible_reset(
+def test_https_preserves_six_character_password_and_allows_explicit_six_character_reset(
     synthetic_database: str, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     local_start.prepare_database(ROOT)
@@ -167,21 +167,20 @@ def test_https_rejects_local_only_password_until_explicit_network_eligible_reset
             identifier, hashed = admin.id, admin.password_hash
             assert admin.local_only_password
         monkeypatch.setenv("APP_PUBLIC_ORIGIN", "https://tutor.example")
-        with pytest.raises(ValueError, match="make admin"):
-            local_start.owner_setup_token(urlsplit(settings.app_public_origin()))
+        assert local_start.owner_setup_token(urlsplit(settings.app_public_origin())) is None
         with Session(engine) as db:
             stored = db.get(Administrator, identifier)
             assert stored is not None and stored.password_hash == hashed
             assert stored.local_only_password
         monkeypatch.setattr("builtins.input", lambda _: "synthetic-adult")
-        monkeypatch.setattr(getpass, "getpass", lambda _: PASSWORD)
+        monkeypatch.setattr(getpass, "getpass", lambda _: "reset6")
         assert cli.run_admin() == 0
-        assert "12–256" in capsys.readouterr().out
+        assert "6–256" in capsys.readouterr().out
         assert local_start.owner_setup_token(urlsplit(settings.app_public_origin())) is None
         with Session(engine) as db:
             stored = db.get(Administrator, identifier)
-            assert stored is not None and not stored.local_only_password
-            assert auth.authenticate_admin(db, "synthetic-adult", PASSWORD) is not None
+            assert stored is not None and stored.password_hash != hashed
+            assert auth.authenticate_admin(db, "synthetic-adult", "reset6") is not None
     finally:
         engine.dispose()
 
