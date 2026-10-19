@@ -487,9 +487,11 @@ describe("linked app areas", () => {
     );
     expect(screen.queryByRole("link", { name: "Settings" })).toBeNull();
     expect(window.location.search).toBe("?page=practice");
-    const unguarded = new Event("beforeunload", { cancelable: true });
-    window.dispatchEvent(unguarded);
-    expect(unguarded.defaultPrevented).toBe(false);
+    await vi.waitFor(() => {
+      const unguarded = new Event("beforeunload", { cancelable: true });
+      window.dispatchEvent(unguarded);
+      expect(unguarded.defaultPrevented).toBe(false);
+    });
   });
 });
 

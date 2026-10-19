@@ -16,7 +16,8 @@ independent adversarial review and its bounded corrections. T51 records the
 initial October 18 deployment; T52 links learning/administration and deploys the
 maintainer's subsequent lock update. T53 applies the maintainer's six-character
 account password minimum on both HTTP and HTTPS. T54 records the subsequent
-source-only dependency refresh. The
+source-only dependency refresh; T55 reviews and publishes the reconciled October
+19 lock. The
 schema head is `0020_request_recovery`. The latest private deployment uses
 runtime source `93f93de`, Python 3.15.0, FastAPI 0.145.0 and pillow-heif 1.8.1,
 verified on **October 18, 2026**. T53 below records the image, encrypted backup/isolated
@@ -33,6 +34,85 @@ container packaging and private installation; October 11's evidence is historica
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
+
+## T55 — Review and publish the reconciled Python lock (2026-10-19)
+
+**Status:** Review and local validation complete. The maintainer authorized
+publication to `main`, explicitly including their `uv.lock` updates.
+
+**Scope and contracts:** SPECIFICATION sections 6 and 16; locked installation,
+existing API/HTTP-client behavior and dependency compatibility. Local `main`
+fast-forwarded from `3292ea7` to `a46a42f`; the maintainer's newer local lock
+was retained byte-for-byte from a verified temporary backup. No application,
+generated API, database schema, provider policy or Python version changes.
+
+**Independent review:** All 97 package identities, dependency declarations,
+registry sources and Python constraints remain unchanged. Fourteen packages
+advance relative to `a46a42f`; only versions and distribution artifacts change.
+No downgrade or actionable lock inconsistency was found.
+
+| Package          | Before    | After     |
+| ---------------- | --------- | --------- |
+| boto3            | 1.43.114  | 1.43.115  |
+| boto3-stubs      | 1.43.114  | 1.43.115  |
+| botocore         | 1.43.114  | 1.43.115  |
+| botocore-stubs   | 1.43.114  | 1.43.115  |
+| FastAPI          | 0.146.0   | 0.150.0   |
+| filelock         | 4.2.2     | 4.2.4     |
+| httpcore2        | 2.14.0    | 2.15.1    |
+| httpx2           | 2.14.0    | 2.15.1    |
+| hypothesis       | 6.170.1   | 6.170.3   |
+| jsonpatch        | 1.35      | 1.36      |
+| jsonpointer      | 3.3       | 3.4       |
+| platformdirs     | 4.13.4    | 4.13.5    |
+| python-discovery | 1.6.3     | 1.6.4     |
+| s3transfer       | 0.19.2    | 0.19.3    |
+
+**Validation:** `uv lock --offline`, `uv lock --check --offline` and
+`git diff --check` passed. Initial checks lacked pnpm and an offline artifact;
+locked bootstrap now passes using checksum-verified Node 26.11.1 and pnpm
+12.11.2, uv 0.13.2 and Python 3.15.0. Commands use
+`/tmp/shepherd-publish-toolchain/run`, which clears inherited variables and
+disables env-file loading. The sandbox reported `EPERM` for Node subprocess
+checks; the full gate runs outside that restriction with the same tests.
+
+- `make bootstrap`: passed locked Python and frozen JavaScript installation.
+- `make check`: passed **329 backend unit, 11 toolchain and 214 component
+  tests**, locks, lint/format, strict types, builds, generated-contract checks,
+  credential scan and infrastructure lint. Existing build-system upper-bound
+  and JavaScript chunk-size warnings remain.
+- `make test-integration`: **378 passed in 67.21s**, covering authentication,
+  ownership, provider policy, SQLite migrations/recovery and tutoring/worker
+  workflows against synthetic fixtures.
+- `make audit`: Python and pnpm reported **no known vulnerabilities**.
+- `make hooks-files-check`: passed all repository file hooks; its duplicate
+  project gate was skipped because `make check` passed separately.
+
+The first full gate had **213 component tests pass and one failure** at the
+account-switch reload-warning assertion. The unchanged focused case and all
+19 App tests passed in isolation. Independent review identified a passive-effect
+cleanup race: the new empty form can render before React removes the old
+`beforeunload` listener. The existing assertion now waits for cleanup, creating
+a fresh cancelable event per attempt. All original draft, role, URL and guard
+assertions remain. Final `pnpm test` and `make check` passed with this test-only
+synchronization fix; no production behavior was changed.
+
+**Remaining acceptance:** Updated ACCEPTANCE with the existing October 18
+container, encrypted backup/isolated restore and private deployment evidence.
+Live model selection/teaching review, physical devices/manual accessibility and
+full restored-host startup/sign-in/key recovery remain maintainer work. The
+administrator-authorship and post-attempt worked-solution decisions remain open;
+this dependency refresh does not change either policy.
+
+**Changed files and publication:** `uv.lock`, `apps/web/tests/App.test.tsx`,
+`docs/DEPENDENCIES.md`, `docs/ACCEPTANCE.md` and this task record. A fresh fetch
+confirmed local `main` matched `origin/main` at `a46a42f` before publication.
+The final installed commit-hook, non-force push and remote-equality results are
+recorded in the completion report.
+
+No failures remain. Browser/container checks were not repeated for this lock and
+test-only refresh. No live provider evaluations, model downloads or deployment
+occurred; the private installation retains the earlier dependency set.
 
 ## T54 — Publish the maintainer's Python lock refresh (2026-10-18)
 

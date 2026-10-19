@@ -6,7 +6,7 @@ Newer stable Node and pnpm versions are allowed, including newer majors, but
 package peer-dependency requirements and Python compatibility restrictions still
 apply.
 
-This guide was checked against repository files on October 18, 2026. It describes
+This guide was checked against repository files on October 19, 2026. It describes
 the declared configuration, not the newest upstream releases or the packages in
 a running private installation. Dated verification results are in
 [task history](history/TASKS.md#release-publication-2026-10-11).
@@ -30,6 +30,13 @@ The October 18 root lock refresh changes six dependency resolutions while
 preserving Python 3.15.0. [T54](TASKS.md#t54--publish-the-maintainers-python-lock-refresh-2026-10-18)
 records their before/after versions and validation separately from the private
 deployment's earlier dependency set.
+
+The October 19 reconciliation preserves the maintainer's newer local lock after
+merging that refresh. Fourteen further resolutions change, including FastAPI
+0.150.0 and HTTPX2 2.15.1; Python remains 3.15.0.
+[T55](TASKS.md#t55--review-and-publish-the-reconciled-python-lock-2026-10-19)
+records the version changes and fresh validation. Publishing this lock does not
+update the private deployment's dependencies.
 
 Python uses one project: the root `pyproject.toml`, `uv.lock`, `.python-version`
 and `.venv`. Run the root Make targets or `uv run --locked` from the repository
