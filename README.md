@@ -23,12 +23,24 @@ See [TASKS](docs/TASKS.md) for the current checkpoint and
 
 ## Start the app
 
-Use Git, GNU Make, Node **>=26.11.1**, pnpm **>=12.11.2** and uv **>=0.13.0**.
+Use Git, GNU Make, Node **>=26.12.0**, pnpm **>=12.14.0** and uv **>=0.13.2**.
 uv installs Python **3.15.0** into the root `.venv` for the app and development
 tools, including CloudFormation validation. The root `pyproject.toml` and
 `uv.lock` define all Python dependencies. Minimum requirements allow newer stable
 tools; installer pins and lockfiles record the exact versions used. Compatibility
 exceptions are recorded in [DEPENDENCIES](docs/DEPENDENCIES.md).
+
+For an existing nvm installation, select the repository's Node version and set
+the default for new terminals before installing pnpm:
+
+```bash
+nvm install "$(cat .node-version)"
+nvm alias default "$(cat .node-version)"
+npm install --global npm@12.2.0
+npm install --global pnpm@12.14.0 --allow-scripts=pnpm
+```
+
+Use `nvm use default` in terminals that were already open.
 
 ```bash
 make bootstrap

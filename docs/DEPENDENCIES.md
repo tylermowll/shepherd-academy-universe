@@ -38,6 +38,16 @@ merging that refresh. Fourteen further resolutions change, including FastAPI
 records the version changes and fresh validation. Publishing this lock does not
 update the private deployment's dependencies.
 
+The subsequent [T56 toolchain refresh](TASKS.md#t56--update-development-tools-and-dependencies-2026-10-19)
+updates the persistent development installation, repository installer pins and
+dependency locks. Its fresh compatibility and validation evidence is separate
+from T55 and the private deployment above. Official release metadata was checked
+on October 19: [Node](https://nodejs.org/dist/index.json),
+[npm](https://registry.npmjs.org/npm/latest),
+[pnpm](https://registry.npmjs.org/pnpm/latest),
+[uv](https://pypi.org/project/uv/) and
+[uv_build](https://pypi.org/project/uv-build/).
+
 Python uses one project: the root `pyproject.toml`, `uv.lock`, `.python-version`
 and `.venv`. Run the root Make targets or `uv run --locked` from the repository
 root. Application source remains under `apps/api/src`; it does not need a second
@@ -49,9 +59,14 @@ records the consolidation.
 | Tool    | Repository pin                                 | Authority                                                                                         |
 | ------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | Python  | 3.15.0; requirement `>=3.15.0`                 | [.python-version](../.python-version), root Python manifest                                       |
-| Node.js | 26.11.1; requirement `>=26.11.1`               | [.node-version](../.node-version), root manifest                                                  |
-| pnpm    | 12.11.2; requirement `>=12.11.2`               | Root `packageManager` and `engines`                                                               |
-| uv      | 0.13.0 in CI/container; requirement `>=0.13.0` | Root Python manifest, [CI](../.github/workflows/ci.yml), [Dockerfile](../infra/docker/Dockerfile) |
+| Node.js | 26.12.0; requirement `>=26.12.0`               | [.node-version](../.node-version), root manifest                                                  |
+| pnpm    | 12.14.0; requirement `>=12.14.0`               | Root `packageManager` and `engines`                                                               |
+| uv      | 0.13.2 in CI/container; requirement `>=0.13.2` | Root Python manifest, [CI](../.github/workflows/ci.yml), [Dockerfile](../infra/docker/Dockerfile) |
+
+The local nvm default is now Node 26.12.0 with npm 12.2.0 and pnpm 12.14.0
+installed in its global prefix. npm is an installation tool; project commands
+use pnpm. The managed root Python environment remains 3.15.0. This refresh does
+not replace the operating system's Python or upgrade OS packages.
 
 [The toolchain checker](../scripts/check-toolchain.mjs) enforces stable
 Node/pnpm versions at or above the declared minimums.
@@ -86,12 +101,18 @@ removed.
   claiming formal upstream 3.15 support. Recheck the metadata and CLI on
   updates. Its transitive SymPy dependency never evaluates learner text.
 - **TypeScript:** application TypeScript resolves to 6.0.3 within
-  typescript-eslint 8.71.1's recorded `>=4.8.4 <6.1.0` peer range. The OpenAPI
+  typescript-eslint 8.71.2's recorded `>=4.8.4 <6.1.0` peer range. The OpenAPI
   generator is isolated with TypeScript 5.9.3 for openapi-typescript 7.13.0's
-  `^5.x` peer requirement.
-- **Vitest:** 4.1.11 remains locked after the recorded Vitest 5.0.3 / jest-dom
-  7.0.1 declaration conflict. No `skipLibCheck`, declaration patch or suppressed
-  type error was introduced.
+  `^5.x` peer requirement. T56 retried TypeScript 7.0.2 and reproduced both
+  strict peer conflicts; 6.0.3 and 5.9.3 remain the newest compatible versions.
+- **Vitest:** T56 advances the compatible maintenance line to 4.1.12. Retrying
+  Vitest 5.0.5 with jest-dom 7.0.1 still fails strict checking with TS2428
+  (`Assertion` declaration conflict). No `skipLibCheck`, declaration patch or
+  suppressed type error was introduced.
+- **Release age:** typescript-eslint 8.72.0 was published on October 19 and
+  required pnpm to add release-age exclusions. T56 retains eligible 8.71.2
+  without those exclusions; existing workspace supply-chain policies are
+  unchanged. Reassess the newer release after it becomes eligible.
 - **HEIF:** the app requires at least pillow-heif 1.8.1 and locks that version.
   The October 11 release passed a Python 3.15 HEIF conversion and container
   smoke check. Earlier temporary 1.8.0 results remain historical evidence.

@@ -17,7 +17,8 @@ initial October 18 deployment; T52 links learning/administration and deploys the
 maintainer's subsequent lock update. T53 applies the maintainer's six-character
 account password minimum on both HTTP and HTTPS. T54 records the subsequent
 source-only dependency refresh; T55 reviews and publishes the reconciled October
-19 lock. The
+19 lock. T56 updates the persistent development tools and project dependencies.
+The
 schema head is `0020_request_recovery`. The latest private deployment uses
 runtime source `93f93de`, Python 3.15.0, FastAPI 0.145.0 and pillow-heif 1.8.1,
 verified on **October 18, 2026**. T53 below records the image, encrypted backup/isolated
@@ -34,6 +35,114 @@ container packaging and private installation; October 11's evidence is historica
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
+
+## T56 — Update development tools and dependencies (2026-10-19)
+
+**Status:** Local update, review and validation complete. The maintainer
+authorized updating the development tools and project dependencies and pushing
+the reviewed result to `main`.
+
+**Scope and contracts:** SPECIFICATION sections 6 and 16, D001 and D016;
+persistent nvm-managed Node/npm/pnpm, uv, root Python environment, JavaScript
+workspaces, reproducible CI/container installers, generated API contracts and
+existing application workflows. Retain minimum-only requirements, strict peers,
+type checks, private-data boundaries and synthetic test fixtures. No database
+migration or product-policy change is planned.
+
+**Plan:** Verify current stable versions against official registry/release
+metadata; install persistent tools, align repository pins, refresh dependency
+locks, retry documented compatibility exceptions, then run locked bootstrap,
+source/integration/browser/mock/audit/hook gates and the changed container
+package checks. Review the final diff, commit with normal hooks and perform a
+non-force push after a fresh fetch.
+
+**Toolchain:** Direct official Node/npm/PyPI metadata selected Node 26.12.0,
+npm 12.2.0, pnpm 12.14.0 and uv/uv_build 0.13.2. Python 3.15.0 remains the
+current stable project runtime. Node's archive checksum and the new container
+manifest digest were verified. Installed Node through the existing nvm and set
+its persistent default to 26.12.0. npm and pnpm are installed in that Node's
+global prefix; npm's one-time `--allow-scripts=pnpm` ran the official native
+installer without changing user npm configuration. Node subprocess invocation
+of pnpm passed. Existing terminals need `nvm use default` to select the new
+installation; future nvm shells use the new default.
+
+**Dependency resolution:** Python retains all 97 package identities and the
+maintainer's prior upgrades; Hypothesis advances from 6.170.3 to 6.170.4.
+JavaScript direct updates are Playwright 1.64.1, ESLint 10.13.0,
+typescript-eslint 8.71.2, web-llm 0.2.86, React/React DOM 19.3.1, jsdom
+30.1.3 and Vitest 4.1.12. The generated pnpm lock changes 89 package names,
+including package-manager/platform packages; its first document now pins
+pnpm 12.14.0. The supported one-time
+`pnpm install --pm-on-fail=download --state-dir=/tmp/shepherd-js-refresh-pnpm-state --lockfile-only`
+regenerated that manager lock; the workspace retains `pmOnFail: ignore`.
+
+Independent isolated checks reproduced TypeScript 7.0.2's strict peer conflicts
+with typescript-eslint and openapi-typescript. Application TypeScript 6.0.3 and
+generator TypeScript 5.9.3 remain the newest compatible versions. Vitest
+5.0.5/jest-dom 7.0.1 still fail with TS2428; the newest compatible 4.x release
+4.1.12 passes. typescript-eslint 8.72.0 was too recent for the existing release-age
+policy; no exclusions were retained. No workspace-policy changes, patched
+declarations, type-check suppression or loosened assertions were introduced.
+
+**Validation:** Commands use `/tmp/shepherd-t56/run` with the persistent Node
+installation, cleared inherited variables, disabled env-file loading and
+synthetic fixtures. The independent isolated JavaScript candidate also passed
+frozen installation, strict types, lint, formatting, 11 toolchain/214 component
+tests and audit before adoption.
+
+- `make bootstrap`: passed locked Python and frozen JavaScript installation.
+- `make check`: passed **329 backend unit, 11 toolchain and 214 component
+  tests**, locks, lint/format, strict types, builds, generated-contract drift,
+  credential scan and infrastructure lint. Existing build-system upper-bound
+  and JavaScript chunk-size warnings remain.
+- `make test-integration`: **378 passed in 67.50s** against synthetic fixtures.
+- `make smoke-built`: **88 desktop/mobile browser cases passed in 14.3 minutes**
+  using Chrome 155 through the supported executable override, with retries
+  disabled. Covered accounts, setup, navigation/drafts, request recovery,
+  provider policy, passages, assignment boundaries and photo workflows.
+- `make eval-mock`: deterministic checks and all reading, teaching and
+  adversarial contract gates passed. Fresh reports remain in
+  `/tmp/shepherd-t56/eval-reports/`; dated tracked reports were preserved.
+- `make audit`: Python and pnpm reported **no known vulnerabilities**.
+- `make hooks-files-check`: all repository file hooks passed; its duplicate
+  project hook was skipped because the full source gate passed separately.
+- A fresh clean nvm shell selects Node 26.12.0, npm 12.2.0 and pnpm 12.14.0.
+  The managed project Python remains 3.15.0 and uv reports 0.13.2.
+- Stock cfn-lint still accepts the household template and rejects an invalid
+  synthetic template on Python 3.15; no metadata override or patched package.
+
+**Container package:** Built `math-practice-tutor:t56-check` from an isolated
+context containing only tracked public build inputs. Node/npm/pnpm and uv
+installer pins match the updated development tools; Node's image manifest
+digest was independently hashed. The final image is
+`sha256:10093491bc97f783c814f19ee855c8f68da5dbb4087f8c7436d54fbaf497fc92`.
+The checked-in container smoke passed runtime/HEIF/cryptography, restricted
+provider/no-inference, migration/SQLite, non-root/read-only API/worker, UI and
+owner-setup checks against disposable synthetic storage.
+
+Checksum-verified Trivy 0.76.0 passed HIGH/CRITICAL vulnerability and secret
+scanning with **zero findings**, including unfixed vulnerabilities and without
+exclusions. Generated CycloneDX 1.7 with **52 components**; SBOM SHA-256
+`58fd1aff9e42a221864bcc601b86d12efdc27239d9f331ae2cd7b1de274da07b`.
+
+**Final review and publication:** Independent diff review found no blocker.
+All direct requirements retain `>=`; workspace peer, build and supply-chain
+policies are unchanged. No application code, generated API contract, database
+schema or private configuration changed. A fresh fetch confirmed the starting
+`main` still matched `origin/main` at `1a804ad`. The installed commit-hook,
+non-force push and remote-equality outcomes are recorded in the completion
+report.
+
+**Changed files:** `.node-version`, `package.json`, `apps/web/package.json`,
+`pnpm-lock.yaml`, `pyproject.toml`, `uv.lock`, `.github/workflows/ci.yml`,
+`infra/docker/Dockerfile`, README, DEPENDENCIES, SPECIFICATION, ACCEPTANCE and
+this task record. Previously published maintainer Python upgrades are retained.
+
+No failures remain. Compatibility/release-age exceptions are recorded above;
+reassess them on the next update. Hosted CI was not observed in these local
+results. No live provider evaluations, model downloads, deployment or OS-package
+upgrade occurred. Real model, physical-device, manual-accessibility and full
+host-recovery acceptance remain open.
 
 ## T55 — Review and publish the reconciled Python lock (2026-10-19)
 
