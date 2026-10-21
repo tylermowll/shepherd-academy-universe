@@ -6,7 +6,7 @@ Newer stable Node and pnpm versions are allowed, including newer majors, but
 package peer-dependency requirements and Python compatibility restrictions still
 apply.
 
-This guide was checked against repository files on October 20, 2026. It describes
+This guide was checked against repository files on October 21, 2026. It describes
 the declared configuration, not the newest upstream releases or the packages in
 a running private installation. Dated verification results are in
 [task history](history/TASKS.md#release-publication-2026-10-11).
@@ -53,6 +53,11 @@ installs the pinned JavaScript tools on the maintainer's workstation and checks
 their subsequent Python lock refresh, including FastAPI 0.156.4 and cfn-lint
 1.58.0. This does not update the private deployment.
 
+The October 21 [T58 release](TASKS.md#t58--upgrade-and-deploy-the-private-local-application-2026-10-21)
+updates Node to 26.12.1, uv/uv_build to 0.13.4, typescript-eslint to 8.72.0
+and FastAPI to 0.159.1. Its task record owns fresh validation, publication and
+private deployment evidence.
+
 Python uses one project: the root `pyproject.toml`, `uv.lock`, `.python-version`
 and `.venv`. Run the root Make targets or `uv run --locked` from the repository
 root. Application source remains under `apps/api/src`; it does not need a second
@@ -64,9 +69,9 @@ records the consolidation.
 | Tool    | Repository pin                                 | Authority                                                                                         |
 | ------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | Python  | 3.15.0; requirement `>=3.15.0`                 | [.python-version](../.python-version), root Python manifest                                       |
-| Node.js | 26.12.0; requirement `>=26.12.0`               | [.node-version](../.node-version), root manifest                                                  |
+| Node.js | 26.12.1; requirement `>=26.12.1`               | [.node-version](../.node-version), root manifest                                                  |
 | pnpm    | 12.14.0; requirement `>=12.14.0`               | Root `packageManager` and `engines`                                                               |
-| uv      | 0.13.2 in CI/container; requirement `>=0.13.2` | Root Python manifest, [CI](../.github/workflows/ci.yml), [Dockerfile](../infra/docker/Dockerfile) |
+| uv      | 0.13.4 in CI/container; requirement `>=0.13.4` | Root Python manifest, [CI](../.github/workflows/ci.yml), [Dockerfile](../infra/docker/Dockerfile) |
 
 T56's development environment uses an nvm default of Node 26.12.0 with npm
 12.2.0 and pnpm 12.14.0 installed in its global prefix. T57's maintainer
@@ -75,6 +80,9 @@ links in the existing `~/.local/bin` PATH entry. npm is an installation tool;
 project commands use pnpm. The managed root Python environment remains 3.15.0.
 Neither installation replaces the operating system's Python or upgrades OS
 packages.
+
+T58 advances the persistent nvm default to Node 26.12.1, retaining npm 12.2.0
+and pnpm 12.14.0. Existing terminals can select it with `nvm use default`.
 
 [The toolchain checker](../scripts/check-toolchain.mjs) enforces stable
 Node/pnpm versions at or above the declared minimums.
@@ -96,6 +104,11 @@ removed.
   independent of any SQLite CLI.
   [D004](DECISIONS.md#d004--sqlite-for-the-initial-deployment-2026-09-06)
   defines the one-host, local-disk deployment boundary.
+- **Python patch availability:** Python 3.15.1 was released on October 21, but
+  uv 0.13.4 reports no managed Linux x86-64 download and the official
+  `python:3.15.1-slim-bookworm` image is not yet published. T58 retains the
+  supported packaging with Python 3.15.0, current uv and locked certifi/pip.
+  Recheck both artifacts before advancing the shared native/container runtime.
 - **CloudFormation validator:** cfn-lint 1.57.2's
   [published metadata](https://pypi.org/pypi/cfn-lint/1.57.2/json) still
   declares Python `<3.15`, although its
@@ -112,7 +125,7 @@ removed.
   claiming formal upstream 3.15 support. Recheck the metadata and CLI on
   updates. Its transitive SymPy dependency never evaluates learner text.
 - **TypeScript:** application TypeScript resolves to 6.0.3 within
-  typescript-eslint 8.71.2's recorded `>=4.8.4 <6.1.0` peer range. The OpenAPI
+  typescript-eslint 8.72.0's recorded `>=4.8.4 <6.1.0` peer range. The OpenAPI
   generator is isolated with TypeScript 5.9.3 for openapi-typescript 7.13.0's
   `^5.x` peer requirement. T56 retried TypeScript 7.0.2 and reproduced both
   strict peer conflicts; 6.0.3 and 5.9.3 remain the newest compatible versions.
@@ -123,7 +136,9 @@ removed.
 - **Release age:** typescript-eslint 8.72.0 was published on October 19 and
   required pnpm to add release-age exclusions. T56 retains eligible 8.71.2
   without those exclusions; existing workspace supply-chain policies are
-  unchanged. Reassess the newer release after it becomes eligible.
+  unchanged. T58 adopts 8.72.0 after it becomes eligible under pnpm's default
+  24-hour release-age policy. Vite 8.3.5 was published on October 21 and remains
+  too recent; retain 8.3.4 without exclusions until the new patch is eligible.
 - **HEIF:** the app requires at least pillow-heif 1.8.1 and locks that version.
   The October 11 release passed a Python 3.15 HEIF conversion and container
   smoke check. Earlier temporary 1.8.0 results remain historical evidence.

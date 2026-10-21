@@ -1,4 +1,4 @@
-FROM node:26.12.0-bookworm-slim@sha256:298992629d69bbd5b2b03ad57094d8e4fcb3a8eeb7c4e25d29de656519568913 AS web
+FROM node:26.12.1-bookworm-slim@sha256:28147155d47dc31abe0a46e0d12b59b2fb3d0a2dcc5dc65fce76a074180b16fe AS web
 WORKDIR /src
 RUN npm install --global npm@12.2.0 \
     && npm install --global pnpm@12.14.0 --allow-scripts=pnpm
@@ -14,7 +14,7 @@ RUN pnpm --filter @math-tutor/web build
 # uv supplies the standalone Python 3.15 runtime copied into the final image.
 FROM python:3.15.0-slim-bookworm@sha256:2a41267d9de9d358f77a1de356e0f16ecba8d39827855be0ce9ef4792edce402 AS api
 ENV UV_PYTHON_INSTALL_DIR=/opt/python UV_PYTHON_PREFERENCE=only-managed UV_LINK_MODE=copy
-RUN pip install --no-cache-dir uv==0.13.2
+RUN pip install --no-cache-dir uv==0.13.4
 WORKDIR /app
 COPY pyproject.toml uv.lock .python-version ./
 COPY apps/api/src apps/api/src

@@ -23,7 +23,7 @@ See [TASKS](docs/TASKS.md) for the current checkpoint and
 
 ## Start the app
 
-Use Git, GNU Make, Node **>=26.12.0**, pnpm **>=12.14.0** and uv **>=0.13.2**.
+Use Git, GNU Make, Node **>=26.12.1**, pnpm **>=12.14.0** and uv **>=0.13.4**.
 uv installs Python **3.15.0** into the root `.venv` for the app and development
 tools, including CloudFormation validation. The root `pyproject.toml` and
 `uv.lock` define all Python dependencies. Minimum requirements allow newer stable

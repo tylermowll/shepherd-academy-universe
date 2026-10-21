@@ -38,6 +38,90 @@ The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
 
+## T58 — Upgrade and deploy the private local application (2026-10-21)
+
+**Status:** Source and candidate-package validation complete; publication and
+private cutover are next. The maintainer authorized upgrading the tools and
+dependencies, pushing the reviewed result to `main`, and deploying the existing
+private local installation.
+
+**Scope and contracts:** SPECIFICATION sections 2, 6, 12–13 and 16–17;
+D001/D004/D007/D016; Node/Python/uv runtime and installer pins, exact dependency
+locks, generated API consistency, immutable container packaging and the existing
+single-host API/worker deployment. Preserve private settings, accounts, retained
+data, strict peers and compatibility requirements. No product-policy or database
+schema change is planned.
+
+**Plan:** Verify stable releases and compatible artifacts, update the persistent
+development tools and reproducible pins, refresh compatible locks, and run
+locked bootstrap plus source, integration, browser, mock, audit and package
+checks. Review and commit with normal hooks, push without force, then retain a
+rollback image, stop both writers, create an encrypted backup and verify an
+isolated restore before cutover. Verify the exact served build, worker readiness
+and anonymous authorization boundaries without calling live providers. Record
+actual outcomes and the address for opening the program below.
+
+**Resolution:** Installed checksum-verified Node 26.12.1 through the existing
+nvm and set its persistent default, retaining npm 12.2.0/pnpm 12.14.0. Current
+uv is 0.13.4; CI/container pins and the uv_build minimum now match it. The
+Node container index is pinned to its verified immutable registry digest.
+The Python lock refresh preserves all 97 package identities and updates only
+FastAPI 0.159.0 → 0.159.1. JavaScript adopts typescript-eslint 8.72.0 now that
+it satisfies the unchanged default release-age policy. TypeScript/Vitest retain
+their documented compatible versions; Vite 8.3.5 is still too recent.
+
+Python 3.15.1 was released today, but `uv python install 3.15.1` fails with
+`No download found for request: cpython-3.15.1-linux-x86_64-gnu`; the official
+`python:3.15.1-slim-bookworm` registry tag is also unavailable. Retain Python
+3.15.0 rather than change the approved shared-runtime packaging. Recheck these
+artifacts as the next bounded runtime update. No OS Python change is planned.
+
+**Source validation:** Commands use `/tmp/shepherd-t58/run` with cleared
+inherited variables, no env-file loading, empty temporary npm configuration and
+synthetic fixtures.
+
+- `make bootstrap`: passed with Node 26.12.1, pnpm 12.14.0, uv 0.13.4,
+  locked Python installation and frozen JavaScript installation.
+- `make check`: passed **329 backend unit, 11 toolchain and 214 component
+  tests**, locks, lint/format, strict types, builds, generated-contract drift,
+  credential scan and infrastructure lint. Existing build-system upper-bound
+  and JavaScript chunk-size warnings remain.
+- `make test-integration`: **378 passed in 68.79s**, including authorization,
+  ownership, provider policy, on-disk migrations, retention and recovery.
+- `make audit`: Python and pnpm report **no known vulnerabilities**.
+- `make eval-mock`: all four synthetic fixture suites passed. Generated
+  timestamp/timing report churn was excluded from the release diff.
+- `make hooks-files-check`: all applicable file hooks passed; only the duplicate
+  project gate was skipped after its separate successful run.
+- `make smoke-built`: **88 desktop/mobile browser tests passed in 14.2 minutes**.
+
+The first browser attempt could not launch the missing Playwright Chromium 1248
+executable. Installed the matching official browser with
+`pnpm exec playwright install chromium`; the unchanged suite then passed above.
+
+**Candidate package:** Built `math-practice-tutor:t58-check` from tracked public
+build inputs in an isolated context. The checked-in container smoke passed
+Python/SQLite/HEIF/cryptography, installer removal, restricted-provider rejection
+without inference, synthetic migrations, non-root/read-only API/worker/UI and
+owner-setup checks. Independently hashing the Node image's raw index confirmed
+its pinned registry digest. Checksum-verified Trivy 0.76.1 passed HIGH/CRITICAL
+vulnerability and secret scanning with zero findings, including unfixed issues
+and without exclusions. CycloneDX 1.7 contains 52 components. The final committed
+image and deployment evidence will be recorded separately.
+
+Independent source and deployment-helper reviews found no blocker. The offline
+native encrypted backup/isolated-restore helper passed a disposable synthetic
+exercise with a retained object, pending work and a deletion tombstone; original
+data remained read-only. Real deployment has not yet begun.
+
+**Changed files:** `.node-version`, `package.json`, `pnpm-lock.yaml`,
+`pyproject.toml`, `uv.lock`, `.github/workflows/ci.yml`,
+`infra/docker/Dockerfile`, README, DEPENDENCIES, SPECIFICATION and this task
+record. Application source, tests, generated API schema and database migrations
+are unchanged. No live provider evaluations, model downloads, cloud provisioning
+or OS-package upgrades are part of this release. Physical-device, teaching
+quality and full restored-host acceptance remain tracked in ACCEPTANCE.
+
 ## T57 — Restore the workstation commit toolchain (2026-10-20)
 
 **Status:** Workstation repair and local validation complete. The maintainer
