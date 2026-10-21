@@ -18,6 +18,64 @@ async function expectPageFits(page: Page) {
   ).toBe(true);
 }
 
+test("page headings keep accessible focus without a box while keyboard controls stay outlined", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const signIn = page.getByRole("button", { name: "Sign in", exact: true });
+  await expect(signIn).toBeEnabled();
+  const heading = page.getByRole("heading", { level: 1, name: "Sign in" });
+  await expect(heading).toBeFocused();
+  expect(
+    await heading.evaluate((element) => element.matches(":focus-visible")),
+  ).toBe(true);
+  await expect(heading).toHaveCSS("outline-style", "none");
+
+  for (const control of [
+    page.getByRole("textbox", { name: "Username", exact: true }),
+    page.getByLabel("Password", { exact: true }),
+    signIn,
+  ]) {
+    await page.keyboard.press("Tab");
+    await expect(control).toBeFocused();
+    await expect(control).toHaveCSS("outline-style", "solid");
+    await expect(control).toHaveCSS("outline-width", "3px");
+  }
+
+  const help = page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("link", { name: "Help", exact: true });
+  for (let step = 0; step < 3; step += 1)
+    await page.keyboard.press("Shift+Tab");
+  await expect(help).toBeFocused();
+  await expect(help).toHaveCSS("outline-style", "solid");
+  await expect(help).toHaveCSS("outline-width", "3px");
+  await page.keyboard.press("Enter");
+  const helpHeading = page.getByRole("heading", {
+    level: 2,
+    name: "Start practicing",
+    exact: true,
+  });
+  await expect(helpHeading).toBeFocused();
+  expect(
+    await helpHeading.evaluate((element) => element.matches(":focus-visible")),
+  ).toBe(true);
+  await expect(helpHeading).toHaveCSS("outline-style", "none");
+
+  const phone = page
+    .getByRole("navigation", { name: "Help topics" })
+    .getByRole("link", { name: "Phone setup", exact: true });
+  await phone.focus();
+  await page.keyboard.press("Enter");
+  const phoneHeading = page.getByRole("heading", {
+    level: 2,
+    name: "Phone setup",
+    exact: true,
+  });
+  await expect(phoneHeading).toBeFocused();
+  await expect(phoneHeading).toHaveCSS("outline-style", "none");
+});
+
 test("guests can open and reload Help without exposing account controls", async ({
   page,
 }) => {

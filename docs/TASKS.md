@@ -38,6 +38,47 @@ The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
 
+## T59 — Remove the focus box from page headings (2026-10-21)
+
+**Status:** Source validation complete; publication and deployment are next.
+The maintainer requested removing or otherwise fixing
+the oversized focus outline around the Sign in heading in the deployed app.
+
+**Scope and contracts:** SPECIFICATION section 18 accessibility requirements;
+programmatic page-heading focus, visible keyboard focus on interactive controls
+and the existing private deployment. Preserve screen-reader focus management,
+semantic headings, authentication and all API/database contracts.
+
+**Plan:** Limit the CSS correction to programmatically focusable headings. Add
+a browser regression that checks heading focus without an outline and visible
+keyboard focus on sign-in and navigation controls. Run the targeted desktop and
+mobile checks and `make check`, review the diff, publish with normal hooks and
+deploy a checked container using the existing encrypted-backup procedure.
+
+**Implementation:** `:is(h1, h2)[tabindex="-1"]:focus-visible` suppresses only
+the outline on noninteractive focus targets. Automatic focus, heading semantics,
+tab order and the shared three-pixel control outline remain unchanged.
+
+**Validation:** Commands use the cleared, no-env-file `/tmp/shepherd-t58/run`
+runner and synthetic/anonymous browser contexts. The new regression failed in
+both browser projects against the previous build with `outline-style: solid`,
+confirming it detects the reported defect. After rebuilding:
+
+- `make check`: passed **329 backend unit, 11 toolchain and 214 component
+  tests**, strict types/lint/format, locked dependencies, build, API-contract
+  consistency, credential scan and infrastructure validation. Existing build
+  upper-bound and chunk-size warnings remain.
+- `pnpm exec playwright test tests/smoke/navigation.spec.ts --grep 'page headings keep accessible focus|guests can open and reload Help'`:
+  **4 passed in 2.2 seconds** across desktop/mobile. The regression checks
+  focused, focus-visible headings without an outline, real Tab/Shift+Tab focus
+  on username/password/button/link controls with the existing outline, and
+  keyboard Help/topic navigation. Existing guest authorization checks also pass.
+
+The full integration/browser suites and live provider evaluations are not
+repeated for this CSS-only runtime correction; T58 owns the preceding full-run
+evidence. No API, database, dependency, model, provider setting or real account
+change is included.
+
 ## T58 — Upgrade and deploy the private local application (2026-10-21)
 
 **Status:** Complete, with the Python patch-artifact limitation below. Source,

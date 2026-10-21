@@ -474,6 +474,9 @@ footer {
   outline: 3px solid #b1701d;
   outline-offset: 3px;
 }
+:is(h1, h2)[tabindex="-1"]:focus-visible {
+  outline: none;
+}
 code {
   overflow-wrap: anywhere;
 }
