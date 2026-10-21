@@ -6,7 +6,7 @@ Newer stable Node and pnpm versions are allowed, including newer majors, but
 package peer-dependency requirements and Python compatibility restrictions still
 apply.
 
-This guide was checked against repository files on October 19, 2026. It describes
+This guide was checked against repository files on October 20, 2026. It describes
 the declared configuration, not the newest upstream releases or the packages in
 a running private installation. Dated verification results are in
 [task history](history/TASKS.md#release-publication-2026-10-11).
@@ -48,6 +48,11 @@ on October 19: [Node](https://nodejs.org/dist/index.json),
 [uv](https://pypi.org/project/uv/) and
 [uv_build](https://pypi.org/project/uv-build/).
 
+The October 20 [T57 workstation repair](TASKS.md#t57--restore-the-workstation-commit-toolchain-2026-10-20)
+installs the pinned JavaScript tools on the maintainer's workstation and checks
+their subsequent Python lock refresh, including FastAPI 0.156.4 and cfn-lint
+1.58.0. This does not update the private deployment.
+
 Python uses one project: the root `pyproject.toml`, `uv.lock`, `.python-version`
 and `.venv`. Run the root Make targets or `uv run --locked` from the repository
 root. Application source remains under `apps/api/src`; it does not need a second
@@ -63,10 +68,13 @@ records the consolidation.
 | pnpm    | 12.14.0; requirement `>=12.14.0`               | Root `packageManager` and `engines`                                                               |
 | uv      | 0.13.2 in CI/container; requirement `>=0.13.2` | Root Python manifest, [CI](../.github/workflows/ci.yml), [Dockerfile](../infra/docker/Dockerfile) |
 
-The local nvm default is now Node 26.12.0 with npm 12.2.0 and pnpm 12.14.0
-installed in its global prefix. npm is an installation tool; project commands
-use pnpm. The managed root Python environment remains 3.15.0. This refresh does
-not replace the operating system's Python or upgrade OS packages.
+T56's development environment uses an nvm default of Node 26.12.0 with npm
+12.2.0 and pnpm 12.14.0 installed in its global prefix. T57's maintainer
+workstation uses the same versions in `~/.local/share/shepherd-toolchain`, with
+links in the existing `~/.local/bin` PATH entry. npm is an installation tool;
+project commands use pnpm. The managed root Python environment remains 3.15.0.
+Neither installation replaces the operating system's Python or upgrades OS
+packages.
 
 [The toolchain checker](../scripts/check-toolchain.mjs) enforces stable
 Node/pnpm versions at or above the declared minimums.
@@ -97,7 +105,10 @@ removed.
   so ordinary resolution and installation work without an override or patched
   distribution. The October 17 check installed the released package on 3.15 and
   validated JSON, YAML and the household template; an invalid template failed
-  with E3030. These checks justify the current shared environment, without
+  with E3030. T57 repeats the stock CLI checks for cfn-lint 1.58.0, whose metadata
+  retains the same Python upper bound: the household template passes and an
+  unknown synthetic resource type fails with E3006. These checks justify the
+  current shared environment, without
   claiming formal upstream 3.15 support. Recheck the metadata and CLI on
   updates. Its transitive SymPy dependency never evaluates learner text.
 - **TypeScript:** application TypeScript resolves to 6.0.3 within

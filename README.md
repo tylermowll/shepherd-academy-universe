@@ -42,6 +42,12 @@ npm install --global pnpm@12.14.0 --allow-scripts=pnpm
 
 Use `nvm use default` in terminals that were already open.
 
+Python and JavaScript tools are installed separately: `uv sync` does not install
+Node or pnpm. The Git commit hook uses the terminal's `PATH`. If it reports that
+Node is missing, install the version in `.node-version` or activate your existing
+Node installation in that terminal, then run `make toolchain-check` before
+retrying the commit.
+
 ```bash
 make bootstrap
 make start

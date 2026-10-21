@@ -18,6 +18,8 @@ maintainer's subsequent lock update. T53 applies the maintainer's six-character
 account password minimum on both HTTP and HTTPS. T54 records the subsequent
 source-only dependency refresh; T55 reviews and publishes the reconciled October
 19 lock. T56 updates the persistent development tools and project dependencies.
+T57 repairs the maintainer workstation's missing JavaScript toolchain and checks
+the subsequent Python lock refresh.
 The
 schema head is `0020_request_recovery`. The latest private deployment uses
 runtime source `93f93de`, Python 3.15.0, FastAPI 0.145.0 and pillow-heif 1.8.1,
@@ -35,6 +37,78 @@ container packaging and private installation; October 11's evidence is historica
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
+
+## T57 — Restore the workstation commit toolchain (2026-10-20)
+
+**Status:** Workstation repair and local validation complete. The maintainer
+supplied the failed commit transcript; the staged `uv.lock` refresh is preserved.
+The maintainer subsequently authorized committing the reviewed changes and
+pushing to `main`.
+
+**Scope and contracts:** SPECIFICATION sections 6 and 16; repository Node/pnpm
+minimums, the normal pre-commit gate, generated API consistency and the existing
+synthetic unit/component/integration suites. No application behavior, API schema,
+database schema or private settings change is planned.
+
+**Diagnosis and repair:** `command -v node` and `command -v pnpm` found no
+executable; no installation was present in the usual nvm/fnm/mise locations.
+The failure occurs before the JavaScript version checker or Python lock checks.
+Prepared Node 26.12.0 from the official archive, verified its SHA-256 against
+the official `SHASUMS256.txt`, and installed npm 12.2.0/pnpm 12.14.0 with empty
+temporary npm configurations. Installed the complete distribution under
+`~/.local/share/shepherd-toolchain/node-v26.12.0-linux-x64`, with non-overwriting
+`node`, `npm`, `npx` and `pnpm` links in the existing `~/.local/bin` PATH entry.
+No shell startup files, system packages or persistent npm configuration changed.
+README now explains that `uv sync` does not install JavaScript tools and that
+the Git hook needs them on the invoking terminal's PATH.
+
+**Maintainer lock refresh:** All 97 package identities and Python 3.15.0 remain.
+The ten version changes are boto3/boto3-stubs/botocore/botocore-stubs
+1.43.115 → 1.43.116, certifi 2026.10.18 → 2026.10.19, cfn-lint 1.57.2 →
+1.58.0, FastAPI 0.150.0 → 0.156.4, Hypothesis 6.170.4 → 6.170.5, pip
+26.2.1 → 26.2.2 and types-s3transfer 0.19.2 → 0.19.3. The staged and working
+`uv.lock` SHA-256 is unchanged by this repair:
+`8c2404db7ba6b9fa04691b6a68ef4f561e244c465eb26e7aa4e2890ecf0bd425`.
+
+**Validation:** Source checks use `/tmp/shepherd-t57.c1VEbz/run` with cleared
+inherited variables, no env-file loading, empty temporary npm configuration and
+synthetic fixtures. Integration checks use a cleared offline environment.
+
+- A fresh clean shell resolves all four commands through `~/.local/bin` and
+  reports Node 26.12.0, npm 12.2.0 and pnpm 12.14.0; `make toolchain-check`
+  passes. uv is 0.13.4 and the project Python remains 3.15.0.
+- `make bootstrap`: passed locked Python and frozen JavaScript installation.
+- `make check`: passed **329 backend unit, 11 toolchain and 214 component
+  tests**, locks, lint/format, strict types, builds, generated-contract drift,
+  credential scan and infrastructure lint. Existing build-system upper-bound
+  and JavaScript chunk-size warnings remain.
+- `make test-integration`: **378 passed in 171.55s**, including FastAPI auth,
+  ownership, provider policy, setup, reading/tutoring, migrations and recovery.
+- `make audit`: Python and pnpm report **no known vulnerabilities**.
+- Stock cfn-lint 1.58.0 passes the household template and rejects an unknown
+  synthetic resource type with E3006/exit 2 on Python 3.15. Its published
+  metadata still declares Python `<3.15`; the existing documented compatibility
+  limitation remains, without an override or patched distribution.
+- `make hooks-files-check`: all applicable repository file hooks passed; the
+  duplicate project hook was skipped because `make check` passed separately.
+- Independent diff review found no blocker and confirmed the tool paths,
+  versions, archive checksum and preserved staged/working lock hash.
+
+Initial sandbox child-process/ASGI restrictions prevented the toolchain check
+and stalled the first integration attempt (interrupted, exit 130). The unchanged
+checks passed outside the sandbox with the same private-data boundaries.
+No check failures remain.
+
+**Changed files:** README, DEPENDENCIES and this task record. The maintainer's
+pre-existing staged `uv.lock` is unchanged by the repair. Browser/container
+suites and live provider evaluations were not run for this workstation repair.
+No model downloads or deployment performed.
+
+**Publication:** A fresh fetch confirmed the starting `main` and `origin/main`
+both equal `cc07db3`. Independent publication review found only the audited
+`uv.lock` refresh and the three documentation files above, with no blocker.
+The installed commit-hook, non-force push and remote-equality outcomes are
+recorded in the completion report.
 
 ## T56 — Update development tools and dependencies (2026-10-19)
 
