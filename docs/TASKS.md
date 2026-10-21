@@ -19,11 +19,11 @@ account password minimum on both HTTP and HTTPS. T54 records the subsequent
 source-only dependency refresh; T55 reviews and publishes the reconciled October
 19 lock. T56 updates the persistent development tools and project dependencies.
 T57 repairs the maintainer workstation's missing JavaScript toolchain and checks
-the subsequent Python lock refresh.
-The
-schema head is `0020_request_recovery`. The latest private deployment uses
-runtime source `93f93de`, Python 3.15.0, FastAPI 0.145.0 and pillow-heif 1.8.1,
-verified on **October 18, 2026**. T53 below records the image, encrypted backup/isolated
+the subsequent Python lock refresh. T58 upgrades the available development tools
+and compatible dependencies, publishes them and updates the private local app.
+The schema head is `0020_request_recovery`. The latest private deployment uses
+runtime source `25b79eb`, Python 3.15.0, FastAPI 0.159.1 and pillow-heif 1.8.1,
+verified on **October 21, 2026**. T58 below records the image, encrypted backup/isolated
 restore, HTTPS, served-asset and authorization checks. The earlier installation
 is preserved in the [October 11 release record](history/TASKS.md#release-publication-2026-10-11).
 This is dated evidence; current provider selections and live teaching quality
@@ -31,7 +31,7 @@ have not been verified.
 
 The maintainer refreshed the former `apps/api/uv.lock` before T46 publication.
 T47 preserves those versions and artifacts in the root `uv.lock`, adding the
-CloudFormation validator. T51–T53 verify the consolidated project's current
+CloudFormation validator. T51–T53 and T58 verify the consolidated project's current
 container packaging and private installation; October 11's evidence is historical.
 
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
@@ -40,8 +40,8 @@ and publication checks. Browser-model research and AWS hosting remain optional.
 
 ## T58 — Upgrade and deploy the private local application (2026-10-21)
 
-**Status:** Source and candidate-package validation complete; publication and
-private cutover are next. The maintainer authorized upgrading the tools and
+**Status:** Complete, with the Python patch-artifact limitation below. Source,
+browser, image and private deployment checks passed. The maintainer authorized upgrading the tools and
 dependencies, pushing the reviewed result to `main`, and deploying the existing
 private local installation.
 
@@ -90,7 +90,7 @@ synthetic fixtures.
   ownership, provider policy, on-disk migrations, retention and recovery.
 - `make audit`: Python and pnpm report **no known vulnerabilities**.
 - `make eval-mock`: all four synthetic fixture suites passed. Generated
-  timestamp/timing report churn was excluded from the release diff.
+  fixture-report churn was excluded from the release diff.
 - `make hooks-files-check`: all applicable file hooks passed; only the duplicate
   project gate was skipped after its separate successful run.
 - `make smoke-built`: **88 desktop/mobile browser tests passed in 14.2 minutes**.
@@ -106,13 +106,61 @@ without inference, synthetic migrations, non-root/read-only API/worker/UI and
 owner-setup checks. Independently hashing the Node image's raw index confirmed
 its pinned registry digest. Checksum-verified Trivy 0.76.1 passed HIGH/CRITICAL
 vulnerability and secret scanning with zero findings, including unfixed issues
-and without exclusions. CycloneDX 1.7 contains 52 components. The final committed
-image and deployment evidence will be recorded separately.
+and without exclusions. CycloneDX 1.7 contains 52 components.
 
 Independent source and deployment-helper reviews found no blocker. The offline
 native encrypted backup/isolated-restore helper passed a disposable synthetic
 exercise with a retained object, pending work and a deletion tombstone; original
-data remained read-only. Real deployment has not yet begun.
+data remained read-only. The ownership recovery flag was set before ownership
+changes so partial failures also receive cleanup.
+
+**Publication and final image:** Normal installed commit hooks passed, including
+their complete project gate. The non-force push advanced `main` from `958f80d`
+to `25b79eb41b8bcf39ebdefef65ac60dc1110d0e3e`; remote equality and a clean tree
+were verified. Built `math-practice-tutor:release-20261021-25b79eb` from that
+commit's clean Git archive, labeled with its full OCI source revision. Exact image:
+`sha256:2719582393e9e3ff827271e711446a23454222a8ec01cae57d70d7491842b84f`.
+The final image repeated the checked-in container smoke and Trivy 0.76.1 scan:
+all commands exited 0, with zero HIGH/CRITICAL vulnerabilities or secrets,
+including unfixed issues and without exclusions. Its CycloneDX 1.7 SBOM contains
+52 components; SHA-256:
+`81865e6a61b4cdb13dae5c229c6d9d17cfa8f7e44d993a30ff57b619c1d8323d`.
+
+The hosted [package job](https://github.com/tylermowll/shepherd-academy-universe/actions/runs/39678143425)
+also passed. The hosted source job was still running when observed; the complete
+local source/integration/browser/mock/audit results above are the release evidence.
+
+**Private cutover:** The reviewed `/tmp/shepherd-t58-deploy/cutover.py` preflight
+passed before `--execute`. It retained the previous image as
+`math-practice-tutor:rollback-20261021-93f93de`, stopped both writers, then used
+the old image in a network-disabled container with the original data mounted
+read-only. Native encrypted backup and isolated restore passed schema, SQLite
+integrity/foreign keys, retained-object checksums, deletion preservation and
+restored-session/job cleanup checks. No live data was restored or replaced.
+Backup `backups/deploy-20261021-25b79eb/snapshot.enc` has SHA-256:
+`e7fae3d94a723d8a28ea8588999158c76b8ff4f9c664e811f4d928cc1ff73ea3`.
+Directories/files are mode 700/600; its generated passphrase is stored separately
+under `~/.local/share/shepherd-academy-universe/backup-keys/deploy-20261021-25b79eb/`,
+never displayed or passed in arguments/environment variables.
+Public helper code and final scan/SBOM metadata are retained beside the ignored
+encrypted backup for a future operator review.
+
+Compose's controlled `alembic -c alembic.ini upgrade head` and
+`up -d --no-build --pull never --no-deps api worker` passed. Schema remains
+`0020_request_recovery`. Both services use the exact tested image above and the
+unchanged local data mount/private settings. Verification passed private HTTPS
+readiness, a heartbeat newer than the replacement worker's start, all six public
+asset hashes, HTML/service-worker cache headers and scope, three anonymous
+protected-route rejections without reading their bodies and three disabled API
+documentation routes. No live provider test request was made.
+
+**Open the program:** The app is already running locally. Open the configured
+private HTTPS origin, reported in the completion message, from a device on the
+same Tailscale network and sign in with an existing account. Keep the host awake and
+reachable. Docker runs the API/worker and SQLite stays on this computer;
+Tailscale supplies private HTTPS access. Model inference can still use a cloud
+provider if the administrator configured one. The evidence-only follow-up
+changes this task record; the deployed runtime source stays `25b79eb`.
 
 **Changed files:** `.node-version`, `package.json`, `pnpm-lock.yaml`,
 `pyproject.toml`, `uv.lock`, `.github/workflows/ci.yml`,
