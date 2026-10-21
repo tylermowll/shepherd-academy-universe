@@ -21,9 +21,11 @@ source-only dependency refresh; T55 reviews and publishes the reconciled October
 T57 repairs the maintainer workstation's missing JavaScript toolchain and checks
 the subsequent Python lock refresh. T58 upgrades the available development tools
 and compatible dependencies, publishes them and updates the private local app.
+T59 removes the oversized page-heading focus box while preserving accessible
+focus management and visible keyboard focus on controls, and deploys the fix.
 The schema head is `0020_request_recovery`. The latest private deployment uses
-runtime source `25b79eb`, Python 3.15.0, FastAPI 0.159.1 and pillow-heif 1.8.1,
-verified on **October 21, 2026**. T58 below records the image, encrypted backup/isolated
+runtime source `4be4888`, Python 3.15.0, FastAPI 0.159.1 and pillow-heif 1.8.1,
+verified on **October 21, 2026**. T59 below records the image, encrypted backup/isolated
 restore, HTTPS, served-asset and authorization checks. The earlier installation
 is preserved in the [October 11 release record](history/TASKS.md#release-publication-2026-10-11).
 This is dated evidence; current provider selections and live teaching quality
@@ -40,7 +42,8 @@ and publication checks. Browser-model research and AWS hosting remain optional.
 
 ## T59 — Remove the focus box from page headings (2026-10-21)
 
-**Status:** Source validation complete; publication and deployment are next.
+**Status:** Complete; source, targeted browser, container and private deployment
+checks passed.
 The maintainer requested removing or otherwise fixing
 the oversized focus outline around the Sign in heading in the deployed app.
 
@@ -78,6 +81,49 @@ The full integration/browser suites and live provider evaluations are not
 repeated for this CSS-only runtime correction; T58 owns the preceding full-run
 evidence. No API, database, dependency, model, provider setting or real account
 change is included.
+
+**Publication and image:** Independent review found no blocker. Normal commit
+hooks passed; non-force push published
+`4be488851e2dc7585f0f821cb7218f254f2257c9`, with remote equality and a clean tree
+verified before building. Built `math-practice-tutor:release-20261021-4be4888`
+from that commit's clean Git archive with the full OCI revision label. Exact
+image is `sha256:af1f037e8536d967daccb6edc08903165a2cb0e386c19183d2286b50b8f48059`.
+The checked-in container smoke and Trivy 0.76.1 HIGH/CRITICAL vulnerability/secret
+scan passed, including unfixed issues and without exclusions. Zero findings;
+CycloneDX 1.7 has 52 components. SBOM SHA-256:
+`16a8195d49418f9285d74bbd65fa9987d520f1d7704b49bc9c85a67efc62e83e`.
+
+**Private deployment:** Reused the independently reviewed T58 cutover helpers.
+Preflight passed; retained the previous image as
+`math-practice-tutor:rollback-20261021-25b79eb`, stopped both writers and verified
+an encrypted native backup plus isolated restore with the original data mounted
+read-only. No live data was restored or replaced. Backup
+`backups/deploy-20261021-4be4888/snapshot.enc` has SHA-256
+`822bd28a2e0214045910db124071ab902e0bbe59c6b8e303fe1a3c05145471b5`.
+Directories/files are mode 700/600; the generated passphrase is kept separately
+under `~/.local/share/shepherd-academy-universe/backup-keys/deploy-20261021-4be4888/`,
+without exposing its value or passing it through arguments/environment variables.
+
+The controlled no-op migration and Compose restart passed. API and worker use
+the exact tested image, preserve the original data mount/private settings and
+retain schema `0020_request_recovery`. Private HTTPS readiness, a fresh replacement
+worker heartbeat, all six public asset hashes, cache/scope headers, three
+anonymous protected-route rejections without reading their bodies and three
+disabled API documentation routes passed.
+
+`node /tmp/shepherd-t59/deployed-focus.cjs <private-origin>` additionally passed
+against the live HTTPS app in two fresh anonymous desktop/mobile browser
+contexts: Sign in retains heading focus with no outline; Tab focuses username,
+password and the submit button with their existing three-pixel outlines. No
+real account, authenticated request or live model call was used. Final image,
+backup and browser verification metadata are retained beside the ignored
+encrypted backup. Hosted CI was not awaited; the local results above are the
+observed validation evidence.
+
+**Changed files:** `apps/web/src/styles.css`, `tests/smoke/navigation.spec.ts`
+and this task record. The final evidence-only follow-up does not change the
+deployed runtime. Refresh the app, or choose **Refresh when ready** when its
+update notice appears, to load the new assets.
 
 ## T58 — Upgrade and deploy the private local application (2026-10-21)
 
