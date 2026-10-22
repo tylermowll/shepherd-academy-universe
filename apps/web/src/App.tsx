@@ -76,6 +76,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
   const [signingIn, setSigningIn] = useState(false);
   const [accountVersion, setAccountVersion] = useState(0);
   const accountGeneration = useRef(0);
+  const actionsInFlight = useRef(0);
   const leavingAccount = useRef(false);
   const [location, setLocation] = useState(readLocation);
   const [learners, setLearners] = useState<Schema<"LearnerPublic">[]>([]);
@@ -230,7 +231,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
     );
   }, []);
   useEffect(() => {
-    if (!tutorBusy && !tutorDraft) return;
+    if (!busy && !tutorBusy && !tutorDraft) return;
     const protectWork = (event: BeforeUnloadEvent) => {
       if (leavingAccount.current) return;
       event.preventDefault();
@@ -238,7 +239,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
     };
     window.addEventListener("beforeunload", protectWork);
     return () => window.removeEventListener("beforeunload", protectWork);
-  }, [tutorBusy, tutorDraft]);
+  }, [busy, tutorBusy, tutorDraft]);
   const chooseLearner = (id: string) => setLearner(id);
   const refresh = useCallback(async () => {
     const session = await api<Schema<"SessionStatus">>("/auth/session");
@@ -281,6 +282,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
     () =>
       onAuthenticationLost(() => {
         accountGeneration.current += 1;
+        actionsInFlight.current = 0;
         setAccountVersion((current) => current + 1);
         clearSetupToken();
         setSession(null);
@@ -304,6 +306,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
   );
   const act = useCallback(async (action: () => Promise<void>) => {
     const generation = accountGeneration.current;
+    actionsInFlight.current += 1;
     setBusy(true);
     setError("");
     try {
@@ -316,7 +319,10 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
             : "Connection lost. Reconnect to recover your saved work.",
         );
     } finally {
-      if (generation === accountGeneration.current) setBusy(false);
+      if (generation === accountGeneration.current) {
+        actionsInFlight.current -= 1;
+        setBusy(actionsInFlight.current > 0);
+      }
     }
   }, []);
   useEffect(() => {
@@ -499,13 +505,14 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
           setupRequired ||
           checkingSetup ||
           !!setupToken ||
+          busy ||
           tutorBusy ||
           tutorDraft
         }
         deferMessage={
           setupRequired || checkingSetup || !!setupToken
             ? undefined
-            : tutorBusy
+            : busy || tutorBusy
               ? "An update is ready. Finish or recover your pending request before refreshing."
               : "An update is ready. Send or clear your draft before refreshing."
         }
@@ -604,6 +611,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                           } satisfies Schema<"LoginRequest">,
                         );
                         accountGeneration.current += 1;
+                        actionsInFlight.current = 0;
                         setAccountVersion((current) => current + 1);
                         learnerSequence.current += 1;
                         clearSetupToken();
@@ -742,14 +750,15 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                 </div>
               </div>
             )}
-            {isAdult && (page === "learners" || page === "settings") && (
+            {isAdult && (
               <AdultPanel
-                key={page}
                 learner={learner}
                 onLearner={chooseLearner}
                 learners={learners}
                 onRefresh={refreshLearners}
-                page={page}
+                page={
+                  page === "learners" || page === "settings" ? page : "help"
+                }
                 onNavigate={navigate}
                 act={act}
                 administrator={identity.login_name ?? "Administrator"}

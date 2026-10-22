@@ -34,8 +34,9 @@ export async function login(
       .isVisible())
   )
     await page.getByRole("link", { name: title, exact: true }).click();
-  await page.getByLabel("Username", { exact: true }).fill(username);
-  await page.getByLabel("Password", { exact: true }).fill(password);
+  const signInForm = page.locator("form").filter({ has: signInButton });
+  await signInForm.getByLabel("Username", { exact: true }).fill(username);
+  await signInForm.getByLabel("Password", { exact: true }).fill(password);
   const signIn = async () => {
     const response = page.waitForResponse(
       (result) =>

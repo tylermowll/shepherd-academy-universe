@@ -48,7 +48,7 @@ export function UpdateNotice({
         onClick={() => {
           if (
             window.confirm(
-              "Refresh now? Saved work will remain; unsent text and photographs will be lost.",
+              "Refresh now? Saved work will remain; unsaved forms, unsent text and photographs will be lost.",
             )
           ) {
             navigator.serviceWorker.addEventListener(

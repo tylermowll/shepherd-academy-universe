@@ -497,8 +497,10 @@ export function ProviderConnections({
               </h3>
               <p className="fine">
                 Saving stores the connection on your server. It does not call
-                the model or change the active models used for practice. Leaving
-                Settings discards unsaved entries, including the API key.
+                the model or change the active models used for practice. Unsaved
+                entries, including the API key, stay in memory while you
+                navigate. Canceling, reloading, closing the app or changing
+                accounts clears them.
               </p>
               <fieldset disabled={busy}>
                 <legend>Model and server</legend>
@@ -1360,33 +1362,34 @@ export function ProviderConnections({
           </div>
         </section>
       )}
-      {section === "policy" && (
-        <section aria-labelledby="settings-policy-heading">
-          <div className="section-heading">
-            <div>
-              <h2 id="settings-policy-heading" tabIndex={-1}>
-                Data & privacy
-              </h2>
-              <p>
-                Choose whether learner work may go to cloud AI, and which age
-                groups use this app. These settings apply to every connection.
-              </p>
-            </div>
+      <section
+        hidden={section !== "policy"}
+        aria-labelledby="settings-policy-heading"
+      >
+        <div className="section-heading">
+          <div>
+            <h2 id="settings-policy-heading" tabIndex={-1}>
+              Data & privacy
+            </h2>
+            <p>
+              Choose whether learner work may go to cloud AI, and which age
+              groups use this app. These settings apply to every connection.
+            </p>
           </div>
-          <ProviderPolicy
-            key={JSON.stringify(policy)}
-            policy={policy}
-            act={act}
-            onChanged={async () => {
-              await onChanged();
-              setMessage(
-                "Data & privacy saved. Test the permitted connections next.",
-              );
-              openSection("tests");
-            }}
-          />
-        </section>
-      )}
+        </div>
+        <ProviderPolicy
+          key={JSON.stringify(policy)}
+          policy={policy}
+          act={act}
+          onChanged={async () => {
+            await onChanged();
+            setMessage(
+              "Data & privacy saved. Test the permitted connections next.",
+            );
+            openSection("tests");
+          }}
+        />
+      </section>
     </section>
   );
 }

@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api, ApiError, newKey, type Schema } from "./client";
 import { AdministratorAccount } from "./AdministratorAccount";
 
 type Props = {
+  active?: boolean;
   learner: string;
   learners: Schema<"LearnerPublic">[];
   onLearner: (id: string) => void;
@@ -18,6 +19,7 @@ function field(data: FormData, name: string): string {
 }
 
 export function LearnerAccounts({
+  active = true,
   learner,
   learners,
   onLearner,
@@ -37,6 +39,10 @@ export function LearnerAccounts({
   const [deviceError, setDeviceError] = useState("");
   const [deviceRefresh, setDeviceRefresh] = useState(0);
   const version = useRef(0);
+  const visible = useRef(active);
+  useLayoutEffect(() => {
+    visible.current = active;
+  }, [active]);
   const chosen = learners.find((item) => item.id === learner);
   const creating = !managingAdministrator && (adding || learners.length === 0);
   const chosenId = chosen?.id;
@@ -102,7 +108,13 @@ export function LearnerAccounts({
               <button
                 disabled={busy}
                 aria-pressed={managingAdministrator}
-                onClick={() => setManagingAdministrator(true)}
+                onClick={() => {
+                  if (!managingAdministrator) {
+                    setError("");
+                    setMessage("");
+                  }
+                  setManagingAdministrator(true);
+                }}
               >
                 {administrator} <small>Manage administrator</small>
               </button>
@@ -118,6 +130,14 @@ export function LearnerAccounts({
                     !managingAdministrator && !creating && learner === item.id
                   }
                   onClick={() => {
+                    if (
+                      managingAdministrator ||
+                      creating ||
+                      learner !== item.id
+                    ) {
+                      setError("");
+                      setMessage("");
+                    }
                     setManagingAdministrator(false);
                     setAdding(false);
                     onLearner(item.id);
@@ -184,7 +204,8 @@ export function LearnerAccounts({
                   if (!current()) return;
                   setAdding(false);
                   setBusy(false);
-                  onLearner(row.id);
+                  setMessage("Learner account created.");
+                  if (visible.current) onLearner(row.id);
                 });
               }}
             >
@@ -474,7 +495,7 @@ export function LearnerAccounts({
                         await onRefresh();
                         if (current()) {
                           setBusy(false);
-                          onLearner("");
+                          if (visible.current) onLearner("");
                           setMessage("Learner account deleted.");
                         }
                       });

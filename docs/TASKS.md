@@ -53,6 +53,72 @@ The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
 
+## T65 — Review and preserve administrator work across navigation (2026-10-22)
+
+**Status:** In progress; the maintainer authorized running `ui-ux-review`, fixing
+the previously identified administrator draft-loss issue, pushing the result to
+`main`, then deploying the existing private installation.
+
+**Scope and contracts:** SPECIFICATION sections 3, 8, 10, 12 and 18; in-memory
+drafts and pending/completed operation context across page changes; role/account
+isolation; honest copy, focus and update behavior. Run the whole-app review with
+explicit coverage limits and confirm the administrator finding using disposable
+synthetic browser fixtures. Keep the correction bounded to administrator panel
+lifetime, Settings drafts and related notice/recovery behavior. Preserve the
+maintainer's exact T64 lockfile; no new dependencies, migration, live-provider
+inference or learner-data inspection is needed.
+
+**Requirement conflict:** README/SPECIFICATION/Help promise that page changes
+preserve in-memory drafts, while the connection editor currently says leaving
+Settings discards entries and its API key. Resolve this by preserving drafts in
+account-scoped memory across ordinary navigation and correcting the editor copy.
+Successful save, explicit cancel/reset, account changes, authentication loss and
+reload remain deliberate clearing boundaries. Never persist keys/passwords in
+browser storage.
+
+**Implementation and validation plan:** Reproduce the issue before changing
+production code. Keep administrator panels mounted but hidden outside their page;
+preserve identity/learner reset boundaries and privacy-tab state. Add meaningful
+component and desktop/mobile browser regressions for drafts, delayed completion,
+hidden controls, navigation focus and clearing after account changes. Check
+existing App/account/settings flows and run the required project/integration and
+focused browser gates sequentially with builds. Record source-only concerns
+separately from exercised behavior and manual-accessibility/device gaps.
+
+**Publication/deployment plan:** Independently review the diff, commit with normal
+hooks and push without force. Build the exact pushed revision from a clean source
+archive; run disposable container smoke/security checks. Reuse the established
+private cutover with retained rollback image, stopped API/worker writers,
+encrypted backup and isolated restore before restart. Preserve existing settings
+without opening or printing them, and verify schema, fresh worker heartbeat,
+public served assets, anonymous boundaries and replacement-container health.
+Do not rerun the T62 administrator reset; it is not requested by this deployment.
+
+**Implemented:** `App.tsx` and `AdultPanel.tsx` retain visited administrator pages
+in account-scoped memory with inactive controls hidden. `ProviderConnections.tsx`
+retains privacy-tab drafts and explains credential lifetime. `LearnerAccounts.tsx`
+clears notices on explicit management selection and preserves delayed add/delete
+selection behavior. Pending actions are counted across overlapping requests and
+included in browser-unload/PWA-update protection; `UpdateNotice.tsx` warns about
+unsaved forms. Account replacement/authentication loss still clears hidden state;
+no browser credential storage, API contract or schema change was introduced.
+
+**Review and checks so far:** [The review report](UI_UX_REVIEW.md) records all 23
+workflow groups with baseline source-only coverage, the synthetic browser failure
+before the fix, corrections, independent review and manual/device limits.
+`make check` passed: 329 backend unit, 11 toolchain and 252 frontend tests, lint,
+format, types, build, generated-contract drift, credential scan and infrastructure
+lint. `make test-integration` passed 403 tests in 71.56 seconds. The six new App
+regressions include delayed password completion, overlapping requests, retained
+drafts, cleared account state and scoped notices. Initial verification exposed
+React lifecycle lint errors and a test waiting for an account list too early;
+both were corrected. The focused desktop/mobile browser gate remains in progress.
+The privacy-draft browser case overrides only the synthetic provider GET response
+to expose editable controls; server locks remain enforced and no policy save is
+performed. Existing build warnings about the uv_build upper bound and JavaScript
+chunk size remain. The exact T64 `uv.lock` SHA-256 remains
+`95bbc12a27fa194c35aecc20d9d8e5d41c244c942b43841d6319d95fad121cdb`.
+
 ## T64 — Publish pending account, review-skill and lock updates (2026-10-22)
 
 **Status:** Complete; the validated source was committed and pushed to `main`,
@@ -1075,22 +1141,22 @@ registry sources and Python constraints remain unchanged. Fourteen packages
 advance relative to `a46a42f`; only versions and distribution artifacts change.
 No downgrade or actionable lock inconsistency was found.
 
-| Package          | Before    | After     |
-| ---------------- | --------- | --------- |
-| boto3            | 1.43.114  | 1.43.115  |
-| boto3-stubs      | 1.43.114  | 1.43.115  |
-| botocore         | 1.43.114  | 1.43.115  |
-| botocore-stubs   | 1.43.114  | 1.43.115  |
-| FastAPI          | 0.146.0   | 0.150.0   |
-| filelock         | 4.2.2     | 4.2.4     |
-| httpcore2        | 2.14.0    | 2.15.1    |
-| httpx2           | 2.14.0    | 2.15.1    |
-| hypothesis       | 6.170.1   | 6.170.3   |
-| jsonpatch        | 1.35      | 1.36      |
-| jsonpointer      | 3.3       | 3.4       |
-| platformdirs     | 4.13.4    | 4.13.5    |
-| python-discovery | 1.6.3     | 1.6.4     |
-| s3transfer       | 0.19.2    | 0.19.3    |
+| Package          | Before   | After    |
+| ---------------- | -------- | -------- |
+| boto3            | 1.43.114 | 1.43.115 |
+| boto3-stubs      | 1.43.114 | 1.43.115 |
+| botocore         | 1.43.114 | 1.43.115 |
+| botocore-stubs   | 1.43.114 | 1.43.115 |
+| FastAPI          | 0.146.0  | 0.150.0  |
+| filelock         | 4.2.2    | 4.2.4    |
+| httpcore2        | 2.14.0   | 2.15.1   |
+| httpx2           | 2.14.0   | 2.15.1   |
+| hypothesis       | 6.170.1  | 6.170.3  |
+| jsonpatch        | 1.35     | 1.36     |
+| jsonpointer      | 3.3      | 3.4      |
+| platformdirs     | 4.13.4   | 4.13.5   |
+| python-discovery | 1.6.3    | 1.6.4    |
+| s3transfer       | 0.19.2   | 0.19.3   |
 
 **Validation:** `uv lock --offline`, `uv lock --check --offline` and
 `git diff --check` passed. Initial checks lacked pnpm and an offline artifact;
