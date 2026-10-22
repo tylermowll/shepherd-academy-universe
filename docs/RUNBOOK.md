@@ -127,15 +127,18 @@ administrator exists, the command returns the sign-in address. Explicit
 `make dev`, `make serve` and
 alternate `ENV_FILE` values select native startup.
 
-For a container upgrade, stop both services and complete the
+Build and validate the candidate image from clean committed source in isolation,
+without private settings or data mounts, before scheduling the upgrade. Before
+changing the running installation, stop both services and complete the
 [encrypted backup procedure](#encrypted-backup-and-restore-rehearsal) against the
-host-mounted data before building or migrating:
+host-mounted data before migrating or replacing either service:
 
 ```bash
 docker compose -f infra/docker/compose.yaml stop
 ```
 
-After the backup succeeds:
+After the backup succeeds, select the tested candidate image, migrate and start
+both services. For a direct Compose build, use:
 
 ```bash
 docker compose -f infra/docker/compose.yaml build

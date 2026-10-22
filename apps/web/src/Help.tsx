@@ -25,6 +25,7 @@ export function ContextHelp({
 
 const topics = [
   ["practice", "Start practicing"],
+  ["signin", "Sign-in & passwords"],
   ["accounts", "Accounts & learners"],
   ["phone", "Phone setup"],
   ["setup", "Set up the app"],
@@ -37,12 +38,15 @@ export function HelpPage({
   topic,
   onNavigate,
   entryRole,
+  accountRole,
 }: {
   topic?: string;
   onNavigate: Navigate;
   entryRole?: SignInRole | undefined;
+  accountRole?: SignInRole | undefined;
 }) {
   const selected = topics.find(([id]) => id === topic) ?? topics[0];
+  const recoveryRole = accountRole ?? entryRole ?? "learner";
   const link = (page: Page, label: string, help?: string) => (
     <a
       href={pageUrl(
@@ -138,6 +142,82 @@ export function HelpPage({
                   the selected model in {link("settings", "Settings")}.
                 </p>
               </ContextHelp>
+            </>
+          )}
+          {selected[0] === "signin" && (
+            <>
+              {recoveryRole === "adult" ? (
+                <>
+                  <h3>Recover an existing administrator account</h3>
+                  <p>
+                    Contact the person running this app if you need help with
+                    your administrator username or password. Administrator
+                    password recovery happens on the computer running the app,
+                    using the existing username.
+                  </p>
+                  <h3>Native installation</h3>
+                  <p>
+                    In the repository root on that computer, the operator runs{" "}
+                    <code>make admin</code> and enters the existing username to
+                    reset the administrator password.
+                  </p>
+                  <h3>Docker installation</h3>
+                  <p>
+                    The operator stops both the API and worker, then runs this
+                    command from the repository root with the existing username:
+                  </p>
+                  <pre>
+                    <code>
+                      {
+                        "docker compose -f infra/docker/compose.yaml run --rm api python -m math_tutor.cli admin"
+                      }
+                    </code>
+                  </pre>
+                  <p>
+                    Start the services again after the reset. The reset signs
+                    out administrator browsers and preserves learner accounts
+                    and saved work. Recovery does not require deleting the
+                    database or changing the session secret.
+                  </p>
+                  <h3>First-time setup</h3>
+                  <p>
+                    The private setup link creates the first administrator
+                    account; it cannot reset an existing account. If you are
+                    starting a new installation, follow{" "}
+                    {link("help", "First-time setup", "setup")}.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3>Learner sign-in and passwords</h3>
+                  <p>
+                    Contact your administrator or the person who gave you your
+                    account for your username or a password reset. Keep using
+                    your existing learner account so your saved work stays with
+                    you.
+                  </p>
+                  <p>Your administrator can reset your password:</p>
+                  <ol className="steps">
+                    <li>
+                      Open <strong>Learners</strong> and choose{" "}
+                      <strong>Manage account</strong> beside your account.
+                    </li>
+                    <li>
+                      Under <strong>Sign-in details</strong>, enter a{" "}
+                      <strong>New password</strong>.
+                    </li>
+                    <li>
+                      Choose <strong>Save sign-in details</strong> and give you
+                      the new password privately.
+                    </li>
+                  </ol>
+                  <p>
+                    A password reset signs out that learner&apos;s browsers.
+                    Your learner account and saved work stay the same; sign in
+                    again with your existing username and the new password.
+                  </p>
+                </>
+              )}
             </>
           )}
           {selected[0] === "accounts" && (
@@ -520,12 +600,14 @@ export function HelpPage({
               </ContextHelp>
               <ContextHelp topic="I forgot the administrator password">
                 <p>
-                  The person running the app can run <code>make admin</code> in
-                  the terminal and enter the existing login name to reset its
-                  password. Saved settings load automatically. This signs that
-                  administrator out on other browsers without deleting learners
-                  or work. This recovery step is separate from first-time
-                  browser setup.
+                  Contact the person running the app. For a native installation,
+                  the operator runs <code>make admin</code> from the repository
+                  root with the existing username. For Docker, stop the API and
+                  worker, run the administrator reset in a temporary API
+                  container, then start both services again. The reset signs out
+                  administrator browsers and preserves learner accounts and
+                  saved work. The first-time setup link cannot reset an existing
+                  account.
                 </p>
               </ContextHelp>
               <ContextHelp topic="Does my password work on my phone?">

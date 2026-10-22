@@ -428,17 +428,20 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
               {signInTitle}
             </a>
           )}
-          <a
-            href={signInUrl(otherRole)}
-            aria-disabled={signingIn || undefined}
-            onClick={(event) =>
-              followPage(event, () => openArea(otherRole), "practice")
-            }
-          >
-            {otherRole === "adult"
-              ? "Administrator sign-in"
-              : "Learner sign-in"}
-          </a>
+          <div className="sign-in-switch">
+            <span>Switch to</span>
+            <a
+              href={signInUrl(otherRole)}
+              aria-disabled={signingIn || undefined}
+              onClick={(event) =>
+                followPage(event, () => openArea(otherRole), "practice")
+              }
+            >
+              {otherRole === "adult"
+                ? "Administrator sign-in"
+                : "Learner sign-in"}
+            </a>
+          </div>
           <a
             href={pageUrl("help", undefined, signInRole)}
             aria-current={showHelp ? "page" : undefined}
@@ -526,6 +529,9 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
             topic={location.help}
             onNavigate={navigate}
             entryRole={entryVisible ? signInRole : undefined}
+            accountRole={
+              entryVisible ? signInRole : (identity?.role ?? "learner")
+            }
           />
         )}
         {(!authenticated || switchingAccount) && (
@@ -576,7 +582,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                 )}
                 <div className="grid">
                   <form
-                    className="card"
+                    className={`card sign-in-card sign-in-card-${signInRole}`}
                     onSubmit={(event) => {
                       event.preventDefault();
                       if (signingIn) return;
@@ -627,6 +633,11 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                       }).finally(() => setSigningIn(false));
                     }}
                   >
+                    <p className="sign-in-role">
+                      {signInRole === "adult"
+                        ? "Administrator account"
+                        : "Learner account"}
+                    </p>
                     <h2>Account sign-in</h2>
                     <p>
                       {signInRole === "adult"
@@ -664,21 +675,49 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                         : "Use the learner account your administrator created for you."}
                     </p>
 
-                    <ContextHelp topic="Need an account or a password reset?">
-                      <p>
-                        Ask your administrator to reset a learner password in
-                        Learners. The administrator account is created with the
-                        private setup link printed by <code>make start</code>.
-                        If an account already exists, only the person running
-                        the app can reset its password with{" "}
-                        <code>make admin</code> on that computer.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => navigate("help", "setup")}
+                    <p>
+                      <a
+                        href={pageUrl("help", "signin", signInRole)}
+                        onClick={(event) =>
+                          followPage(event, navigate, "help", "signin")
+                        }
+                        aria-disabled={signingIn || undefined}
                       >
-                        Setup instructions
-                      </button>
+                        Forgot password?
+                      </a>
+                    </p>
+                    <ContextHelp
+                      topic={
+                        signInRole === "adult"
+                          ? "Setting up for the first time?"
+                          : "Need a learner account?"
+                      }
+                    >
+                      {signInRole === "adult" ? (
+                        <>
+                          <p>
+                            The person running the app creates the first
+                            administrator account using a private setup link.
+                            For an existing account, choose Forgot password?
+                          </p>
+                          <a
+                            href={pageUrl("help", "setup", signInRole)}
+                            onClick={(event) =>
+                              followPage(event, navigate, "help", "setup")
+                            }
+                            aria-disabled={signingIn || undefined}
+                          >
+                            Setup instructions
+                          </a>
+                        </>
+                      ) : (
+                        <p>
+                          Ask the person who gave you the app address to create
+                          your learner account and give you your username and
+                          password. If you already have an account, choose
+                          Forgot password?
+                        </p>
+                      )}
                     </ContextHelp>
                   </form>
                 </div>

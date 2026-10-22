@@ -79,6 +79,153 @@ test("page headings keep accessible focus without a box while keyboard controls 
   await expect(phoneHeading).toHaveCSS("outline-style", "none");
 });
 
+for (const role of ["learner", "adult"] as const) {
+  test(`${role} sign-in distinguishes the selected account and offers keyboard-accessible recovery that survives Back, reload and copied links`, async ({
+    page,
+    context,
+  }) => {
+    const title = role === "adult" ? "Administrator" : "Learner";
+    const counterpart = role === "adult" ? "Learner" : "Administrator";
+    const mutations: string[] = [];
+    page.on("request", (request) => {
+      if (
+        request.method() !== "GET" &&
+        /\/auth\/(login|logout)$/.test(new URL(request.url()).pathname)
+      )
+        mutations.push(request.url());
+    });
+    const expectEntry = async (account: string) => {
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+        `${account} sign-in`,
+      );
+      await expect(
+        page.locator("form").getByText(`${account} account`, { exact: true }),
+      ).toBeVisible();
+      await expect(
+        page
+          .getByRole("navigation", { name: "Sign-in navigation" })
+          .getByText("Switch to", { exact: true }),
+      ).toBeVisible();
+      await expectPageFits(page);
+    };
+    const expectRecovery = async (target: Page) => {
+      await expect(target).toHaveURL(
+        (url) =>
+          url.searchParams.get("page") === "help" &&
+          url.searchParams.get("help") === "signin" &&
+          url.searchParams.get("signin") === role,
+      );
+      await expect(
+        target.getByRole("heading", {
+          level: 2,
+          name: "Sign-in & passwords",
+          exact: true,
+        }),
+      ).toBeVisible();
+      const article = target.getByRole("article");
+      if (role === "learner") {
+        await expect(article).toContainText(/contact your administrator/i);
+        for (const step of [
+          "Learners",
+          "Manage account",
+          "Sign-in details",
+          "New password",
+          "Save sign-in details",
+        ])
+          await expect(article).toContainText(step);
+        await expect(article).not.toContainText(/make admin|docker compose/i);
+        await expect(
+          article.getByRole("link", {
+            name: /set up the app|setup instructions|first-time setup/i,
+          }),
+        ).toHaveCount(0);
+      } else {
+        await expect(article).toContainText("make admin");
+        await expect(article).toContainText(
+          "docker compose -f infra/docker/compose.yaml run --rm api python -m math_tutor.cli admin",
+        );
+        await expect(article).toContainText(/existing username/i);
+        await expect(
+          article.getByRole("heading", {
+            name: "First-time setup",
+            exact: true,
+          }),
+        ).toBeVisible();
+        await expect(article).toContainText(
+          /cannot reset an existing account/i,
+        );
+      }
+      await expect(target.getByLabel("Signed in account")).toHaveCount(0);
+      await expect(
+        target.getByRole("navigation", { name: "Main navigation" }),
+      ).toHaveCount(0);
+      await expectPageFits(target);
+    };
+
+    await page.goto(
+      `/?page=${role === "adult" ? "learners" : "practice"}&signin=${role}`,
+    );
+    await expect(
+      page.getByRole("button", { name: "Sign in", exact: true }),
+    ).toBeEnabled();
+    await expectEntry(title);
+    if (role === "learner")
+      await expect(
+        page.getByRole("link", {
+          name: /first-time setup|setup instructions/i,
+        }),
+      ).toHaveCount(0);
+    for (const account of [counterpart, title]) {
+      const switchLink = page
+        .getByRole("navigation", { name: "Sign-in navigation" })
+        .getByRole("link", { name: `${account} sign-in`, exact: true });
+      await switchLink.focus();
+      await expect(switchLink).toBeFocused();
+      await expect(switchLink).toHaveCSS("border-top-style", "solid");
+      await expect(switchLink).toHaveCSS("border-top-width", "1px");
+      await expect(switchLink).toHaveCSS("outline-style", "solid");
+      await expect(switchLink).toHaveCSS("outline-width", "3px");
+      await page.keyboard.press("Enter");
+      await expectEntry(account);
+    }
+    const recovery = page.getByRole("link", {
+      name: "Forgot password?",
+      exact: true,
+    });
+    await expect(recovery).toBeVisible();
+    const copiedUrl = new URL(
+      (await recovery.getAttribute("href"))!,
+      page.url(),
+    ).href;
+    await recovery.focus();
+    await expect(recovery).toBeFocused();
+    await expect(recovery).toHaveCSS("outline-style", "solid");
+    await expect(recovery).toHaveCSS("outline-width", "3px");
+    await page.keyboard.press("Enter");
+    await expectRecovery(page);
+    const topicHeading = page.getByRole("heading", {
+      level: 2,
+      name: "Sign-in & passwords",
+      exact: true,
+    });
+    await expect(topicHeading).toBeFocused();
+    await expect(topicHeading).toHaveCSS("outline-style", "none");
+    await page.reload();
+    await expectRecovery(page);
+    await page.goBack();
+    await expectEntry(title);
+
+    const copied = await context.newPage();
+    try {
+      await copied.goto(copiedUrl);
+      await expectRecovery(copied);
+    } finally {
+      await copied.close();
+    }
+    expect(mutations).toEqual([]);
+  });
+}
+
 test("guests can open and reload Help without exposing account controls", async ({
   page,
 }) => {

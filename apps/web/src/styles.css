@@ -299,6 +299,41 @@ h4 {
 .grid .card {
   margin: 0;
 }
+.sign-in-card {
+  border-top: 4px solid #37674f;
+}
+.sign-in-card-adult {
+  border-top-color: #365a82;
+}
+.sign-in-role {
+  display: inline-block;
+  margin: 0;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: #e5eadf;
+  font-weight: 700;
+}
+.sign-in-card-adult .sign-in-role {
+  background: #e5ebf3;
+  color: #274969;
+}
+.sign-in-switch {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.account-navigation .sign-in-switch a {
+  border: 1px solid #668779;
+  border-radius: 10px;
+  background: #fffef9;
+  padding: 8px 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.account-navigation .sign-in-switch a:hover {
+  background: #e6eee2;
+}
 .fine {
   font-size: 0.86rem;
   color: #4e6156;

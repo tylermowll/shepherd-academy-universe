@@ -304,6 +304,172 @@ describe("linked app areas", () => {
       role: "learner",
     },
   ])(
+    "distinguishes the $role account and preserves role-specific recovery through switching, Back, copied links and reload at $deployment",
+    async ({ deployment, role }) => {
+      browser.reconfigure({
+        url: `${deployment}?deployment=synthetic&page=${role === "adult" ? "learners" : "practice"}&signin=${role}`,
+      });
+      const current = new URL(window.location.href);
+      const title = role === "adult" ? "Administrator" : "Learner";
+      const counterpart = role === "adult" ? "Learner" : "Administrator";
+      const expectEntry = (account: string) => {
+        expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+          `${account} sign-in`,
+        );
+        const form = screen
+          .getByRole("button", { name: "Sign in" })
+          .closest("form")!;
+        expect(
+          within(form).getByText(`${account} account`, { exact: true }),
+        ).toBeVisible();
+        expect(
+          within(
+            screen.getByRole("navigation", { name: "Sign-in navigation" }),
+          ).getByText("Switch to", { exact: true }),
+        ).toBeVisible();
+      };
+      const expectRecovery = () => {
+        expect(
+          screen.getByRole("heading", {
+            level: 2,
+            name: "Sign-in & passwords",
+          }),
+        ).toBeVisible();
+        const article = screen.getByRole("article");
+        if (role === "learner") {
+          expect(article).toHaveTextContent(/contact your administrator/i);
+          for (const step of [
+            "Learners",
+            "Manage account",
+            "Sign-in details",
+            "New password",
+            "Save sign-in details",
+          ])
+            expect(article).toHaveTextContent(step);
+          expect(article).not.toHaveTextContent(/make admin|docker compose/i);
+          expect(
+            within(article).queryByRole("link", {
+              name: /set up the app|setup instructions|first-time setup/i,
+            }),
+          ).toBeNull();
+        } else {
+          expect(
+            within(article).getByRole("heading", {
+              name: "Recover an existing administrator account",
+            }),
+          ).toBeVisible();
+          expect(
+            within(article).getByRole("heading", {
+              name: "Native installation",
+            }),
+          ).toBeVisible();
+          expect(
+            within(article).getByRole("heading", {
+              name: "Docker installation",
+            }),
+          ).toBeVisible();
+          expect(article).toHaveTextContent("make admin");
+          expect(article).toHaveTextContent(
+            "docker compose -f infra/docker/compose.yaml run --rm api python -m math_tutor.cli admin",
+          );
+          expect(article).toHaveTextContent(/existing username/i);
+          expect(article).toHaveTextContent(
+            /preserv\w* learner accounts and saved work/i,
+          );
+          expect(article).toHaveTextContent(
+            /signs out administrator browsers/i,
+          );
+          expect(
+            within(article).getByRole("heading", { name: "First-time setup" }),
+          ).toBeVisible();
+          expect(article).toHaveTextContent(
+            /cannot reset an existing account/i,
+          );
+        }
+        expect(new URLSearchParams(window.location.search).get("signin")).toBe(
+          role,
+        );
+      };
+
+      let view = render(<App />);
+      await vi.waitFor(() =>
+        expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
+      );
+      expectEntry(title);
+      const accountHelp = screen.getByText(
+        role === "adult"
+          ? "Setting up for the first time?"
+          : "Need a learner account?",
+        { exact: true },
+      );
+      expect(accountHelp).toBeVisible();
+      fireEvent.click(accountHelp);
+      if (role === "learner") {
+        expect(
+          screen.queryByRole("link", {
+            name: /first-time setup|setup instructions/i,
+          }),
+        ).toBeNull();
+        expect(screen.queryByText(/make admin/)).toBeNull();
+      } else {
+        const setup = screen.getByRole("link", { name: "Setup instructions" });
+        expect(setup).toBeVisible();
+        expect(
+          new URL(setup.getAttribute("href")!, current).searchParams.get(
+            "help",
+          ),
+        ).toBe("setup");
+        expect(
+          new URL(setup.getAttribute("href")!, current).searchParams.get(
+            "signin",
+          ),
+        ).toBe(role);
+      }
+
+      fireEvent.click(
+        screen.getByRole("link", { name: `${counterpart} sign-in` }),
+      );
+      expectEntry(counterpart);
+      fireEvent.click(screen.getByRole("link", { name: `${title} sign-in` }));
+      expectEntry(title);
+      const recovery = screen.getByRole("link", { name: "Forgot password?" });
+      expect(recovery).toBeVisible();
+      const copiedHref = recovery.getAttribute("href")!;
+      const destination = new URL(copiedHref, current);
+      expect(destination.origin).toBe(current.origin);
+      expect(destination.pathname).toBe(current.pathname);
+      expect(destination.searchParams.get("deployment")).toBe("synthetic");
+      expect(destination.searchParams.get("page")).toBe("help");
+      expect(destination.searchParams.get("help")).toBe("signin");
+      expect(destination.searchParams.get("signin")).toBe(role);
+      fireEvent.click(recovery);
+      expectRecovery();
+      window.history.back();
+      await vi.waitFor(() => expectEntry(title));
+
+      view.unmount();
+      window.history.replaceState(null, "", copiedHref);
+      view = render(<App />);
+      expectRecovery();
+      view.unmount();
+      view = render(<App />);
+      expectRecovery();
+      view.unmount();
+    },
+  );
+
+  it.each([
+    { deployment: "http://localhost:5173/", role: "adult" },
+    { deployment: "http://localhost:5173/", role: "learner" },
+    {
+      deployment: "https://learn.example.test/household/tutor/",
+      role: "adult",
+    },
+    {
+      deployment: "https://learn.example.test/household/tutor/",
+      role: "learner",
+    },
+  ])(
     "keeps $role Help context and routes clicked or copied inline links to their workspace role at $deployment",
     async ({ deployment, role }) => {
       vi.stubGlobal(
@@ -655,6 +821,20 @@ describe("linked app areas", () => {
         screen.queryByRole("navigation", { name: "Main navigation" }),
       ).toBeNull();
       expect(topic).toHaveValue("Keep my learner's unsent idea.");
+      fireEvent.click(screen.getByRole("link", { name: "Forgot password?" }));
+      expect(
+        screen.getByRole("heading", { level: 2, name: "Sign-in & passwords" }),
+      ).toBeVisible();
+      expect(new URLSearchParams(window.location.search).get("signin")).toBe(
+        "adult",
+      );
+      expect(topic).not.toBeVisible();
+      expect(topic).toHaveValue("Keep my learner's unsent idea.");
+      fireEvent.click(
+        within(
+          screen.getByRole("navigation", { name: "Sign-in navigation" }),
+        ).getByRole("link", { name: "Administrator sign-in" }),
+      );
       fireEvent.click(
         screen.getByRole("button", { name: "Cancel account switch" }),
       );
@@ -735,8 +915,14 @@ describe("linked app areas", () => {
       password: "synthetic-password-only",
       role: "learner",
     });
-    fireEvent.click(screen.getByRole("link", { name: "Help" }));
+    fireEvent.click(screen.getByRole("link", { name: "Forgot password?" }));
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Help");
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Sign-in & passwords" }),
+    ).toBeVisible();
+    expect(screen.getByRole("article")).not.toHaveTextContent(
+      /make admin|docker compose/i,
+    );
     expect(name).not.toBeVisible();
     expect(screen.queryByLabelText("Signed in account")).toBeNull();
     expect(

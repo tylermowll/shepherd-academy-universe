@@ -42,6 +42,64 @@ The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
 
+## T61 — Clarify sign-in roles and password recovery (2026-10-21)
+
+**Status:** In progress; the maintainer approved the proposed UI/help changes,
+publication to main and deployment to the existing private installation.
+
+**Scope and contracts:** SPECIFICATION sections 3, 12 and 18; D011/D013 account
+recovery policy; standalone learner/administrator sign-in, contextual Help,
+deployment-relative links, accessible focus and preserved account-switch drafts.
+Administrator recovery remains operator-managed; learner recovery remains
+administrator-managed. Authentication, permissions, API schemas and the database
+remain unchanged. Preserve the unrelated working-tree `uv.lock` modification.
+
+**Plan:** Make the selected account role and counterpart switch visibly distinct.
+Give each role an immediately discoverable password-help link and appropriate
+account guidance. Add a directly addressable Sign-in & passwords Help topic;
+separate first-account setup from existing-account recovery and document native
+versus Docker operator recovery accurately. Keep existing Help navigation usable.
+
+**Validation plan:** Extend component and desktop/mobile browser coverage for both
+role-switch directions, role-specific recovery content and destinations, Help
+reload/Back/copied links, keyboard focus and existing-session/draft preservation.
+Use synthetic accounts and mock providers. Run targeted checks, `make check`,
+`make test-integration` and the browser gate, then independently review the diff.
+Publish with normal hooks and deploy a checked immutable image using encrypted
+backup, isolated restore, rollback retention and served-build/readiness checks.
+Record actual outcomes below; provider evaluations remain outside this task.
+
+**Implementation and review:** The sign-in form now labels its selected account
+role with text and a modest role-specific accent; the counterpart link has a
+visible switch treatment. Both roles have a visible Forgot password? link to
+Sign-in & passwords. Learner guidance points to the existing administrator reset
+workflow; administrator guidance separates operator recovery from first setup
+and distinguishes native from Docker commands. Existing Help routing, requested
+role enforcement, session replacement and draft handling remain intact.
+Independent review found no runtime issue and strengthened the learner test's
+exclusion of first-time setup links. The runbook now resolves the earlier
+build/backup wording conflict: isolated image validation may precede downtime;
+backup precedes migration or replacement of running services.
+
+**Validation so far:** Commands use the cleared no-env-file
+`/tmp/shepherd-t58/run` runner with `UV_CACHE_DIR=/tmp/shepherd-t61/uv-cache`.
+Focused App/navigation Vitest passed **41 tests**. `make check` passed **329
+backend unit, 11 toolchain and 237 component tests**, strict types/lint/format,
+lock checks, production build, generated-contract consistency, credential scan
+and infrastructure validation. Existing build upper-bound/chunk-size warnings
+remain. Initial new test type/text mismatches were corrected before this gate.
+The first integration run had **382 passed and one fixture error** because a
+concurrent browser setup build temporarily removed `dist/assets`; it is not a
+successful integration gate. Serial integration and browser outcomes follow.
+
+- The serial `make test-integration` rerun passed **383 tests in 69.29s**.
+- `pnpm exec playwright test tests/smoke/navigation.spec.ts tests/smoke/workspace-navigation.spec.ts tests/smoke/accounts.spec.ts tests/smoke/setup.spec.ts`:
+  **28 desktop/mobile tests passed in 3.1 minutes**, including both recovery
+  entry points, keyboard focus, copied URLs, setup, account-switch drafts and
+  the existing synthetic learner-password-reset journey.
+
+The frozen full browser gate, image checks and deployment evidence follow.
+
 ## T60 — Separate Management and Learning sign-in (2026-10-21)
 
 **Status:** Complete; source, integration, Playwright, image, publication and
