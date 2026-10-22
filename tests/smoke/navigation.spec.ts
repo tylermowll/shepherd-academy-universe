@@ -110,7 +110,12 @@ test("guests can open and reload Help without exposing account controls", async 
     .getByRole("navigation", { name: "Help topics" })
     .getByRole("link", { name: "Phone setup", exact: true })
     .click();
-  await expect(page).toHaveURL(/page=help&help=phone/);
+  await expect(page).toHaveURL(
+    (url) =>
+      url.searchParams.get("page") === "help" &&
+      url.searchParams.get("help") === "phone" &&
+      url.searchParams.get("signin") === "learner",
+  );
   await expect(
     page.getByRole("heading", {
       name: "Send a photo while you work on the computer",
