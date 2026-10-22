@@ -677,6 +677,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
 
                     <p>
                       <a
+                        className="sign-in-recovery"
                         href={pageUrl("help", "signin", signInRole)}
                         onClick={(event) =>
                           followPage(event, navigate, "help", "signin")

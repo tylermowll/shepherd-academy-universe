@@ -334,6 +334,15 @@ h4 {
 .account-navigation .sign-in-switch a:hover {
   background: #e6eee2;
 }
+.sign-in-recovery {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-block: 8px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .fine {
   font-size: 0.86rem;
   color: #4e6156;

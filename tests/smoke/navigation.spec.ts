@@ -193,6 +193,8 @@ for (const role of ["learner", "adult"] as const) {
       exact: true,
     });
     await expect(recovery).toBeVisible();
+    expect((await recovery.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await expect(recovery).toHaveCSS("text-decoration-line", "underline");
     const copiedUrl = new URL(
       (await recovery.getAttribute("href"))!,
       page.url(),

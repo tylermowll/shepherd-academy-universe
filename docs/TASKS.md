@@ -100,6 +100,14 @@ successful integration gate. Serial integration and browser outcomes follow.
 
 The frozen full browser gate, image checks and deployment evidence follow.
 
+**Rendered accessibility refinement:** Inspection of synthetic desktop/mobile
+previews found that the new recovery link needed a clearer link treatment and
+touch target. It is now underlined with a minimum 44-pixel target; browser
+coverage checks both. The first full browser run was deliberately interrupted
+for that refinement after **17 passes**, with **one interrupted** and **76 not
+run**; it is not a completed gate. The earlier `54e32e2` candidate passed image
+smoke/scanning but is superseded by the final source and image recorded below.
+
 ## T60 — Separate Management and Learning sign-in (2026-10-21)
 
 **Status:** Complete; source, integration, Playwright, image, publication and
