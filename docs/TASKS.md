@@ -23,12 +23,12 @@ the subsequent Python lock refresh. T58 upgrades the available development tools
 and compatible dependencies, publishes them and updates the private local app.
 T59 removes the oversized page-heading focus box while preserving accessible
 focus management and visible keyboard focus on controls, and deploys the fix.
-T60 is in progress to separate Management and Learning with role-specific
-credential sign-in and explicit learner-account management actions.
+T60 separates Management and Learning with role-specific sign-in, deployment-relative
+links and explicit learner-account management actions, and deploys the result.
 The schema head is `0020_request_recovery`. The latest private deployment uses
-runtime source `4be4888`, Python 3.15.0, FastAPI 0.159.1 and pillow-heif 1.8.1,
-verified on **October 21, 2026**. T59 below records the image, encrypted backup/isolated
-restore, HTTPS, served-asset and authorization checks. The earlier installation
+runtime source `3b0a4c3`, Python 3.15.0, FastAPI 0.159.1 and pillow-heif 1.8.1,
+verified on **October 21, 2026**. T60 below records the image, encrypted backup/isolated
+restore, HTTPS, served-asset, browser and authorization checks. The earlier installation
 is preserved in the [October 11 release record](history/TASKS.md#release-publication-2026-10-11).
 This is dated evidence; current provider selections and live teaching quality
 have not been verified.
@@ -44,7 +44,8 @@ and publication checks. Browser-model research and AWS hosting remain optional.
 
 ## T60 — Separate Management and Learning sign-in (2026-10-21)
 
-**Status:** In progress. The maintainer clarified that Management and Learning
+**Status:** Complete; source, integration, Playwright, image, publication and
+private deployment checks passed. The maintainer clarified that Management and Learning
 need separate views with explicit credential-based sign-in links. The learner
 list manages accounts; it does not select an identity for practice.
 
@@ -73,8 +74,8 @@ and desktop/mobile browser checks cover anonymous and authenticated navigation,
 standalone sign-in, reload/bookmarks, cancellation, draft preservation, successful
 account cleanup and management-only learner-list actions. Run targeted checks,
 generated-contract consistency and the required project gates; record only
-observed outcomes. No publication, live deployment or provider evaluation has
-been performed for T60.
+observed outcomes. Publication and private-deployment results are recorded
+below. Live provider evaluations remain outside this task.
 
 **Focused documentation/account-list validation:** Updated README, Help,
 SPECIFICATION and D013 to describe the separate views, standalone role-specific
@@ -85,8 +86,8 @@ The no-env-file runner's
 passed **7 tests**; the added case verifies the management callback without an
 authentication request. Scoped ESLint, Prettier checks for the six other files
 and the added T60 section, and `git diff --check` passed. Historical task evidence
-and its existing table formatting are preserved. Broader T60 validation remains
-pending.
+and its existing table formatting are preserved. Complete project and release
+checks follow.
 
 **Source implementation and observed gates:** The required `LoginRequest.role`
 contract is enforced after credentials/current account state are checked and
@@ -138,9 +139,79 @@ starting URL and verifies that the administrator remains signed in. Its token,
 no-logout and same-document checks remain intact. The corrected cases passed
 **4/4 in 29.0 seconds** on an isolated instance with the checked-in desktop/mobile
 profiles and zero retries. Broad runs were stopped while applying review changes;
-those interruptions are not successful full-suite results. Final browser, image,
-publication and private-deployment evidence remains pending. No live provider
-evaluation ran.
+those interruptions are not successful full-suite results. They are superseded
+by the clean frozen run below. No live provider evaluation ran.
+
+**Final frozen browser gate:** `make smoke-built` ran the actual checked-in
+Playwright suite against the production build with synthetic data and mock
+providers: **90 passed in 15.2 minutes**, comprising 45 desktop Chromium and 45
+Pixel 7 profile cases, with zero retries. The final focused workspace run also
+passed **4/4 in 1.1 minutes**. These include submitted synthetic credentials, role
+rejections, normal/copied/new-tab Help links, Back/Forward/reload, learner draft
+retention, the second Settings handoff and clearing prior-account content after
+successful authentication. The frozen runtime source is
+`3b0a4c37bb2a3f705a17c3bdc7965d874d7cd65f`.
+
+**Publication and image:** Normal hooks passed for every implementation/test
+commit. A non-force push published the frozen source to `main`; remote equality
+and a clean tree were verified. Built
+`math-practice-tutor:release-20261021-3b0a4c3` from its clean Git archive with the
+full OCI revision label. Exact image:
+`sha256:c7709b0718d99082a875ef9f8ba46ef2ff7051997c032ba23c1c5acc7a235a8c`.
+The checked-in container smoke and Trivy 0.76.1 HIGH/CRITICAL vulnerability/secret
+scan passed, including unfixed issues and without exclusions: **zero findings**.
+CycloneDX 1.7 contains 52 components; SBOM SHA-256:
+`882a44c5bf4def526d5add55539a98813a8b36e1704c37844099af9561e7e12c`.
+
+**Private deployment:** The reviewed T58 cutover helper passed preflight, retained
+`math-practice-tutor:rollback-20261021-4be4888`, stopped both writers and verified
+an encrypted native backup plus isolated restore with the original mount
+read-only. Integrity, foreign keys, object checksums, deletions and restored
+session/job cleanup passed. No live data was restored or replaced. Backup
+`backups/deploy-20261021-3b0a4c3/snapshot.enc` SHA-256:
+`0baa6434eb4d2c06549c7b9dcd67687ec80fddfca86fbd567e25efadc7fbe946`.
+Directories/files use modes 700/600; the generated passphrase is held separately
+under `~/.local/share/shepherd-academy-universe/backup-keys/deploy-20261021-3b0a4c3/`,
+without reading/exposing its value or passing it in arguments/environment.
+
+The no-op schema upgrade and Compose restart passed. The API and worker run the
+exact tested image with schema `0020_request_recovery`. HTTPS readiness, a fresh
+replacement-worker heartbeat, loopback binding, original mount, all six public
+asset hashes and cache/scope headers passed. Three anonymous protected routes
+were rejected without reading their bodies; three API-documentation routes
+returned 404.
+
+`node /tmp/shepherd-t60/deployed-entry.cjs <private-origin>` then passed against
+the live private HTTPS app in two fresh anonymous desktop/mobile Playwright
+contexts. It verified standalone entries, actual relative counterpart links,
+Help/topic/copied-footer role retention, reloads, heading focus without an
+outline, three outlined keyboard controls and no horizontal overflow. It blocked
+mutating/external/unexpected API requests, entered no credentials and performed
+no inference. Safe image, browser and deployment metadata are retained beside
+the ignored encrypted backup.
+
+No remaining local gate failure is open. Hosted CI was not awaited; live provider
+evaluations and paid inference were not run for this navigation/authentication
+change. Mock evaluation reports were not rewritten. The final evidence-only
+follow-up does not change the deployed runtime. Refresh the app or choose
+**Refresh when ready** to load the new assets.
+
+**Changed files (26):**
+
+- Runtime: `apps/api/src/math_tutor/api/auth.py`; web `App.tsx`, `Help.tsx`,
+  `LearnerAccounts.tsx`, `navigation.ts` and `styles.css` under `apps/web/src/`.
+- Backend integration tests: `test_auth_sessions.py`, `test_browser_setup.py`,
+  `test_learner_accounts.py` and `test_workflows.py` under
+  `apps/api/tests/integration/`.
+- Component tests: `App.test.tsx`, `LearnerAccounts.test.tsx`, `Setup.test.tsx`
+  and `navigation.test.tsx` under `apps/web/tests/`.
+- Browser tests/support: `bootstrap.spec.ts`, `navigation.spec.ts`,
+  `phone-navigation.spec.ts`, `setup.spec.ts`, `support.ts` and
+  `workspace-navigation.spec.ts` under `tests/smoke/`.
+- Generated contracts: `contracts/openapi.json` and
+  `apps/web/src/generated/api.d.ts`.
+- Documentation: `README.md`, `docs/SPECIFICATION.md`, `docs/DECISIONS.md` and
+  this task record.
 
 ## T59 — Remove the focus box from page headings (2026-10-21)
 
