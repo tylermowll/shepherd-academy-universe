@@ -419,7 +419,8 @@ async def adult(engine: Engine) -> AsyncIterator[AsyncClient]:
         bootstrap = await result.get("/api/v1/auth/session")
         result.headers["X-CSRF-Token"] = bootstrap.json()["csrf_token"]
         response = await result.post(
-            "/api/v1/auth/login", json={"login_name": "demo", "password": DEMO_PASSWORD}
+            "/api/v1/auth/login",
+            json={"login_name": "demo", "password": DEMO_PASSWORD, "role": "adult"},
         )
         assert response.status_code == 200, response.text
         result.headers["X-CSRF-Token"] = response.json()["csrf_token"]
@@ -510,7 +511,8 @@ async def sign_in_learner(adult: AsyncClient, device: AsyncClient, learner_id: s
     token = (await device.get("/api/v1/auth/session")).json()["csrf_token"]
     device.headers["X-CSRF-Token"] = token
     response = await device.post(
-        "/api/v1/auth/login", json={"login_name": learner["alias"], "password": DEMO_PASSWORD}
+        "/api/v1/auth/login",
+        json={"login_name": learner["alias"], "password": DEMO_PASSWORD, "role": "learner"},
     )
     assert response.status_code == 200, response.text
     status = response.json()

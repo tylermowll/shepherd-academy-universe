@@ -38,6 +38,32 @@ function Accounts({
 beforeEach(() => setIdentity("synthetic-age-edit-csrf", true));
 afterEach(() => vi.unstubAllGlobals());
 
+describe("learner account management", () => {
+  it("labels account selection as management and leaves sign-in to the learner", () => {
+    const fetcher = vi.fn(() => Promise.resolve(response([])));
+    vi.stubGlobal("fetch", fetcher);
+    const choose = vi.fn();
+    render(
+      <LearnerAccounts
+        learner=""
+        learners={[learner]}
+        onLearner={choose}
+        onRefresh={() => Promise.resolve()}
+        act={async (action) => action()}
+      />,
+    );
+
+    const manage = screen.getByRole("button", {
+      name: "River Manage account",
+    });
+    expect(manage).toHaveTextContent("Manage account");
+    fireEvent.click(manage);
+
+    expect(choose).toHaveBeenCalledExactlyOnceWith(learner.id);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+});
+
 describe("learner passwords on HTTPS", () => {
   it.each(["create", "reset"] as const)(
     "uses a six-character minimum for %s and preserves rejected input until corrected",

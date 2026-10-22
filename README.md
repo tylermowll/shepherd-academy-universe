@@ -105,7 +105,9 @@ for advanced file configuration and [backup recovery](docs/RUNBOOK.md) for key
 storage and recovery.
 
 Open **Learners** to create learner usernames, passwords and age groups. Each
-learner signs in through the common sign-in page and sees only their own work.
+learner opens **Learner sign-in** with their own credentials and sees only their
+own work. Choose **Manage account** beside a learner to update their sign-in
+details, browsers and saved work.
 Administrators can correct an existing learner's age group without losing saved
 work. Changing it stops pending requests so the updated provider restrictions
 apply before more work is processed.
@@ -113,12 +115,19 @@ Administrators who also study create a separate learner account. Administrator
 pages manage accounts, connections, exports, revocation and deletion; learner
 pages show **Practice**, **History** and **Help**.
 
-Use **Learning environment** and **Administration** at the top of the app to
-move between the two areas. If the other area needs a different account, its
-sign-in form opens in the same app. Your current account stays signed in until
-the new credentials succeed; **Cancel account switch** returns to your work.
-Sign in with a learner account to learn, or the administrator account to manage
-settings and accounts.
+**Management** and **Learning** are separate views in this app. Management has
+**Learners**, **Settings** and **Help**, with a **Learner sign-in** link to study.
+Learning has **Practice**, **History** and **Help**, with an **Administrator
+sign-in** link to manage the app. Each sign-in screen has its own heading,
+**Help** and a link to the other sign-in screen. The app opens at **Learner
+sign-in** when you are signed out; these addresses support reloads and bookmarks
+on the same app host.
+
+Opening the other sign-in keeps your current account and unsent work available.
+**Cancel account switch**, or the sign-in link for your current role, returns to
+your workspace. Invalid credentials or credentials for the other role preserve
+that account and work. Successful sign-in with the requested role switches the
+browser's account and clears unsent drafts from the previous account.
 
 ## Practice and reading
 

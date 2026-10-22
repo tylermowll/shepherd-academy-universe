@@ -461,11 +461,12 @@ async def test_existing_six_character_password_and_session_work_on_https_without
         assert (await browser.get("/api/v1/admin/learners")).status_code == 200
         await csrf(browser)
         wrong = await browser.post(
-            "/api/v1/auth/login", json={"login_name": "Owner", "password": "wrong"}
+            "/api/v1/auth/login", json={"login_name": "Owner", "password": "wrong", "role": "adult"}
         )
         assert wrong.status_code == 401 and "local-only" not in wrong.text
         accepted = await browser.post(
-            "/api/v1/auth/login", json={"login_name": "Owner", "password": PASSWORD}
+            "/api/v1/auth/login",
+            json={"login_name": "Owner", "password": PASSWORD, "role": "adult"},
         )
         assert accepted.status_code == 200
         # An explicit reset still revokes old sessions and checks the new minimum.
@@ -476,7 +477,8 @@ async def test_existing_six_character_password_and_session_work_on_https_without
             db.commit()
         await csrf(browser)
         accepted = await browser.post(
-            "/api/v1/auth/login", json={"login_name": "Owner", "password": "reset6"}
+            "/api/v1/auth/login",
+            json={"login_name": "Owner", "password": "reset6", "role": "adult"},
         )
         assert accepted.status_code == 200
     with Session(engine) as db:
@@ -506,7 +508,8 @@ async def test_learner_creation_and_reset_require_six_on_http_and_https(
         path = f"/api/v1/admin/learners/{created.json()['id']}/account"
         await csrf(learner)
         signed = await learner.post(
-            "/api/v1/auth/login", json={"login_name": "River", "password": "plain6"}
+            "/api/v1/auth/login",
+            json={"login_name": "River", "password": "plain6", "role": "learner"},
         )
         assert signed.status_code == 200 and signed.json()["role"] == "learner"
         assert (await learner.get("/api/v1/auth/session")).json()["authenticated"]
@@ -520,7 +523,8 @@ async def test_learner_creation_and_reset_require_six_on_http_and_https(
         await csrf(learner)
         for password, expected in [("plain6", 401), ("reset6", 200)]:
             response = await learner.post(
-                "/api/v1/auth/login", json={"login_name": "River", "password": password}
+                "/api/v1/auth/login",
+                json={"login_name": "River", "password": password, "role": "learner"},
             )
             assert response.status_code == expected
 
@@ -603,7 +607,7 @@ async def test_malformed_unicode_setup_and_login_inputs_fail_safely(app: FastAPI
         for login, password in (("Owner", "\ud800"), ("\ud800", PASSWORD)):
             response = await browser.post(
                 "/api/v1/auth/login",
-                content=json.dumps({"login_name": login, "password": password}),
+                content=json.dumps({"login_name": login, "password": password, "role": "adult"}),
                 headers={"Content-Type": "application/json"},
             )
             assert response.status_code == 422

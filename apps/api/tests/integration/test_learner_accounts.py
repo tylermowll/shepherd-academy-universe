@@ -1,6 +1,6 @@
 """Account identity, reset races, authorization, and private credential boundaries."""
 
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID, uuid4
 
 import pytest
@@ -16,8 +16,10 @@ from test_workflows import client, read_problem, send, start
 from test_workflows import engine as engine
 
 from math_tutor import auth, worker
-from math_tutor.adapters.db.models import Job, Learner, PracticeSession, Submission
+from math_tutor.adapters.db.models import DeviceSession, Job, Learner, PracticeSession, Submission
 from math_tutor.adapters.providers.transports import MockProvider
+from math_tutor.api.auth import SESSION_COOKIE
+from math_tutor.demo import DEMO_PASSWORD
 
 PASSWORD = "synthetic-learner-password"
 REPLACEMENT = "synthetic-replacement-password"
@@ -31,16 +33,68 @@ async def create(adult: AsyncClient, name: str = "River") -> dict[str, Any]:
     return dict(response.json())
 
 
-async def login(browser: AsyncClient, name: str, password: str) -> Any:
+async def login(
+    browser: AsyncClient,
+    name: str,
+    password: str,
+    role: Literal["adult", "learner"] = "learner",
+) -> Any:
     browser.headers["X-CSRF-Token"] = (await browser.get("/api/v1/auth/session")).json()[
         "csrf_token"
     ]
     response = await browser.post(
-        "/api/v1/auth/login", json={"login_name": name, "password": password}
+        "/api/v1/auth/login", json={"login_name": name, "password": password, "role": role}
     )
     if response.status_code == 200:
         browser.headers["X-CSRF-Token"] = response.json()["csrf_token"]
     return response
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("current_role", ["adult", "learner"])
+async def test_role_bound_sign_in_preserves_session_until_matching_credentials_succeed(
+    adult: AsyncClient, engine: Engine, current_role: Literal["adult", "learner"]
+) -> None:
+    await create(adult)
+    credentials = {"adult": ("demo", DEMO_PASSWORD), "learner": ("River", PASSWORD)}
+    target_role: Literal["adult", "learner"] = "learner" if current_role == "adult" else "adult"
+    async with client(engine) as browser:
+        assert (await login(browser, *credentials[current_role], current_role)).status_code == 200
+        previous_cookie = browser.cookies[SESSION_COOKIE]
+        previous_status = (await browser.get("/api/v1/auth/session")).json()
+        with Session(engine) as db:
+            previous_sessions = set(db.scalars(select(DeviceSession.id)))
+
+        rejected = await login(browser, *credentials[target_role], current_role)
+        destination = "Administrator" if target_role == "adult" else "Learner"
+        assert rejected.status_code == 403
+        assert rejected.json() == {"detail": f"Use {destination} sign-in for this account."}
+        assert "set-cookie" not in rejected.headers
+        assert browser.cookies[SESSION_COOKIE] == previous_cookie
+        assert (await browser.get("/api/v1/auth/session")).json() == previous_status
+        with Session(engine) as db:
+            assert set(db.scalars(select(DeviceSession.id))) == previous_sessions
+            assert auth.get_valid_session(db, previous_cookie) is not None
+
+        incorrect = await login(
+            browser, credentials[target_role][0], "wrong-password", current_role
+        )
+        assert incorrect.status_code == 401
+        assert incorrect.json() == {"detail": "Invalid login name or password."}
+        assert "set-cookie" not in incorrect.headers
+        assert browser.cookies[SESSION_COOKIE] == previous_cookie
+        assert (await browser.get("/api/v1/auth/session")).json() == previous_status
+
+        accepted = await login(browser, *credentials[target_role], target_role)
+        assert accepted.status_code == 200 and accepted.json()["role"] == target_role
+        assert browser.cookies[SESSION_COOKIE] != previous_cookie
+        assert accepted.json()["csrf_token"] != previous_status["csrf_token"]
+        with Session(engine) as db:
+            assert auth.get_valid_session(db, previous_cookie) is None
+            assert auth.get_valid_session(db, browser.cookies[SESSION_COOKIE]) is not None
+        assert (await browser.get("/api/v1/admin/learners")).status_code == (
+            200 if target_role == "adult" else 403
+        )
 
 
 @pytest.mark.anyio

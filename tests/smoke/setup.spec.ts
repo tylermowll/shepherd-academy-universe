@@ -347,6 +347,9 @@ for (const lostReceipt of [false, true]) {
       ).toBeVisible();
       await page.getByRole("button", { name: "Sign out", exact: true }).click();
       await page
+        .getByRole("link", { name: "Administrator sign-in", exact: true })
+        .click();
+      await page
         .getByLabel("Username", { exact: true })
         .fill("synthetic-owner");
       await page.getByLabel("Password", { exact: true }).fill("local6");

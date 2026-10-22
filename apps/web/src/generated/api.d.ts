@@ -919,13 +919,18 @@ export interface components {
     };
     /**
      * LoginRequest
-     * @description Credentials for the administrator or one learner account.
+     * @description Credentials bound to the administrator or learner sign-in screen.
      */
     LoginRequest: {
       /** Login Name */
       login_name: string;
       /** Password */
       password: string;
+      /**
+       * Role
+       * @enum {string}
+       */
+      role: "adult" | "learner";
     };
     /**
      * LogoutResponse

@@ -1,15 +1,70 @@
 import { expect, test, type Page } from "@playwright/test";
 import { createLearner, login, navigate, startTutor } from "./support";
 
-function appAreas(page: Page) {
-  return page.getByRole("navigation", { name: "App areas", exact: true });
+function accountNavigation(page: Page) {
+  return page.getByRole("navigation", {
+    name: "Account navigation",
+    exact: true,
+  });
 }
 
-async function rejectAdministratorSignIn(page: Page) {
-  await page.getByLabel("Username", { exact: true }).fill("demo");
-  await page
-    .getByLabel("Password", { exact: true })
-    .fill("synthetic-incorrect-password-only");
+async function expectStandaloneEntry(page: Page) {
+  await expect(
+    page.getByRole("navigation", { name: "Main navigation" }),
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Signed in account")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Sign out", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("navigation", { name: "Sign-in navigation" }),
+  ).toBeVisible();
+}
+
+async function expectCopiedEntryLinks(page: Page, role: "adult" | "learner") {
+  const privacy = await page
+    .getByRole("link", { name: "Saved work & privacy", exact: true })
+    .getAttribute("href");
+  const target = new URL(privacy!, page.url());
+  expect(target.origin).toBe(new URL(page.url()).origin);
+  expect(target.pathname).toBe(new URL(page.url()).pathname);
+  expect(target.searchParams.get("signin")).toBe(role);
+  const copied = await page.context().newPage();
+  try {
+    await copied.goto(target.href);
+    await expect(copied.getByRole("heading", { level: 1 })).toHaveText("Help");
+    await expectStandaloneEntry(copied);
+    const topics = copied.getByRole("navigation", { name: "Help topics" });
+    const practiceHref = await topics
+      .getByRole("link", { name: "Start practicing", exact: true })
+      .getAttribute("href");
+    await copied.goto(new URL(practiceHref!, copied.url()).href);
+    await expectStandaloneEntry(copied);
+    const practice = await copied
+      .getByRole("article")
+      .getByRole("link", { name: "Practice", exact: true })
+      .getAttribute("href");
+    expect(new URL(practice!, copied.url()).searchParams.get("signin")).toBe(
+      role,
+    );
+    await copied.goto(new URL(practice!, copied.url()).href);
+    await expect(copied.getByRole("heading", { level: 1 })).toHaveText(
+      role === "adult" ? "Administrator sign-in" : "Learner sign-in",
+    );
+    await expectStandaloneEntry(copied);
+  } finally {
+    await copied.close();
+  }
+}
+
+async function rejectSignIn(
+  page: Page,
+  username: string,
+  password: string,
+  status: number,
+) {
+  await page.getByLabel("Username", { exact: true }).fill(username);
+  await page.getByLabel("Password", { exact: true }).fill(password);
   const submit = async () => {
     const response = page.waitForResponse(
       (result) =>
@@ -33,7 +88,7 @@ async function rejectAdministratorSignIn(page: Page) {
     await page.waitForTimeout(delay);
     response = await submit();
   }
-  expect(response.status()).toBe(401);
+  expect(response.status()).toBe(status);
   await expect(page.getByRole("alert")).toBeVisible();
 }
 
@@ -42,17 +97,27 @@ test("app area links connect administration and learning through the appropriate
 }) => {
   await login(page);
   const alias = await createLearner(page, false);
-  await expect(appAreas(page).getByRole("link")).toHaveText([
-    "Learning environment",
-    "Administration",
+  await expect(accountNavigation(page).getByRole("link")).toHaveText([
+    "Learner sign-in",
   ]);
-  await appAreas(page)
-    .getByRole("link", { name: "Learning environment", exact: true })
+  await accountNavigation(page)
+    .getByRole("link", { name: "Learner sign-in", exact: true })
     .click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Learner sign-in",
   );
   await expect(page).toHaveURL(/[?&]signin=learner(?:[&#]|$)/);
+  await expectStandaloneEntry(page);
+  await expectCopiedEntryLinks(page, "learner");
+  await page.goBack();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Learners");
+  await page.goForward();
+  await expectStandaloneEntry(page);
+  await rejectSignIn(page, "demo", "synthetic-demo-password-only", 403);
+  await expect(page.getByRole("alert")).toContainText("Administrator sign-in");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Learner sign-in",
+  );
   expect(
     await (await page.request.get("/api/v1/auth/session")).json(),
   ).toMatchObject({ authenticated: true, role: "adult" });
@@ -70,13 +135,15 @@ test("app area links connect administration and learning through the appropriate
     page.getByRole("button", { name: "Add learner account" }),
   ).toHaveCount(0);
 
-  await appAreas(page)
-    .getByRole("link", { name: "Administration", exact: true })
+  await accountNavigation(page)
+    .getByRole("link", { name: "Administrator sign-in", exact: true })
     .click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Administrator sign-in",
   );
   await expect(page).toHaveURL(/[?&]signin=adult(?:[&#]|$)/);
+  await expectStandaloneEntry(page);
+  await expectCopiedEntryLinks(page, "adult");
   await expect(
     page.getByRole("button", { name: "Add learner account" }),
   ).toHaveCount(0);
@@ -109,13 +176,16 @@ test("canceling a failed administrator switch preserves learner work and success
   });
   const draft = "Synthetic unsent work: I will compare the two observations.";
   await work.fill(draft);
-  await appAreas(page)
-    .getByRole("link", { name: "Administration", exact: true })
+  await accountNavigation(page)
+    .getByRole("link", { name: "Administrator sign-in", exact: true })
     .click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Administrator sign-in",
   );
-  await rejectAdministratorSignIn(page);
+  await expectStandaloneEntry(page);
+  await rejectSignIn(page, "demo", "synthetic-incorrect-password-only", 401);
+  await rejectSignIn(page, alias, "synthetic-demo-password-only", 403);
+  await expect(page.getByRole("alert")).toContainText("Learner sign-in");
   expect(
     await (await page.request.get("/api/v1/auth/session")).json(),
   ).toMatchObject({
@@ -134,13 +204,13 @@ test("canceling a failed administrator switch preserves learner work and success
     .click();
   await expect(work).toHaveValue(draft);
   expect(new URL(page.url()).hash).toBe(sessionHash);
-  await appAreas(page)
-    .getByRole("link", { name: "Learning environment", exact: true })
-    .click();
+  await expect(accountNavigation(page).getByRole("link")).toHaveText([
+    "Administrator sign-in",
+  ]);
   await expect(work).toHaveValue(draft);
 
-  await appAreas(page)
-    .getByRole("link", { name: "Administration", exact: true })
+  await accountNavigation(page)
+    .getByRole("link", { name: "Administrator sign-in", exact: true })
     .click();
   await login(page);
   await expect(
@@ -150,8 +220,8 @@ test("canceling a failed administrator switch preserves learner work and success
   await expect(work).toHaveCount(0);
   await expect(page.locator(".tutor-activity")).toHaveCount(0);
 
-  await appAreas(page)
-    .getByRole("link", { name: "Learning environment", exact: true })
+  await accountNavigation(page)
+    .getByRole("link", { name: "Learner sign-in", exact: true })
     .click();
   await login(page, alias);
   expect(new URL(page.url()).hash).toBe("");

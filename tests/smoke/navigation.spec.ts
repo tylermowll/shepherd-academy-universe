@@ -24,7 +24,10 @@ test("page headings keep accessible focus without a box while keyboard controls 
   await page.goto("/");
   const signIn = page.getByRole("button", { name: "Sign in", exact: true });
   await expect(signIn).toBeEnabled();
-  const heading = page.getByRole("heading", { level: 1, name: "Sign in" });
+  const heading = page.getByRole("heading", {
+    level: 1,
+    name: "Learner sign-in",
+  });
   await expect(heading).toBeFocused();
   expect(
     await heading.evaluate((element) => element.matches(":focus-visible")),
@@ -43,7 +46,7 @@ test("page headings keep accessible focus without a box while keyboard controls 
   }
 
   const help = page
-    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("navigation", { name: "Sign-in navigation" })
     .getByRole("link", { name: "Help", exact: true });
   for (let step = 0; step < 3; step += 1)
     await page.keyboard.press("Shift+Tab");
@@ -80,8 +83,14 @@ test("guests can open and reload Help without exposing account controls", async 
   page,
 }) => {
   await page.goto("/?page=help");
-  const navigation = page.getByRole("navigation", { name: "Main navigation" });
-  await expect(navigation.getByRole("link")).toHaveText(["Sign in", "Help"]);
+  const navigation = page.getByRole("navigation", {
+    name: "Sign-in navigation",
+  });
+  await expect(navigation.getByRole("link")).toHaveText([
+    "Learner sign-in",
+    "Administrator sign-in",
+    "Help",
+  ]);
   await expect(
     navigation.getByRole("link", { name: "Help", exact: true }),
   ).toHaveAttribute("aria-current", "page");
@@ -123,7 +132,9 @@ test("guests can open and reload Help without exposing account controls", async 
     page.getByText(/No sign-in is needed for this photo/),
   ).toBeVisible();
   await expectPageFits(page);
-  await navigation.getByRole("link", { name: "Sign in", exact: true }).click();
+  await navigation
+    .getByRole("link", { name: "Learner sign-in", exact: true })
+    .click();
   await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("textbox", { name: "Username", exact: true }),

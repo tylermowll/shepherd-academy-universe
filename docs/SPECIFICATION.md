@@ -157,16 +157,24 @@ itself solve on-device inference.
 
 Keep learner navigation separate from administrator controls. The learner cannot edit endpoints, credentials, retention, age eligibility, or system safety rules.
 
-Administrators see **Learners**, **Settings** and **Help**; learners see
-**Practice**, **History** and **Help**. Practice requires a learner sign-in.
-Both areas are visibly linked through **Learning environment** and
-**Administration** in the same app. Opening the other area shows its labeled
-sign-in screen when a different role is needed, without ending the current
-session or clearing unsent learner work. Canceling returns to that work.
-Successful authentication switches accounts, revokes the preceding session,
-clears prior-account content and session selection, and opens the authenticated
-role's area. Learners still need administrator credentials to enter
-administration; an administrator uses a separate learner account to study.
+**Management** shows administrators **Learners**, **Settings** and **Help**;
+**Learning** shows learners **Practice**, **History** and **Help**. Practice
+requires a learner sign-in. Management links to **Learner sign-in**; Learning
+links to **Administrator sign-in**. Learner-list actions say **Manage account**
+and select a record for administration while retaining the administrator account.
+
+The default anonymous opening is **Learner sign-in**. Each role has a standalone
+sign-in screen with its own heading, **Help** and a link to the other sign-in
+screen; prior-account navigation, identity and learner lists are absent. Links
+retain the current app host and path, and support reloads and bookmarks.
+Opening another role's sign-in preserves the current session and unsent work.
+Canceling or following the current role's sign-in link returns to the prior
+workspace and its drafts. Failed authentication, including valid credentials for
+the other role, preserves that session and work. Successful authentication for
+the requested role switches accounts, revokes the preceding session, clears
+prior-account content and session selection, and opens that role's area.
+Learners need administrator credentials to enter Management; an administrator
+uses a separate learner account to study.
 Keep provider controls and browser experiments out of Practice. Use clear labels
 and contextual help for topics, reference material, tutor style, photos,
 sign-in, age categories and data processing. Help distinguishes photo QR uploads
@@ -192,7 +200,9 @@ configuration and secret handling.
 Learner usernames are unique after Unicode, whitespace and case normalization,
 and cannot conflict with the administrator username. The administrator creates
 accounts, sets/resets write-only passwords, and manages each learner's signed-in
-browsers. The common sign-in form accepts either account type (D013).
+browsers. **Learner sign-in** accepts learner credentials; **Administrator
+sign-in** accepts administrator credentials (D013). The backend enforces the
+requested role before replacing a session.
 Administrators can correct age eligibility on the same account. Preserve saved
 work and identity; on an actual change, atomically cancel pending submissions
 and jobs and invalidate their leases so late results cannot bypass the updated
@@ -844,8 +854,9 @@ recovery or voluntary changes, not unauthenticated web account recovery.
 
 D013 defines administrator-managed learner credentials. Passwords follow the
 same length policy and Argon2id hashing as the administrator. Login rechecks
-the password hash and enabled/deleted state inside the session-creation
-transaction, preventing a concurrent reset from being bypassed. Password reset
+the password hash, requested role and enabled/deleted state inside the
+session-creation transaction, preventing a concurrent reset or role mismatch
+from replacing a session. Password reset
 revokes learner sessions; no public account list or password recovery is exposed. The CLI cannot create a
 second administrator. A learner session cannot become an administrator session by
 switching profiles.

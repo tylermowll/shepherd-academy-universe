@@ -580,31 +580,25 @@ img {
 [hidden] {
   display: none !important;
 }
-.app-areas {
+.account-navigation {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-block: 24px 12px;
+  gap: 12px;
+  margin-block: 20px 8px;
 }
-.app-areas a {
+.account-navigation a {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  padding: 10px 16px;
-  border: 1px solid #668779;
-  border-radius: 10px;
-  background: #fffef8;
+  padding: 8px 0;
+  font-weight: 600;
+}
+.account-navigation span {
   font-weight: 650;
-  text-decoration: none;
 }
-.app-areas a:hover {
-  background: #e6eee2;
-}
-.app-areas a[aria-current="location"] {
-  background: #173d34;
-  color: white;
-}
-.app-areas a[aria-disabled="true"] {
+.account-navigation a[aria-disabled="true"] {
   opacity: 0.55;
 }
 .page-tabs {

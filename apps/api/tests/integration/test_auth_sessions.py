@@ -14,7 +14,7 @@ import uuid
 from collections.abc import Iterator
 from datetime import timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import pytest
 from alembic import command
@@ -125,6 +125,7 @@ async def attempt_login(
     password: str = ADMIN_PASSWORD,
     csrf: str | None = None,
     origin: str | None = None,
+    role: Literal["adult", "learner"] = "adult",
 ) -> Response:
     """POST a login, bootstrapping CSRF unless an explicit token is given."""
 
@@ -134,7 +135,7 @@ async def attempt_login(
         headers["Origin"] = origin
     return await client.post(
         "/api/v1/auth/login",
-        json={"login_name": login, "password": password},
+        json={"login_name": login, "password": password, "role": role},
         headers=headers,
     )
 
@@ -324,6 +325,26 @@ async def test_bad_logins_share_one_401_without_session(engine: Engine) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("role_field", [{}, {"role": None}, {"role": "administrator"}])
+async def test_login_requires_an_explicit_supported_role(
+    engine: Engine, role_field: dict[str, str | None]
+) -> None:
+    create_admin(engine)
+    async with make_client(engine) as client:
+        csrf = await bootstrap_csrf(client)
+        response = await client.post(
+            "/api/v1/auth/login",
+            json={"login_name": ADMIN_LOGIN, "password": ADMIN_PASSWORD, **role_field},
+            headers={CSRF_HEADER: csrf},
+        )
+        assert response.status_code == 422
+        assert "set-cookie" not in response.headers
+        assert client.cookies.get(SESSION_COOKIE) is None
+    with Session(engine) as db:
+        assert db.scalar(select(DeviceSession)) is None
+
+
+@pytest.mark.anyio
 async def test_login_requires_csrf_double_submit(engine: Engine) -> None:
     create_admin(engine)
     async with make_client(engine) as client:
@@ -331,7 +352,7 @@ async def test_login_requires_csrf_double_submit(engine: Engine) -> None:
 
         missing = await client.post(
             "/api/v1/auth/login",
-            json={"login_name": ADMIN_LOGIN, "password": ADMIN_PASSWORD},
+            json={"login_name": ADMIN_LOGIN, "password": ADMIN_PASSWORD, "role": "adult"},
         )
         assert missing.status_code == 403
 
@@ -650,7 +671,7 @@ async def test_invalid_credentials_are_not_echoed_and_forwarded_host_is_not_trus
     async with make_client(engine) as client:
         password = "synthetic-sensitive-input" * 20
         rejected = await client.post(
-            "/api/v1/auth/login", json={"login_name": "name", "password": password}
+            "/api/v1/auth/login", json={"login_name": "name", "password": password, "role": "adult"}
         )
         assert rejected.status_code == 422
         assert password not in rejected.text

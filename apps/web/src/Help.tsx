@@ -1,5 +1,11 @@
 import type { ReactNode } from "react";
-import { followPage, pageUrl, type Page, type Navigate } from "./navigation";
+import {
+  followPage,
+  pageUrl,
+  type Page,
+  type Navigate,
+  type SignInRole,
+} from "./navigation";
 
 export function ContextHelp({
   topic,
@@ -29,14 +35,16 @@ const topics = [
 export function HelpPage({
   topic,
   onNavigate,
+  entryRole,
 }: {
   topic?: string;
   onNavigate: Navigate;
+  entryRole?: SignInRole | undefined;
 }) {
   const selected = topics.find(([id]) => id === topic) ?? topics[0];
   const link = (page: Page, label: string, help?: string) => (
     <a
-      href={pageUrl(page, help)}
+      href={pageUrl(page, help, entryRole)}
       onClick={(event) => followPage(event, onNavigate, page, help)}
     >
       {label}
@@ -56,7 +64,7 @@ export function HelpPage({
           {topics.map(([id, title]) => (
             <a
               key={id}
-              href={pageUrl("help", id)}
+              href={pageUrl("help", id, entryRole)}
               aria-current={selected[0] === id ? "page" : undefined}
               onClick={(event) => followPage(event, onNavigate, "help", id)}
             >
@@ -145,23 +153,28 @@ export function HelpPage({
                   group. Choose <strong>Create learner account</strong>.
                 </li>
                 <li>
-                  Give the learner their username and password. They use the
-                  normal Sign in page on any device that can reach this app.
+                  Give the learner their username and password. They open{" "}
+                  <strong>Learner sign-in</strong> on any device that can reach
+                  this app.
                 </li>
               </ol>
               <h3>If you also want to study</h3>
               <p>
-                Create one learner account for your own saved work. Choose{" "}
-                <strong>Learning environment</strong> at the top of the app,
-                then sign in with that learner's username and password. Choose{" "}
-                <strong>Administration</strong> to return to administrator
-                sign-in. Both areas are part of this app.
+                Create one learner account for your own saved work. In
+                Management, choose <strong>Learner sign-in</strong> and enter
+                that learner's username and password. In Learning, choose{" "}
+                <strong>Administrator sign-in</strong> to manage the app.
+                Management has Learners, Settings and Help; Learning has
+                Practice, History and Help. Each sign-in screen offers Help and
+                a link to the other sign-in screen.
               </p>
               <p>
-                Opening the other area's sign-in keeps your current account and
-                unsent work available. Choose{" "}
-                <strong>Cancel account switch</strong> to return. Signing in
-                successfully switches the browser's account and clears unsent
+                Opening the other sign-in keeps your current account and unsent
+                work available. Choose <strong>Cancel account switch</strong>,
+                or the sign-in link for your current role, to return to your
+                workspace. Invalid credentials or credentials for the other role
+                preserve that account and work. Signing in successfully with the
+                requested role switches the browser's account and clears unsent
                 drafts from the previous account.
               </p>
               <h3>Passwords and signed-in browsers</h3>

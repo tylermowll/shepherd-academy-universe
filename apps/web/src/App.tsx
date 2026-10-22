@@ -28,7 +28,12 @@ const pageNames: Record<Page, string> = {
   settings: "Settings",
   help: "Help",
 };
-function readLocation() {
+function readLocation(): {
+  page: Page;
+  help: string;
+  signIn: SignInRole | null;
+  switchPage: Page | null;
+} {
   const params = new URLSearchParams(window.location.search);
   const requested = params.get("page") ?? "practice";
   const requestedSignIn = params.get("signin");
@@ -38,7 +43,7 @@ function readLocation() {
   return {
     page: Object.hasOwn(pageNames, requested)
       ? (requested as Page)
-      : ("practice" as Page),
+      : "practice",
     help: params.get("help") ?? "practice",
     signIn:
       requestedSignIn === "adult" || requestedSignIn === "learner"
@@ -69,22 +74,12 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
   const [signingIn, setSigningIn] = useState(false);
   const [accountVersion, setAccountVersion] = useState(0);
   const accountGeneration = useRef(0);
-  const [accountNotice, setAccountNotice] = useState("");
   const leavingAccount = useRef(false);
   const [location, setLocation] = useState(readLocation);
   const [learners, setLearners] = useState<Schema<"LearnerPublic">[]>([]);
   const learnerSequence = useRef(0);
   const workspace = useRef<HTMLDivElement>(null);
   const scrollToTop = useRef(false);
-  const navigate: Navigate = useCallback(
-    (page, help) => {
-      if (signingIn) return;
-      scrollToTop.current = true;
-      window.history.pushState(null, "", pageUrl(page, help));
-      setLocation(readLocation());
-    },
-    [signingIn],
-  );
   const isAdult = identity?.authenticated === true && identity.role === "adult";
   const authenticated = identity?.authenticated === true;
   const setupRequired = !authenticated && identity?.setup_required === true;
@@ -110,22 +105,43 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
   const signInVisible =
     !setupRequired &&
     !checkingSetup &&
-    (switchingAccount || (!authenticated && page !== "help"));
+    (switchingAccount || !authenticated) &&
+    location.page !== "help";
+  const entryVisible =
+    !setupRequired && !checkingSetup && (!authenticated || switchingAccount);
+  const showHelp = switchingAccount
+    ? location.page === "help"
+    : page === "help";
+  const signInRole: SignInRole =
+    location.signIn ??
+    (location.page === "learners" || location.page === "settings"
+      ? "adult"
+      : "learner");
   const signInTitle =
-    location.signIn === "adult"
-      ? "Administrator sign-in"
-      : location.signIn === "learner"
-        ? "Learner sign-in"
-        : "Sign in";
+    signInRole === "adult" ? "Administrator sign-in" : "Learner sign-in";
+  const otherRole: SignInRole = signInRole === "adult" ? "learner" : "adult";
+  const navigate: Navigate = useCallback(
+    (nextPage, help) => {
+      if (signingIn) return;
+      scrollToTop.current = true;
+      window.history.pushState(
+        entryVisible ? { switchPage: location.switchPage ?? page } : null,
+        "",
+        pageUrl(nextPage, help, entryVisible ? signInRole : undefined),
+      );
+      setLocation(readLocation());
+    },
+    [signingIn, entryVisible, signInRole, location.switchPage, page],
+  );
   const tutorVisible =
     !switchingAccount && (page === "practice" || page === "history");
   const openArea = (role: SignInRole) => {
     if (signingIn) return;
     setError("");
-    setAccountNotice("");
     const home = role === "adult" ? "learners" : "practice";
     if (authenticated && identity.role === role) {
-      navigate(home);
+      if (switchingAccount) cancelAccountSwitch();
+      else navigate(home);
       return;
     }
     scrollToTop.current = true;
@@ -167,7 +183,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
     };
   }, [authenticated, identity]);
   useLayoutEffect(() => {
-    document.title = `${signInVisible ? signInTitle : authenticated || page === "help" ? pageNames[page] : setupRequired || checkingSetup ? "Create administrator account" : "Sign in"} · Shepherd Academy Universe`;
+    document.title = `${showHelp ? "Help" : signInVisible ? signInTitle : authenticated ? pageNames[page] : setupRequired || checkingSetup ? "Create administrator account" : signInTitle} · Shepherd Academy Universe`;
     const focusTarget =
       Array.from(
         workspace.current?.querySelectorAll<HTMLElement>("[data-page-focus]") ??
@@ -189,6 +205,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
     checkingSetup,
     signInVisible,
     signInTitle,
+    showHelp,
   ]);
   const refreshLearners = useCallback(async () => {
     const sequence = ++learnerSequence.current;
@@ -260,7 +277,6 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
         setTutorBusy(false);
         setTutorDraft(false);
         setBusy(false);
-        setAccountNotice("");
         window.history.replaceState(
           null,
           "",
@@ -343,15 +359,25 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
       </a>
       <header className="masthead">
         <a
-          href={pageUrl("practice")}
-          onClick={(event) => followPage(event, navigate, "practice")}
+          href={
+            entryVisible
+              ? signInUrl(signInRole)
+              : pageUrl(isAdult ? "learners" : "practice")
+          }
+          onClick={(event) =>
+            followPage(
+              event,
+              entryVisible ? () => openArea(signInRole) : navigate,
+              isAdult ? "learners" : "practice",
+            )
+          }
           className="wordmark"
           aria-disabled={signingIn || undefined}
         >
           <img src="/icon.svg" alt="" width={32} height={32} />
           Shepherd Academy Universe
         </a>
-        {identity?.authenticated && (
+        {identity?.authenticated && !entryVisible && (
           <>
             <span className="account-summary" aria-label="Signed in account">
               <strong>{identity.login_name || "Signed-in account"}</strong>
@@ -368,7 +394,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                   setIdentity("");
                   setSession(null);
                   setLearner("");
-                  window.location.replace("/");
+                  window.location.replace(window.location.pathname);
                 })
               }
             >
@@ -377,68 +403,81 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
           </>
         )}
       </header>
-      {!setupRequired && !checkingSetup && (
-        <nav className="app-areas" aria-label="App areas">
-          {(
-            [
-              ["learner", "Learning environment"],
-              ["adult", "Administration"],
-            ] as const
-          ).map(([role, label]) => (
+      {entryVisible ? (
+        <nav className="account-navigation" aria-label="Sign-in navigation">
+          {showHelp && (
             <a
-              key={role}
-              href={
-                authenticated && identity.role === role
-                  ? pageUrl(role === "adult" ? "learners" : "practice")
-                  : signInUrl(role)
-              }
-              aria-current={
-                (
-                  switchingAccount || !authenticated
-                    ? location.signIn === role
-                    : identity.role === role
-                )
-                  ? "location"
-                  : undefined
-              }
+              href={signInUrl(signInRole)}
               aria-disabled={signingIn || undefined}
               onClick={(event) =>
-                followPage(
-                  event,
-                  () => openArea(role),
-                  role === "adult" ? "learners" : "practice",
-                )
+                followPage(event, () => openArea(signInRole), "practice")
               }
             >
-              {label}
+              {signInTitle}
             </a>
-          ))}
-        </nav>
-      )}
-      <nav className="page-tabs" aria-label="Main navigation">
-        {(authenticated
-          ? isAdult
-            ? (["learners", "settings", "help"] as Page[])
-            : (["practice", "history", "help"] as Page[])
-          : (["practice", "help"] as Page[])
-        ).map((item) => (
+          )}
           <a
-            key={item}
-            href={pageUrl(item)}
-            aria-current={
-              !switchingAccount && page === item ? "page" : undefined
-            }
+            href={signInUrl(otherRole)}
             aria-disabled={signingIn || undefined}
-            onClick={(event) => followPage(event, navigate, item)}
+            onClick={(event) =>
+              followPage(event, () => openArea(otherRole), "practice")
+            }
           >
-            {!authenticated && item === "practice"
-              ? setupRequired || checkingSetup
-                ? "Set up account"
-                : "Sign in"
-              : pageNames[item]}
+            {otherRole === "adult"
+              ? "Administrator sign-in"
+              : "Learner sign-in"}
           </a>
-        ))}
-      </nav>
+          <a
+            href={pageUrl("help", undefined, signInRole)}
+            aria-current={showHelp ? "page" : undefined}
+            aria-disabled={signingIn || undefined}
+            onClick={(event) => followPage(event, navigate, "help")}
+          >
+            Help
+          </a>
+        </nav>
+      ) : (
+        <>
+          {authenticated && (
+            <nav className="account-navigation" aria-label="Account navigation">
+              <span>{isAdult ? "Management" : "Learning"}</span>
+              <a
+                href={signInUrl(isAdult ? "learner" : "adult")}
+                aria-disabled={signingIn || undefined}
+                onClick={(event) =>
+                  followPage(
+                    event,
+                    () => openArea(isAdult ? "learner" : "adult"),
+                    "practice",
+                  )
+                }
+              >
+                {isAdult ? "Learner sign-in" : "Administrator sign-in"}
+              </a>
+            </nav>
+          )}
+          <nav className="page-tabs" aria-label="Main navigation">
+            {(authenticated
+              ? isAdult
+                ? (["learners", "settings", "help"] as Page[])
+                : (["practice", "history", "help"] as Page[])
+              : (["practice", "help"] as Page[])
+            ).map((item) => (
+              <a
+                key={item}
+                href={pageUrl(item)}
+                aria-current={page === item ? "page" : undefined}
+                aria-disabled={signingIn || undefined}
+                onClick={(event) => followPage(event, navigate, item)}
+              >
+                {!authenticated && item === "practice"
+                  ? "Set up account"
+                  : pageNames[item]}
+              </a>
+            ))}
+          </nav>
+        </>
+      )}
       <UpdateNotice
         deferRefresh={
           setupRequired ||
@@ -469,17 +508,16 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
           </button>
         </div>
       )}
-      {accountNotice && (
-        <p role="status" className="notice">
-          {accountNotice}
-        </p>
-      )}
       <div id="workspace" ref={workspace} tabIndex={-1} aria-busy={busy}>
-        {page === "help" && !switchingAccount && (
-          <HelpPage topic={location.help} onNavigate={navigate} />
+        {showHelp && (
+          <HelpPage
+            topic={location.help}
+            onNavigate={navigate}
+            entryRole={entryVisible ? signInRole : undefined}
+          />
         )}
         {(!authenticated || switchingAccount) && (
-          <div hidden={page === "help" && !switchingAccount}>
+          <div hidden={showHelp}>
             {setupRequired ? (
               <Setup
                 token={setupToken}
@@ -494,22 +532,18 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                 <p role="status">Checking account setup…</p>
               </section>
             ) : (
-              <section className="welcome" key={location.signIn}>
+              <section className="welcome" key={signInRole}>
                 <h1 tabIndex={-1}>{signInTitle}</h1>
                 <p>
-                  {location.signIn === "adult"
+                  {signInRole === "adult"
                     ? "Sign in with an administrator account to manage learners and settings."
-                    : location.signIn === "learner"
-                      ? "Sign in with a learner account to open Practice and History."
-                      : "Use your administrator or learner username and password."}
+                    : "Sign in with a learner account to open Practice and History."}
                 </p>
                 {switchingAccount && (
                   <>
                     <p>
-                      You are still signed in as{" "}
-                      {identity?.login_name || "your current account"}. Your
-                      current workspace stays available until another sign-in
-                      succeeds.
+                      Your current workspace stays signed in until this sign-in
+                      succeeds. Cancel to return to your work.
                     </p>
                     {(tutorBusy || tutorDraft) && (
                       <p className="notice">
@@ -535,15 +569,20 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                       event.preventDefault();
                       if (signingIn) return;
                       const data = new FormData(event.currentTarget);
+                      const loginName = data.get("login");
+                      const password = data.get("password");
                       setSigningIn(true);
                       void act(async () => {
                         const session = await api<Schema<"SessionStatus">>(
                           "/auth/login",
                           "POST",
                           {
-                            login_name: data.get("login"),
-                            password: data.get("password"),
-                          },
+                            login_name:
+                              typeof loginName === "string" ? loginName : "",
+                            password:
+                              typeof password === "string" ? password : "",
+                            role: signInRole,
+                          } satisfies Schema<"LoginRequest">,
                         );
                         accountGeneration.current += 1;
                         setAccountVersion((current) => current + 1);
@@ -557,21 +596,10 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                         setTutorDraft(false);
                         setBusy(false);
                         setError("");
-                        setAccountNotice(
-                          location.signIn && session.role !== location.signIn
-                            ? session.role === "adult"
-                              ? "Signed in as an administrator. Open Learning environment and sign in with a learner account to practice."
-                              : "Signed in as a learner. Open Administration and sign in with an administrator account to manage the app."
-                            : "",
-                        );
                         const destination = new URL(
-                          location.signIn
-                            ? pageUrl(
-                                session.role === "adult"
-                                  ? "learners"
-                                  : "practice",
-                              )
-                            : window.location.href,
+                          pageUrl(
+                            session.role === "adult" ? "learners" : "practice",
+                          ),
                           window.location.href,
                         );
                         destination.searchParams.delete("signin");
@@ -589,8 +617,9 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                   >
                     <h2>Account sign-in</h2>
                     <p>
-                      Learner accounts open only that learner’s practice and
-                      history.
+                      {signInRole === "adult"
+                        ? "Manage learner accounts and app settings."
+                        : "Open only your own practice and history."}
                     </p>
                     <label>
                       Username
@@ -618,8 +647,9 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                       Sign in
                     </button>
                     <p className="fine">
-                      Learners: use the account your administrator created for
-                      you.
+                      {signInRole === "adult"
+                        ? "Use the administrator account created during setup."
+                        : "Use the learner account your administrator created for you."}
                     </p>
 
                     <ContextHelp topic="Need an account or a password reset?">
@@ -695,7 +725,11 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
       <footer>
         <span>Shepherd Academy Universe</span>
         <a
-          href={pageUrl("help", "privacy")}
+          href={pageUrl(
+            "help",
+            "privacy",
+            entryVisible ? signInRole : undefined,
+          )}
           aria-disabled={signingIn || undefined}
           onClick={(event) => followPage(event, navigate, "help", "privacy")}
         >

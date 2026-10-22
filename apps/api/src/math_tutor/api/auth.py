@@ -3,7 +3,7 @@
 Routes (all under ``/api/v1/auth``):
 
 * ``GET /session`` — minimal status plus CSRF bootstrap; never a learner list.
-* ``POST /login`` — opaque session cookie on valid credentials.
+* ``POST /login`` — opaque session cookie on valid credentials for the requested role.
 * ``POST /logout`` — immediate revocation of the presenting session.
 
 State-changing requests require the ``X-CSRF-Token`` header and a passing
@@ -47,12 +47,13 @@ _RATE_LIMITED = "Too many login attempts. Try again later."
 
 
 class LoginRequest(BaseModel):
-    """Credentials for the administrator or one learner account."""
+    """Credentials bound to the administrator or learner sign-in screen."""
 
     model_config = ConfigDict(frozen=True)
 
     login_name: str = Field(min_length=1, max_length=64)
     password: str = Field(min_length=1, max_length=auth_service.MAX_ADMIN_PASSWORD_LENGTH)
+    role: Literal["adult", "learner"]
 
 
 class SessionStatus(BaseModel):
@@ -272,6 +273,13 @@ def login(credentials: LoginRequest, request: Request, response: Response) -> Se
             )
         ):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=_BAD_CREDENTIALS)
+        account_role = "adult" if isinstance(account, Administrator) else "learner"
+        if credentials.role != account_role:
+            destination = "Administrator" if account_role == "adult" else "Learner"
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Use {destination} sign-in for this account.",
+            )
         previous = request.cookies.get(SESSION_COOKIE)
         if previous:
             old_session = auth_service.get_valid_session(db, previous)

@@ -23,6 +23,8 @@ the subsequent Python lock refresh. T58 upgrades the available development tools
 and compatible dependencies, publishes them and updates the private local app.
 T59 removes the oversized page-heading focus box while preserving accessible
 focus management and visible keyboard focus on controls, and deploys the fix.
+T60 is in progress to separate Management and Learning with role-specific
+credential sign-in and explicit learner-account management actions.
 The schema head is `0020_request_recovery`. The latest private deployment uses
 runtime source `4be4888`, Python 3.15.0, FastAPI 0.159.1 and pillow-heif 1.8.1,
 verified on **October 21, 2026**. T59 below records the image, encrypted backup/isolated
@@ -39,6 +41,90 @@ container packaging and private installation; October 11's evidence is historica
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
+
+## T60 — Separate Management and Learning sign-in (2026-10-21)
+
+**Status:** In progress. The maintainer clarified that Management and Learning
+need separate views with explicit credential-based sign-in links. The learner
+list manages accounts; it does not select an identity for practice.
+
+**Scope and contracts:** SPECIFICATION sections 3, 9 and 12; D013 account
+ownership; role-specific login input and generated API clients; anonymous,
+administrator and learner navigation; account-switch session and draft handling.
+The anonymous app opens at **Learner sign-in**. Standalone **Learner sign-in**
+and **Administrator sign-in** screens offer Help and the counterpart link.
+Management contains Learners, Settings and Help with a Learner sign-in link;
+Learning contains Practice, History and Help with an Administrator sign-in link.
+Learner-list buttons explicitly say **Manage account**. No database migration,
+new identity service or change to account ownership is planned.
+
+**Plan:** Enforce the requested login role in the backend before replacing or
+revoking a session, and regenerate public contracts. Give each sign-in screen
+its own navigation without prior-account controls. Retain relative app addresses,
+reload/bookmark behavior and return to the previous workspace when canceling or
+following the current role's sign-in link. Preserve the prior session and unsent
+work on opening, failure or cancellation; a successful sign-in for the requested
+role replaces the session and clears prior-account content. Update current
+README, Help, SPECIFICATION and D013 wording while preserving historical evidence.
+
+**Validation plan:** Cover successful role-specific login, rejected credentials
+for the other role and prior-session preservation in backend tests. Component
+and desktop/mobile browser checks cover anonymous and authenticated navigation,
+standalone sign-in, reload/bookmarks, cancellation, draft preservation, successful
+account cleanup and management-only learner-list actions. Run targeted checks,
+generated-contract consistency and the required project gates; record only
+observed outcomes. No publication, live deployment or provider evaluation has
+been performed for T60.
+
+**Focused documentation/account-list validation:** Updated README, Help,
+SPECIFICATION and D013 to describe the separate views, standalone role-specific
+sign-in and preservation of the prior account/work until the requested-role
+sign-in succeeds. Learner-list buttons visibly say **Manage account**.
+The no-env-file runner's
+`pnpm --filter @math-tutor/web exec vitest run tests/LearnerAccounts.test.tsx`
+passed **7 tests**; the added case verifies the management callback without an
+authentication request. Scoped ESLint, Prettier checks for the six other files
+and the added T60 section, and `git diff --check` passed. Historical task evidence
+and its existing table formatting are preserved. Broader T60 validation remains
+pending.
+
+**Source implementation and observed gates:** The required `LoginRequest.role`
+contract is enforced after credentials/current account state are checked and
+before the old session is revoked. Valid credentials for the other role return
+specific sign-in guidance; invalid credentials retain the generic error. The
+client sends the selected role using regenerated types. Standalone entry chrome
+replaces the global area tabs, with one cross-role link in each workspace.
+Help, footer and inline links share the same entry-role URL construction for
+ordinary clicks, copied addresses and new tabs. Canceling and returning to the
+current role keep the exact mounted workspace; success clears prior-account
+state. Default signed-out entry is Learner sign-in, while direct Settings and
+Learners bookmarks offer Administrator sign-in. Sign-out preserves the current
+app path.
+
+Commands used the cleared no-env-file `/tmp/shepherd-t58/run` runner with
+`UV_CACHE_DIR=/tmp/shepherd-t60/uv-cache`. Synthetic ASGI/browser tests ran outside
+the sandbox after the first restricted ASGI run stalled and was stopped; no
+assertion or authorization check was weakened.
+
+- `make check`: passed **329 backend unit, 11 toolchain and 232 component
+  tests**, strict types/lint/format, lock checks, production build, generated
+  contracts, credential scan and infrastructure validation. Earlier runs caught
+  lint and optional-prop typing issues; these were corrected before the complete
+  successful gate. Existing build upper-bound/chunk-size warnings remain.
+- `make test-integration`: **383 passed in 69.90 seconds**. New coverage requires
+  an explicit supported role and checks both mismatch directions: cookie, CSRF
+  and old session survive failure; matching credentials replace and revoke it.
+- `pnpm exec playwright test tests/smoke/workspace-navigation.spec.ts tests/smoke/navigation.spec.ts tests/smoke/bootstrap.spec.ts`:
+  **34 desktop/mobile tests passed in 5.1 minutes**. The final complete browser
+  run additionally includes copied Help/footer/inline URL checks added during
+  independent review.
+- Focused App/URL tests passed **36 cases**, including both roles at localhost
+  and HTTPS nested paths. These verify URL construction and component routing;
+  they do not claim complete subpath hosting support.
+
+Independent source review found no remaining blocker after correcting actual
+Help hrefs to match intercepted navigation. Full browser, image, publication and
+private-deployment evidence remains pending. No live provider evaluation ran.
 
 ## T59 — Remove the focus box from page headings (2026-10-21)
 

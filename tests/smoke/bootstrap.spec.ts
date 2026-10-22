@@ -31,8 +31,10 @@ test("same-origin entry renders without external requests, templates, or overflo
   });
   expect((await request.get("/health/ready")).status()).toBe(200);
   await page.goto("/");
-  await expect(page).toHaveTitle("Sign in · Shepherd Academy Universe");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Sign in");
+  await expect(page).toHaveTitle("Learner sign-in · Shepherd Academy Universe");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Learner sign-in",
+  );
   await expect(
     page.getByRole("button", { name: "Sign in", exact: true }),
   ).toBeEnabled();
@@ -86,7 +88,9 @@ test("persisted tutoring survives disconnect and reload, then logout clears priv
     page.getByRole("textbox", { name: "Your work or question", exact: true }),
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Sign in");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Learner sign-in",
+  );
   await expect(page.locator(".tutor-feedback")).toHaveCount(0);
   expect(await page.evaluate(() => Object.keys(localStorage))).toEqual([]);
 });

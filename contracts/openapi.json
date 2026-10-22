@@ -404,7 +404,7 @@
         "type": "object"
       },
       "LoginRequest": {
-        "description": "Credentials for the administrator or one learner account.",
+        "description": "Credentials bound to the administrator or learner sign-in screen.",
         "properties": {
           "login_name": {
             "maxLength": 64,
@@ -417,11 +417,20 @@
             "minLength": 1,
             "title": "Password",
             "type": "string"
+          },
+          "role": {
+            "enum": [
+              "adult",
+              "learner"
+            ],
+            "title": "Role",
+            "type": "string"
           }
         },
         "required": [
           "login_name",
-          "password"
+          "password",
+          "role"
         ],
         "title": "LoginRequest",
         "type": "object"

@@ -308,6 +308,20 @@ administrator-set passwords rather than shared defaults. Pairing requests and
 endpoints were retired. Photo-camera delegation remains a separate limited
 capability, never a learner sign-in.
 
+**T60 clarification (2026-10-21):** Management and Learning have separate
+navigation and standalone **Administrator sign-in** and **Learner sign-in**
+screens. The anonymous app opens at Learner sign-in. Each sign-in screen offers
+Help and a link to the other screen. Management's learner-list actions explicitly
+say **Manage account** and retain the administrator session.
+
+Login requests require the intended account role. The backend rejects credentials
+for a different role before revoking or replacing the current session. Opening,
+failing or canceling the other sign-in preserves the current account and unsent
+work; the current role's sign-in link returns to that workspace. A successful
+sign-in for the requested role replaces the session and clears prior-account
+browser content. Account ownership and permissions continue to follow the
+authenticated role.
+
 ## D014 — Browser permission for completing setup (2026-09-08)
 
 Opening an unexpired owner link exchanges it once for a signed HttpOnly cookie

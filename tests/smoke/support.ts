@@ -26,6 +26,14 @@ export async function login(
       .catch(() => {});
   if (!(await signInButton.isVisible().catch(() => false)))
     await page.goto("/");
+  const title =
+    username === "demo" ? "Administrator sign-in" : "Learner sign-in";
+  if (
+    !(await page
+      .getByRole("heading", { level: 1, name: title, exact: true })
+      .isVisible())
+  )
+    await page.getByRole("link", { name: title, exact: true }).click();
   await page.getByLabel("Username", { exact: true }).fill(username);
   await page.getByLabel("Password", { exact: true }).fill(password);
   const signIn = async () => {

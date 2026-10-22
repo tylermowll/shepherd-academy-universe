@@ -85,8 +85,8 @@ export function LearnerAccounts({
     <section aria-label="Learner accounts">
       <p>
         Create one account per learner. They sign in with the username and
-        password you set here. Select an account to manage its sign-in details,
-        browsers, and saved work.
+        password you set here. Choose Manage account beside a learner to update
+        their sign-in details, browsers, and saved work.
       </p>
       <div className="learner-accounts">
         <aside aria-label="Choose an account">
@@ -102,7 +102,7 @@ export function LearnerAccounts({
                     onLearner(item.id);
                   }}
                 >
-                  {item.alias}
+                  {item.alias} <small>Manage account</small>
                   {!item.has_password && <small>Password not set</small>}
                 </button>
               </li>

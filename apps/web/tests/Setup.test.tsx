@@ -552,6 +552,11 @@ describe("browser first-account setup", () => {
         fetcher.mock.calls.some(([url]) => url.endsWith("/auth/setup")),
       ).toBe(false);
       if (!authenticated) {
+        fireEvent.click(
+          screen.getByRole("link", {
+            name: "Administrator sign-in",
+          }),
+        );
         fireEvent.change(screen.getByLabelText("Username"), {
           target: { value: "Synthetic" },
         });
