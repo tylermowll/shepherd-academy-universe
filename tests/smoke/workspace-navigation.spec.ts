@@ -21,7 +21,11 @@ async function expectStandaloneEntry(page: Page) {
   ).toBeVisible();
 }
 
-async function expectCopiedEntryLinks(page: Page, role: "adult" | "learner") {
+async function expectCopiedEntryLinks(
+  page: Page,
+  role: "adult" | "learner",
+  currentRole: "adult" | "learner",
+) {
   const privacy = await page
     .getByRole("link", { name: "Saved work & privacy", exact: true })
     .getAttribute("href");
@@ -35,23 +39,55 @@ async function expectCopiedEntryLinks(page: Page, role: "adult" | "learner") {
     await expect(copied.getByRole("heading", { level: 1 })).toHaveText("Help");
     await expectStandaloneEntry(copied);
     const topics = copied.getByRole("navigation", { name: "Help topics" });
-    const practiceHref = await topics
-      .getByRole("link", { name: "Start practicing", exact: true })
-      .getAttribute("href");
-    await copied.goto(new URL(practiceHref!, copied.url()).href);
-    await expectStandaloneEntry(copied);
-    const practice = await copied
-      .getByRole("article")
-      .getByRole("link", { name: "Practice", exact: true })
-      .getAttribute("href");
-    expect(new URL(practice!, copied.url()).searchParams.get("signin")).toBe(
-      role,
+    const destinations = [
+      {
+        topic: "Start practicing",
+        label: "Practice",
+        role: "learner",
+        page: "practice",
+        entry: "Learner sign-in",
+      },
+      {
+        topic: "Connect an AI model",
+        label: "Settings",
+        role: "adult",
+        page: "settings",
+        entry: "Administrator sign-in",
+      },
+    ] as const;
+    const topicLinks = await Promise.all(
+      destinations.map((destination) =>
+        topics
+          .getByRole("link", { name: destination.topic, exact: true })
+          .getAttribute("href"),
+      ),
     );
-    await copied.goto(new URL(practice!, copied.url()).href);
-    await expect(copied.getByRole("heading", { level: 1 })).toHaveText(
-      role === "adult" ? "Administrator sign-in" : "Learner sign-in",
-    );
-    await expectStandaloneEntry(copied);
+    for (const [index, destination] of destinations.entries()) {
+      await copied.goto(new URL(topicLinks[index]!, target.href).href);
+      await expectStandaloneEntry(copied);
+      const link = copied
+        .getByRole("article")
+        .getByRole("link", { name: destination.label, exact: true });
+      const href = await link.getAttribute("href");
+      const resolved = new URL(href!, copied.url());
+      expect(resolved.origin).toBe(target.origin);
+      expect(resolved.pathname).toBe(target.pathname);
+      expect(resolved.searchParams.get("signin")).toBe(destination.role);
+      expect(resolved.searchParams.get("page")).toBe(destination.page);
+      await link.click();
+      const expectedHeading =
+        currentRole === destination.role
+          ? destination.label
+          : destination.entry;
+      await expect(copied.getByRole("heading", { level: 1 })).toHaveText(
+        expectedHeading,
+      );
+      await copied.goto(resolved.href);
+      await expect(copied.getByRole("heading", { level: 1 })).toHaveText(
+        expectedHeading,
+      );
+      if (currentRole !== destination.role) await expectStandaloneEntry(copied);
+    }
   } finally {
     await copied.close();
   }
@@ -108,7 +144,41 @@ test("app area links connect administration and learning through the appropriate
   );
   await expect(page).toHaveURL(/[?&]signin=learner(?:[&#]|$)/);
   await expectStandaloneEntry(page);
-  await expectCopiedEntryLinks(page, "learner");
+  // A named Help destination resumes that page. The next handoff must preserve
+  // its new draft rather than reuse the older Learners return path.
+  await page
+    .getByRole("navigation", { name: "Sign-in navigation" })
+    .getByRole("link", { name: "Help", exact: true })
+    .click();
+  await page
+    .getByRole("navigation", { name: "Help topics" })
+    .getByRole("link", { name: "Connect an AI model", exact: true })
+    .click();
+  await page
+    .getByRole("article")
+    .getByRole("link", { name: "Settings", exact: true })
+    .click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Settings");
+  await page
+    .getByRole("button", { name: "Add new AI connection", exact: true })
+    .click();
+  const connectionName = page.getByLabel("Connection name", { exact: true });
+  await connectionName.fill("Synthetic unsaved second handoff");
+  await accountNavigation(page)
+    .getByRole("link", { name: "Learner sign-in", exact: true })
+    .click();
+  await expectStandaloneEntry(page);
+  await page
+    .getByRole("button", { name: "Cancel account switch", exact: true })
+    .click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Settings");
+  await expect(connectionName).toHaveValue("Synthetic unsaved second handoff");
+  await connectionName.fill("");
+  await navigate(page, "Learners");
+  await accountNavigation(page)
+    .getByRole("link", { name: "Learner sign-in", exact: true })
+    .click();
+  await expectCopiedEntryLinks(page, "learner", "adult");
   await page.goBack();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Learners");
   await page.goForward();
@@ -143,7 +213,7 @@ test("app area links connect administration and learning through the appropriate
   );
   await expect(page).toHaveURL(/[?&]signin=adult(?:[&#]|$)/);
   await expectStandaloneEntry(page);
-  await expectCopiedEntryLinks(page, "adult");
+  await expectCopiedEntryLinks(page, "adult", "learner");
   await expect(
     page.getByRole("button", { name: "Add learner account" }),
   ).toHaveCount(0);

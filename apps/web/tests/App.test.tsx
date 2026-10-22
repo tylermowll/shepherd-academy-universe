@@ -304,7 +304,7 @@ describe("linked app areas", () => {
       role: "learner",
     },
   ])(
-    "preserves the $role entry in actual Help and copied inline hrefs at $deployment",
+    "keeps $role Help context and routes clicked or copied inline links to their workspace role at $deployment",
     async ({ deployment, role }) => {
       vi.stubGlobal(
         "fetch",
@@ -318,14 +318,19 @@ describe("linked app areas", () => {
         url: `${deployment}?deployment=synthetic&page=${role === "adult" ? "learners" : "practice"}&signin=${role}`,
       });
       const current = new URL(window.location.href);
-      const assertLink = (link: HTMLElement, page: string, help?: string) => {
+      const assertLink = (
+        link: HTMLElement,
+        page: string,
+        help?: string,
+        targetRole = role,
+      ) => {
         const href = link.getAttribute("href");
         expect(href).not.toBeNull();
         const destination = new URL(href!, window.location.href);
         expect(destination.origin).toBe(current.origin);
         expect(destination.pathname).toBe(current.pathname);
         expect(destination.searchParams.get("deployment")).toBe("synthetic");
-        expect(destination.searchParams.get("signin")).toBe(role);
+        expect(destination.searchParams.get("signin")).toBe(targetRole);
         expect(destination.searchParams.get("page")).toBe(page);
         expect(destination.searchParams.get("help")).toBe(help ?? null);
       };
@@ -363,24 +368,49 @@ describe("linked app areas", () => {
       assertLink(practiceTopic, "help", "practice");
       fireEvent.click(practiceTopic);
       const practice = screen.getByRole("link", { name: "Practice" });
-      assertLink(practice, "practice");
+      assertLink(practice, "practice", undefined, "learner");
       fireEvent.click(screen.getByText("Why is Start session unavailable?"));
       const settings = screen.getByRole("link", { name: "Settings" });
-      assertLink(settings, "settings");
+      assertLink(settings, "settings", undefined, "adult");
       const copiedHrefs = [
-        practice.getAttribute("href")!,
-        settings.getAttribute("href")!,
+        { href: practice.getAttribute("href")!, role: "learner" },
+        { href: settings.getAttribute("href")!, role: "adult" },
       ];
 
-      for (const href of copiedHrefs) {
+      fireEvent.click(practice);
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+        "Learner sign-in",
+      );
+      expect(new URLSearchParams(window.location.search).get("signin")).toBe(
+        "learner",
+      );
+      window.history.back();
+      await vi.waitFor(() =>
+        expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+          "Help",
+        ),
+      );
+      expect(new URLSearchParams(window.location.search).get("signin")).toBe(
+        role,
+      );
+      fireEvent.click(screen.getByText("Why is Start session unavailable?"));
+      fireEvent.click(screen.getByRole("link", { name: "Settings" }));
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+        "Administrator sign-in",
+      );
+      expect(new URLSearchParams(window.location.search).get("signin")).toBe(
+        "adult",
+      );
+
+      for (const copied of copiedHrefs) {
         view.unmount();
-        window.history.replaceState(null, "", href);
+        window.history.replaceState(null, "", copied.href);
         view = render(<App />);
         await vi.waitFor(() =>
           expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
         );
         expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-          role === "adult" ? "Administrator sign-in" : "Learner sign-in",
+          copied.role === "adult" ? "Administrator sign-in" : "Learner sign-in",
         );
         expect(screen.queryByLabelText("Signed in account")).toBeNull();
         expect(
@@ -729,6 +759,85 @@ describe("linked app areas", () => {
     expect(window.location.search).toBe("?page=settings");
     expect(
       fetcher.mock.calls.some(([url]) => url.endsWith("/auth/logout")),
+    ).toBe(false);
+  });
+
+  it("preserves new settings work on a second handoff after returning through a Help destination", async () => {
+    const fetcher = vi.fn((url: string) =>
+      Promise.resolve(
+        response(
+          url.endsWith("/auth/session")
+            ? adult
+            : url.endsWith("/admin/providers")
+              ? {
+                  policy: {
+                    allow_cloud_inference: false,
+                    app_audience: "mixed",
+                    cloud_locked: false,
+                    audience_locked: false,
+                    demo_mode: false,
+                  },
+                  routes: { tutor: "", vision: "" },
+                  providers: [],
+                }
+              : [],
+        ),
+      ),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    render(<App />);
+    await screen.findByRole("heading", { level: 1, name: "Learners" });
+
+    fireEvent.click(screen.getByRole("link", { name: "Learner sign-in" }));
+    fireEvent.click(screen.getByRole("link", { name: "Help" }));
+    fireEvent.click(
+      within(screen.getByRole("navigation", { name: "Help topics" })).getByRole(
+        "link",
+        { name: "Connect an AI model" },
+      ),
+    );
+    const connectionSteps = within(screen.getByRole("article")).getByRole(
+      "list",
+    );
+    fireEvent.click(
+      within(connectionSteps).getByRole("link", { name: "Settings" }),
+    );
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Settings",
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add new AI connection" }),
+    );
+    const connectionName = screen.getByLabelText("Connection name");
+    fireEvent.change(connectionName, {
+      target: { value: "Keep this second-handoff connection draft" },
+    });
+
+    fireEvent.click(screen.getByRole("link", { name: "Learner sign-in" }));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Learner sign-in",
+    );
+    expect(connectionName).toBeInTheDocument();
+    expect(connectionName).not.toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Cancel account switch" }),
+    );
+
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Settings",
+    );
+    expect(screen.getByLabelText("Connection name")).toBe(connectionName);
+    expect(connectionName).toBeVisible();
+    expect(connectionName).toHaveValue(
+      "Keep this second-handoff connection draft",
+    );
+    expect(screen.getByLabelText("Signed in account")).toHaveTextContent(
+      "home-admin",
+    );
+    expect(
+      fetcher.mock.calls.some(
+        ([url]) => url.endsWith("/auth/login") || url.endsWith("/auth/logout"),
+      ),
     ).toBe(false);
   });
 

@@ -4,6 +4,11 @@ export type Page = "practice" | "history" | "learners" | "settings" | "help";
 export type Navigate = (page: Page, help?: string) => void;
 export type SignInRole = "adult" | "learner";
 
+export function roleForPage(page: Page): SignInRole | null {
+  if (page === "help") return null;
+  return page === "learners" || page === "settings" ? "adult" : "learner";
+}
+
 export function pageUrl(page: Page, help?: string, entryRole?: SignInRole) {
   const url = new URL(window.location.href);
   url.searchParams.set("page", page);

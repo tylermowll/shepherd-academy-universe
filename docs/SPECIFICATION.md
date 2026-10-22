@@ -167,6 +167,9 @@ The default anonymous opening is **Learner sign-in**. Each role has a standalone
 sign-in screen with its own heading, **Help** and a link to the other sign-in
 screen; prior-account navigation, identity and learner lists are absent. Links
 retain the current app host and path, and support reloads and bookmarks.
+Help topics retain the selected sign-in context. Links labeled Practice or
+History request learner access; Learners or Settings request administrator
+access. If already signed in for that destination, open the named page.
 Opening another role's sign-in preserves the current session and unsent work.
 Canceling or following the current role's sign-in link returns to the prior
 workspace and its drafts. Failed authentication, including valid credentials for

@@ -94,8 +94,11 @@ before the old session is revoked. Valid credentials for the other role return
 specific sign-in guidance; invalid credentials retain the generic error. The
 client sends the selected role using regenerated types. Standalone entry chrome
 replaces the global area tabs, with one cross-role link in each workspace.
-Help, footer and inline links share the same entry-role URL construction for
-ordinary clicks, copied addresses and new tabs. Canceling and returning to the
+Help topics and footer links retain the selected entry role. Inline Practice
+and History links request learner access; Learners and Settings request
+administrator access, opening the named page when already signed in for that
+role. Actual URLs and intercepted clicks share the same role/page mapping for
+copied addresses and new tabs. Canceling and returning to the
 current role keep the exact mounted workspace; success clears prior-account
 state. Default signed-out entry is Learner sign-in, while direct Settings and
 Learners bookmarks offer Administrator sign-in. Sign-out preserves the current
@@ -106,7 +109,7 @@ Commands used the cleared no-env-file `/tmp/shepherd-t58/run` runner with
 the sandbox after the first restricted ASGI run stalled and was stopped; no
 assertion or authorization check was weakened.
 
-- `make check`: passed **329 backend unit, 11 toolchain and 232 component
+- `make check`: passed **329 backend unit, 11 toolchain and 233 component
   tests**, strict types/lint/format, lock checks, production build, generated
   contracts, credential scan and infrastructure validation. Earlier runs caught
   lint and optional-prop typing issues; these were corrected before the complete
@@ -118,13 +121,26 @@ assertion or authorization check was weakened.
   **34 desktop/mobile tests passed in 5.1 minutes**. The final complete browser
   run additionally includes copied Help/footer/inline URL checks added during
   independent review.
-- Focused App/URL tests passed **36 cases**, including both roles at localhost
+- Focused App/URL tests passed **37 cases**, including both roles at localhost
   and HTTPS nested paths. These verify URL construction and component routing;
   they do not claim complete subpath hosting support.
 
-Independent source review found no remaining blocker after correcting actual
-Help hrefs to match intercepted navigation. Full browser, image, publication and
-private-deployment evidence remains pending. No live provider evaluation ran.
+Independent review corrected actual Help hrefs, destination-role routing and
+a stale return-page state that could discard a new Settings draft on a second
+handoff. A regression now follows Learners → learner entry → Help → Settings →
+new unsaved connection → learner entry → Cancel and retains the exact input and
+value. Only an ongoing opposite-role handoff keeps the previous return page.
+
+An initial broad browser run exposed two outdated test assumptions: adjacent
+Help query fields and an implicit root URL after administrator login. Assertions
+now check page/topic/role explicitly; the phone test establishes its fragment-only
+starting URL and verifies that the administrator remains signed in. Its token,
+no-logout and same-document checks remain intact. The corrected cases passed
+**4/4 in 29.0 seconds** on an isolated instance with the checked-in desktop/mobile
+profiles and zero retries. Broad runs were stopped while applying review changes;
+those interruptions are not successful full-suite results. Final browser, image,
+publication and private-deployment evidence remains pending. No live provider
+evaluation ran.
 
 ## T59 — Remove the focus box from page headings (2026-10-21)
 

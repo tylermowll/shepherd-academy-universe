@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { pageUrl, signInUrl } from "../src/navigation";
+import { pageUrl, roleForPage, signInUrl } from "../src/navigation";
 
 const browser = (
   globalThis as typeof globalThis & {
@@ -58,19 +58,21 @@ describe.each([
   });
 
   it.each(["adult", "learner"] as const)(
-    "keeps the selected %s entry in copied Help and inline workspace URLs",
+    "keeps the %s reader context for Help and uses the target workspace role for copied inline URLs",
     (role) => {
       browser.reconfigure({ url: currentUrl });
       const current = new URL(currentUrl);
 
-      for (const [page, topic] of [
-        ["help", undefined],
-        ["help", "privacy"],
-        ["help", "practice"],
-        ["practice", undefined],
-        ["settings", undefined],
+      for (const [page, topic, expectedRole] of [
+        ["help", undefined, role],
+        ["help", "privacy", role],
+        ["help", "practice", role],
+        ["practice", undefined, "learner"],
+        ["history", undefined, "learner"],
+        ["learners", undefined, "adult"],
+        ["settings", undefined, "adult"],
       ] as const) {
-        const href = pageUrl(page, topic, role);
+        const href = pageUrl(page, topic, roleForPage(page) ?? role);
         const resolved = new URL(href, currentUrl);
         expect(resolved.origin).toBe(current.origin);
         expect(resolved.pathname).toBe(current.pathname);
@@ -78,7 +80,7 @@ describe.each([
           current.searchParams.get("deployment"),
         );
         expect(resolved.searchParams.get("page")).toBe(page);
-        expect(resolved.searchParams.get("signin")).toBe(role);
+        expect(resolved.searchParams.get("signin")).toBe(expectedRole);
         expect(resolved.searchParams.get("help")).toBe(topic ?? null);
         expect(resolved.hash).toBe(current.hash);
         expect(href).not.toMatch(/^https?:/);

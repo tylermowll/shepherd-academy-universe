@@ -13,6 +13,7 @@ import { ContextHelp, HelpPage } from "./Help";
 import {
   followPage,
   pageUrl,
+  roleForPage,
   signInUrl,
   type Page,
   type Navigate,
@@ -124,14 +125,25 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
     (nextPage, help) => {
       if (signingIn) return;
       scrollToTop.current = true;
+      const destinationRole = roleForPage(nextPage) ?? signInRole;
+      const keepWorkspace =
+        entryVisible && authenticated && destinationRole !== identity.role;
       window.history.pushState(
-        entryVisible ? { switchPage: location.switchPage ?? page } : null,
+        keepWorkspace ? { switchPage: location.switchPage ?? page } : null,
         "",
-        pageUrl(nextPage, help, entryVisible ? signInRole : undefined),
+        pageUrl(nextPage, help, entryVisible ? destinationRole : undefined),
       );
       setLocation(readLocation());
     },
-    [signingIn, entryVisible, signInRole, location.switchPage, page],
+    [
+      signingIn,
+      entryVisible,
+      authenticated,
+      identity,
+      signInRole,
+      location.switchPage,
+      page,
+    ],
   );
   const tutorVisible =
     !switchingAccount && (page === "practice" || page === "history");

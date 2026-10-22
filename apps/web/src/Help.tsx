@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import {
   followPage,
   pageUrl,
+  roleForPage,
   type Page,
   type Navigate,
   type SignInRole,
@@ -44,7 +45,11 @@ export function HelpPage({
   const selected = topics.find(([id]) => id === topic) ?? topics[0];
   const link = (page: Page, label: string, help?: string) => (
     <a
-      href={pageUrl(page, help, entryRole)}
+      href={pageUrl(
+        page,
+        help,
+        entryRole ? (roleForPage(page) ?? entryRole) : undefined,
+      )}
       onClick={(event) => followPage(event, onNavigate, page, help)}
     >
       {label}
