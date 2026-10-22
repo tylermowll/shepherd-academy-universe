@@ -30,6 +30,8 @@ function Accounts({
       learners={[savedLearner]}
       onLearner={vi.fn()}
       onRefresh={async () => setSavedLearner(await refresh())}
+      administrator="home-admin"
+      onSessionChange={vi.fn()}
       act={async (action) => action()}
     />
   );
@@ -49,6 +51,8 @@ describe("learner account management", () => {
         learners={[learner]}
         onLearner={choose}
         onRefresh={() => Promise.resolve()}
+        administrator="home-admin"
+        onSessionChange={vi.fn()}
         act={async (action) => action()}
       />,
     );
@@ -66,16 +70,16 @@ describe("learner account management", () => {
 
 describe("learner passwords on HTTPS", () => {
   it.each(["create", "reset"] as const)(
-    "uses a six-character minimum for %s and preserves rejected input until corrected",
+    "uses a three-character minimum for %s and preserves rejected input until corrected",
     async (operation) => {
       expect(window.location.protocol).toBe("https:");
       const fetcher = vi.fn((_url: string, init?: RequestInit) => {
         if (init?.method === "POST" || init?.method === "PATCH") {
           const body = JSON.parse(init.body as string) as { password: string };
           return Promise.resolve(
-            body.password.length < 6
+            body.password.length < 3
               ? response(
-                  { detail: "Use at least 6 characters for the password." },
+                  { detail: "Use at least 3 characters for the password." },
                   422,
                 )
               : response(learner),
@@ -92,6 +96,8 @@ describe("learner passwords on HTTPS", () => {
           learners={operation === "reset" ? [learner] : []}
           onLearner={choose}
           onRefresh={refresh}
+          administrator="home-admin"
+          onSessionChange={vi.fn()}
           act={async (action) => action()}
         />,
       );
@@ -104,22 +110,22 @@ describe("learner passwords on HTTPS", () => {
             ? "Create learner account"
             : "Save sign-in details",
       });
-      expect(password).toHaveAttribute("minlength", "6");
+      expect(password).toHaveAttribute("minlength", "3");
       expect(password).toHaveAttribute("maxlength", "256");
-      expect(screen.getByText(/^At least 6 characters\./)).toBeVisible();
+      expect(screen.getByText(/^At least 3 characters\./)).toBeVisible();
       fireEvent.change(screen.getByLabelText("Learner username"), {
         target: { value: learner.alias },
       });
-      fireEvent.change(password, { target: { value: "short" } });
+      fireEvent.change(password, { target: { value: "12" } });
       // Submit directly to exercise the backend rejection path as well as the
       // native minlength contract; browser tests cover native form prevention.
       fireEvent.submit(submit.closest("form")!);
       expect(await screen.findByRole("alert")).toHaveTextContent(
-        "Use at least 6 characters for the password.",
+        "Use at least 3 characters for the password.",
       );
-      expect(password).toHaveValue("short");
+      expect(password).toHaveValue("12");
       expect(refresh).not.toHaveBeenCalled();
-      fireEvent.change(password, { target: { value: "simple" } });
+      fireEvent.change(password, { target: { value: "123" } });
       fireEvent.click(submit);
       await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
       expect(password).toHaveValue("");
@@ -136,7 +142,7 @@ describe("learner passwords on HTTPS", () => {
           method: operation === "create" ? "POST" : "PATCH",
           body: JSON.stringify({
             alias: learner.alias,
-            password: "simple",
+            password: "123",
             ...(operation === "create" ? { eligibility: "unknown" } : {}),
           }),
         }),

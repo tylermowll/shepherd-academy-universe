@@ -27,7 +27,7 @@ const adult: Schema<"SessionStatus"> = {
 const available: Schema<"SetupStatus"> = {
   required: true,
   available: true,
-  minimum_password_length: 6,
+  minimum_password_length: 3,
   maximum_password_length: 256,
 };
 const reply = (body: unknown, status = 200) =>
@@ -250,7 +250,7 @@ describe("browser first-account setup", () => {
       "/local?page=practice",
     );
     await fill();
-    expect(screen.getByText(/Use 6–256 characters/)).toBeVisible();
+    expect(screen.getByText(/Use 3–256 characters/)).toBeVisible();
     expect(screen.getByLabelText("Password", { exact: true })).toHaveAttribute(
       "type",
       "password",
@@ -304,10 +304,10 @@ describe("browser first-account setup", () => {
     expect(screen.getByText("Enter a username.")).toBeVisible();
     expect(screen.getByText("Enter a password.")).toBeVisible();
     expect(screen.getByText("Enter the password again.")).toBeVisible();
-    await fill("short");
+    await fill("12");
     submit();
     expect(
-      screen.getByText("Use 6–256 characters for your password."),
+      screen.getByText("Use 3–256 characters for your password."),
     ).toBeVisible();
     await fill("simple", "different");
     submit();
@@ -326,14 +326,14 @@ describe("browser first-account setup", () => {
       ),
     ).toBe(false);
   });
-  it("rejects five characters and accepts six for administrator setup on HTTPS", async () => {
+  it("rejects two characters and accepts three for administrator setup on HTTPS", async () => {
     expect(window.location.protocol).toBe("https:");
     const fetcher = install();
     mount();
-    await fill("short");
+    await fill("12");
     submit();
     expect(
-      screen.getByText("Use 6–256 characters for your password."),
+      screen.getByText("Use 3–256 characters for your password."),
     ).toBeVisible();
     expect(
       fetcher.mock.calls.some(
@@ -341,7 +341,7 @@ describe("browser first-account setup", () => {
           url.endsWith("/auth/setup") && options.method === "POST",
       ),
     ).toBe(false);
-    await fill("simple");
+    await fill("123");
     submit();
     await screen.findByRole("heading", { name: "Settings", level: 1 });
     expect(
@@ -355,8 +355,8 @@ describe("browser first-account setup", () => {
         expect.objectContaining({
           body: JSON.stringify({
             login_name: "Synthetic",
-            password: "simple",
-            password_confirmation: "simple",
+            password: "123",
+            password_confirmation: "123",
           }),
         }),
       ],
@@ -395,7 +395,7 @@ describe("browser first-account setup", () => {
   it("counts Unicode characters like the server, not UTF-16 code units", async () => {
     const fetcher = install();
     mount();
-    await fill("🌱".repeat(5));
+    await fill("🌱".repeat(2));
     submit();
     expect(screen.getByLabelText("Password", { exact: true })).toHaveAttribute(
       "aria-invalid",
@@ -407,7 +407,7 @@ describe("browser first-account setup", () => {
           url.endsWith("/auth/setup") && options.method === "POST",
       ),
     ).toBe(false);
-    await fill("🌱".repeat(6));
+    await fill("🌱".repeat(3));
     submit();
     await screen.findByRole("heading", { name: "Settings", level: 1 });
   });

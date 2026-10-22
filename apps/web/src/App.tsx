@@ -20,6 +20,7 @@ import {
   type SignInRole,
 } from "./navigation";
 import { Setup } from "./Setup";
+import { SignInAccounts } from "./SignInAccounts";
 import { captureSetupAuthority, type SetupAuthority } from "./setup-authority";
 
 const pageNames: Record<Page, string> = {
@@ -644,15 +645,11 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                         ? "Manage learner accounts and app settings."
                         : "Open only your own practice and history."}
                     </p>
-                    <label>
-                      Username
-                      <input
-                        name="login"
-                        autoComplete="username"
-                        required
-                        maxLength={64}
-                      />
-                    </label>
+                    <SignInAccounts
+                      role={signInRole}
+                      ready={!!identity && signInVisible}
+                      disabled={signingIn}
+                    />
                     <label>
                       Password
                       <input
@@ -660,6 +657,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                         type="password"
                         autoComplete="current-password"
                         required
+                        minLength={3}
                         maxLength={256}
                       />
                     </label>
@@ -754,6 +752,11 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                 page={page}
                 onNavigate={navigate}
                 act={act}
+                administrator={identity.login_name ?? "Administrator"}
+                onSessionChange={(session) => {
+                  setIdentity(session.csrf_token, session.authenticated);
+                  setSession(session);
+                }}
               />
             )}
             {learner && !isAdult && (

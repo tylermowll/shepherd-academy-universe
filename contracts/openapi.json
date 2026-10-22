@@ -676,6 +676,43 @@
         "title": "OperationPublic",
         "type": "object"
       },
+      "PasswordChangeRequest": {
+        "additionalProperties": false,
+        "description": "Write-only credentials for a signed-in administrator password change.",
+        "properties": {
+          "current_password": {
+            "format": "password",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Current Password",
+            "type": "string",
+            "writeOnly": true
+          },
+          "new_password": {
+            "format": "password",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "New Password",
+            "type": "string",
+            "writeOnly": true
+          },
+          "password_confirmation": {
+            "format": "password",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Password Confirmation",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "current_password",
+          "new_password",
+          "password_confirmation"
+        ],
+        "title": "PasswordChangeRequest",
+        "type": "object"
+      },
       "PhoneReceipt": {
         "properties": {
           "received": {
@@ -1988,6 +2025,30 @@
         "title": "SetupStatus",
         "type": "object"
       },
+      "SignInAccount": {
+        "additionalProperties": false,
+        "description": "A deliberately public name for selecting the intended sign-in account.",
+        "properties": {
+          "login_name": {
+            "title": "Login Name",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "adult",
+              "learner"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "login_name",
+          "role"
+        ],
+        "title": "SignInAccount",
+        "type": "object"
+      },
       "SourceChoice": {
         "properties": {
           "id": {
@@ -3282,6 +3343,57 @@
         ]
       }
     },
+    "/api/v1/auth/accounts": {
+      "get": {
+        "description": "List only sign-in names for the requested role, including before login.",
+        "operationId": "sign_in_accounts_api_v1_auth_accounts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "role",
+            "required": true,
+            "schema": {
+              "enum": [
+                "adult",
+                "learner"
+              ],
+              "title": "Role",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SignInAccount"
+                  },
+                  "title": "Response Sign In Accounts Api V1 Auth Accounts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sign In Accounts",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "description": "Authenticate one account and recheck its credentials before issuing a cookie.",
@@ -3341,6 +3453,48 @@
           }
         },
         "summary": "Logout",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/password": {
+      "post": {
+        "description": "Change the administrator's password and replace all their signed-in sessions.",
+        "operationId": "change_password_api_v1_auth_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Password",
         "tags": [
           "auth"
         ]

@@ -34,11 +34,17 @@ test("page headings keep accessible focus without a box while keyboard controls 
   ).toBe(true);
   await expect(heading).toHaveCSS("outline-style", "none");
 
-  for (const control of [
+  const choices = page
+    .getByRole("group", { name: "Choose an account" })
+    .getByRole("button");
+  await expect(choices.first()).toBeVisible();
+  const controls = [
+    ...(await choices.all()),
     page.getByRole("textbox", { name: "Username", exact: true }),
     page.getByLabel("Password", { exact: true }),
     signIn,
-  ]) {
+  ];
+  for (const control of controls) {
     await page.keyboard.press("Tab");
     await expect(control).toBeFocused();
     await expect(control).toHaveCSS("outline-style", "solid");
@@ -48,7 +54,7 @@ test("page headings keep accessible focus without a box while keyboard controls 
   const help = page
     .getByRole("navigation", { name: "Sign-in navigation" })
     .getByRole("link", { name: "Help", exact: true });
-  for (let step = 0; step < 3; step += 1)
+  for (let step = 0; step < controls.length; step += 1)
     await page.keyboard.press("Shift+Tab");
   await expect(help).toBeFocused();
   await expect(help).toHaveCSS("outline-style", "solid");

@@ -235,7 +235,7 @@ def test_admin_login_names_stay_unique(engine: Engine) -> None:
 def test_admin_password_policy_and_reset(engine: Engine) -> None:
     with Session(engine) as db:
         with pytest.raises(ValueError, match="at least"):
-            auth_service.create_or_reset_admin(db, ADMIN_LOGIN, "short")
+            auth_service.create_or_reset_admin(db, ADMIN_LOGIN, "12")
         with pytest.raises(ValueError, match="1-64"):
             auth_service.create_or_reset_admin(db, "   ", ADMIN_PASSWORD * 4)
 
@@ -498,7 +498,7 @@ def test_cli_admin_rejects_mismatch_and_short_password(
     assert cli.main(["admin"]) == 1
     assert "do not match" in capsys.readouterr().err
 
-    short = iter(["short", "short"])
+    short = iter(["12", "12"])
     monkeypatch.setattr("getpass.getpass", lambda _: next(short))
     assert cli.main(["admin"]) == 1
     assert "at least" in capsys.readouterr().err

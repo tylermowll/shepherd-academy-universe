@@ -66,11 +66,12 @@ restarts. Unsent passwords clear on reload. `make start` renews an expired link
 when no administrator exists; it does not reset an existing account. Keep setup
 links private.
 
-Administrator and learner passwords require **6–256 characters** on both HTTP
+Administrator and learner passwords require **3–256 characters** on both HTTP
 and HTTPS. Uppercase letters and symbols are optional. Existing passwords work
 over HTTPS without a reset; updates preserve stored credentials. Use the
 [runbook](docs/RUNBOOK.md) for password recovery. Resetting a password signs out
-that account's browsers.
+that account's browsers. Sign-in screens list usernames for this household;
+choose your account and enter its password.
 
 Use `make start` after stopping a native app with Ctrl+C. `make dev` restricts the
 same workflow to loopback HTTP. For desktop practice with an iPhone camera, follow
@@ -107,7 +108,10 @@ storage and recovery.
 Open **Learners** to create learner usernames, passwords and age groups. Each
 learner opens **Learner sign-in** with their own credentials and sees only their
 own work. Choose **Manage account** beside a learner to update their sign-in
-details, browsers and saved work.
+details, browsers and saved work. The administrator is also listed here; choose
+the administrator account to change its password using the current password
+and a confirmed new password. Changing it signs out other administrator browsers
+and keeps this browser signed in.
 Administrators can correct an existing learner's age group without losing saved
 work. Changing it stops pending requests so the updated provider restrictions
 apply before more work is processed.

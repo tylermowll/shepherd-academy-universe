@@ -31,7 +31,7 @@ from math_tutor.setup_gate import SETUP_TOKEN_ENV_VAR, SetupGate
 
 OWNER_TOKEN = "synthetic-local-owner-token-0123456789abcdef"
 NEW_OWNER_TOKEN = "different-synthetic-owner-token-fedcba9876543210"
-PASSWORD = "plain6"
+PASSWORD = "123"
 OTHER_PASSWORD = "different-synthetic-password"
 SETUP = "/api/v1/auth/setup"
 EXCHANGE = SETUP + "/session"
@@ -198,7 +198,7 @@ async def test_first_owner_setup_signs_in_and_never_exposes_secrets(
         assert status.json() == {
             "required": True,
             "available": False,
-            "minimum_password_length": 6,
+            "minimum_password_length": 3,
             "maximum_password_length": 256,
         }
         assert status.headers["Cache-Control"] == "no-store"
@@ -278,7 +278,7 @@ async def test_setup_rejects_invalid_authority_origin_csrf_without_creating_acco
 
 @pytest.mark.anyio
 @pytest.mark.parametrize(
-    "bad_password", ["short", "      ", "abcdef\n", "abcdef\x00", "abcdef\ud800", "x" * 257]
+    "bad_password", ["12", "      ", "abcdef\n", "abcdef\x00", "abcdef\ud800", "x" * 257]
 )
 async def test_invalid_passwords_remain_recoverable_inline(
     app: FastAPI, engine: Engine, bad_password: str
@@ -419,7 +419,7 @@ async def test_setup_rate_limit_is_bounded_and_returns_retry_after(app: FastAPI)
 
 
 @pytest.mark.anyio
-async def test_https_setup_requires_six_and_keeps_secure_cookies(
+async def test_https_setup_requires_three_and_keeps_secure_cookies(
     engine: Engine, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     origin = "https://tutor.example"
@@ -428,16 +428,16 @@ async def test_https_setup_requires_six_and_keeps_secure_cookies(
     app = create_app(engine)
     async with client(app, origin) as browser:
         status = (await browser.get(SETUP)).json()
-        assert status["minimum_password_length"] == 6
+        assert status["minimum_password_length"] == 3
         assert "local_passwords_allowed" not in status
         await authorize(browser)
         assert next(cookie for cookie in browser.cookies.jar if cookie.name == SETUP_COOKIE).secure
         response = await browser.post(
             SETUP,
-            json=body(password="short", password_confirmation="short"),
+            json=body(password="12", password_confirmation="12"),
             headers={"X-Forwarded-Host": "localhost", "X-Forwarded-Proto": "http"},
         )
-        assert response.status_code == 422 and "at least 6" in response.text
+        assert response.status_code == 422 and "at least 3" in response.text
         accepted = await browser.post(SETUP, json=body())
         assert accepted.status_code == 200 and "Secure" in accepted.headers["set-cookie"]
     with Session(engine) as db:
@@ -446,7 +446,7 @@ async def test_https_setup_requires_six_and_keeps_secure_cookies(
 
 
 @pytest.mark.anyio
-async def test_existing_six_character_password_and_session_work_on_https_without_reset(
+async def test_existing_three_character_password_and_session_work_on_https_without_reset(
     app: FastAPI, engine: Engine, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     async with client(app) as browser:
@@ -471,14 +471,14 @@ async def test_existing_six_character_password_and_session_work_on_https_without
         assert accepted.status_code == 200
         # An explicit reset still revokes old sessions and checks the new minimum.
         with Session(engine) as db:
-            with pytest.raises(ValueError, match="at least 6"):
-                auth.create_or_reset_admin(db, "Owner", "short")
-            auth.create_or_reset_admin(db, "Owner", "reset6")
+            with pytest.raises(ValueError, match="at least 3"):
+                auth.create_or_reset_admin(db, "Owner", "12")
+            auth.create_or_reset_admin(db, "Owner", "456")
             db.commit()
         await csrf(browser)
         accepted = await browser.post(
             "/api/v1/auth/login",
-            json={"login_name": "Owner", "password": "reset6", "role": "adult"},
+            json={"login_name": "Owner", "password": "456", "role": "adult"},
         )
         assert accepted.status_code == 200
     with Session(engine) as db:
@@ -487,7 +487,7 @@ async def test_existing_six_character_password_and_session_work_on_https_without
 
 @pytest.mark.anyio
 @pytest.mark.parametrize("origin", [TEST_ORIGIN, "https://tutor.example"])
-async def test_learner_creation_and_reset_require_six_on_http_and_https(
+async def test_learner_creation_and_reset_require_three_on_http_and_https(
     engine: Engine, monkeypatch: pytest.MonkeyPatch, origin: str
 ) -> None:
     monkeypatch.setenv(settings.APP_PUBLIC_ORIGIN_ENV_VAR, origin)
@@ -498,30 +498,30 @@ async def test_learner_creation_and_reset_require_six_on_http_and_https(
         assert (await adult.post(SETUP, json=body())).status_code == 200
         await csrf(adult)
         rejected = await adult.post(
-            "/api/v1/admin/learners", json={"alias": "River", "password": "short"}
+            "/api/v1/admin/learners", json={"alias": "River", "password": "12"}
         )
-        assert rejected.status_code == 422 and "at least 6" in rejected.text
+        assert rejected.status_code == 422 and "at least 3" in rejected.text
         created = await adult.post(
-            "/api/v1/admin/learners", json={"alias": "River", "password": "plain6"}
+            "/api/v1/admin/learners", json={"alias": "River", "password": "123"}
         )
         assert created.status_code == 201
         path = f"/api/v1/admin/learners/{created.json()['id']}/account"
         await csrf(learner)
         signed = await learner.post(
             "/api/v1/auth/login",
-            json={"login_name": "River", "password": "plain6", "role": "learner"},
+            json={"login_name": "River", "password": "123", "role": "learner"},
         )
         assert signed.status_code == 200 and signed.json()["role"] == "learner"
         assert (await learner.get("/api/v1/auth/session")).json()["authenticated"]
         assert (await learner.get("/api/v1/admin/learners")).status_code == 403
-        rejected = await adult.patch(path, json={"alias": "River", "password": "short"})
-        assert rejected.status_code == 422 and "at least 6" in rejected.text
+        rejected = await adult.patch(path, json={"alias": "River", "password": "12"})
+        assert rejected.status_code == 422 and "at least 3" in rejected.text
         assert (await learner.get("/api/v1/auth/session")).json()["authenticated"]
-        reset = await adult.patch(path, json={"alias": "River", "password": "reset6"})
+        reset = await adult.patch(path, json={"alias": "River", "password": "456"})
         assert reset.status_code == 200
         assert not (await learner.get("/api/v1/auth/session")).json()["authenticated"]
         await csrf(learner)
-        for password, expected in [("plain6", 401), ("reset6", 200)]:
+        for password, expected in [("123", 401), ("456", 200)]:
             response = await learner.post(
                 "/api/v1/auth/login",
                 json={"login_name": "River", "password": password, "role": "learner"},

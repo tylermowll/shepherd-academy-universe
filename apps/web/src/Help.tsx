@@ -146,8 +146,24 @@ export function HelpPage({
           )}
           {selected[0] === "signin" && (
             <>
+              <p>
+                Choose your username from the account list on the sign-in
+                screen, then enter your password. You can also enter your
+                username directly. Administrator and learner passwords use 3–256
+                characters, with no uppercase or symbol rules.
+              </p>
               {recoveryRole === "adult" ? (
                 <>
+                  <h3>Change your administrator password</h3>
+                  <p>
+                    While signed in to Management, open{" "}
+                    <strong>Learners</strong>, choose{" "}
+                    <strong>Manage administrator</strong> beside your account,
+                    and enter your current password and a new password twice.
+                    Choose <strong>Change administrator password</strong>. This
+                    browser stays signed in; other administrator browsers are
+                    signed out.
+                  </p>
                   <h3>Recover an existing administrator account</h3>
                   <p>
                     Contact the person running this app if you need help with
@@ -394,7 +410,7 @@ export function HelpPage({
                 The first start prints a{" "}
                 <strong>Create administrator account</strong> link. Open that
                 link and choose your username and password here in the browser.
-                Administrator and learner passwords need at least six
+                Administrator and learner passwords need at least three
                 characters, including for phone and HTTPS access. No uppercase
                 or symbol rules apply. Invalid input stays on the form so you
                 can correct it.
@@ -612,7 +628,7 @@ export function HelpPage({
               </ContextHelp>
               <ContextHelp topic="Does my password work on my phone?">
                 <p>
-                  Administrator and learner passwords need at least six
+                  Administrator and learner passwords need at least three
                   characters on both this computer and your private HTTPS
                   address. Use the same app address on your phone and sign in
                   with your existing account.

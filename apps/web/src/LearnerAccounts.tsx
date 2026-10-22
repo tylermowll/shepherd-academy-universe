@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError, newKey, type Schema } from "./client";
+import { AdministratorAccount } from "./AdministratorAccount";
 
 type Props = {
   learner: string;
@@ -7,6 +8,8 @@ type Props = {
   onLearner: (id: string) => void;
   onRefresh: () => Promise<void>;
   act: (action: () => Promise<void>) => Promise<void>;
+  administrator: string;
+  onSessionChange: (session: Schema<"SessionStatus">) => void;
 };
 
 function field(data: FormData, name: string): string {
@@ -20,8 +23,11 @@ export function LearnerAccounts({
   onLearner,
   onRefresh,
   act,
+  administrator,
+  onSessionChange,
 }: Props) {
   const [adding, setAdding] = useState(false);
+  const [managingAdministrator, setManagingAdministrator] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -32,9 +38,9 @@ export function LearnerAccounts({
   const [deviceRefresh, setDeviceRefresh] = useState(0);
   const version = useRef(0);
   const chosen = learners.find((item) => item.id === learner);
-  const creating = adding || learners.length === 0;
+  const creating = !managingAdministrator && (adding || learners.length === 0);
   const chosenId = chosen?.id;
-  const minimumPassword = 6;
+  const minimumPassword = 3;
   useEffect(() => {
     return () => {
       version.current += 1;
@@ -42,7 +48,7 @@ export function LearnerAccounts({
   }, [learner]);
   useEffect(() => {
     let current = true;
-    if (chosenId && !creating)
+    if (chosenId && !creating && !managingAdministrator)
       void api<Schema<"LearnerDevicePublic">[]>(
         `/admin/learners/${chosenId}/devices`,
       ).then(
@@ -60,7 +66,7 @@ export function LearnerAccounts({
     return () => {
       current = false;
     };
-  }, [chosenId, creating, deviceRefresh]);
+  }, [chosenId, creating, managingAdministrator, deviceRefresh]);
   const run = (action: (current: () => boolean) => Promise<void>) => {
     const started = version.current;
     setBusy(true);
@@ -90,14 +96,29 @@ export function LearnerAccounts({
       </p>
       <div className="learner-accounts">
         <aside aria-label="Choose an account">
+          <h2>Administrator</h2>
+          <ul className="account-list">
+            <li>
+              <button
+                disabled={busy}
+                aria-pressed={managingAdministrator}
+                onClick={() => setManagingAdministrator(true)}
+              >
+                {administrator} <small>Manage administrator</small>
+              </button>
+            </li>
+          </ul>
           <h2>Learners</h2>
           <ul className="account-list">
             {learners.map((item) => (
               <li key={item.id}>
                 <button
                   disabled={busy}
-                  aria-pressed={!creating && learner === item.id}
+                  aria-pressed={
+                    !managingAdministrator && !creating && learner === item.id
+                  }
                   onClick={() => {
+                    setManagingAdministrator(false);
                     setAdding(false);
                     onLearner(item.id);
                   }}
@@ -111,6 +132,7 @@ export function LearnerAccounts({
           <button
             disabled={busy}
             onClick={() => {
+              setManagingAdministrator(false);
               setAdding(true);
               setError("");
               setMessage("");
@@ -130,7 +152,13 @@ export function LearnerAccounts({
               {message}
             </p>
           )}
-          {creating ? (
+          {managingAdministrator ? (
+            <AdministratorAccount
+              loginName={administrator}
+              onSessionChange={onSessionChange}
+              act={act}
+            />
+          ) : creating ? (
             <form
               className="card"
               onSubmit={(event) => {

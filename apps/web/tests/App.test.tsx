@@ -28,13 +28,19 @@ beforeEach(() => {
   window.history.replaceState(null, "", "/");
   vi.stubGlobal(
     "fetch",
-    vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          authenticated: false,
-          csrf_token: "synthetic-csrf",
-        }),
-        { headers: { "Content-Type": "application/json" } },
+    vi.fn((url: string) =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify(
+            url.includes("/auth/accounts?")
+              ? []
+              : {
+                  authenticated: false,
+                  csrf_token: "synthetic-csrf",
+                },
+          ),
+          { headers: { "Content-Type": "application/json" } },
+        ),
       ),
     ),
   );
@@ -195,6 +201,77 @@ describe("linked app areas", () => {
     photos_available: false,
     text_processing: "mock",
   };
+
+  it("keeps Management signed in after changing the administrator password and uses its rotated CSRF", async () => {
+    const rotated = { ...adult, csrf_token: "synthetic-rotated-csrf" };
+    const fetcher = vi.fn((url: string, options?: RequestInit) => {
+      if (url.endsWith("/auth/session"))
+        return Promise.resolve(response(adult));
+      if (url.endsWith("/auth/password"))
+        return Promise.resolve(response(rotated));
+      if (url.endsWith("/admin/learners") && options?.method === "POST")
+        return Promise.resolve(
+          response({
+            id: learnerId,
+            alias: "River",
+            eligibility: "unknown",
+            enabled: true,
+            has_password: true,
+          }),
+        );
+      return Promise.resolve(response([]));
+    });
+    vi.stubGlobal("fetch", fetcher);
+    render(<App />);
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "home-admin Manage administrator",
+      }),
+    );
+    for (const [label, value] of [
+      ["Current password", "old"],
+      ["New password", "123"],
+      ["Confirm new password", "123"],
+    ])
+      fireEvent.change(screen.getByLabelText(label!), { target: { value } });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Change administrator password" }),
+    );
+    await screen.findByText(
+      "Administrator password changed. Other administrator browsers are signed out.",
+    );
+    expect(screen.getByLabelText("Signed in account")).toHaveTextContent(
+      "home-admin",
+    );
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Learners",
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Add learner account" }),
+    );
+    fireEvent.change(screen.getByLabelText("Learner username"), {
+      target: { value: "River" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "123" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Create learner account" }),
+    );
+    await vi.waitFor(() =>
+      expect(fetcher).toHaveBeenCalledWith(
+        "/api/v1/admin/learners",
+        expect.objectContaining({
+          method: "POST",
+          headers: {
+            "X-CSRF-Token": "synthetic-rotated-csrf",
+            "Content-Type": "application/json",
+            "Idempotency-Key": expect.any(String) as string,
+          },
+        }),
+      ),
+    );
+  });
 
   it.each([adult, learnerAccount])(
     "submits the selected $role entry and clears the previous selection on success",
@@ -474,9 +551,13 @@ describe("linked app areas", () => {
     async ({ deployment, role }) => {
       vi.stubGlobal(
         "fetch",
-        vi.fn(() =>
+        vi.fn((url: string) =>
           Promise.resolve(
-            response({ authenticated: false, csrf_token: "synthetic-csrf" }),
+            response(
+              url.includes("/auth/accounts?")
+                ? []
+                : { authenticated: false, csrf_token: "synthetic-csrf" },
+            ),
           ),
         ),
       );
@@ -704,7 +785,7 @@ describe("linked app areas", () => {
     expect(
       screen.queryByRole("navigation", { name: "Account navigation" }),
     ).toBeNull();
-    expect(screen.queryByText("home-admin")).toBeNull();
+    expect(screen.getByText("home-admin")).not.toBeVisible();
     signIn("home-learner");
     await screen.findByRole("heading", { level: 1, name: "Practice" });
     expect(screen.getByLabelText("Signed in account")).toHaveTextContent(

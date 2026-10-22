@@ -3,7 +3,9 @@
 Routes (all under ``/api/v1/auth``):
 
 * ``GET /session`` — minimal status plus CSRF bootstrap; never a learner list.
+* ``GET /accounts`` — role-specific sign-in names, without private account data.
 * ``POST /login`` — opaque session cookie on valid credentials for the requested role.
+* ``POST /password`` — adult password change and session replacement.
 * ``POST /logout`` — immediate revocation of the presenting session.
 
 State-changing requests require the ``X-CSRF-Token`` header and a passing
@@ -24,13 +26,14 @@ from urllib.parse import urlsplit
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from sqlalchemy import select, update
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from math_tutor import auth as auth_service
 from math_tutor import settings
-from math_tutor.adapters.db.models import Administrator, Learner
+from math_tutor.adapters.db.models import Administrator, DeviceSession, Learner
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -54,6 +57,31 @@ class LoginRequest(BaseModel):
     login_name: str = Field(min_length=1, max_length=64)
     password: str = Field(min_length=1, max_length=auth_service.MAX_ADMIN_PASSWORD_LENGTH)
     role: Literal["adult", "learner"]
+
+
+class SignInAccount(BaseModel):
+    """A deliberately public name for selecting the intended sign-in account."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    login_name: str
+    role: Literal["adult", "learner"]
+
+
+class PasswordChangeRequest(BaseModel):
+    """Write-only credentials for a signed-in administrator password change."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    current_password: SecretStr = Field(
+        min_length=1, max_length=auth_service.MAX_ADMIN_PASSWORD_LENGTH, repr=False
+    )
+    new_password: SecretStr = Field(
+        min_length=1, max_length=auth_service.MAX_ADMIN_PASSWORD_LENGTH, repr=False
+    )
+    password_confirmation: SecretStr = Field(
+        min_length=1, max_length=auth_service.MAX_ADMIN_PASSWORD_LENGTH, repr=False
+    )
 
 
 class SessionStatus(BaseModel):
@@ -222,6 +250,30 @@ def get_session(request: Request, response: Response) -> SessionStatus:
     return SessionStatus(authenticated=False, csrf_token=anon, setup_required=needs_setup)
 
 
+@router.get("/accounts", response_model=list[SignInAccount])
+def sign_in_accounts(request: Request, role: Literal["adult", "learner"]) -> list[SignInAccount]:
+    """List only sign-in names for the requested role, including before login."""
+
+    require_secret()
+    if not origin_allowed(request):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=_ORIGIN_REJECTED)
+    with Session(engine_for(request)) as db:
+        names = (
+            db.scalars(select(Administrator.login_name).order_by(Administrator.login_name)).all()
+            if role == "adult"
+            else db.scalars(
+                select(Learner.alias)
+                .where(
+                    Learner.enabled.is_(True),
+                    Learner.deleted_at.is_(None),
+                    Learner.password_hash.is_not(None),
+                )
+                .order_by(Learner.alias_key)
+            ).all()
+        )
+        return [SignInAccount(login_name=name, role=role) for name in names]
+
+
 @router.post(
     "/login",
     response_model=SessionStatus,
@@ -301,6 +353,87 @@ def login(credentials: LoginRequest, request: Request, response: Response) -> Se
     return SessionStatus(
         authenticated=True, role=role, login_name=name, learner_id=learner_id, csrf_token=csrf
     )
+
+
+@router.post(
+    "/password",
+    response_model=SessionStatus,
+    response_model_exclude_none=True,
+    response_model_exclude_defaults=True,
+)
+def change_password(
+    body: PasswordChangeRequest, request: Request, response: Response
+) -> SessionStatus:
+    """Change the administrator's password and replace all their signed-in sessions."""
+
+    require_secret()
+    if not origin_allowed(request):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=_ORIGIN_REJECTED)
+    token = request.cookies.get(SESSION_COOKIE, "")
+    with Session(engine_for(request)) as db:
+        current = auth_service.get_valid_session(db, token)
+        if current is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=_NOT_AUTHENTICATED)
+        if current.role != "adult" or current.administrator is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Adult access required."
+            )
+        if not csrf_matches(request.headers.get(CSRF_HEADER), current.csrf_token):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=_CSRF_FAILED)
+        retry_after = auth_service.register_login_attempt("password:" + client_key(request))
+        if retry_after is not None:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many password change attempts. Try again later.",
+                headers={"Retry-After": str(max(1, math.ceil(retry_after)))},
+            )
+        verified_admin = current.administrator
+        account_id, previous_hash = verified_admin.id, verified_admin.password_hash
+        if not auth_service.verify_password(
+            previous_hash, body.current_password.get_secret_value()
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="The current password is incorrect."
+            )
+        password = body.new_password.get_secret_value()
+        if password != body.password_confirmation.get_secret_value():
+            raise HTTPException(status_code=422, detail="The new passwords do not match.")
+        try:
+            auth_service.validate_admin_credentials(verified_admin.login_name, password)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from None
+        password_hash = auth_service.hash_password(password)
+        # Verification and expensive hashing run before the short write lock.
+        # Recheck both session authority and the verified hash under that lock.
+        db.rollback()
+        db.connection(execution_options={"sqlite_begin_immediate": True})
+        current = auth_service.get_valid_session(db, token)
+        admin = db.get(Administrator, account_id, populate_existing=True)
+        if (
+            current is None
+            or current.role != "adult"
+            or current.administrator_id != account_id
+            or admin is None
+            or admin.password_hash != previous_hash
+        ):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=_NOT_AUTHENTICATED)
+        if not csrf_matches(request.headers.get(CSRF_HEADER), current.csrf_token):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=_CSRF_FAILED)
+        admin.password_hash = password_hash
+        admin.local_only_password = len(password) < auth_service.PASSWORD_DOWNGRADE_GUARD_LENGTH
+        admin.updated_at = auth_service.utcnow()
+        db.execute(
+            update(DeviceSession)
+            .where(DeviceSession.administrator_id == account_id, DeviceSession.revoked_at.is_(None))
+            .values(revoked_at=auth_service.utcnow())
+        )
+        row, replacement = auth_service.create_device_session(db, admin)
+        name, csrf = admin.login_name, row.csrf_token
+        max_age = max(1, int((row.expires_at - auth_service.utcnow()).total_seconds()))
+        db.commit()
+    set_session_cookie(response, replacement, max_age)
+    response.delete_cookie(ANON_CSRF_COOKIE, path="/")
+    return SessionStatus(authenticated=True, role="adult", login_name=name, csrf_token=csrf)
 
 
 @router.post("/logout", response_model=LogoutResponse)

@@ -26,11 +26,18 @@ focus management and visible keyboard focus on controls, and deploys the fix.
 T60 separates Management and Learning with role-specific sign-in, deployment-relative
 links and explicit learner-account management actions, and deploys the result.
 T61 clarifies the selected sign-in role, makes role-specific password recovery
-discoverable and deploys the checked UI/help changes.
+discoverable and deploys the checked UI/help changes. T62 simplifies household
+account access with the maintainer-approved three-character password minimum,
+sign-in account names and portal password changes; see its status below. T63 adds
+a repository-specific UI/UX review skill spanning learner and administrator
+workflows; it does not establish that those workflows passed a new audit. T64
+validates and publishes the remaining account/skill changes with the maintainer's
+latest root lockfile update.
 The schema head is `0020_request_recovery`. The latest private deployment uses
-runtime source `6171f22`, Python 3.15.0, FastAPI 0.159.1 and pillow-heif 1.8.1,
-verified on **October 21, 2026**. T61 below records the image, encrypted backup/isolated
-restore, HTTPS, served-asset, browser and authorization checks. The earlier installation
+the frozen T62 source snapshot `3845f8c`, Python 3.15.0, FastAPI 0.159.1 and
+pillow-heif 1.8.1, verified on **October 22, 2026**. T62 below records the
+immutable image, encrypted backup/isolated restore, served assets, browser and
+authorization checks. The last published runtime source remains `6171f22`. The earlier installation
 is preserved in the [October 11 release record](history/TASKS.md#release-publication-2026-10-11).
 This is dated evidence; current provider selections and live teaching quality
 have not been verified.
@@ -43,6 +50,294 @@ container packaging and private installation; October 11's evidence is historica
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
+
+## T64 — Publish pending account, review-skill and lock updates (2026-10-22)
+
+**Status:** Validation complete; Git publication is pending. The maintainer
+authorized pushing to `main` with their `uv.lock` updates and all other pending
+repository changes included.
+
+**Scope and contracts:** Publish the existing T62 account behavior and generated
+schemas, T63 review skill and references, associated documentation/tests, and the
+maintainer's exact lockfile. SPECIFICATION sections 3, 12, 13 and 18 and the root
+Makefile govern verification. Preserve unrelated work and private-data boundaries.
+No deployment, paid provider inference, model download or product-policy change
+is part of this publication.
+
+**Lockfile:** The supplied `uv.lock` has SHA-256
+`95bbc12a27fa194c35aecc20d9d8e5d41c244c942b43841d6319d95fad121cdb`.
+It updates boto3/botocore 1.43.117 → 1.43.118, FastAPI 0.159.1 → 0.161.0,
+pycparser 3.11 → 3.12 and Ruff 0.17.1 → 0.17.2. Validate it without regenerating
+or replacing the maintainer's dependency selections.
+
+**Plan and gates:** Review the combined source diff and ensure only public source,
+synthetic fixtures and documentation are included. Run targeted auth/account
+checks, `make check`, `make test-integration`, the built desktop/mobile browser
+suite, skill validation and repository file checks, sequentially where they share
+build/server outputs. Record actual failures and outcomes. Commit using normal
+hooks, push without force, and verify remote `main` and a clean working tree.
+
+**Validation:** Commands use `/tmp/shepherd-t64/run`, which passes a
+small explicit environment allowlist, clears inherited operator/provider settings,
+disables environment-file loading and uses a temporary uv cache. No live private
+settings or data are read.
+
+- `git fetch origin`: passed; local and remote `main` both started at `9b43820`.
+- Focused `test_auth_secrets.py` and `test_account_access.py`: **48 passed in
+  4.18s**. Focused SignInAccounts/AdministratorAccount components: **8 passed**.
+- `make check`: **329 backend unit, 11 toolchain and 246 component tests passed**;
+  locked resolution, lint/format, strict types, production builds, generated API
+  drift, credential scan and infrastructure checks passed. Existing build-system
+  upper-bound and bundle-size warnings remain.
+- `make test-integration`: **403 passed in 71.41s**, using temporary on-disk
+  databases and synthetic data.
+- `make audit`: Python and JavaScript audits both reported **no known
+  vulnerabilities** in the supplied locked dependencies.
+- Skill validator and six-file Markdown formatting passed; **133 local skill
+  links resolve**. `git diff --check HEAD` passed. The supplied lockfile hash
+  remains unchanged after validation.
+- Independent backend and frontend source reviews found **no publication
+  blocker**. The T63 administrator-draft concern remains a separate follow-up.
+  A frontend reviewer also noted that a prior learner notice can remain visible
+  when selecting administrator management; the broader notice carryover predates
+  this change and remains a bounded UI review follow-up.
+
+`make smoke-built`: **96 desktop/mobile Chromium cases passed in 15.3 minutes**,
+with one worker and zero retries. Existing login throttles remained in force.
+No application implementation or test requirement was changed for publication.
+
+`make hooks-files-check secret-check`: **passed** on the complete staged set,
+including the six new skill files. All applicable repository file hooks passed;
+the file-only target skips only the project gate already run above. The tracked
+credential scan and `git diff --cached --check` passed. The explicit publication
+manifest contains **38 files**; the staged lockfile matches the recorded supplied
+hash. Commit and push outcomes will be recorded after publication.
+
+Live-provider evaluations, paid inference, model downloads, physical-device/manual
+accessibility checks, container rebuild/deployment and hosted CI were not run as
+part of the local pre-publication checks. Existing release-acceptance limits remain.
+
+## T63 — Add a whole-application UI/UX review skill (2026-10-22)
+
+**Status:** Complete; structural, file and independent behavioral validation
+finished. The maintainer authorized adapting the design critique, accessibility
+and UX writing approach into a repository skill, including administrator and
+other application workflows. This task creates the review capability; it does
+not claim a completed application audit.
+
+**Scope and contracts:** Agent instructions and review references only;
+SPECIFICATION sections 2–4, 8, 10–14 and 18; existing ACCEPTANCE gaps; current
+Makefile and isolated synthetic Playwright harness. Cover setup, role access,
+account administration, providers/privacy, learning/materials, phone/photos,
+history, Help and interruption/PWA recovery. Preserve current product contracts,
+private-data boundaries and unrelated T62 edits. No application behavior,
+generated contracts, dependencies or deployment changes are required.
+
+**Plan:** Add one discoverable `ui-ux-review` skill with a workflow inventory and
+separate design, WCAG 2.2 AA accessibility and writing references. Adapt the
+approach in original repository-specific prose and record pinned upstream
+sources. Require scoped coverage, reproducible findings and explicit evidence
+limits. Reuse the existing browser harness rather than introducing a tour stack.
+
+**Validation plan:** Run the skill-creator validator, Markdown formatting and
+local-link checks, scoped repository file hooks and `git diff --check`. Exercise
+the skill independently on realistic source-only requests, keeping generated
+evaluation artifacts outside the worktree. Runtime suites are not required for
+this instruction-only task; application UI, real devices, screen readers and
+providers remain unaudited by this change.
+
+**Implementation:** `.agents/skills/ui-ux-review/SKILL.md` defines scope, coverage
+statuses, evidence collection and findings. Five references map **23 current
+journeys** to source/tests, provide the three review lenses and record upstream
+provenance. Optional research, specification-only surfaces and dated acceptance
+gaps are distinguished from implemented journeys and new observations. Focused
+requests retain their scope; whole-app reviews include account administration,
+all four Settings sections and transitions between administrator/learner roles.
+
+The guidance is original repository-specific prose informed by Anthropic's
+`knowledge-work-plugins` commit `33d3dea41a341b341d4f5da2e8801ae0c89be2b8`.
+Its README calls the copy skill `ux-writing`, while the actual source is `ux-copy`;
+the source reference records that inconsistency. The accessibility reference uses
+the project's WCAG 2.2 AA target and correctly separates 2.5.8 minimum target size
+from 2.5.5 AAA enhanced size. No upstream text, scripts or templates were vendored.
+
+**Structural and file validation:**
+
+- `UV_CACHE_DIR=/tmp/shepherd-ui-ux-uv-cache uv run --locked --no-env-file python /home/mowll/.codex/skills/.system/skill-creator/scripts/quick_validate.py .agents/skills/ui-ux-review`:
+  **passed**, `Skill is valid!`.
+- `pnpm exec prettier --check .agents/skills/ui-ux-review/SKILL.md .agents/skills/ui-ux-review/references/*.md`:
+  **passed**, all six Markdown files formatted.
+- An explicit local Markdown-link check resolved **133 repository-relative
+  links across all six skill files**, with zero missing destinations.
+- `SKIP=project-check UV_CACHE_DIR=/tmp/shepherd-ui-ux-uv-cache uv run --locked --no-env-file pre-commit run --files`
+  with the six skill files and `docs/TASKS.md`: applicable private-key, file-size,
+  merge-marker, filename-case, final-newline and trailing-whitespace hooks
+  **passed**; the unrelated runtime project gate was deliberately skipped for
+  this instruction-only change.
+- `git diff --check`: **passed**.
+
+Initial directory creation and newline-hook attempts encountered the sandbox's
+read-only `.agents` mount. The skill was prepared in `/tmp`, then installed with
+a narrow authorized filesystem escalation; the same scoped hooks passed with
+escalation. No hook or content requirement was relaxed.
+
+**Independent behavioral validation:** Two fresh agent contexts used the installed
+skill on realistic requests, without application execution or repository edits.
+Their actual reports were inspected:
+
+- Whole-app source-only review: produced a **23-journey coverage matrix**, marked
+  source-only evidence honestly, traced administrator password changes and
+  learner text practice/finish/History, and kept existing acceptance gaps separate.
+  Report: `/tmp/shepherd-ui-ux-whole-app-evaluation.md`.
+- Focused administrator password-recovery wording review: inspected only relevant
+  Help/sign-in copy and public recovery implementation, retained the requested
+  source-only scope, and found no actionable wording mismatch.
+  Report: `/tmp/shepherd-ui-ux-copy-evaluation.md`.
+
+The focused trial identified an instruction ambiguity: the inventory's shared
+checklist could imply all review lenses even for a copy-only request. Both the
+opening and cross-cutting section now qualify checks by requested lens and
+available evidence; the independent reviewer inspected the revision and confirmed
+the ambiguity was resolved. These trials establish observable skill behavior,
+not application correctness or usability.
+
+The whole-app trial also identified a **source-based product concern**: the
+administrator panel remounts on page changes while Help broadly promises draft
+preservation. It was not reproduced in a browser or fixed in this task. The next
+bounded product action is to verify administrator form drafts and completion
+messages across Help/Settings navigation with synthetic account fixtures, then
+reconcile behavior and wording against the product contract.
+
+**Changed files:** `.agents/skills/ui-ux-review/SKILL.md` and its five references
+(`workflows.md`, `design-critique.md`, `accessibility.md`, `ux-writing.md`,
+`sources.md`); this task record. Existing application and staged changes were
+preserved. Evaluation artifacts stayed under `/tmp`.
+
+No skill-validation failure remains. Application unit/component/integration and
+browser suites, live-provider tests, real-device/screen-reader checks, paid
+inference, model downloads, deployment, Git commit and push were not run for this
+instruction-only change. Existing release acceptance work remains unchanged.
+
+## T62 — Simplify household account access (2026-10-22)
+
+**Status:** Complete; source, project, integration, focused browser, container
+and private-update checks passed. The maintainer authorized a three-character
+minimum for administrator and learner passwords, resetting the existing
+administrator password, listing account names on sign-in screens, and
+administrator-portal password changes. The requested live reset was performed
+with hidden terminal input; no credential value is stored in this record.
+No Git publication or provider inference was performed.
+
+**Scope and contracts:** SPECIFICATION sections 3 and 12; D011/D013 amended by
+D017; shared credential validation, browser setup, learner creation/reset,
+role-specific sign-in account names, and authenticated administrator password
+changes. Public sign-in entries contain only username and role. Keep learner
+ownership, administrator authorization, password hashing, maximum length,
+CSRF/origin/Host checks, rate limits, and session revocation. No migration,
+password defaults, private-data export, or additional administrator is required.
+
+**Plan:** Set the shared password minimum to three, reject two characters,
+retain existing stored passwords, and show selectable account names on the
+matching sign-in screen. List the administrator beside learner management and
+provide current/new/confirmation password fields. A successful administrator
+change revokes prior sessions and replaces the presenting session. Existing
+learner password reset remains available. Use supported backend recovery to
+reset the private installation without putting its credential into source,
+arguments, logs, or this record.
+
+**Validation plan:** Synthetic HTTP/HTTPS boundary tests; directory projection
+and disabled/deleted exclusion; administrator-only password change, current
+password verification, confirmation, CSRF/origin checks, reset race and session
+replacement; component tests and focused desktop/mobile browser journeys.
+Regenerate OpenAPI/TypeScript, run targeted checks, `make check`, and
+`make test-integration` sequentially with browser builds. Validate the isolated
+container before updating the private installation; stop both writers, take an
+encrypted backup and verify an isolated restore, retain the previous image,
+then verify readiness, served assets, and the requested reset without reading
+private learner content or provider configuration. Record actual evidence below.
+
+**Source validation:** Commands use `/tmp/shepherd-t62/run`, which clears
+operator/provider environment variables and disables environment-file loading.
+Python is 3.15.0 and embedded SQLite is 3.53.1. `make contracts` regenerated
+OpenAPI and TypeScript; no generated file was edited manually.
+
+- Focused backend authentication/setup/learner/CLI checks: **161 passed in
+  21.65s**. Sandbox ASGI attempts stalled and were interrupted; the same cleared
+  synthetic tests passed outside sandbox restrictions.
+- Focused chooser/password/account/setup/App component checks: **88 passed**;
+  scoped ESLint and strict TypeScript checks passed.
+- `make check`: **329 backend unit, 11 toolchain, and 246 component tests passed**,
+  with lint, format, strict types, lock checks, production build, contract drift,
+  credential scan and infrastructure validation. Existing build-system
+  upper-bound and bundle-size warnings remain.
+- Independent review found no actionable authorization, stale-response,
+  rotated-session, directory-projection, or current-documentation defect.
+- `docker build` succeeded from a frozen **288-file source-only snapshot**,
+  SHA-256 `3845f8cf0e1ff53bb368ebc2585d976291d60002cc2ab34eee772bfec65821b8`.
+  Private settings/data were not in the context. Candidate:
+  `math-practice-tutor:t62-3845f8c`.
+- `sh scripts/container-smoke.sh math-practice-tutor:t62-3845f8c`: passed on
+  disposable storage, including SQLite migrations, non-root runtime, HEIF,
+  worker readiness, built UI, disabled-provider rejection, setup renewal,
+  stale-link rejection and first-account claiming. No inference was used.
+
+**Final gates:** `make test-integration` passed **403 tests in 71.93s**.
+`pnpm exec playwright test tests/smoke/accounts.spec.ts tests/smoke/setup.spec.ts tests/smoke/navigation.spec.ts tests/smoke/workspace-navigation.spec.ts`
+passed **30 desktop/mobile cases in 4.1 minutes**, with one worker and zero
+retries. Production login throttles remained in force. These journeys cover
+setup/create/reset two-versus-three-character boundaries, matching-role
+name selection and password focus, keyboard access, wrong-current-password and
+confirmation errors, successful administrator password change, preserved current
+browser and revoked other browsers, old-password rejection/new-password access,
+restored synthetic fixture credentials, Help and account-switch drafts.
+No full browser suite or live-provider evaluation was needed for this bounded
+authentication change.
+
+**Private update:** The installed immutable image is
+`sha256:75e68667c1a8d2d1a9fbe72d8d6408175ebebc42a8a19f8c5ddc814099bce50a`.
+The candidate used the recorded frozen source-only worktree snapshot in place of
+the runbook's usual committed archive; this local update was requested before
+Git publication. Repository changes remain uncommitted. Runtime-source hashes
+were rechecked against the snapshot before cutover.
+
+The reviewed helper retained `math-practice-tutor:rollback-20261022-t62`, stopped
+both API and worker, and mounted existing data read-only for the application's
+encrypted backup and isolated restore. Integrity, foreign keys, retained-object
+checksums, current deletion handling and restored-session/job cleanup passed.
+Backup: `backups/deploy-20261022-t62-3845f8c/snapshot.enc`; SHA-256:
+`3597820404f6da3c01fd71da96e31525853d4c5475e7175c510202f987061ed9`.
+A generated passphrase is held separately under the operator's private
+`~/.local/share/shepherd-academy-universe/backup-keys/deploy-20261022-t62-3845f8c/`
+directory. Its value was never printed or put in arguments/environment; new
+directories/files use 700/600. No live database was restored or replaced.
+
+With both writers stopped, the supported `auth.create_or_reset_admin` recovery
+operation reset the single existing administrator using hidden `getpass` input.
+Credential verification passed and all prior administrator sessions were revoked.
+Learner credentials and work were preserved. Both services then restarted with
+the exact candidate image and original data mount; the schema stays
+`0020_request_recovery`. Verification passed readiness through the configured
+Host on loopback, a heartbeat newer than the replacement worker's start time,
+running worker with zero restarts, the 3–256 policy, role/name-only no-store
+sign-in directories, three anonymous protected-route rejections, three disabled
+API-documentation routes, and both directly referenced served asset hashes.
+The prior image and encrypted backup remain available.
+
+**Changed files:** Backend `auth.py`, `api/auth.py`, `test_auth_secrets.py`,
+`test_auth_sessions.py`, `test_browser_setup.py`, `test_local_setup.py`, and new
+`test_account_access.py`; web `App.tsx`, `AdultPanel.tsx`, `LearnerAccounts.tsx`,
+`Help.tsx`, new `SignInAccounts.tsx`/`AdministratorAccount.tsx`, their new tests,
+and existing App/AdultPanel/LearnerAccounts/Setup tests; regenerated
+`contracts/openapi.json` and `apps/web/src/generated/api.d.ts`; browser
+`accounts.spec.ts`, `setup.spec.ts`, `navigation.spec.ts`; README,
+SPECIFICATION, DECISIONS, THREAT_MODEL, PHONE_SETUP, RUNBOOK and this task record.
+No migration, dependency, provider, or deployment-infrastructure source changed.
+
+No gate failure remains. The sandbox-only ASGI hangs were resolved by the
+successful outside-sandbox synthetic run. Existing packaging/bundle warnings
+remain as recorded above. Provider evaluations, paid inference, physical-device
+checks, hosted CI, Git commit and push were not run. Refresh the app or choose
+**Refresh when ready** to load the updated public assets.
 
 ## T61 — Clarify sign-in roles and password recovery (2026-10-21)
 

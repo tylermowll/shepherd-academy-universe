@@ -155,7 +155,7 @@ def test_demo_never_issues_an_owner_setup_token(
     assert local_start.owner_setup_token(urlsplit(settings.app_public_origin())) is None
 
 
-def test_https_preserves_six_character_password_and_allows_explicit_six_character_reset(
+def test_https_preserves_six_character_password_and_allows_explicit_three_character_reset(
     synthetic_database: str, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     local_start.prepare_database(ROOT)
@@ -173,14 +173,14 @@ def test_https_preserves_six_character_password_and_allows_explicit_six_characte
             assert stored is not None and stored.password_hash == hashed
             assert stored.local_only_password
         monkeypatch.setattr("builtins.input", lambda _: "synthetic-adult")
-        monkeypatch.setattr(getpass, "getpass", lambda _: "reset6")
+        monkeypatch.setattr(getpass, "getpass", lambda _: "123")
         assert cli.run_admin() == 0
-        assert "6–256" in capsys.readouterr().out
+        assert "3–256" in capsys.readouterr().out
         assert local_start.owner_setup_token(urlsplit(settings.app_public_origin())) is None
         with Session(engine) as db:
             stored = db.get(Administrator, identifier)
             assert stored is not None and stored.password_hash != hashed
-            assert auth.authenticate_admin(db, "synthetic-adult", "reset6") is not None
+            assert auth.authenticate_admin(db, "synthetic-adult", "123") is not None
     finally:
         engine.dispose()
 
@@ -199,19 +199,19 @@ def test_interactive_admin_announces_policy_and_retries_short_or_mismatched_pass
         prompts.append(prompt)
         return "synthetic-adult"
 
-    passwords = iter(["short", "short", "local6", "other6", "local6", "local6"])
+    passwords = iter(["12", "12", "123", "456", "123", "123"])
     monkeypatch.setattr("builtins.input", name)
     monkeypatch.setattr(getpass, "getpass", lambda _: next(passwords))
     assert cli.run_admin() == 0
     assert len(prompts) == 3
-    assert "6–256" in announcements[0]
+    assert "3–256" in announcements[0]
     captured = capsys.readouterr()
-    assert "at least 6" in captured.err and "do not match" in captured.err
-    assert "local6" not in captured.out + captured.err + announcements[0]
+    assert "at least 3" in captured.err and "do not match" in captured.err
+    assert "123" not in captured.out + captured.err + announcements[0]
     engine = create_engine_for_url(synthetic_database)
     try:
         with Session(engine) as db:
-            admin = auth.authenticate_admin(db, "synthetic-adult", "local6")
+            admin = auth.authenticate_admin(db, "synthetic-adult", "123")
             assert admin is not None and admin.local_only_password
     finally:
         engine.dispose()
@@ -223,7 +223,7 @@ def test_interactive_admin_retries_validation_until_cancelled(
     local_start.prepare_database(ROOT)
     monkeypatch.setattr(sys.stdin, "isatty", lambda: True)
     monkeypatch.setattr("builtins.input", Mock(side_effect=["synthetic-adult", EOFError]))
-    monkeypatch.setattr(getpass, "getpass", lambda _: "short")
+    monkeypatch.setattr(getpass, "getpass", lambda _: "12")
     assert cli.run_admin() == 1
     engine = create_engine_for_url(synthetic_database)
     try:

@@ -11,7 +11,7 @@ requirements; [ACCEPTANCE](ACCEPTANCE.md) tracks unfinished release checks.
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Browser identity      | Argon2id password hashes, hashed random session tokens, expiry/revocation, CSRF and configured Origin/Host checks; no authentication tokens in browser storage                                                                        |
 | First-account owner   | Native launcher or private Docker owner socket issues a one-use link; exchange grants a setup-only HttpOnly cookie; CSRF/origin/rate checks and first-account creation in one transaction; no public owner-link issuance or web reset |
-| Password requirements | Administrator and learner passwords use 6–256 characters on HTTP and HTTPS; existing passwords of at least six characters remain valid when enabling HTTPS, without an automatic reset (D011, amended by T53)                         |
+| Password requirements | Administrator and learner passwords use 3–256 characters on HTTP and HTTPS; existing passwords of at least three characters remain valid when enabling HTTPS, without an automatic reset (D011, amended by T62)                       |
 | Learner sign-in       | Unique usernames, Argon2id passwords, rate limits and revocable sessions; the administrator creates accounts and resets passwords                                                                                                     |
 | Learner ownership     | Backend checks the signed-in learner's ownership on every practice/photo/operation route; two-learner isolation tests                                                                                                                 |
 | Private answers       | Separate public response schemas omit hidden answers, seeds and private parameters; AI generation returns an activity, not a solution key                                                                                             |
@@ -30,7 +30,7 @@ requirements; [ACCEPTANCE](ACCEPTANCE.md) tracks unfinished release checks.
 | Repository            | Private-path/key/token checks, locked dependency audits, no credentials or live learner fixtures                                                                                                                                      |
 
 Host files use private permissions and should reside on an encrypted local
-volume. The six-character password minimum favors convenience and does not
+volume. The three-character password minimum favors convenience and does not
 provide strong password protection. Keep setup links private. An unexpired link
 can be exchanged once for an HttpOnly setup cookie with an absolute eight-hour
 lifetime. The signature binds the cookie to setup and the configured origin. It

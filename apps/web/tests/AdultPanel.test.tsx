@@ -84,6 +84,8 @@ const run = async (action: () => Promise<void>) => {
   }
 };
 const props = () => ({
+  administrator: "home-admin",
+  onSessionChange: vi.fn(),
   learner: learner.id,
   learners: [learner],
   onLearner: vi.fn(),

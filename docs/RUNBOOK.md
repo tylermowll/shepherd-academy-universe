@@ -36,10 +36,15 @@ account creation finishes. The unopened link expires after thirty minutes;
 Ctrl+C followed by `make start` issues a replacement for a native app.
 No public API issues setup links, and setup cannot reset an existing account.
 
-Administrator and learner passwords require 6–256 characters on both loopback
+Administrator and learner passwords require 3–256 characters on both loopback
 HTTP and HTTPS, without uppercase or symbol requirements. Existing passwords of
-at least six characters work over HTTPS without a reset; updates preserve stored
-credentials.
+at least three characters work over HTTPS without a reset; updates preserve stored
+credentials. Role-specific sign-in screens list account names.
+
+A signed-in administrator can change their password under **Learners**, by
+selecting the administrator account and entering the current password plus a
+confirmed new password. This replaces the current session and signs out other
+administrator browsers. Learner passwords are changed through **Manage account**.
 
 For administrator recovery in a native installation, use the existing login name
 with `make admin`. For Docker, use the reset command in the

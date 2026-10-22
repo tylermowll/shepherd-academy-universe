@@ -33,8 +33,8 @@ not read them. Never paste private files or keys into chat.
 The computer must stay awake. `localhost` on an iPhone means the iPhone itself.
 Both desktop and phone must open the **same configured HTTPS address**.
 
-Administrator and learner passwords use the same 6–256-character policy on
-HTTP and HTTPS. Existing passwords of at least six characters work on the phone
+Administrator and learner passwords use the same 3–256-character policy on
+HTTP and HTTPS. Existing passwords of at least three characters work on the phone
 without a reset, and updates preserve stored credentials. For a forgotten
 administrator password, follow [password recovery](RUNBOOK.md#native-local-host);
 learner password resets remain under **Learners** and sign out that learner's

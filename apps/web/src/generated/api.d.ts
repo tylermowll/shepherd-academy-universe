@@ -244,6 +244,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/auth/accounts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Sign In Accounts
+     * @description List only sign-in names for the requested role, including before login.
+     */
+    get: operations["sign_in_accounts_api_v1_auth_accounts_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/auth/login": {
     parameters: {
       query?: never;
@@ -278,6 +298,26 @@ export interface paths {
      * @description Revoke the presenting session and clear its cookie.
      */
     post: operations["logout_api_v1_auth_logout_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/auth/password": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Change Password
+     * @description Change the administrator's password and replace all their signed-in sessions.
+     */
+    post: operations["change_password_api_v1_auth_password_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -1024,6 +1064,27 @@ export interface components {
       /** Work Text */
       work_text: string;
     };
+    /**
+     * PasswordChangeRequest
+     * @description Write-only credentials for a signed-in administrator password change.
+     */
+    PasswordChangeRequest: {
+      /**
+       * Current Password
+       * Format: password
+       */
+      current_password: string;
+      /**
+       * New Password
+       * Format: password
+       */
+      new_password: string;
+      /**
+       * Password Confirmation
+       * Format: password
+       */
+      password_confirmation: string;
+    };
     /** PhoneReceipt */
     PhoneReceipt: {
       /**
@@ -1601,6 +1662,19 @@ export interface components {
       minimum_password_length: number;
       /** Required */
       required: boolean;
+    };
+    /**
+     * SignInAccount
+     * @description A deliberately public name for selecting the intended sign-in account.
+     */
+    SignInAccount: {
+      /** Login Name */
+      login_name: string;
+      /**
+       * Role
+       * @enum {string}
+       */
+      role: "adult" | "learner";
     };
     /** SourceChoice */
     SourceChoice: {
@@ -2350,6 +2424,37 @@ export interface operations {
       };
     };
   };
+  sign_in_accounts_api_v1_auth_accounts_get: {
+    parameters: {
+      query: {
+        role: "adult" | "learner";
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SignInAccount"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   login_api_v1_auth_login_post: {
     parameters: {
       query?: never;
@@ -2399,6 +2504,39 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["LogoutResponse"];
+        };
+      };
+    };
+  };
+  change_password_api_v1_auth_password_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PasswordChangeRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SessionStatus"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };

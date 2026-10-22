@@ -16,6 +16,8 @@ type Props = {
   page: "learners" | "settings";
   onNavigate: Navigate;
   act: (action: () => Promise<void>) => Promise<void>;
+  administrator: string;
+  onSessionChange: (session: Schema<"SessionStatus">) => void;
 };
 
 const providerSettingsSteps: Array<{
@@ -61,6 +63,8 @@ export function AdultPanel({
   page,
   onNavigate,
   act,
+  administrator,
+  onSessionChange,
 }: Props) {
   const [providers, setProviders] = useState<Schema<"ProvidersPublic"> | null>(
     null,
@@ -192,6 +196,8 @@ export function AdultPanel({
           onLearner={onLearner}
           onRefresh={onRefresh}
           act={act}
+          administrator={administrator}
+          onSessionChange={onSessionChange}
         />
       ) : (
         <>

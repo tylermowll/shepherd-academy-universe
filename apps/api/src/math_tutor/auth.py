@@ -36,7 +36,7 @@ SESSION_LIFETIME = timedelta(hours=24)
 ANON_CSRF_LIFETIME_SECONDS = 3600
 
 #: Account password minimum for both HTTP and HTTPS.
-MIN_ADMIN_PASSWORD_LENGTH = 6
+MIN_ADMIN_PASSWORD_LENGTH = 3
 # Preserve the existing schema-downgrade guard, independently of today's policy.
 PASSWORD_DOWNGRADE_GUARD_LENGTH = 12
 MAX_ADMIN_PASSWORD_LENGTH = 256

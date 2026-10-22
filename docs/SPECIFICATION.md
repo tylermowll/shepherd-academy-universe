@@ -848,11 +848,11 @@ unchanged CSRF token and authenticated state must not invalidate pending
 requests. Discard responses from a previous identity, including responses whose
 body finishes decoding after the identity changes.
 
-Administrator and learner passwords must contain 6–256 characters on both
-loopback HTTP and HTTPS. Do not impose composition rules. T53 amends D011's
-original origin-dependent policy: existing accounts with passwords of at least
-six characters work over HTTPS without a reset. Updates and restarts preserve
-stored credentials. Keep the explicit operator administrator-reset command for
+Administrator and learner passwords must contain 3–256 characters on both
+loopback HTTP and HTTPS. Do not impose composition rules. T62/D017 amends
+D011/T53: existing stored passwords continue to work without a reset. Updates
+and restarts preserve stored credentials. This is an explicit household
+convenience tradeoff. Keep the explicit operator administrator-reset command for
 recovery or voluntary changes, not unauthenticated web account recovery.
 
 D013 defines administrator-managed learner credentials. Passwords follow the
@@ -860,7 +860,15 @@ same length policy and Argon2id hashing as the administrator. Login rechecks
 the password hash, requested role and enabled/deleted state inside the
 session-creation transaction, preventing a concurrent reset or role mismatch
 from replacing a session. Password reset
-revokes learner sessions; no public account list or password recovery is exposed. The CLI cannot create a
+revokes learner sessions. Role-specific sign-in screens list account usernames
+through a dedicated name/role-only endpoint. Omit learner IDs, age groups,
+account state, credentials, and other management data; exclude disabled, deleted,
+and passwordless learners. D017 explicitly permits these sign-in names.
+Authenticated administrators can change their own password by verifying the
+current password and confirming a policy-valid new password. Success revokes
+all previous administrator sessions and issues a replacement for the presenting
+browser. Failed changes preserve the current password and sessions. Public
+password recovery is not exposed. The CLI cannot create a
 second administrator. A learner session cannot become an administrator session by
 switching profiles.
 

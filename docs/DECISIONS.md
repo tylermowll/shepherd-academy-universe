@@ -372,3 +372,28 @@ The consolidated lock extends the prior 90-package application resolution to
 97 packages, retaining every existing version and adding the seven validator
 packages from the former infrastructure lock. Keep exact lock resolutions and
 repeat installation, validation and audit checks when dependencies change.
+
+## D017 — Household account names and password convenience (2026-10-22)
+
+The maintainer authorized a three-character account password minimum for both
+administrator and learner accounts on HTTP and HTTPS. This supersedes the
+six-character minimum in D011/T53. Retain the 256-character maximum, no
+composition rules, Argon2id hashing, rate limits, CSRF/origin checks, and existing
+stored credentials. No shared/default password is added to the application.
+This minimum is a household convenience policy, not strong password protection.
+Backup encryption passphrases retain their separate minimum.
+
+The maintainer explicitly permits usernames to be listed at sign-in in this
+private household deployment. Amend D013's no-public-account-list rule to allow
+a dedicated name/role-only projection for each sign-in role. Exclude disabled,
+deleted, and passwordless learner accounts; expose no learner IDs, age groups,
+credentials, management settings, or learner work. Choosing a name grants no
+session or permissions: password verification and backend ownership remain.
+
+Management lists the administrator alongside learner account management.
+A signed-in administrator can change their own password by verifying the
+current password and confirming the new password. Atomically revoke existing
+administrator sessions and issue a replacement session to the presenting
+browser. Keep the existing operator reset for forgotten passwords and
+administrator-managed learner resets. No anonymous web reset or extra
+administrator account is introduced.
