@@ -121,6 +121,52 @@ missing Add learner form after Help → Settings → Learners. No private
 configuration, private logs, real learner data or live providers were accessed
 for this review.
 
-Post-fix executed component, project and browser checks will be recorded here
-when complete. The baseline T64 results remain dated evidence for their recorded
-revision and do not establish that this correction passed.
+The correction in `4151794` passed `make check`: 329 backend unit tests, 11
+toolchain tests, 252 component tests, lint, formatting, types, build, generated
+contract checks, credential scan and infrastructure lint. `make test-integration`
+passed 403 tests in 71.56 seconds. Six new App regressions cover drafts, delayed
+completion, overlapping pending requests, account replacement/authentication loss
+and notices associated with the correct management selection.
+
+After building the corrected source, this focused command passed **38 cases in
+6.2 minutes**, using one worker, no retries and the real login rate limit:
+
+```bash
+pnpm exec playwright test tests/smoke/admin-navigation.spec.ts tests/smoke/accounts.spec.ts tests/smoke/connections.spec.ts tests/smoke/navigation.spec.ts tests/smoke/workspace-navigation.spec.ts
+```
+
+Both projects ran: desktop Chromium and Pixel 7 Chromium emulation, with automated
+pointer/keyboard actions. The fixture used disposable synthetic accounts and
+loopback model responses. All commands ran with environment-file loading disabled,
+operator/provider environment settings excluded and cloud inference disabled.
+The privacy-draft case unlocked only its synthetic GET response; it asserted no
+writes, and neither enabled cloud inference nor changed backend policy. Initial
+selector/focus assumptions and that locked-fixture setup were corrected before
+the final passing gate; they are not additional product defects.
+
+| Post-fix workflow coverage                                                      | Status and evidence                                                                                                                                                                                                        |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Administrator learner/password drafts, Help and browser Back                    | **Exercised:** new browser cases on both projects retain entered values and selected mode; hidden forms leave visible role queries; heading focus asserted.                                                                |
+| Administrator connection credentials and privacy subtabs                        | **Exercised:** both projects retain drafts across subtabs/pages, keep keys masked, perform no writes and leave credentials out of browser storage. Policy interaction uses the explicit synthetic response override above. |
+| Sign-in, password change/revocation, provider setup/tests/activation blockers   | **Exercised:** existing account/connection cases on both projects; provider calls target loopback fixtures. No live model or real household account was used.                                                              |
+| Role switches, canceled/failed switches, learner drafts, Help/History and focus | **Exercised:** existing navigation/workspace cases on both projects, including saved-session return and clearing on successful account replacement.                                                                        |
+| Other workflow states in the baseline matrix                                    | **Source-only for this review:** the focused gate does not establish every state of all 23 groups. Component/integration passes are additional automated evidence, not a complete visual or accessibility audit.           |
+
+All eight new desktop/mobile screenshots were visually inspected. No new
+clipping, overlap or exposed credential was observed. An existing layout
+limitation appears with the fixture's accumulated learners: the full account list
+precedes the mobile editor, placing it several screens below the heading. This
+remains a separate mobile-navigation consideration. Screenshots do not establish
+contrast, touch-target dimensions, actual zoom, screen-reader announcements or
+physical-phone behavior. The manual and live-provider limits above remain open.
+
+After private deployment, two fresh desktop/mobile HTTPS contexts passed
+anonymous learner/administrator entry, administrator reload, public Help/topic
+navigation, role return and overflow checks. Before navigation, request routing
+replaced every account-directory response with a synthetic empty list and blocked
+service workers, external destinations, mutations and unexpected APIs. Four
+anonymous session reads were allowed; ten account-directory requests were
+intercepted before networking. No credentials, login, setup or provider request
+was used, and no page error occurred. This verifies public entry behavior, not
+authenticated use of the real household installation. T65 records image, backup,
+readiness and served-asset verification separately.

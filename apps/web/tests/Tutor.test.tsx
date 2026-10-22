@@ -2058,6 +2058,7 @@ it("stages sentence help in the existing composer without sending or discarding 
   const fetcher = installSession(session([studyActivity()]));
   render(<Tutor learner={learner} offline={false} act={run} />);
   const reply = await screen.findByLabelText("Your work or question");
+  await vi.waitFor(() => expect(reply).toBeEnabled());
   const range = document.createRange();
   range.selectNodeContents(screen.getByLabelText("Reading passage"));
   window.getSelection()!.removeAllRanges();

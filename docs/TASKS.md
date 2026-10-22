@@ -32,14 +32,14 @@ sign-in account names and portal password changes; see its status below. T63 add
 a repository-specific UI/UX review skill spanning learner and administrator
 workflows; it does not establish that those workflows passed a new audit. T64
 validates and publishes the remaining account/skill changes with the maintainer's
-latest root lockfile update.
+latest root lockfile update. T65 applies the review skill, preserves administrator
+work across navigation and deploys the checked result with that exact lockfile.
 The schema head is `0020_request_recovery`. The latest private deployment uses
-the frozen T62 source snapshot `3845f8c`, Python 3.15.0, FastAPI 0.159.1 and
-pillow-heif 1.8.1, verified on **October 22, 2026**. T62 below records the
-immutable image, encrypted backup/isolated restore, served assets, browser and
-authorization checks. The latest published runtime source is `18f6784`, which
-includes the pending T62/T63 work and the maintainer's October 22 lock refresh;
-T64 records publication checks. The earlier installation
+committed source `4151794`, Python 3.15.0, FastAPI 0.161.0 and pillow-heif 1.8.1,
+verified on **October 22, 2026**. T65 below records the immutable image, encrypted
+backup/isolated restore, served assets and authorization checks. The final T65
+documentation update records deployment evidence without changing that runtime.
+The earlier installation
 is preserved in the [October 11 release record](history/TASKS.md#release-publication-2026-10-11).
 This is dated evidence; current provider selections and live teaching quality
 have not been verified.
@@ -55,44 +55,26 @@ and publication checks. Browser-model research and AWS hosting remain optional.
 
 ## T65 — Review and preserve administrator work across navigation (2026-10-22)
 
-**Status:** In progress; the maintainer authorized running `ui-ux-review`, fixing
-the previously identified administrator draft-loss issue, pushing the result to
-`main`, then deploying the existing private installation.
+**Status:** Complete; the maintainer-authorized review and bounded corrections
+were checked, pushed to `main` as `4151794`, then deployed to the existing private
+installation. The final documentation update records the observed results.
 
 **Scope and contracts:** SPECIFICATION sections 3, 8, 10, 12 and 18; in-memory
 drafts and pending/completed operation context across page changes; role/account
-isolation; honest copy, focus and update behavior. Run the whole-app review with
-explicit coverage limits and confirm the administrator finding using disposable
-synthetic browser fixtures. Keep the correction bounded to administrator panel
-lifetime, Settings drafts and related notice/recovery behavior. Preserve the
-maintainer's exact T64 lockfile; no new dependencies, migration, live-provider
-inference or learner-data inspection is needed.
+isolation; honest copy, focus and update behavior. The review spans all 23 workflow
+groups in source, with focused synthetic browser coverage of the affected paths.
+The correction stays bounded to administrator panel lifetime, Settings drafts and
+related notice/recovery behavior. The maintainer's exact T64 lockfile is retained;
+no dependencies, API/schema changes or live-provider inference were added.
 
 **Requirement conflict:** README/SPECIFICATION/Help promise that page changes
-preserve in-memory drafts, while the connection editor currently says leaving
-Settings discards entries and its API key. Resolve this by preserving drafts in
-account-scoped memory across ordinary navigation and correcting the editor copy.
+preserve in-memory drafts, while the old connection editor said leaving Settings
+discarded entries and its API key. The correction preserves drafts in
+account-scoped memory across ordinary navigation and updates the editor copy.
 Successful save, explicit cancel/reset, account changes, authentication loss and
-reload remain deliberate clearing boundaries. Never persist keys/passwords in
-browser storage.
-
-**Implementation and validation plan:** Reproduce the issue before changing
-production code. Keep administrator panels mounted but hidden outside their page;
-preserve identity/learner reset boundaries and privacy-tab state. Add meaningful
-component and desktop/mobile browser regressions for drafts, delayed completion,
-hidden controls, navigation focus and clearing after account changes. Check
-existing App/account/settings flows and run the required project/integration and
-focused browser gates sequentially with builds. Record source-only concerns
-separately from exercised behavior and manual-accessibility/device gaps.
-
-**Publication/deployment plan:** Independently review the diff, commit with normal
-hooks and push without force. Build the exact pushed revision from a clean source
-archive; run disposable container smoke/security checks. Reuse the established
-private cutover with retained rollback image, stopped API/worker writers,
-encrypted backup and isolated restore before restart. Preserve existing settings
-without opening or printing them, and verify schema, fresh worker heartbeat,
-public served assets, anonymous boundaries and replacement-container health.
-Do not rerun the T62 administrator reset; it is not requested by this deployment.
+reload remain deliberate clearing boundaries. Keys/passwords never enter browser
+storage. Authoritative policy changes reset privacy drafts, and returning to
+Settings requires fresh active-model acknowledgement.
 
 **Implemented:** `App.tsx` and `AdultPanel.tsx` retain visited administrator pages
 in account-scoped memory with inactive controls hidden. `ProviderConnections.tsx`
@@ -102,8 +84,12 @@ selection behavior. Pending actions are counted across overlapping requests and
 included in browser-unload/PWA-update protection; `UpdateNotice.tsx` warns about
 unsaved forms. Account replacement/authentication loss still clears hidden state;
 no browser credential storage, API contract or schema change was introduced.
+The final evidence commit also makes the existing selected-text-help test await
+an enabled composer before selecting text. Its normal hook exposed a readiness
+race after the earlier full gate passed; all behavior assertions remain intact,
+and this test-only correction changes no deployed runtime code.
 
-**Review and checks so far:** [The review report](UI_UX_REVIEW.md) records all 23
+**Review and checks:** [The review report](UI_UX_REVIEW.md) records all 23
 workflow groups with baseline source-only coverage, the synthetic browser failure
 before the fix, corrections, independent review and manual/device limits.
 `make check` passed: 329 backend unit, 11 toolchain and 252 frontend tests, lint,
@@ -112,12 +98,68 @@ lint. `make test-integration` passed 403 tests in 71.56 seconds. The six new App
 regressions include delayed password completion, overlapping requests, retained
 drafts, cleared account state and scoped notices. Initial verification exposed
 React lifecycle lint errors and a test waiting for an account list too early;
-both were corrected. The focused desktop/mobile browser gate remains in progress.
+both were corrected. The focused Playwright gate selected `admin-navigation`,
+`accounts`, `connections`, `navigation` and `workspace-navigation`: **38 cases
+passed in 6.2 minutes**, on desktop and Pixel 7 Chromium emulation, one worker,
+zero retries and unchanged login throttles. All eight new screenshots were
+visually inspected. An initial browser run exposed the fixture's locked privacy
+controls and was stopped; its test setup was corrected before the passing gate.
 The privacy-draft browser case overrides only the synthetic provider GET response
 to expose editable controls; server locks remain enforced and no policy save is
 performed. Existing build warnings about the uv_build upper bound and JavaScript
 chunk size remain. The exact T64 `uv.lock` SHA-256 remains
 `95bbc12a27fa194c35aecc20d9d8e5d41c244c942b43841d6319d95fad121cdb`.
+
+**Image and deployment:** The clean source archive for
+`4151794a02c560ce0e7bad175003f573512266f2` produced immutable image
+`sha256:a9e01150b7ec0f81568860c0b3cb786f5abfeef8276e6036bceaa9815e8479d9`,
+with that full OCI revision label. `sh scripts/container-smoke.sh IMAGE` passed
+Python/HEIF/cryptography and restricted-subprocess checks, migrations, worker
+readiness, built UI and synthetic setup/renewal/stale-link behavior. The first
+temporary archive incorrectly gave public source directories mode 700; smoke
+caught the non-root import failure. Extraction modes were corrected and cached
+layers discarded before rebuilding and rerunning all candidate checks. No
+production source change was needed for this preparation error.
+
+Checksum-verified Trivy 0.76.1 with the October 22 database reported **zero high or
+critical vulnerabilities and zero secrets at all severities** for the final
+image. A CycloneDX SBOM with 52 components was generated. A network-disabled,
+read-only-root synthetic backup/restore rehearsal also passed before cutover.
+
+After push and remote revision verification, the reviewed cutover retained the
+previous image as `math-practice-tutor:rollback-20261022-t65`, stopped API and
+worker writers, and completed encrypted native backup plus isolated restore in
+`backups/deploy-20261022-t65-4151794`. The encryption passphrase is held separately
+outside Git and was never printed. The encrypted archive SHA-256 is
+`db4a8b4624e5442898bdda4d1ca204bf756ddbaf474fceaeafc3e636b894dd22`.
+Integrity, foreign keys, checksums, deletion preservation, restored-session
+revocation and pending-job cancellation passed; the original data mount was
+preserved. The unchanged schema upgrade passed before both replacements started.
+
+Private HTTPS verification passed: both services run the exact tested image with
+zero restarts, the worker heartbeat is newer than replacement startup, readiness
+is healthy, and the loopback API binding/data mounts are preserved. Six served
+HTML/JS/CSS/worker/manifest/icon hashes match the image; cache headers and worker
+scope match. Three protected routes returned anonymous 401/no-store without their
+bodies being read; three runtime documentation routes returned 404. Existing
+settings and account credentials were retained; no administrator reset, provider
+configuration inspection, real learner-data inspection or inference was performed.
+
+An additional anonymous HTTPS cold-start browser probe passed in two fresh
+desktop/mobile contexts: learner/administrator entry, administrator reload,
+public Help/topic navigation, role return and horizontal-overflow checks. Ten
+account-directory requests were fulfilled with synthetic empty lists before
+networking; only four anonymous session reads reached the API. External,
+mutation, unexpected API/public, WebSocket, redirect and page-error counts were
+zero. No credentials were entered and no login/setup/provider requests ran.
+
+**Limits:** No test failures remain in the required gates. The review does not
+establish whole-app WCAG conformance, physical-device behavior or teaching quality.
+The existing [acceptance checks](ACCEPTANCE.md#items-requiring-the-maintainer)
+remain open, as does the review's mobile long-account-list navigation consideration.
+Live/paid providers, model downloads, cloud provisioning and public deployment
+were not run. The published T64 lockfile and all its preceding account/skill work
+are included through the source commit's ancestry.
 
 ## T64 — Publish pending account, review-skill and lock updates (2026-10-22)
 
