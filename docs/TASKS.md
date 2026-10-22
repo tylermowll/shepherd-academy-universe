@@ -25,9 +25,11 @@ T59 removes the oversized page-heading focus box while preserving accessible
 focus management and visible keyboard focus on controls, and deploys the fix.
 T60 separates Management and Learning with role-specific sign-in, deployment-relative
 links and explicit learner-account management actions, and deploys the result.
+T61 clarifies the selected sign-in role, makes role-specific password recovery
+discoverable and deploys the checked UI/help changes.
 The schema head is `0020_request_recovery`. The latest private deployment uses
-runtime source `3b0a4c3`, Python 3.15.0, FastAPI 0.159.1 and pillow-heif 1.8.1,
-verified on **October 21, 2026**. T60 below records the image, encrypted backup/isolated
+runtime source `6171f22`, Python 3.15.0, FastAPI 0.159.1 and pillow-heif 1.8.1,
+verified on **October 21, 2026**. T61 below records the image, encrypted backup/isolated
 restore, HTTPS, served-asset, browser and authorization checks. The earlier installation
 is preserved in the [October 11 release record](history/TASKS.md#release-publication-2026-10-11).
 This is dated evidence; current provider selections and live teaching quality
@@ -44,8 +46,9 @@ and publication checks. Browser-model research and AWS hosting remain optional.
 
 ## T61 — Clarify sign-in roles and password recovery (2026-10-21)
 
-**Status:** In progress; the maintainer approved the proposed UI/help changes,
-publication to main and deployment to the existing private installation.
+**Status:** Complete; the approved UI/help changes passed targeted browser,
+project, integration, image and private-deployment checks and were published to
+main. The deliberately stopped broad browser run is recorded separately below.
 
 **Scope and contracts:** SPECIFICATION sections 3, 12 and 18; D011/D013 account
 recovery policy; standalone learner/administrator sign-in, contextual Help,
@@ -107,6 +110,80 @@ coverage checks both. The first full browser run was deliberately interrupted
 for that refinement after **17 passes**, with **one interrupted** and **76 not
 run**; it is not a completed gate. The earlier `54e32e2` candidate passed image
 smoke/scanning but is superseded by the final source and image recorded below.
+
+**Final source and proportionate validation:** The accessibility refinement
+repeated `make check` successfully with the same **329 backend unit, 11
+toolchain and 237 component tests**. Focused recovery Playwright cases passed
+**4/4 in 2.9s**, checking the visible underline and 44-pixel touch target for
+both roles on desktop/mobile. The anonymous deployment probe also passed
+against disposable synthetic storage with zero mutating, external, unexpected
+API, redirect or WebSocket requests.
+
+The maintainer questioned whether the broad browser gate was proportionate to
+this UI/help change. The agent stopped it after **77 passes in 12.1 minutes**,
+with **one interrupted and 16 not run**. It is not a successful full-suite gate.
+Release acceptance uses the completed targeted 28-case journeys, four final
+recovery accessibility cases, project gate, serial 383-case integration run,
+container checks and protected deployed-browser acceptance. No test assertion
+or authentication rule was weakened. Normal installed hooks passed on both
+implementation commits, preserving the unrelated `uv.lock` bytes.
+
+**Publication and final image:** A normal non-force push advanced main from
+`d745a53` to runtime source
+`6171f22358efce18e4ff3c6dbe877cb86d6e9738`. The image was built from that
+commit's clean Git archive, excluding the unrelated working-tree lock edit and
+all untracked private files, with the full OCI revision label. Image tag:
+`math-practice-tutor:release-20261021-6171f22`; exact immutable image:
+`sha256:adfb837dc74d56a95e339916b735d4b358144af0cc62c797d514091db7ddecda`.
+The checked-in container smoke passed. Trivy 0.76.1 reported **zero
+HIGH/CRITICAL vulnerabilities**, including unfixed findings, and a separate
+all-severity secret scan reported **zero secrets**, without exclusions. The
+CycloneDX SBOM contains **52 components**; SHA-256:
+`5bef1e0f800c17e04096bb613c388a348cc8fa046254efaa1f04480458891fdc`.
+
+The reviewed deployment wrapper uses that immutable scanned image ID rather
+than a mutable tag. The anonymous browser probe runs inside the cutover's
+rollback block; stub-only success, probe-failure rollback and invalid-probe
+preflight checks passed. The read-only live preflight confirmed the old T60
+image, original data mount and unchanged `0020_request_recovery` schema.
+
+**Private deployment:** The cutover retained
+`math-practice-tutor:rollback-20261021-3b0a4c3`, stopped both writers, and verified
+the encrypted native backup plus an isolated restore with the original mount
+read-only. Database integrity, foreign keys, object checksums, deletion
+preservation and restored session/job cleanup passed. No live data was restored
+or replaced. Backup: `backups/deploy-20261021-6171f22/snapshot.enc`; SHA-256:
+`c35e50859ca53cfb15039e7a1ce4d62b101aced01e27e14a15c5755c1f13dc62`.
+The generated passphrase is held separately in the operator's private backup-key
+directory, without reading its value into agent context or passing it in
+arguments/environment. Backup/key directories and files use modes 700/600.
+
+The controlled no-op schema upgrade and Compose restart passed. Both API and
+worker run the exact tested immutable image with the original data mount and
+loopback binding. Verification passed private HTTPS readiness, a fresh
+replacement-worker heartbeat, all **six public asset hashes**, cache/scope
+headers, **three anonymous protected-route rejections without reading bodies**
+and **three disabled API-documentation routes**.
+
+The protected live probe passed in **two fresh anonymous desktop/mobile
+contexts**: visible role labels/switch controls, both switch directions, recovery
+link underline/44-pixel target, role-specific guidance, keyboard focus,
+Back/reload/copied links, normal Help navigation and absence of horizontal
+overflow. It entered no credentials and performed no mutations or inference;
+mutating, external, unexpected API, redirect, WebSocket and page-error counts
+were all zero. Safe deployment evidence remains with the ignored encrypted
+backup. The prior image remains available for rollback.
+
+**Changed files (7):** `App.tsx`, `Help.tsx` and `styles.css` under
+`apps/web/src/`; `apps/web/tests/App.test.tsx`;
+`tests/smoke/navigation.spec.ts`; `docs/RUNBOOK.md`; this task record. No API,
+generated contract, permission or schema change was required. The unrelated
+`uv.lock` modification remains byte-for-byte unchanged and is excluded from the
+release. Live provider evaluations, paid inference and real account resets were
+not run. Hosted CI was not awaited. The evidence-only follow-up changes no
+runtime code; its commit runs file hooks while skipping the already-passed
+duplicate project gate. Refresh the app or choose **Refresh when ready** to load
+the new assets.
 
 ## T60 — Separate Management and Learning sign-in (2026-10-21)
 
