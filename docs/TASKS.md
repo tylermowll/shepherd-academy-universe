@@ -37,7 +37,9 @@ The schema head is `0020_request_recovery`. The latest private deployment uses
 the frozen T62 source snapshot `3845f8c`, Python 3.15.0, FastAPI 0.159.1 and
 pillow-heif 1.8.1, verified on **October 22, 2026**. T62 below records the
 immutable image, encrypted backup/isolated restore, served assets, browser and
-authorization checks. The last published runtime source remains `6171f22`. The earlier installation
+authorization checks. The latest published runtime source is `18f6784`, which
+includes the pending T62/T63 work and the maintainer's October 22 lock refresh;
+T64 records publication checks. The earlier installation
 is preserved in the [October 11 release record](history/TASKS.md#release-publication-2026-10-11).
 This is dated evidence; current provider selections and live teaching quality
 have not been verified.
@@ -53,9 +55,9 @@ and publication checks. Browser-model research and AWS hosting remain optional.
 
 ## T64 — Publish pending account, review-skill and lock updates (2026-10-22)
 
-**Status:** Validation complete; Git publication is pending. The maintainer
-authorized pushing to `main` with their `uv.lock` updates and all other pending
-repository changes included.
+**Status:** Complete; the validated source was committed and pushed to `main`,
+including the maintainer's exact `uv.lock` updates and all other pending repository
+changes. This publication did not update the private installation recorded above.
 
 **Scope and contracts:** Publish the existing T62 account behavior and generated
 schemas, T63 review skill and references, associated documentation/tests, and the
@@ -111,7 +113,16 @@ including the six new skill files. All applicable repository file hooks passed;
 the file-only target skips only the project gate already run above. The tracked
 credential scan and `git diff --cached --check` passed. The explicit publication
 manifest contains **38 files**; the staged lockfile matches the recorded supplied
-hash. Commit and push outcomes will be recorded after publication.
+hash.
+
+**Publication:** Commit `18f6784147205c56f5b1cd8e2bad9aeb1283c508`
+(`Publish household accounts, UI/UX review skill and lock refresh`) includes all
+**38 manifest files**. Normal commit hooks passed, including their project gate;
+no hook was bypassed. `git push origin main` succeeded, advancing remote `main`
+from `9b43820` to `18f6784` without a force push. The committed `uv.lock` matches
+the supplied SHA-256 exactly. The post-push working tree was clean and
+`git rev-list --left-right --count main...origin/main` returned `0 0`.
+The accompanying documentation commit records these observed outcomes.
 
 Live-provider evaluations, paid inference, model downloads, physical-device/manual
 accessibility checks, container rebuild/deployment and hosted CI were not run as
