@@ -23,6 +23,20 @@ test("a signed-in phone opens and replaces photo links in its existing tab witho
   try {
     const phone = await mobile.newPage();
     await login(phone);
+    // Start at the photo URL's base so the navigation below changes only the
+    // fragment. Explicit administrator sign-in has its own page query.
+    const photoBase = new URL(link!);
+    photoBase.hash = "";
+    await phone.goto(photoBase.href);
+    await expect(
+      phone.getByRole("button", { name: "Sign out", exact: true }),
+    ).toBeVisible();
+    expect(
+      await (await phone.request.get("/api/v1/auth/session")).json(),
+    ).toMatchObject({
+      authenticated: true,
+      role: "adult",
+    });
     await phone.evaluate(() => {
       document.documentElement.dataset.qrDocument = "original";
     });
