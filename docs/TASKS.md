@@ -36,13 +36,15 @@ latest root lockfile update. T65 applies the review skill, preserves administrat
 work across navigation and deploys the checked result with that exact lockfile.
 T66 records a whole-application UI/UX review with eight confirmed findings and
 explicit browser/manual limits. T67 implements the corrections and two review
-follow-ups; final gates, publication and deployment remain in progress.
+follow-ups, passes the final gates, publishes the source and deploys the result.
 The schema head is `0020_request_recovery`. The latest private deployment uses
-committed source `4151794`, Python 3.15.0, FastAPI 0.161.0 and pillow-heif 1.8.1,
-verified on **October 22, 2026**. T65 below records the immutable image, encrypted
-backup/isolated restore, served assets and authorization checks. The final T65
-documentation update records deployment evidence without changing that runtime.
-The earlier installation
+committed source `7ce664b97530e5641cdd5ae8459f82beeabb1bf6` and immutable image
+`sha256:9e7d5e1ffd96c32902753ed24793992daf9a77cfc0d1169adfefa50f7d14f759`,
+with Python 3.15.0, FastAPI 0.162.0 and pillow-heif 1.8.1, verified on
+**October 23, 2026**. T67 below records checks against the committed source,
+encrypted backup/isolated restore, cutover, served assets and authorization
+checks. This final documentation update records evidence without changing that
+runtime. T65 preserves the previous October 22 installation; the earlier installation
 is preserved in the [October 11 release record](history/TASKS.md#release-publication-2026-10-11).
 This is dated evidence; current provider selections and live teaching quality
 have not been verified.
@@ -58,9 +60,11 @@ and publication checks. Browser-model research and AWS hosting remain optional.
 
 ## T67 — Fix review findings, publish and deploy (2026-10-23)
 
-**Status:** In progress; the maintainer authorized all review corrections, push to
-`main`, and deployment to the existing private installation. Implementation and
-targeted checks are complete; final gates, publication and deployment are pending.
+**Status:** Complete; the maintainer-authorized corrections passed the gates,
+were published to `main` as `7ce664b97530e5641cdd5ae8459f82beeabb1bf6` through
+normal commit hooks, and were deployed to the existing private installation.
+The pushed remote revision was verified. This evidence-only documentation update
+does not change the deployed application revision.
 
 **Scope and contracts:** T66's eight confirmed issues plus the saved-review
 metadata and History identification follow-ups. SPECIFICATION sections 2–4,
@@ -69,6 +73,10 @@ accurate settings outcomes, role-specific destinations, phone operation ordering
 photo availability, narrow layouts, contrast and source-linked fallible review.
 No new services, dependencies, live provider calls or database migration were
 introduced. Existing lockfiles remain unchanged.
+Their SHA-256 values are `uv.lock`:
+`3c30aecb82975db9a5df58080e6271afdbfe4246cca98f58798e7c043dceec81`;
+`pnpm-lock.yaml`:
+`d0614a0d4a4646f60abd0e4ad6ceb8a0875371c851bca8458ca45243d4df3d8d`.
 
 **Implemented:** `Tutor.tsx` retains successful availability/history reads when a
 saved session is unavailable, clears invalid initial selections, restores the
@@ -89,15 +97,18 @@ on cancellation. `PhoneLink.tsx` serializes creation/cancellation and clears onl
 the canceled link. CSS permits valid long names to wrap and gives enabled
 placeholders an opaque darker color. The settings receipt now gives its message
 a full row and wraps actions to prevent narrow-screen text compression.
-Regression coverage is in the affected
-component tests, API history tests and `tests/smoke/review-fixes.spec.ts`.
+Regression coverage is in the affected component tests, API history tests and
+`tests/smoke/review-fixes.spec.ts`.
 
-**Evidence to date:** Targeted history/metadata integration passed **3 tests in
+**Commands and gates:** Targeted history/metadata integration passed **3 tests in
 1.26 seconds**, including serialization and cross-learner 404 isolation.
-`make test-integration` passed **404 tests in 72.38 seconds**. `make check` passed
-**329 backend unit tests in 10.65 seconds**, **11 toolchain tests** and **284
-frontend tests in 18 files**, plus lint/format, types, build, generated-contract
-drift, secrets and infrastructure checks. Two older expectations were corrected
+`make test-integration` passed **404 tests in 72.38 seconds**. Final `make check`
+was repeated successfully against the exact committed source: **329 backend unit
+tests**, **11 toolchain tests** and **284 frontend tests in 18 files**, plus
+lint/format, types, build, generated-contract drift, secrets and infrastructure
+checks. The full built Playwright suite passed **114 cases in 18.3 minutes** on
+desktop and Pixel 7 Chromium emulation. Final credential scanning and all-files
+repository hooks also passed. Two older expectations were corrected
 for the intended guarded session-selection behavior and explicit role-specific
 entry on setup cancellation; background-poll race, draft and account-isolation
 assertions remain covered. Focused learner, administrator and navigation test
@@ -106,7 +117,7 @@ repository-file hooks passed. `make audit` reported no known vulnerabilities in
 either dependency audit. All four deterministic/mock evaluation suites passed;
 reports remain outside Git in `/tmp/shepherd-t67/mock-reports`.
 
-The focused `review-fixes.spec.ts` browser suite passed **14 cases in 2.1 minutes**
+The earlier focused `review-fixes.spec.ts` browser suite passed **14 cases in 2.1 minutes**
 across desktop and Pixel 7 Chromium emulation. Both projects kept body/document
 width within the 320px viewport for valid long names. The desktop enabled
 placeholder measured **6.3157026914:1** with opaque `#536456` on white. Ten
@@ -114,15 +125,57 @@ desktop/mobile role-entry, active-model, phone-QR, photo-unavailable and recover
 session screenshots were visually inspected. This exposed a narrow-screen
 active-model success toast whose unwrapped actions squeezed the message into a
 tall column. A final CSS correction and 320px receipt-width browser assertion were
-added afterward; targeted formatting, a fresh build and both desktop/mobile
-receipt checks passed (**2 browser executions in 3.0 seconds**). The full check
-and initial focused browser results above precede this final layout change.
+added afterward; a fresh build and both desktop/mobile receipt checks passed
+(**2 browser executions in 3.0 seconds**), and both new 320px screenshots were
+visually inspected. The final full gate and browser results above include this
+correction. Focused browser counts overlap the 114-case suite.
 
-**Pending gates and limits:** The full built browser suite, final repository-file
-checks, container/security/backup-restore checks, push verification and private deployment
-remain pending. The root agent will record their actual results and immutable
-deployment identity here. No private configuration, real learner data/logs or live
-teaching has been inspected. Actual-device, assistive-technology, real-model
+**Image and security:** Committed source
+`7ce664b97530e5641cdd5ae8459f82beeabb1bf6` produced immutable image
+`sha256:9e7d5e1ffd96c32902753ed24793992daf9a77cfc0d1169adfefa50f7d14f759`,
+with that full OCI revision label. Container smoke and an offline encrypted
+backup/restore rehearsal passed. Trivy 0.76.1 with the October 23 database
+reported **zero HIGH/CRITICAL vulnerabilities and zero secrets at all severities**.
+The first scan exhausted its 256 MiB temporary database-download mount; retry
+with 2 GiB passed against the same image, without rebuilding. The CycloneDX SBOM
+contains 52 components and has SHA-256
+`ea8a1d1d06040f39bb8d0849ac745fc44cb39c3d27022ae96131b9835ce31441`.
+
+**Deployment and recovery:** Attempt 1 refused backup preflight because the
+current deletion ledger was missing, before creating an archive, migrating or
+starting the candidate. Automatic rollback restored the previous image and
+passed private HTTPS verification. Before attempt 2, with API and worker writers
+stopped, a guard verified the absence of tombstones, deletion-audit records and
+deleted learners before initializing the first empty ledger, as permitted by
+RUNBOOK. It preserved any existing ledger rather than substituting an older one.
+
+Attempt 2 completed without rollback. The encrypted archive is
+`backups/deploy-20261023-t67-7ce664b97530-attempt2/archive.enc`, SHA-256
+`d0a8654ec70b4eb574039ad75cb3822b0fff71e3484dbda443359348dad21087`.
+Its passphrase is held separately outside Git and was not printed or exposed
+to the agent.
+The isolated restore passed SQLite integrity, foreign-key, preserved table-content,
+retained-object checksum, deletion-preservation, restored-session revocation and
+pending-job cancellation checks. The ledger remained unchanged after its guarded
+creation, and the plaintext restore rehearsal was removed.
+
+The rollback image remains tagged
+`math-practice-tutor:rollback-20261023-t67-7ce664b97530-attempt2`.
+API/worker startup reached `0020_request_recovery` with the original data mount
+preserved, a fresh worker heartbeat and zero service restarts. Private HTTPS
+readiness passed; six public asset hashes matched the candidate; cache headers
+and worker scope passed. Three anonymous protected endpoints returned **401**
+with `no-store`, without reading their bodies, and three runtime-documentation
+endpoints returned **404**. The public/synthetic gate, scan, SBOM and content-free
+deployment evidence bundle retains 60 evidence files plus a checksum index under
+`backups/evidence-deploy-20261023-t67-7ce664b97530`, including final checks,
+deployment receipts, SBOM/scans, mock results and helper tests. A sustained
+post-cutover metadata check also confirmed both exact service images, zero
+restarts and a fresh worker heartbeat.
+
+**Remaining limits:** No private provider configuration or real learner content/logs
+was inspected. No live or paid provider tests, model downloads or cloud
+provisioning were run. Actual-device, assistive-technology, real-model
 quality and full operational-recovery checks remain in ACCEPTANCE; synthetic
 results do not establish WCAG conformance or teaching quality. See the
 [remediation record](UI_UX_REVIEW.md#october-23-2026--t67-remediation) for the
@@ -130,8 +183,10 @@ relationship to T66's historical findings.
 
 ## T66 — Whole-application UI/UX review (2026-10-23)
 
-**Status:** Review complete; application corrections remain open. This is a
-source and synthetic-browser review, with the manual/device limits below.
+**Status at review:** Review complete; application corrections remained open.
+This is the dated source and synthetic-browser review, with the manual/device
+limits below. [T67](#t67--fix-review-findings-publish-and-deploy-2026-10-23)
+subsequently corrected and deployed the eight findings and two follow-ups.
 
 **Scope and contracts:** Applied `.agents/skills/ui-ux-review/SKILL.md` across
 all 23 workflow groups, tracking administrator and learner journeys separately.
@@ -178,10 +233,11 @@ the repository. The pre-existing JavaScript chunk-size warning remains; the
 backend unit/integration, full project and dependency-audit gates were not rerun
 for this documentation-only review.
 
-**Remaining work:** Prioritize a bounded correction for unavailable initial
+**Remaining work at review completion:** Prioritize a bounded correction for unavailable initial
 session URLs, with regression coverage for successful feature/history loading,
 404 selection, Reconnect and subsequent navigation. The other seven confirmed
-findings remain unfixed. Actual phones/camera/HEIC, installed-PWA background
+findings remained unfixed at that point; T67 records their subsequent correction.
+Actual phones/camera/HEIC, installed-PWA background
 behavior, real browser zoom, text spacing, screen readers/accessible math, live
 teaching and full host recovery remain in ACCEPTANCE. This review does not
 establish complete browser-state coverage or WCAG conformance.

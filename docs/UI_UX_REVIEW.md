@@ -427,8 +427,10 @@ coverage, not a complete manual accessibility audit or WCAG-conformance claim.
 [T67](TASKS.md#t67--fix-review-findings-publish-and-deploy-2026-10-23) implements
 the eight findings and the two separately recorded follow-ups. T66's findings,
 measurements and coverage above describe the reviewed baseline and remain
-historical evidence. Final gates, publication and deployment are still pending;
-this section does not treat the defect-reproduction probes as correction tests.
+historical evidence. The corrections passed final gates, were published as
+`7ce664b97530e5641cdd5ae8459f82beeabb1bf6` and were deployed to the private
+installation on October 23. This section records correction tests separately from
+T66's defect-reproduction probes.
 
 | Finding/follow-up | Implemented correction |
 | --- | --- |
@@ -449,9 +451,10 @@ Regenerated OpenAPI/frontend types and API integration tests cover serialization
 and cross-learner 404 rejection. Retained older observations remain saved history;
 the backend's current-prompt/source filters for teaching evidence are unchanged.
 
-Verification to date: targeted API history/metadata checks passed **3 tests in
+Final verification: targeted API history/metadata checks passed **3 tests in
 1.26 seconds**; integration passed **404 tests in 72.38 seconds**. `make check`
-passed **329 backend unit tests in 10.65 seconds**, **11 toolchain tests** and
+was repeated successfully against the exact committed source: **329 backend unit
+tests**, **11 toolchain tests** and
 **284 frontend tests in 18 files**, plus lint/format, types, build, contract drift,
 secret and infrastructure checks. The component regressions cover
 delayed selection/save/cancel transitions, retained drafts, photo availability,
@@ -462,7 +465,9 @@ repository-file hooks and both dependency audits passed. Four deterministic/mock
 evaluation suites passed, with reports in `/tmp/shepherd-t67/mock-reports` and no
 checked-in report changes. Focused component counts overlap the full total.
 
-The permanent `tests/smoke/review-fixes.spec.ts` browser suite passed **14 cases in
+The full built browser suite passed **114 cases in 18.3 minutes** across desktop
+and Pixel 7 Chromium emulation. The earlier focused permanent
+`tests/smoke/review-fixes.spec.ts` suite passed **14 cases in
 2.1 minutes** on desktop and Pixel 7 Chromium emulation. Valid long learner and
 connection names kept body/document width within 320px in both projects; the
 desktop enabled placeholder sample measured **6.3157026914:1**, `#536456` on white
@@ -475,12 +480,31 @@ the message a full row and wraps the actions; the active-model browser case now
 asserts that its message spans the toast content at 320px and captures that view.
 Targeted formatting and a fresh build passed; both desktop/mobile 320px receipt
 checks passed (**2 browser executions in 3.0 seconds**). The full check and
-14-case browser results above precede this last CSS/assertion change.
+114-case browser results include that correction; focused counts overlap the
+full suite. Both corrected 320px receipt screenshots were visually inspected and
+show readable full-row messages with wrapped controls. Final credential scanning
+and all-files repository hooks passed.
 
-The full built browser suite, final repository-file checks,
-container/security/backup-restore checks, publication and deployment remain pending.
-No live-provider acceptance, real learner material or private configuration was
-used. Actual phones/camera/HEIC, installed-PWA background behavior, browser zoom,
+The immutable image passed container smoke, offline encrypted restore and
+Trivy 0.76.1 checks with the October 23 database: zero HIGH/CRITICAL vulnerabilities
+and zero secrets at all severities. Its CycloneDX SBOM has 52 components. The first
+deployment attempt refused a missing deletion ledger before archive/migration/
+candidate startup and automatically restored the previous image with HTTPS
+verification. A stopped-writer guard then initialized the first empty ledger only
+after confirming no recorded deletion history, as RUNBOOK permits. Attempt 2 passed encrypted
+backup/isolated restore and cutover without rollback, preserving the original
+data mount. SQLite integrity/foreign keys, content/object checksums, deletions,
+restored-session revocation and job cancellation passed. Private HTTPS readiness,
+six asset hashes, cache/worker scope, three protected 401/no-store responses and
+three runtime-documentation 404 responses passed; protected bodies were not read.
+Both services retained the exact image with zero restarts and a fresh worker
+heartbeat. [T67](TASKS.md#t67--fix-review-findings-publish-and-deploy-2026-10-23)
+records the immutable identities, archive checksum, rollback tag and evidence
+retention. This documentation update changes no deployed runtime code.
+
+No live-provider acceptance was run, and no private provider configuration or
+real learner content/logs was inspected.
+Actual phones/camera/HEIC, installed-PWA background behavior, browser zoom,
 text spacing, screen readers/accessible math, real tutoring quality and full host
 recovery remain in ACCEPTANCE. These corrections do not establish complete
 browser-state coverage, WCAG conformance or teaching quality.
