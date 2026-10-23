@@ -35,27 +35,36 @@ function readLocation(): {
   help: string;
   signIn: SignInRole | null;
   switchPage: Page | null;
+  switchHelp: string | undefined;
 } {
   const params = new URLSearchParams(window.location.search);
   const requested = params.get("page") ?? "practice";
   const requestedSignIn = params.get("signin");
   const historyState = window.history.state as {
     switchPage?: unknown;
+    switchHelp?: unknown;
   } | null;
+  const page = Object.hasOwn(pageNames, requested)
+    ? (requested as Page)
+    : "practice";
   return {
-    page: Object.hasOwn(pageNames, requested)
-      ? (requested as Page)
-      : "practice",
+    page,
     help: params.get("help") ?? "practice",
     signIn:
       requestedSignIn === "adult" || requestedSignIn === "learner"
         ? requestedSignIn
-        : null,
+        : params.has("page") && Object.hasOwn(pageNames, requested)
+          ? roleForPage(page)
+          : null,
     switchPage:
       typeof historyState?.switchPage === "string" &&
       Object.hasOwn(pageNames, historyState.switchPage)
         ? (historyState.switchPage as Page)
         : null,
+    switchHelp:
+      typeof historyState?.switchHelp === "string"
+        ? historyState.switchHelp
+        : undefined,
   };
 }
 
@@ -128,12 +137,24 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
       if (signingIn) return;
       scrollToTop.current = true;
       const destinationRole = roleForPage(nextPage) ?? signInRole;
+      const requestEntry =
+        entryVisible ||
+        (authenticated &&
+          destinationRole !== identity.role &&
+          nextPage !== "help");
       const keepWorkspace =
-        entryVisible && authenticated && destinationRole !== identity.role;
+        requestEntry && authenticated && destinationRole !== identity.role;
       window.history.pushState(
-        keepWorkspace ? { switchPage: location.switchPage ?? page } : null,
+        keepWorkspace
+          ? {
+              switchPage: location.switchPage ?? page,
+              switchHelp: location.switchPage
+                ? location.switchHelp
+                : location.help,
+            }
+          : null,
         "",
-        pageUrl(nextPage, help, entryVisible ? destinationRole : undefined),
+        pageUrl(nextPage, help, requestEntry ? destinationRole : undefined),
       );
       setLocation(readLocation());
     },
@@ -144,6 +165,8 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
       identity,
       signInRole,
       location.switchPage,
+      location.switchHelp,
+      location.help,
       page,
     ],
   );
@@ -160,7 +183,10 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
     }
     scrollToTop.current = true;
     window.history.pushState(
-      { switchPage: location.switchPage ?? page },
+      {
+        switchPage: location.switchPage ?? page,
+        switchHelp: location.switchPage ? location.switchHelp : location.help,
+      },
       "",
       signInUrl(role),
     );
@@ -172,7 +198,10 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
     window.history.replaceState(
       null,
       "",
-      pageUrl(location.switchPage ?? (isAdult ? "learners" : "practice")),
+      pageUrl(
+        location.switchPage ?? (isAdult ? "learners" : "practice"),
+        location.switchHelp,
+      ),
     );
     setLocation(readLocation());
   };

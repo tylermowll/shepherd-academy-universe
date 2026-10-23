@@ -123,6 +123,7 @@ export function Tutor({
   );
   const [text, setText] = useState("");
   const [working, setWorking] = useState(false);
+  const [selecting, setSelecting] = useState(false);
   const [pending, setPending] = useState<Command | null>(null);
   const [recovery, setRecovery] = useState(() =>
     readRememberedRequest(learner),
@@ -139,16 +140,22 @@ export function Tutor({
   const pendingCommand = useRef<Command | null>(null);
   const mounted = useRef(true);
   const selectedSession = useRef("");
+  const displayedSession = useRef("");
   const loadSequence = useRef(0);
   const polling = useRef(false);
   const selectingSession = useRef(0);
   const blocked =
-    working || pending !== null || photoPending || recovery !== null;
+    working ||
+    selecting ||
+    pending !== null ||
+    photoPending ||
+    recovery !== null;
 
   const commitSession = useCallback(
     (loaded: Schema<"TutoringSessionPublic">, addToHistory = false) => {
       if (loaded.learner_id !== learner) {
         selectedSession.current = "";
+        displayedSession.current = "";
         setSession(null);
         window.history.replaceState(
           null,
@@ -158,6 +165,7 @@ export function Tutor({
         return false;
       }
       selectedSession.current = loaded.id;
+      displayedSession.current = loaded.id;
       setSession(loaded);
       setHistory((current) => {
         const summary: Schema<"TutoringSessionSummaryPublic"> = {
@@ -168,6 +176,7 @@ export function Tutor({
           initiative: loaded.initiative,
           difficulty: loaded.difficulty,
           activity_count: loaded.problems.length,
+          created_at: loaded.created_at,
         };
         return current.some((item) => item.id === loaded.id)
           ? current.map((item) => (item.id === loaded.id ? summary : item))
@@ -188,7 +197,7 @@ export function Tutor({
   const load = useCallback(
     async (id?: string, includeHistory = true) => {
       const sequence = ++loadSequence.current;
-      const [sessions, capabilities, loaded] = await Promise.all([
+      const [sessions, capabilities, loaded] = await Promise.allSettled([
         includeHistory
           ? api<Schema<"TutoringSessionSummaryPublic">[]>("/tutor/sessions")
           : Promise.resolve(null),
@@ -198,11 +207,38 @@ export function Tutor({
           : Promise.resolve(null),
       ]);
       if (!mounted.current || sequence !== loadSequence.current) return;
-      if (sessions)
-        setHistory(sessions.filter((item) => item.learner_id === learner));
-      setFeatures(capabilities);
+      if (sessions.status === "fulfilled" && sessions.value)
+        setHistory(
+          sessions.value.filter((item) => item.learner_id === learner),
+        );
+      if (capabilities.status === "fulfilled") setFeatures(capabilities.value);
       setConnectionError("");
-      if (loaded) commitSession(loaded);
+      if (loaded.status === "fulfilled") {
+        if (loaded.value) commitSession(loaded.value);
+      } else if (
+        loaded.reason instanceof ApiError &&
+        loaded.reason.status === 404
+      ) {
+        if (selectedSession.current === id && displayedSession.current !== id) {
+          selectedSession.current = "";
+          setSession(null);
+          setNewSession(false);
+          setConnectionError(
+            "This saved session is no longer available. Start a new session or choose another one in History.",
+          );
+        } else {
+          setConnectionError(
+            "That saved session is no longer available. Your current work is still here. Choose another session in History or start a new one.",
+          );
+        }
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}${window.location.search}${selectedSession.current ? `#tutor=${selectedSession.current}` : ""}`,
+        );
+      } else throw loaded.reason;
+      if (capabilities.status === "rejected") throw capabilities.reason;
+      if (sessions.status === "rejected") throw sessions.reason;
     },
     [commitSession, learner],
   );
@@ -210,6 +246,7 @@ export function Tutor({
   const selectSession = useCallback(
     async (id: string) => {
       selectingSession.current += 1;
+      setSelecting(true);
       try {
         await load(id);
         return selectedSession.current === id;
@@ -222,6 +259,7 @@ export function Tutor({
         throw cause;
       } finally {
         selectingSession.current -= 1;
+        if (mounted.current) setSelecting(selectingSession.current > 0);
       }
     },
     [load],
@@ -428,6 +466,7 @@ export function Tutor({
       else {
         loadSequence.current += 1;
         selectedSession.current = "";
+        displayedSession.current = "";
         setSession(null);
       }
     };
@@ -666,6 +705,17 @@ export function Tutor({
         }}
         disabled={blocked || active}
       />
+      {(source === "reference_photo" || source === "reading_photo") &&
+        features &&
+        !features.photos_available && (
+          <div className="notice" role="status">
+            <p>{features.photo_status}</p>
+            <p>
+              Choose a pasted-text input to continue without a photo, or ask the
+              adult who manages this app to check the photo reader in Settings.
+            </p>
+          </div>
+        )}
       {photoRepair === problem?.id &&
         ["reading_text", "reference_text"].includes(source) && (
           <p className="notice">
@@ -821,11 +871,17 @@ export function Tutor({
     <section
       className="tutor"
       aria-label="AI tutor"
-      aria-busy={working || active}
+      aria-busy={working || selecting || active}
     >
+      {selecting && <BusyStatus message="Opening saved session…" />}
       {navigationNotice && changingSessionDisabled && (
         <p role="status" className="notice">
           {navigationNotice}
+        </p>
+      )}
+      {connectionError && (
+        <p role="status" className="error">
+          {connectionError}
         </p>
       )}
       <section
@@ -864,13 +920,23 @@ export function Tutor({
         <div className="session-list">
           {history.map((item) => (
             <article className="card session-card" key={item.id}>
-              <h3>{item.topic}</h3>
+              <h3 id={`saved-session-${item.id}-topic`}>{item.topic}</h3>
+              <p className="fine" id={`saved-session-${item.id}-date`}>
+                Started{" "}
+                <time dateTime={item.created_at}>
+                  {new Date(item.created_at).toLocaleString(undefined, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </time>
+              </p>
               <p className="fine">
                 {item.status === "open" ? "In progress" : "Finished"} ·{" "}
                 {item.activity_count}{" "}
                 {item.activity_count === 1 ? "activity" : "activities"}
               </p>
               <button
+                aria-describedby={`saved-session-${item.id}-topic saved-session-${item.id}-date`}
                 disabled={
                   item.id === session?.id ? blocked : changingSessionDisabled
                 }
@@ -1117,11 +1183,6 @@ export function Tutor({
             </button>
           </div>
         )}
-        {connectionError && (
-          <p role="status" className="error">
-            {connectionError}
-          </p>
-        )}
         {session && (
           <div hidden={newSession}>
             {hasResponseDraft && (
@@ -1280,7 +1341,9 @@ export function Tutor({
                           <textarea
                             ref={composer}
                             value={text}
-                            onChange={(event) => setText(event.target.value)}
+                            onChange={(event) => {
+                              if (!disabled) setText(event.target.value);
+                            }}
                             aria-invalid={responseLength > 8000 || undefined}
                             rows={2}
                             readOnly={disabled}
@@ -1490,6 +1553,7 @@ export function Tutor({
                             disabled={
                               active ||
                               working ||
+                              selecting ||
                               pending !== null ||
                               recovery !== null ||
                               offline ||

@@ -183,11 +183,11 @@ test("learner password sign-in on a second browser is isolated and revocable", a
       learner.getByRole("button", { name: "Approve device" }),
     ).toHaveCount(0);
     await learner.goto("http://127.0.0.1:4173/?page=settings");
-    await expect(navigation.getByRole("link")).toHaveText([
-      "Practice",
-      "History",
-      "Help",
-    ]);
+    await expect(learner.getByRole("heading", { level: 1 })).toHaveText(
+      "Administrator sign-in",
+    );
+    await expect(navigation).toHaveCount(0);
+    await expect(learner.getByLabel("Signed in account")).toHaveCount(0);
     await expect(
       learner.getByRole("button", { name: "Test tutor" }),
     ).toHaveCount(0);
@@ -201,7 +201,14 @@ test("learner password sign-in on a second browser is isolated and revocable", a
     await expect(
       learner.getByRole("button", { name: "Approve device" }),
     ).toHaveCount(0);
-    await navigate(learner, "Practice");
+    await learner
+      .getByRole("button", { name: "Cancel account switch", exact: true })
+      .click();
+    await expect(navigation.getByRole("link")).toHaveText([
+      "Practice",
+      "History",
+      "Help",
+    ]);
     await learner
       .getByRole("textbox", { name: "Topic or learning goal", exact: true })
       .fill("Science: testing a prediction");

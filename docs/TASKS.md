@@ -34,6 +34,9 @@ workflows; it does not establish that those workflows passed a new audit. T64
 validates and publishes the remaining account/skill changes with the maintainer's
 latest root lockfile update. T65 applies the review skill, preserves administrator
 work across navigation and deploys the checked result with that exact lockfile.
+T66 records a whole-application UI/UX review with eight confirmed findings and
+explicit browser/manual limits. T67 implements the corrections and two review
+follow-ups; final gates, publication and deployment remain in progress.
 The schema head is `0020_request_recovery`. The latest private deployment uses
 committed source `4151794`, Python 3.15.0, FastAPI 0.161.0 and pillow-heif 1.8.1,
 verified on **October 22, 2026**. T65 below records the immutable image, encrypted
@@ -52,6 +55,136 @@ container packaging and private installation; October 11's evidence is historica
 The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
 T47 records the Python project consolidation. T46 records the earlier cleanup
 and publication checks. Browser-model research and AWS hosting remain optional.
+
+## T67 — Fix review findings, publish and deploy (2026-10-23)
+
+**Status:** In progress; the maintainer authorized all review corrections, push to
+`main`, and deployment to the existing private installation. Implementation and
+targeted checks are complete; final gates, publication and deployment are pending.
+
+**Scope and contracts:** T66's eight confirmed issues plus the saved-review
+metadata and History identification follow-ups. SPECIFICATION sections 2–4,
+9–13 and 18: recoverable owned-session links, in-memory draft/account isolation,
+accurate settings outcomes, role-specific destinations, phone operation ordering,
+photo availability, narrow layouts, contrast and source-linked fallible review.
+No new services, dependencies, live provider calls or database migration were
+introduced. Existing lockfiles remain unchanged.
+
+**Implemented:** `Tutor.tsx` retains successful availability/history reads when a
+saved session is unavailable, clears invalid initial selections, restores the
+current URL after failed navigation and protects displayed drafts. Opening another
+session now guards the composer, actions and already-open photo picker/dropzone
+until the transition settles. Both photo source choices display the safe reader
+status and a pasted-text alternative. History includes creation dates and
+contextual action descriptions. `TutorConversation.tsx` and `SessionReview.tsx`
+expose optional saved help, unresolved observations and response/reading versions,
+with AI observations labeled fallible. Typed API dates and response-version
+metadata come from existing owned records; OpenAPI/frontend types were regenerated.
+
+`AdultPanel.tsx` guards pending active-model saves against edits and duplicate
+submission. `ProviderConnections.tsx` distinguishes confirmed privacy saves from
+failed refreshes and offers GET-only recovery. `App.tsx`/`Help.tsx` honor the
+destination role in both clicks and copied URLs, retaining workspace/topic/drafts
+on cancellation. `PhoneLink.tsx` serializes creation/cancellation and clears only
+the canceled link. CSS permits valid long names to wrap and gives enabled
+placeholders an opaque darker color. The settings receipt now gives its message
+a full row and wraps actions to prevent narrow-screen text compression.
+Regression coverage is in the affected
+component tests, API history tests and `tests/smoke/review-fixes.spec.ts`.
+
+**Evidence to date:** Targeted history/metadata integration passed **3 tests in
+1.26 seconds**, including serialization and cross-learner 404 isolation.
+`make test-integration` passed **404 tests in 72.38 seconds**. `make check` passed
+**329 backend unit tests in 10.65 seconds**, **11 toolchain tests** and **284
+frontend tests in 18 files**, plus lint/format, types, build, generated-contract
+drift, secrets and infrastructure checks. Two older expectations were corrected
+for the intended guarded session-selection behavior and explicit role-specific
+entry on setup cancellation; background-poll race, draft and account-isolation
+assertions remain covered. Focused learner, administrator and navigation test
+counts overlap this total and are not additional passes. Targeted lint/types and
+repository-file hooks passed. `make audit` reported no known vulnerabilities in
+either dependency audit. All four deterministic/mock evaluation suites passed;
+reports remain outside Git in `/tmp/shepherd-t67/mock-reports`.
+
+The focused `review-fixes.spec.ts` browser suite passed **14 cases in 2.1 minutes**
+across desktop and Pixel 7 Chromium emulation. Both projects kept body/document
+width within the 320px viewport for valid long names. The desktop enabled
+placeholder measured **6.3157026914:1** with opaque `#536456` on white. Ten
+desktop/mobile role-entry, active-model, phone-QR, photo-unavailable and recovered
+session screenshots were visually inspected. This exposed a narrow-screen
+active-model success toast whose unwrapped actions squeezed the message into a
+tall column. A final CSS correction and 320px receipt-width browser assertion were
+added afterward; targeted formatting, a fresh build and both desktop/mobile
+receipt checks passed (**2 browser executions in 3.0 seconds**). The full check
+and initial focused browser results above precede this final layout change.
+
+**Pending gates and limits:** The full built browser suite, final repository-file
+checks, container/security/backup-restore checks, push verification and private deployment
+remain pending. The root agent will record their actual results and immutable
+deployment identity here. No private configuration, real learner data/logs or live
+teaching has been inspected. Actual-device, assistive-technology, real-model
+quality and full operational-recovery checks remain in ACCEPTANCE; synthetic
+results do not establish WCAG conformance or teaching quality. See the
+[remediation record](UI_UX_REVIEW.md#october-23-2026--t67-remediation) for the
+relationship to T66's historical findings.
+
+## T66 — Whole-application UI/UX review (2026-10-23)
+
+**Status:** Review complete; application corrections remain open. This is a
+source and synthetic-browser review, with the manual/device limits below.
+
+**Scope and contracts:** Applied `.agents/skills/ui-ux-review/SKILL.md` across
+all 23 workflow groups, tracking administrator and learner journeys separately.
+Covered usability, semantic accessibility and interface wording against
+SPECIFICATION sections 2–4, 10–13 and 18, the current README, T65 and ACCEPTANCE.
+Reviewed source `b593765` from a clean working tree. Only `docs/UI_UX_REVIEW.md`
+and this task log changed; no application, dependency, API/schema or permanent
+test changes were made.
+
+**Findings:** The [October 23 report](UI_UX_REVIEW.md#october-23-2026--whole-application-review)
+records eight confirmed issues: a missing saved-session bookmark blocks new
+practice and History; a delayed active-model save erases newer selections;
+cross-role Help destinations open the wrong workspace; successful privacy saves
+can be reported as unsuccessful after a refresh failure; delayed phone-link
+cancellation hides its replacement; unavailable photo input silently disables
+Start; valid long names overflow narrow layouts; enabled placeholder text has
+2.819:1 contrast. The saved-review metadata contract and History identification
+suggestion remain separately labeled source-only/design follow-ups. Previous
+T65 fixes and existing acceptance work are kept separate from these findings.
+
+**Commands and evidence:** The fresh Vite build with `envDir: false` and
+`scripts/build-pwa.mjs` passed. The isolated `make smoke-built` gate passed
+**100 cases in 16.2 minutes** on Chrome 156.0.8078.47 desktop and Pixel 7
+emulation, one worker, zero retries. Temporary focused probes initially reported
+13 passed/3 failed: two error-copy expectation mismatches and one mobile timeout
+in an unrelated color-capture step after overflow was measured. Correcting that
+expectation and separating the unrelated step yielded **4 focused passes in
+10.4 seconds**, retaining every behavior/overflow assertion. All 16 distinct
+focused cases consequently have passing evidence across these runs; their
+assertions deliberately reproduce defects rather than validate corrected
+behavior. The lifecycle cases exercised only disposable account age correction,
+no-store export, canceled deletion and final deletion. TypeScript and final
+`git diff --check` passed. Browser-native color conversion measured the enabled
+placeholder at effective RGB (139,158,153) on white. Both projects measured
+918px learner content and 693px connection content in a 320px viewport.
+
+The first sandbox attempt failed before tests because local sockets were blocked;
+the same isolated harness then ran with socket permission. Commands excluded
+operator/provider environment variables and environment-file loading. No private
+configuration/data/logs, live provider tests, paid inference, model downloads,
+provisioning, deployment or push were used. Temporary probes and synthetic
+artifacts were preserved under `/tmp/shepherd-ux-review-20261023` and removed from
+the repository. The pre-existing JavaScript chunk-size warning remains; the
+backend unit/integration, full project and dependency-audit gates were not rerun
+for this documentation-only review.
+
+**Remaining work:** Prioritize a bounded correction for unavailable initial
+session URLs, with regression coverage for successful feature/history loading,
+404 selection, Reconnect and subsequent navigation. The other seven confirmed
+findings remain unfixed. Actual phones/camera/HEIC, installed-PWA background
+behavior, real browser zoom, text spacing, screen readers/accessible math, live
+teaching and full host recovery remain in ACCEPTANCE. This review does not
+establish complete browser-state coverage or WCAG conformance.
 
 ## T65 — Review and preserve administrator work across navigation (2026-10-22)
 

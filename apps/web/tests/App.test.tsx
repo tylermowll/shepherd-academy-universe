@@ -202,6 +202,211 @@ describe("linked app areas", () => {
     text_processing: "mock",
   };
 
+  it.each([
+    {
+      account: adult,
+      topic: "Start practicing",
+      destination: "Practice",
+      targetPage: "practice",
+      targetRole: "learner",
+      entry: "Learner sign-in",
+      home: "Learners",
+    },
+    {
+      account: learnerAccount,
+      topic: "Connect an AI model",
+      destination: "Settings",
+      targetPage: "settings",
+      targetRole: "adult",
+      entry: "Administrator sign-in",
+      home: "Practice",
+    },
+  ])(
+    "requests $targetRole access from signed-in Help and preserves the prior workspace after rejected authentication",
+    async ({
+      account,
+      topic,
+      destination,
+      targetPage,
+      targetRole,
+      entry,
+      home,
+    }) => {
+      const fetcher = vi.fn((url: string) =>
+        Promise.resolve(
+          response(
+            url.endsWith("/auth/session")
+              ? account
+              : url.endsWith("/auth/login")
+                ? { detail: "Use an account for the requested role." }
+                : url.endsWith("/features")
+                  ? features
+                  : [],
+            url.endsWith("/auth/login") ? 403 : 200,
+          ),
+        ),
+      );
+      vi.stubGlobal("fetch", fetcher);
+      let view = render(<App />);
+      await screen.findByLabelText("Signed in account");
+      const draft =
+        account.role === "adult"
+          ? await (async () => {
+              fireEvent.click(
+                await screen.findByRole("button", {
+                  name: "Add learner account",
+                }),
+              );
+              return screen.getByLabelText("Learner username");
+            })()
+          : await screen.findByLabelText("Topic or learning goal");
+      fireEvent.change(draft, {
+        target: { value: "Retained cross-role Help draft" },
+      });
+      fireEvent.click(
+        within(
+          screen.getByRole("navigation", { name: "Main navigation" }),
+        ).getByRole("link", { name: "Help" }),
+      );
+      fireEvent.click(
+        within(
+          screen.getByRole("navigation", { name: "Help topics" }),
+        ).getByRole("link", { name: topic }),
+      );
+      const destinationLink = within(
+        within(screen.getByRole("article")).getByRole("list"),
+      ).getByRole("link", { name: destination });
+      const copiedHref = destinationLink.getAttribute("href")!;
+      const copied = new URL(copiedHref, window.location.href);
+      expect(copied.searchParams.get("signin")).toBe(targetRole);
+      expect(copied.searchParams.get("page")).toBe(targetPage);
+      fireEvent.click(destinationLink);
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+        entry,
+      );
+      expect(screen.queryByLabelText("Signed in account")).toBeNull();
+      expect(draft).not.toBeVisible();
+      signIn("wrong-role-account");
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Use an account for the requested role.",
+      );
+      expect(draft).toHaveValue("Retained cross-role Help draft");
+      fireEvent.click(
+        screen.getByRole("button", { name: "Cancel account switch" }),
+      );
+      expect(
+        screen.getByRole("heading", { level: 2, name: topic }),
+      ).toHaveFocus();
+      fireEvent.click(
+        within(
+          screen.getByRole("navigation", { name: "Main navigation" }),
+        ).getByRole("link", { name: home }),
+      );
+      expect(draft).toBeVisible();
+      expect(draft).toHaveValue("Retained cross-role Help draft");
+      expect(screen.getByLabelText("Signed in account")).toHaveTextContent(
+        account.login_name,
+      );
+
+      view.unmount();
+      window.history.replaceState(null, "", copiedHref);
+      view = render(<App />);
+      await vi.waitFor(() =>
+        expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
+      );
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+        entry,
+      );
+      view.unmount();
+      view = render(<App />);
+      await vi.waitFor(() =>
+        expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
+      );
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+        entry,
+      );
+      expect(
+        fetcher.mock.calls.some(([url]) => url.endsWith("/auth/logout")),
+      ).toBe(false);
+      view.unmount();
+    },
+  );
+
+  it.each(
+    [adult, learnerAccount].flatMap((account) => [
+      {
+        account,
+        page: "practice",
+        heading: "Practice",
+        role: "learner",
+        entry: "Learner sign-in",
+      },
+      {
+        account,
+        page: "history",
+        heading: "History",
+        role: "learner",
+        entry: "Learner sign-in",
+      },
+      {
+        account,
+        page: "learners",
+        heading: "Learners",
+        role: "adult",
+        entry: "Administrator sign-in",
+      },
+      {
+        account,
+        page: "settings",
+        heading: "Settings",
+        role: "adult",
+        entry: "Administrator sign-in",
+      },
+    ]),
+  )(
+    "opens a named $page bookmark under the $account.role account through its required role",
+    async ({ account, page, heading, role, entry }) => {
+      window.history.replaceState(null, "", `/?page=${page}`);
+      vi.stubGlobal(
+        "fetch",
+        vi.fn((url: string) =>
+          Promise.resolve(
+            response(
+              url.endsWith("/auth/session")
+                ? account
+                : url.endsWith("/features")
+                  ? features
+                  : url.endsWith("/admin/providers")
+                    ? {
+                        policy: {
+                          allow_cloud_inference: false,
+                          app_audience: "mixed",
+                          cloud_locked: false,
+                          audience_locked: false,
+                          demo_mode: false,
+                        },
+                        routes: { tutor: "", vision: "" },
+                        providers: [],
+                      }
+                    : [],
+            ),
+          ),
+        ),
+      );
+      render(<App />);
+      await vi.waitFor(() =>
+        expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+          account.role === role ? heading : entry,
+        ),
+      );
+      if (account.role === role)
+        expect(screen.getByLabelText("Signed in account")).toHaveTextContent(
+          account.login_name,
+        );
+      else expect(screen.queryByLabelText("Signed in account")).toBeNull();
+    },
+  );
+
   it("keeps Management signed in after changing the administrator password and uses its rotated CSRF", async () => {
     const rotated = { ...adult, csrf_token: "synthetic-rotated-csrf" };
     const fetcher = vi.fn((url: string, options?: RequestInit) => {
@@ -1386,11 +1591,15 @@ it("retries a failed learner list when the adult reconnects", async () => {
   expect(screen.queryByRole("alert")).toBeNull();
 });
 
-it("keeps the selected session when a previous session response arrives late", async () => {
+it("protects pending session selection and keeps the chosen session after an older poll finishes", async () => {
   const learner = "4a15f6fc-8866-468e-801c-1faedc9ae88b";
   const first = "4a15f6fc-8866-468e-801c-1faedc9ae881";
   const second = "4a15f6fc-8866-468e-801c-1faedc9ae882";
   window.location.hash = "";
+  let resolveSelection!: (response: Response) => void;
+  const firstSelection = new Promise<Response>((resolve) => {
+    resolveSelection = resolve;
+  });
   let resolveOld: (response: Response) => void = () => {
     throw new Error("not initialized");
   };
@@ -1406,9 +1615,14 @@ it("keeps the selected session when a previous session response arrives late", a
     topic: id === first ? "Old session" : "Chosen session",
     initiative: "balanced",
     difficulty: "standard",
+    created_at: "2026-10-23T12:34:00Z",
   });
+  let firstReads = 0;
   const fetcher = vi.fn((url: string) => {
-    if (url.endsWith(`/sessions/${first}`)) return oldResponse;
+    if (url.endsWith(`/sessions/${first}`)) {
+      firstReads += 1;
+      return firstReads === 1 ? firstSelection : oldResponse;
+    }
     if (url.endsWith(`/sessions/${second}`))
       return Promise.resolve(response(session(second)));
     if (url.endsWith("/sessions"))
@@ -1432,6 +1646,29 @@ it("keeps the selected session when a previous session response arrives late", a
   fireEvent.click(
     screen.getAllByRole("button", { name: "Review session" })[0]!,
   );
+  expect(screen.getByText("Opening saved session…")).toBeVisible();
+  for (const button of screen.getAllByRole("button", {
+    name: "Review session",
+  }))
+    expect(button).toBeDisabled();
+  fireEvent.click(
+    screen.getAllByRole("button", { name: "Review session" })[1]!,
+  );
+  expect(
+    fetcher.mock.calls.some(([url]) => url.endsWith(`/sessions/${second}`)),
+  ).toBe(false);
+  await act(async () => {
+    resolveSelection(response(session(first)));
+    await firstSelection;
+  });
+  await vi.waitFor(() => expect(window.location.hash).toBe(`#tutor=${first}`));
+  await vi.waitFor(() =>
+    expect(
+      screen.getAllByRole("button", { name: "Review session" })[1]!,
+    ).toBeEnabled(),
+  );
+  fireEvent(window, new Event("online"));
+  await vi.waitFor(() => expect(firstReads).toBe(2));
   fireEvent.click(
     screen.getAllByRole("button", { name: "Review session" })[1]!,
   );

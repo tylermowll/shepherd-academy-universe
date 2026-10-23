@@ -25,6 +25,18 @@ export function SessionReview({
     )?.feedback;
   const latestGuidance =
     latestFeedback?.next_step || latestFeedback?.guidance.at(-1);
+  const helpRequests = messages.filter(
+    (operation) => operation.kind === "hint",
+  );
+  const latestObservation = [...operations]
+    .reverse()
+    .find(
+      (operation) =>
+        operation.status === "completed" &&
+        (!operation.reading || operation.reading.can_continue) &&
+        operation.feedback?.learning_observation &&
+        operation.feedback.learning_observation.assessment !== "not_assessed",
+    )?.feedback?.learning_observation;
   return (
     <section className="card" aria-label="Session recap">
       <h3>Session recap</h3>
@@ -50,6 +62,40 @@ export function SessionReview({
         </p>
       )}
       <p>Your saved work, readings and responses are available below.</p>
+      <details>
+        <summary>Help and points to revisit</summary>
+        <p>
+          {helpRequests.length} saved{" "}
+          {helpRequests.length === 1 ? "help request" : "help requests"}. Hints,
+          concept explanations and different examples are recorded in the
+          conversation.
+        </p>
+        {latestObservation ? (
+          <>
+            <p>
+              <strong>Tutor’s last saved observations about your work:</strong>{" "}
+              {latestObservation.evidence}
+            </p>
+            {latestObservation.open_points.length > 0 ? (
+              <ul>
+                {latestObservation.open_points.map((point, index) => (
+                  <li key={index}>
+                    <SafeText text={point} />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>The tutor recorded no open points in that response.</p>
+            )}
+            <p className="fine">
+              These AI observations can be mistaken. They are discussion points,
+              not grades or a mastery assessment.
+            </p>
+          </>
+        ) : (
+          <p>No observations about demonstrated work were saved.</p>
+        )}
+      </details>
     </section>
   );
 }

@@ -1,5 +1,9 @@
 # UI/UX review — October 22, 2026
 
+Latest review: [October 23 whole-application review](#october-23-2026--whole-application-review).
+Correction status: [T67 remediation](#october-23-2026--t67-remediation).
+The October 22 sections below retain T65's historical corrections and evidence.
+
 [T65](TASKS.md#t65--review-and-preserve-administrator-work-across-navigation-2026-10-22)
 applies the repository's [UI/UX review skill](../.agents/skills/ui-ux-review/SKILL.md)
 to administrator and learner workflows, then corrects the confirmed administrator
@@ -170,3 +174,313 @@ intercepted before networking. No credentials, login, setup or provider request
 was used, and no page error occurred. This verifies public entry behavior, not
 authenticated use of the real household installation. T65 records image, backup,
 readiness and served-asset verification separately.
+
+## October 23, 2026 — whole-application review
+
+This review applies all three lenses in the repository UI/UX skill: task and
+interaction design, accessibility, and interface wording. The reviewed source is
+`b593765`; the working tree was clean before the review. The October 22 findings
+and corrections above remain historical evidence. This review changes only this
+report and TASKS; it does not implement the corrections below.
+
+### Findings, ordered by consequence
+
+1. **High — a removed session link blocks otherwise available learning.**
+   Role/workflow: learner, opening Practice from a saved session URL. In
+   [Tutor.tsx](../apps/web/src/Tutor.tsx#L188), one `Promise.all` groups session
+   history, feature availability and the selected session. A 404 for a removed
+   session discards the successful history/features responses. Practice keeps
+   saying “Checking tutor availability…” and disables Start session even with a
+   topic. Reconnect successfully refreshes authentication but leaves this state;
+   History requests the same missing ID again and displays no sessions. Retention
+   can normally remove old sessions, so this is a supported lifecycle, not just a
+   malformed URL. Expected: explain the unavailable session while keeping History
+   and new practice usable. Correct the independent loading/error boundaries,
+   clear an unavailable selection/hash, and offer History/New session. Governing
+   requirements: SPECIFICATION sections 3, 10 and 12 (retention and recovery).
+   **Evidence: reproduced in desktop and mobile Chromium. The owned history contained one saved session; history/features/Reconnect returned 200, the missing session returned 404, and both new practice and the history list stayed unusable.**
+
+2. **Medium — saving active models can erase a newer selection.**
+   Role/workflow: administrator, Settings → Active models during a delayed save.
+   [AdultPanel.tsx](../apps/web/src/AdultPanel.tsx#L275) leaves both selects and Save
+   enabled while POST is pending. Save A, select B before the response, then let
+   A finish: completion clears `routesDirty` and the following GET replaces B
+   with A. The success notice arrives alongside the lost edit. Expected: a save
+   protects its submitted state and preserves or prevents later changes. Use a
+   local pending guard and status, or version edits so an older completion cannot
+   overwrite them. Governing requirement: SPECIFICATION section 3, honest state
+   and in-memory draft behavior. **Evidence: reproduced in both browser projects with one intercepted POST and a delayed response; both selects and Save remained enabled, and B reverted to A. No provider-routing write reached the server.**
+
+3. **Medium — Help links across roles open a different page from their label.**
+   Role/workflow: either signed-in role, following a destination in Help.
+   Administrator → Help → Practice opens Learners. Learner → Help → Connect an
+   AI model → Settings opens Practice. In [App.tsx](../apps/web/src/App.tsx#L126)
+   and [Help.tsx](../apps/web/src/Help.tsx#L50), destination-role sign-in is added
+   only when an entry flow is already visible. Role coercion then substitutes the
+   current workspace. Expected: show the requested role's sign-in while retaining
+   the prior workspace/drafts for cancellation. Apply the same role-aware
+   navigation used by masthead links, including real hrefs for reload/new tabs.
+   This directly conflicts with SPECIFICATION section 3's named Help destinations.
+   **Evidence: both directions reproduced in both browser projects, including the incorrect URL query and observed heading.**
+
+4. **Medium — a completed privacy save can be reported as an unsuccessful change.**
+   Role/workflow: administrator, Settings → Data & privacy, lost refresh after a
+   successful save. [ProviderConnections.tsx](../apps/web/src/ProviderConnections.tsx#L1418)
+   handles POST failure and subsequent GET failure in one catch. A confirmed
+   successful POST followed by GET 503 displays “Data & privacy could not be
+   changed,” with no visible refresh action in that tab. This can leave the
+   operator believing cloud permission did not change when the server accepted
+   it. Expected: distinguish the saved permission from stale display data.
+   Suggested copy: “Data & privacy was saved, but the current settings could not
+   be refreshed. Refresh settings to check them.” Add that read-only recovery
+   action and keep actual POST rejection wording separate. Governing requirements:
+   SPECIFICATION sections 3 and 12; accurate permission disclosures.
+   **Evidence: reproduced in both projects using intercepted POST success followed by GET 503. No actual privacy policy was enabled or changed.**
+
+5. **Medium — canceling an old phone link can hide its replacement QR.**
+   Role/workflow: learner, Attach photo → phone handoff. Hold cancellation of
+   link A, choose New QR code, wait for B, then complete cancellation A. B
+   disappears from the computer because [PhoneLink.tsx](../apps/web/src/PhoneLink.tsx#L130)
+   unconditionally clears `link`; cancellation never sets the local busy state.
+   Expected: cancellation affects A and leaves B visible. Serialize creation and
+   cancellation, or clear only the matching canceled link ID. Show cancellation
+   status without adding a confirmation gate. Governing requirements:
+   SPECIFICATION sections 2, 3 and 10, phone continuity and recovery.
+   **Evidence: reproduced in both projects with actual disposable link creation/cancellation and a held DELETE. B appeared, then disappeared after A completed.**
+
+6. **Medium — a photo-only limitation disables Start session without explaining why.**
+   Role/workflow: learner, Practice starter with a working text tutor but no
+   available photo reader. Selecting reading-photo or assignment-photo input
+   disables Start session in [Tutor.tsx](../apps/web/src/Tutor.tsx#L1052).
+   The starter never displays the returned `photo_status`; that explanation is
+   only rendered inside an existing session's attachments. General Help mentions
+   the demo and tutor availability, not this independent photo-reader blocker.
+   Expected: show the specific reason near Material input and a usable alternative.
+   Suggested copy: “Photo reading is unavailable. Paste the material instead, or
+   ask the administrator to select a photo reader.” Prefer the backend's more
+   specific safe explanation when available. Governing requirements:
+   SPECIFICATION sections 3 and 10, honest unavailable states and recovery.
+   **Evidence: reproduced in both projects using a GET-only features override; both photo choices disabled Start without the supplied reason, while topic input still enabled it.**
+
+7. **Medium — valid long names break narrow-screen reflow.**
+   Role/workflow: administrator, Learners selected-record heading and Settings
+   connection cards. Valid 64-character unbroken names wrap in account-list
+   buttons but not the selected learner heading or provider heading. The grid/flex
+   children retain their intrinsic widths. Relevant sources:
+   [LearnerAccounts.tsx](../apps/web/src/LearnerAccounts.tsx#L272),
+   [ProviderConnections.tsx](../apps/web/src/ProviderConnections.tsx#L1033) and
+   [styles.css](../apps/web/src/styles.css#L1023). Expected: the heading and related
+   controls fit a 320 CSS-pixel viewport without two-dimensional reading. Add
+   appropriate `min-width: 0` and wrapping to the affected children/headings.
+   Governing requirement: SPECIFICATION section 18 and
+   [WCAG 2.2 SC 1.4.10](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html).
+   **Evidence: both projects measured a 320px document viewport with learner content 918px wide and connection content 693px wide. Computed provider heading width was 660.3125px with normal wrapping and auto minimum width.**
+
+8. **Medium — enabled placeholder text has insufficient contrast.**
+   Role/workflow: learner, empty Topic or learning goal in the Practice starter.
+   The displayed 16px/600 placeholder uses a 50% transparent foreground on white.
+   Browser-computed colors match in both projects; native browser conversion and
+   alpha compositing produce effective RGB `(139, 158, 153)` on `(255, 255, 255)`:
+   **2.819:1**, below the 4.5:1 minimum for this text. This is an enabled field,
+   separate from the contrast exemption for disabled controls. The rule comes from
+   imported Tailwind preflight; [styles.css](../apps/web/src/styles.css#L1) has no
+   explicit placeholder override, and [Tutor.tsx](../apps/web/src/Tutor.tsx#L995)
+   displays the affected example. Expected: readable examples in empty controls.
+   Give placeholders an explicit darker color, such as the existing helper-text
+   color, with opacity 1, then remeasure enabled inputs and textareas. Governing
+   requirement: SPECIFICATION section 18 and
+   [WCAG 2.2 SC 1.4.3](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html),
+   which explicitly includes placeholder text.
+
+### Additional source-based concern and design suggestion
+
+The saved review does not expose all the information promised by SPECIFICATION
+section 3: assistance, unresolved points and source/version metadata.
+[SessionReview.tsx](../apps/web/src/SessionReview.tsx#L9) provides counts and one
+last-guidance excerpt; [TutorConversation.tsx](../apps/web/src/TutorConversation.tsx#L153)
+labels help generically and its Response details omit available assistance and
+open-point fields. The chronological conversation already preserves work, help and uncertainty.
+This is a **source-only metadata contract follow-up**, not missing history or a
+measured teaching defect. Clarify which detail helps learners review their work,
+then expose concise optional assistance/unresolved-point details with AI
+observations labeled fallible. Keep implementation-only metadata out of the main
+learning flow.
+
+History cards show topic, status and activity count, without a date. Multiple
+sessions on the same topic can be hard to distinguish. A saved/last-used date and
+more contextual action names are a **design suggestion**, not a demonstrated
+completion failure. The existing 100-session pagination limit is a separate,
+previously recorded acceptance item.
+
+### Coverage matrix
+
+All 23 workflow groups received source review for usability, semantic
+accessibility and wording. “Exercised” below means the specified synthetic
+transitions ran in the browser; other states named in that row were inspected in
+source and existing tests only. It does not mean every state or every accessibility
+criterion passed. Browser/input evidence: installed Chrome 156.0.8078.47,
+Playwright 1.64.1, desktop 1280×720 and Pixel 7 emulation 393×727,
+automated pointer actions and selected keyboard actions. Dedicated touch-only
+journeys were not exercised; mobile contexts emulate touch-capable devices. Menu cases additionally
+exercise 320, 375 and 412 CSS-pixel widths; the long-name probe uses 320×800.
+No assistive technology or physical touch/camera testing was performed.
+
+| # | Role, workflow, goal and entry | States reviewed | Status and fresh evidence |
+| --- | --- | --- | --- |
+| 1 | Operator: first administrator; setup URL | Missing/expired permission, validation, pending, reload/restart, lost receipt, Help/update | **Exercised:** `setup.spec.ts`; invalid/expiry variants also source-reviewed. |
+| 2 | Guest: learner/administrator sign-in | Name-list loading/empty/failure, manual entry, wrong credentials/role, throttle, recovery | **Exercised:** `accounts`, `navigation`, `workspace-navigation`; directory error/loading variants source-only. |
+| 3 | Signed-in roles: switch/cancel/return/sign out; masthead | Back/reload, failed/successful switch, retained/cleared drafts, auth loss | **Exercised:** `bootstrap`, `workspace-navigation`, `navigation`; cross-role Help probe. |
+| 4 | Administrator: create/select learner; Learners | Empty, add/cancel, uniqueness/password/age, pending/rejected save | **Exercised:** `accounts`, `admin-navigation`; long-name layout probe. |
+| 5 | Administrator: learner details/age; selected account | Rename, unchanged/reset password, age consequences, retained corrections | **Exercised:** rename/password/revocation in `accounts` and age correction in the disposable lifecycle probe; some error variants source-only. |
+| 6 | Administrator: own password; Manage administrator | Mismatch/wrong current, pending/success, other-browser revocation, page changes | **Exercised:** `accounts`, `admin-navigation`; some rejection variants source-only. |
+| 7 | Administrator: browsers; selected learner | Loading/empty/stale/error, refresh, revoke one/all, selection changes | **Exercised:** all-browser revocation and isolation in `bootstrap`; single-device/error/races source-only. |
+| 8 | Administrator: export/delete; selected learner | Scope, download/error, named irreversible confirm/cancel, post-delete selection | **Exercised:** disposable lifecycle probe completed no-store export/download, canceled deletion and confirmed deletion; failure/late-result variants source-only. |
+| 9 | Administrator: Connections; Settings | Add/edit/cancel, read-only records, keys/destination, save/refresh failure, enable/delete | **Exercised:** `connections`, `admin-navigation`; long-name probe. Some delete/read-only variants source-only. |
+| 10 | Administrator: Data & privacy; Settings | Cloud/audience consent, server/demo locks, drafts, failed save, disclosure | **Exercised:** `connections`, `admin-navigation`; intercepted save/refresh-failure probe. No actual cloud-policy enablement. |
+| 11 | Administrator: Connection tests; Settings | Cost/sample consent, blockers, pending/success/failure/history/refresh | **Exercised:** `connections`, with loopback HTTP fixtures. Live providers/teaching not tested. |
+| 12 | Administrator: Active models; Settings | Separate roles, capability/policy/test blockers, consent, save/refresh | **Exercised:** `connections`; intercepted delayed-save edit probe. |
+| 13 | Learner: start practice; Practice | Topic/purpose/input, difficulty/initiative, empty/overflow/mock/unavailable/pending | **Exercised:** `practice-start`, `tutor`, `reading`; photo-unavailable starter probe. |
+| 14 | Learner: supply material; source picker | Paste/photo/generated/published, preview/attribution, Unicode/overflow/import failure | **Exercised:** paste/photo/generated and overflow in `reading`/`tutor`; published network/import states source-only. |
+| 15 | Learner: pace/navigate; passage/sidebar | Whole/sections, saved position, current-section next, selection help/draft conflict | **Exercised:** `reading`; model context-limit recovery and some failure variants source-only. |
+| 16 | Learner: work/help/progression; composer/log | Goals/criteria, work/question, pending stages, revision/help/next/easier/harder, menus | **Exercised:** `conversation`, `tutor`, `practice-start`, including keyboard Escape/focus and narrow menus. |
+| 17 | Learner: finish/recap/History | Finish/draft guards, saved work/guidance, empty/recent list, reopen/failure | **Exercised:** `bootstrap`, `tutor`, `navigation`, `reading`; missing initial session probe. Review detail gap source-only. |
+| 18 | Learner: prepare/submit photo; attachments | File/drop, size/format/preview, crop/rotation/remove, preparation/pending/retry | **Exercised:** synthetic file selection/preparation/submission in `tutor`/`bootstrap`; drag/crop/rotation and physical camera/HEIC source-only. |
+| 19 | Learner: respond to photo reading; conversation | Reading before guidance, automatic continuation, uncertainty, retake/typed repair/discuss | **Exercised:** `tutor`, `conversation`; mock reports establish orchestration, not handwriting or teaching quality. |
+| 20 | Learner/phone: hand off upload; QR/photo URL | Create/replace/cancel/expiry, receipt, offline/background recovery | **Exercised:** `phone-navigation`, `tutor`; delayed cancellation probe. Physical phone/background/device variants untested. |
+| 21 | All roles: Help; contextual/full Help | Topics/deep links/Back/reload, role recovery, return to drafts, setup/provider/privacy | **Exercised:** `navigation`, `workspace-navigation`, `admin-navigation`; cross-role destination probe. |
+| 22 | Learner: interrupted request recovery; Practice | Lost acknowledgement, check/resolve, throttle/reload, retries and receipt limits | **Exercised:** `request-recovery`, `bootstrap`; remaining retry-budget/backend failure variants source-only. |
+| 23 | All roles: offline/PWA/update; global notices | Server unavailable, reconnect, public caches, waiting updates, pending/draft deferral | **Exercised:** `bootstrap`, `setup`; installed-device update/background and actual assistive announcements untested. |
+
+Optional browser-model Research is **outside scope**: it is not mounted in the
+current application navigation and was source-inspected only. No model was
+downloaded. Usage/evaluation dashboards are specification-only rather than
+implemented screens; the skill inventory already records that distinction.
+
+### Commands, measurements and limits
+
+Commands used the temporary isolation runner
+`python3 /tmp/shepherd-ux-review-20261023/run.py` as a prefix:
+
+| Command after that prefix | Actual outcome |
+| --- | --- |
+| `pnpm --filter @math-tutor/web exec node --input-type=module -e 'import {build} from "vite"; await build({envDir:false});'` | Fresh frontend build passed; the existing >500kB JavaScript chunk warning remains. |
+| `node scripts/build-pwa.mjs` | Passed; generated the PWA assets for that build. |
+| `make smoke-built` | **100 passed in 16.2 minutes**, 50 per project, one worker and zero retries. |
+| `pnpm exec playwright test tests/smoke/ui-ux-review-access-probes.spec.ts tests/smoke/ui-ux-review-admin-probes.spec.ts tests/smoke/ui-ux-review-learner-probes.spec.ts` | Initial targeted run: **13 passed, 3 failed in 2.2 minutes**. Both missing-session cases stopped on an overly specific error-text expectation. The mobile long-name case measured overflow, then timed out clicking an unrelated color-capture control in the expanded layout. These failures are retained in the local evidence. |
+| `pnpm exec playwright test tests/smoke/ui-ux-review-admin-probes.spec.ts tests/smoke/ui-ux-review-learner-probes.spec.ts --grep 'valid 64-character\|initial missing session'` | **4 passed in 10.4 seconds** after matching the observed safe error text and separating unrelated color capture from the broken layout. All behavior and overflow assertions remained. |
+| `pnpm exec tsc --noEmit` | Passed, including the final temporary probe source. |
+| `node --input-type=module` with the captured-color canvas measurement supplied on stdin | Passed; browser-native Oklab conversion/compositing plus WCAG relative luminance gave 2.8193524214114105:1. No network navigation. |
+
+`git diff --check` passed for the final documentation changes. Backend unit and
+integration suites, `make check`, dependency audits and deployment checks were not
+rerun for this documentation-only review. Historical T65 results above are not
+reported as fresh results. The synthetic account lifecycle probe completed age
+correction, authenticated no-store export/download, canceling deletion and final
+deletion in both projects.
+
+The initial sandbox browser attempt could not bind a loopback socket and exited
+before tests ran. The same isolated harness subsequently ran with the necessary
+socket permission. The temporary runner allowlists ordinary runtime variables,
+excludes inherited operator/provider settings, disables uv environment-file
+loading and uses temporary caches. Vite built with `envDir: false`, preserving the
+checked-in configuration and plugins without reading live environment files.
+The fixture uses a disposable temporary SQLite database, mock provider, explicit
+cloud disablement and loopback model fixtures. No private installation,
+configuration, learner data, uploads or logs were opened.
+
+The targeted probes deliberately assert the observed defective behavior. Their
+passing result demonstrates reproduction, not successful desired behavior. Their
+temporary source and synthetic artifacts are retained locally under
+`/tmp/shepherd-ux-review-20261023`; the probe files were removed from the repository
+after execution. No application or permanent test files changed.
+
+The recorded contrast sample is
+`oklab(0.329377 -0.0462245 0.00368226 / 0.5)`, placeholder/element opacity 1,
+background white, 16px/600. Canvas conversion uses the installed browser's CSS
+color parser rather than a guessed Oklab conversion; the recorded ratio uses
+sRGB relative luminance. This is a measured defect in one enabled-field style,
+not a whole-application contrast pass. Other contrast combinations, all target
+sizes, text spacing and every focus/announcement path were not exhaustively
+measured.
+
+Screenshots of desktop/mobile account/privacy, conversation/reading, and the
+focused unavailable-session/long-name states were visually inspected. The
+interaction assertions and measured geometry establish the cited behavior;
+screenshots alone do not establish correctness. An independent source sanity
+review checked the missing-session setup, both Help directions and the phone
+DELETE/replace sequence, and narrowed the recap concern to missing optional
+metadata rather than missing conversation history.
+
+Fresh source/browser coverage leaves existing ACCEPTANCE work open: actual
+iPhone Safari and Android camera/HEIC, installed PWA and background/reconnect
+behavior, 200% browser zoom, text-spacing and assistive-technology checks, accessible
+math announcements, actual-model tutoring/handwriting/answer-disclosure quality,
+and full host recovery. Existing History pagination/large conversations,
+administrator-authorship and teaching-policy decisions, and the already recorded
+mobile account-list distance to the editor remain separate follow-ups. No live
+or paid provider tests, cloud provisioning, deployment, model downloads or Git push
+were performed. This is whole-app source coverage with selected synthetic browser
+coverage, not a complete manual accessibility audit or WCAG-conformance claim.
+
+## October 23, 2026 — T67 remediation
+
+[T67](TASKS.md#t67--fix-review-findings-publish-and-deploy-2026-10-23) implements
+the eight findings and the two separately recorded follow-ups. T66's findings,
+measurements and coverage above describe the reviewed baseline and remain
+historical evidence. Final gates, publication and deployment are still pending;
+this section does not treat the defect-reproduction probes as correction tests.
+
+| Finding/follow-up | Implemented correction |
+| --- | --- |
+| 1. Unavailable session URL | Preserve successful availability/history responses, explain the unavailable selection and clear its initial hash; retain the current session/draft and restore its URL after failed navigation. Pending session changes guard text, actions and photo selection. |
+| 2. Delayed active-model save | Disable edits/duplicate submission while saving, show pending state and require fresh acknowledgement afterward. |
+| 3. Cross-role Help destinations | Clicks and real hrefs request the destination role; cancel returns to the prior workspace, Help topic and drafts. |
+| 4. Privacy save followed by failed refresh | State that the permission was saved, prevent another policy submission and offer GET-only Refresh settings recovery. |
+| 5. Phone-link cancellation | Serialize creation/cancellation, show cancellation state and clear only the matching canceled link. |
+| 6. Unavailable photo input | Show the safe reader status and a pasted-text alternative beside either photo source choice, in starter and material controls. |
+| 7. Valid long names | Allow narrow grid children and learner/connection names to wrap. |
+| 8. Placeholder contrast | Set an opaque darker placeholder color for inputs and textareas; the desktop enabled-field sample measures 6.3157026914:1 with opaque `#536456` on white. |
+| Saved-review metadata | Optional help/open-point disclosures retain fallible AI wording; response prompt version and photo-reading version are available without exposing prompts, private configuration or answer keys. |
+| History identification | Show the saved creation date and describe each action with its topic/date context. |
+
+Read-only API creation dates and nullable response versions use existing persisted
+records and authorization; no migration or ownership widening was added.
+Regenerated OpenAPI/frontend types and API integration tests cover serialization
+and cross-learner 404 rejection. Retained older observations remain saved history;
+the backend's current-prompt/source filters for teaching evidence are unchanged.
+
+Verification to date: targeted API history/metadata checks passed **3 tests in
+1.26 seconds**; integration passed **404 tests in 72.38 seconds**. `make check`
+passed **329 backend unit tests in 10.65 seconds**, **11 toolchain tests** and
+**284 frontend tests in 18 files**, plus lint/format, types, build, contract drift,
+secret and infrastructure checks. The component regressions cover
+delayed selection/save/cancel transitions, retained drafts, photo availability,
+review observations and dates. Two old expectations were updated to reflect
+guarded History selection and explicit role entry after setup cancellation,
+preserving the relevant race/isolation assertions. Targeted lint/types,
+repository-file hooks and both dependency audits passed. Four deterministic/mock
+evaluation suites passed, with reports in `/tmp/shepherd-t67/mock-reports` and no
+checked-in report changes. Focused component counts overlap the full total.
+
+The permanent `tests/smoke/review-fixes.spec.ts` browser suite passed **14 cases in
+2.1 minutes** on desktop and Pixel 7 Chromium emulation. Valid long learner and
+connection names kept body/document width within 320px in both projects; the
+desktop enabled placeholder sample measured **6.3157026914:1**, `#536456` on white
+with opacity 1. These are specific rendered checks, not whole-app contrast or
+layout conformance. Ten role-entry, active-model, phone-QR, photo-unavailable and
+recovered-session screenshots across both projects were visually inspected.
+Visual inspection exposed a mobile active-model receipt whose message became a
+narrow, tall column beside unwrapped action buttons. The final correction gives
+the message a full row and wraps the actions; the active-model browser case now
+asserts that its message spans the toast content at 320px and captures that view.
+Targeted formatting and a fresh build passed; both desktop/mobile 320px receipt
+checks passed (**2 browser executions in 3.0 seconds**). The full check and
+14-case browser results above precede this last CSS/assertion change.
+
+The full built browser suite, final repository-file checks,
+container/security/backup-restore checks, publication and deployment remain pending.
+No live-provider acceptance, real learner material or private configuration was
+used. Actual phones/camera/HEIC, installed-PWA background behavior, browser zoom,
+text spacing, screen readers/accessible math, real tutoring quality and full host
+recovery remain in ACCEPTANCE. These corrections do not establish complete
+browser-state coverage, WCAG conformance or teaching quality.

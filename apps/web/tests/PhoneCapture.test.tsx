@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PhoneCapture } from "../src/PhoneCapture";
 import { PhoneLink } from "../src/PhoneLink";
@@ -117,12 +123,126 @@ describe("phone camera permission", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel phone link" }));
     await vi.waitFor(() =>
       expect(
-        screen.queryByText("Scan with your iPhone camera"),
+        screen.queryByText("Scan with your phone camera"),
       ).not.toBeInTheDocument(),
     );
     expect(fetcher.mock.calls[1]?.[0]).toBe(
       "/api/v1/phone-uploads/synthetic-link",
     );
     expect(fetcher.mock.calls[1]?.[1]).toMatchObject({ method: "DELETE" });
+  });
+
+  it("blocks creating a replacement while cancellation is pending, then keeps the new QR", async () => {
+    const link = {
+      id: "synthetic-first-link",
+      url: "https://tutor.invalid/#capture=synthetic-first",
+      expires_at: new Date(Date.now() + 300_000).toISOString(),
+    };
+    const replacement = {
+      ...link,
+      id: "synthetic-replacement-link",
+      url: "https://tutor.invalid/#capture=synthetic-replacement",
+    };
+    let completeCancellation!: (response: Response) => void;
+    const cancellation = new Promise<Response>((resolve) => {
+      completeCancellation = resolve;
+    });
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(link)))
+      .mockReturnValueOnce(cancellation)
+      .mockResolvedValueOnce(new Response(JSON.stringify(replacement)));
+    vi.stubGlobal("fetch", fetcher);
+    render(
+      <PhoneLink
+        problem="synthetic-problem"
+        version={2}
+        disabled={false}
+        act={async (action) => action()}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Take photo with phone" }),
+    );
+    await screen.findByRole("link", { name: "Open photo page" });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel phone link" }));
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Canceling your phone photo link…",
+    );
+    const create = screen.getByRole("button", { name: "New QR code" });
+    expect(create).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Canceling phone link…" }),
+    ).toBeDisabled();
+    fireEvent.click(create);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(
+      screen.getByRole("link", { name: "Open photo page" }),
+    ).toHaveAttribute("href", link.url);
+    await act(async () => {
+      completeCancellation(new Response(JSON.stringify({ received: false })));
+      await cancellation;
+    });
+    expect(screen.queryByRole("link", { name: "Open photo page" })).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Take photo with phone" }),
+    );
+    expect(
+      await screen.findByRole("link", { name: "Open photo page" }),
+    ).toHaveAttribute("href", replacement.url);
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("retains the current link after a failed cancellation and allows a retry", async () => {
+    const link = {
+      id: "synthetic-link",
+      url: "https://tutor.invalid/#capture=synthetic",
+      expires_at: new Date(Date.now() + 300_000).toISOString(),
+    };
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(link)))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ detail: "Synthetic cancellation unavailable." }),
+          { status: 503 },
+        ),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ received: false })));
+    const errors: string[] = [];
+    vi.stubGlobal("fetch", fetcher);
+    render(
+      <PhoneLink
+        problem="synthetic-problem"
+        version={2}
+        disabled={false}
+        act={async (action) => {
+          try {
+            await action();
+          } catch (cause) {
+            errors.push((cause as Error).message);
+          }
+        }}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Take photo with phone" }),
+    );
+    await screen.findByRole("link", { name: "Open photo page" });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel phone link" }));
+    await vi.waitFor(() =>
+      expect(errors).toEqual(["Synthetic cancellation unavailable."]),
+    );
+    expect(
+      screen.getByRole("link", { name: "Open photo page" }),
+    ).toHaveAttribute("href", link.url);
+    expect(screen.getByRole("button", { name: "New QR code" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel phone link" }));
+    await vi.waitFor(() =>
+      expect(
+        screen.queryByRole("link", { name: "Open photo page" }),
+      ).toBeNull(),
+    );
   });
 });

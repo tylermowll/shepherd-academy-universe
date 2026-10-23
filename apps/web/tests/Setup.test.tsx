@@ -541,8 +541,8 @@ describe("browser first-account setup", () => {
         initial: authenticated ? adult : { ...guest, setup_required: false },
       });
       const { authority } = mount();
-      await screen.findByRole(authenticated ? "link" : "button", {
-        name: authenticated ? "Settings" : "Sign in",
+      await screen.findByRole(authenticated ? "heading" : "button", {
+        name: authenticated ? "Learner sign-in" : "Sign in",
       });
       expect(
         screen.queryByRole("button", { name: "Create account" }),
@@ -551,6 +551,18 @@ describe("browser first-account setup", () => {
       expect(
         fetcher.mock.calls.some(([url]) => url.endsWith("/auth/setup")),
       ).toBe(false);
+      if (authenticated) {
+        fireEvent.click(
+          screen.getByRole("button", { name: "Cancel account switch" }),
+        );
+        expect(screen.getByRole("link", { name: "Settings" })).toBeVisible();
+        expect(screen.getByLabelText("Signed in account")).toHaveTextContent(
+          adult.login_name!,
+        );
+        expect(
+          fetcher.mock.calls.some(([url]) => url.endsWith("/auth/login")),
+        ).toBe(false);
+      }
       if (!authenticated) {
         fireEvent.click(
           screen.getByRole("link", {

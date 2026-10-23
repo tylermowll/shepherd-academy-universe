@@ -137,6 +137,15 @@ function TutorMessage({
   const reading = operation.reading;
   const feedback = operation.feedback;
   const ambiguities = operation.ambiguities ?? [];
+  const requestedHelp =
+    operation.kind === "hint"
+      ? [
+          "Requested help with this activity.",
+          "Requested a hint with this activity.",
+          "Requested a concept explanation.",
+          "Requested a different worked example.",
+        ][operation.assistance_level ?? 0]
+      : undefined;
   // The backend owns whether a reading may advance. Localized uncertainty can
   // coexist with usable evidence; do not reconstruct a stricter frontend gate.
   const rejected = Boolean(reading && !reading.can_continue);
@@ -152,7 +161,7 @@ function TutorMessage({
           <p className="eyebrow">You{reading ? " · Photo" : ""}</p>
           {operation.text && <p className="user-text">{operation.text}</p>}
           {operation.kind === "hint" && !operation.text && (
-            <p>Requested help with this activity.</p>
+            <p>{requestedHelp ?? "Requested help with this activity."}</p>
           )}
           {operation.work_text && (
             <p className="user-text">{operation.work_text}</p>
@@ -170,7 +179,8 @@ function TutorMessage({
             </p>
           </details>
           {(ambiguities.length > 0 ||
-            reading.organization_feedback.length > 0) && (
+            reading.organization_feedback.length > 0 ||
+            operation.interpretation_version != null) && (
             <details className="reading-details">
               <summary>Reading details</summary>
               {ambiguities.length > 0 && (
@@ -186,6 +196,11 @@ function TutorMessage({
                     <li key={index}>{item}</li>
                   ))}
                 </ul>
+              )}
+              {operation.interpretation_version != null && (
+                <p className="fine">
+                  Photo reading version: {operation.interpretation_version}
+                </p>
               )}
             </details>
           )}
@@ -222,6 +237,30 @@ function TutorMessage({
           )}
           <details className="response-details">
             <summary>Response details</summary>
+            {requestedHelp && <p>{requestedHelp}</p>}
+            {feedback.learning_observation &&
+              feedback.learning_observation.assessment !== "not_assessed" && (
+                <>
+                  <p>
+                    <strong>Tutor’s observations:</strong>{" "}
+                    {feedback.learning_observation.evidence}
+                  </p>
+                  {feedback.learning_observation.open_points.length > 0 && (
+                    <>
+                      <p>Points to discuss or revisit:</p>
+                      <ul>
+                        {feedback.learning_observation.open_points.map(
+                          (point, index) => (
+                            <li key={index}>
+                              <SafeText text={point} />
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                    </>
+                  )}
+                </>
+              )}
             {feedback.concepts.length > 0 && (
               <p>{feedback.concepts.join(" · ")}</p>
             )}
@@ -229,6 +268,11 @@ function TutorMessage({
               {operation.source} · AI feedback can be mistaken; it is not a
               verified grade.
             </p>
+            {operation.prompt_version && (
+              <p className="fine">
+                Response version: {operation.prompt_version}
+              </p>
+            )}
           </details>
         </section>
       ) : !rejected && operation.message ? (

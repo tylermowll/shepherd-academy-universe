@@ -75,10 +75,12 @@ export function AdultPanel({
   const [settingsSection, setSettingsSection] =
     useState<ProviderSettingsSection>("connections");
   const [acknowledged, setAcknowledged] = useState(false);
+  const [savingRoutes, setSavingRoutes] = useState(false);
   const [message, setMessage] = useState("");
   const [loadFailed, setLoadFailed] = useState(false);
   const refreshSequence = useRef(0);
   const routesDirty = useRef(false);
+  const routesSaving = useRef(false);
   const focusSettingsContent = useRef(false);
   const settingsTabs = useRef<Array<HTMLButtonElement | null>>([]);
   const refreshProviders = useCallback(async () => {
@@ -277,23 +279,34 @@ export function AdultPanel({
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (
+                      routesSaving.current ||
                       !acknowledged ||
                       !routeAvailable(selectedProviders.tutor, "tutor") ||
                       !routeAvailable(selectedProviders.vision, "vision")
                     )
                       return;
+                    routesSaving.current = true;
+                    setSavingRoutes(true);
+                    setMessage("");
                     void act(async () => {
-                      await api("/admin/providers/routes", "POST", {
-                        ...routes,
-                        acknowledge_data_boundary: true,
-                      });
-                      routesDirty.current = false;
-                      await refreshProviders();
-                      setMessage(
-                        "Active models saved. These choices apply to future work from every learner.",
-                      );
+                      try {
+                        await api("/admin/providers/routes", "POST", {
+                          ...routes,
+                          acknowledge_data_boundary: true,
+                        });
+                        routesDirty.current = false;
+                        setAcknowledged(false);
+                        setMessage(
+                          "Active models saved. These choices apply to future work from every learner.",
+                        );
+                        await refreshProviders();
+                      } finally {
+                        routesSaving.current = false;
+                        setSavingRoutes(false);
+                      }
                     });
                   }}
+                  aria-busy={savingRoutes}
                 >
                   <h2 id="settings-roles-heading" tabIndex={-1}>
                     Active models
@@ -319,7 +332,9 @@ export function AdultPanel({
                             <select
                               name={stage}
                               value={routes[stage]}
+                              disabled={savingRoutes}
                               onChange={(e) => {
+                                if (routesSaving.current) return;
                                 routesDirty.current = true;
                                 setRoutes({
                                   ...routes,
@@ -385,6 +400,7 @@ export function AdultPanel({
                                   <button
                                     key={target}
                                     type="button"
+                                    disabled={savingRoutes}
                                     onClick={() =>
                                       chooseSettingsSection(target, true)
                                     }
@@ -424,14 +440,20 @@ export function AdultPanel({
                       type="checkbox"
                       required
                       checked={acknowledged}
-                      onChange={(e) => setAcknowledged(e.target.checked)}
+                      disabled={savingRoutes}
+                      onChange={(e) => {
+                        if (!routesSaving.current)
+                          setAcknowledged(e.target.checked);
+                      }}
                     />
                     I authorize these connections to process future text and
                     photos from every learner.
                   </label>
+                  {savingRoutes && <p role="status">Saving active models…</p>}
                   <button
                     className="primary"
                     disabled={
+                      savingRoutes ||
                       !acknowledged ||
                       !routeAvailable(selectedProviders.tutor, "tutor") ||
                       !routeAvailable(selectedProviders.vision, "vision")

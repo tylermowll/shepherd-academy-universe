@@ -41,6 +41,7 @@ const session = (problems: unknown[] = []) => ({
   initiative: "balanced",
   difficulty: "standard",
   status: "open",
+  created_at: "2026-10-23T12:34:00Z",
   problems,
 });
 const summary = (value: ReturnType<typeof session>) => {
@@ -121,6 +122,356 @@ afterEach(() => {
   vi.unstubAllGlobals();
   window.history.replaceState(null, "", "/");
 });
+
+it("recovers an unavailable initial session while keeping availability and saved sessions usable", async () => {
+  const missingId = "911c9abc-4e8e-424d-a914-4338187ba00e";
+  const saved = session([activity()]);
+  window.history.replaceState(null, "", `/?page=practice#tutor=${missingId}`);
+  const fetcher = vi.fn((url: string) => {
+    if (url.endsWith("/auth/session"))
+      return response({
+        authenticated: true,
+        role: "learner",
+        learner_id: learner,
+        csrf_token: "synthetic",
+      });
+    if (url.endsWith("/features")) return response(capabilities);
+    if (url.endsWith(`/tutor/sessions/${missingId}`))
+      return response({ detail: "Not found." }, 404);
+    if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(saved);
+    if (url.endsWith("/tutor/sessions")) return response([summary(saved)]);
+    throw new Error(url);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  render(<App />);
+  expect(
+    await screen.findByText(
+      "This saved session is no longer available. Start a new session or choose another one in History.",
+    ),
+  ).toBeVisible();
+  expect(window.location.hash).toBe("");
+  expect(window.location.search).toBe("?page=practice");
+  expect(screen.queryByText("Checking tutor availability…")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Reconnect" })).toBeNull();
+  const topic = screen.getByLabelText("Topic or learning goal");
+  fireEvent.change(topic, { target: { value: "A new synthetic topic" } });
+  expect(screen.getByRole("button", { name: "Start session" })).toBeEnabled();
+  fireEvent.change(topic, { target: { value: "" } });
+  const navigation = screen.getByRole("navigation", {
+    name: "Main navigation",
+  });
+  fireEvent.click(within(navigation).getByRole("link", { name: "History" }));
+  const continueSession = await screen.findByRole("button", {
+    name: "Continue session",
+  });
+  expect(continueSession).toBeEnabled();
+  expect(continueSession).toHaveAccessibleDescription(
+    /Persuasive writing Started/,
+  );
+  expect(
+    continueSession.closest("article")!.querySelector("time"),
+  ).toHaveAttribute("datetime", saved.created_at);
+  fireEvent.click(continueSession);
+  expect(await screen.findByLabelText("Your work or question")).toBeVisible();
+  expect(window.location.hash).toBe(`#tutor=${sessionId}`);
+  expect(
+    fetcher.mock.calls.filter(([url]) =>
+      url.endsWith(`/tutor/sessions/${missingId}`),
+    ),
+  ).toHaveLength(1);
+});
+
+it("keeps the current session after another saved session returns not found", async () => {
+  const missingId = "911c9abc-4e8e-424d-a914-4338187ba00e";
+  const current = session([activity()]);
+  const navigate = vi.fn();
+  window.history.replaceState(null, "", `/?page=history#tutor=${sessionId}`);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string) => {
+      if (url.endsWith("/features")) return response(capabilities);
+      if (url.endsWith(`/tutor/sessions/${sessionId}`))
+        return response(current);
+      if (url.endsWith(`/tutor/sessions/${missingId}`))
+        return response({ detail: "Not found." }, 404);
+      if (url.endsWith("/tutor/sessions"))
+        return response([
+          summary(current),
+          {
+            ...summary(current),
+            id: missingId,
+            topic: "Expired synthetic work",
+          },
+        ]);
+      throw new Error(url);
+    }),
+  );
+  const view = render(
+    <Tutor
+      learner={learner}
+      offline={false}
+      page="history"
+      act={run}
+      onNavigate={navigate}
+    />,
+  );
+  const missing = await screen.findByRole("heading", {
+    name: "Expired synthetic work",
+  });
+  fireEvent.click(
+    within(missing.closest("article")!).getByRole("button", {
+      name: "Continue session",
+    }),
+  );
+  expect(
+    await screen.findByText(/That saved session is no longer available/),
+  ).toBeVisible();
+  expect(window.location.hash).toBe(`#tutor=${sessionId}`);
+  expect(navigate).not.toHaveBeenCalled();
+  view.rerender(<Tutor learner={learner} offline={false} act={run} />);
+  expect(await screen.findByLabelText("Your work or question")).toBeVisible();
+});
+
+it("distinguishes repeated History topics by their saved creation dates and action descriptions", async () => {
+  const first = summary(session());
+  const second = {
+    ...first,
+    id: "911c9abc-4e8e-424d-a914-4338187ba00e",
+    created_at: "2026-10-22T12:34:00Z",
+  };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string) => {
+      if (url.endsWith("/features")) return response(capabilities);
+      if (url.endsWith("/tutor/sessions")) return response([first, second]);
+      throw new Error(url);
+    }),
+  );
+  render(<Tutor learner={learner} offline={false} page="history" act={run} />);
+  const buttons = await screen.findAllByRole("button", {
+    name: "Continue session",
+  });
+  const cards = buttons.map((button) => button.closest("article")!);
+  expect(cards[0]!.querySelector("time")).toHaveAttribute(
+    "datetime",
+    first.created_at,
+  );
+  expect(cards[1]!.querySelector("time")).toHaveAttribute(
+    "datetime",
+    second.created_at,
+  );
+  expect(cards[0]!.textContent).not.toBe(cards[1]!.textContent);
+  for (const button of buttons)
+    expect(button).toHaveAccessibleDescription(/Persuasive writing Started/);
+});
+
+it("guards the composer while opening an unavailable browser destination and restores the current session URL", async () => {
+  const missingId = "911c9abc-4e8e-424d-a914-4338187ba00e";
+  const current = session([activity()]);
+  let resolveMissing!: (value: Response) => void;
+  const missingRequest = new Promise<Response>((resolve) => {
+    resolveMissing = resolve;
+  });
+  const fetcher = vi.fn((url: string) => {
+    if (url.endsWith("/features")) return response(capabilities);
+    if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(current);
+    if (url.endsWith(`/tutor/sessions/${missingId}`)) return missingRequest;
+    if (url.endsWith("/tutor/sessions")) return response([summary(current)]);
+    throw new Error(url);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  window.history.replaceState(null, "", `/?page=practice#tutor=${sessionId}`);
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  const composer = await screen.findByLabelText("Your work or question");
+  window.history.replaceState(null, "", `/?page=practice#tutor=${missingId}`);
+  fireEvent(window, new PopStateEvent("popstate"));
+  await vi.waitFor(() =>
+    expect(
+      fetcher.mock.calls.some(([url]) =>
+        url.endsWith(`/tutor/sessions/${missingId}`),
+      ),
+    ).toBe(true),
+  );
+  expect(composer).toHaveAttribute("readonly");
+  expect(screen.getByText("Opening saved session…")).toBeVisible();
+  fireEvent.change(composer, {
+    target: {
+      value: "Do not move this current-session text into another session.",
+    },
+  });
+  expect(composer).toHaveValue("");
+  resolveMissing(
+    new Response(JSON.stringify({ detail: "Not found." }), { status: 404 }),
+  );
+  expect(
+    await screen.findByText(/Your current work is still here/),
+  ).toBeVisible();
+  expect(composer).toBeVisible();
+  expect(composer).not.toHaveAttribute("readonly");
+  expect(composer).toHaveValue("");
+  expect(window.location.hash).toBe(`#tutor=${sessionId}`);
+});
+
+it("does not accept current-session text or actions during a successful delayed browser session change", async () => {
+  const secondId = "911c9abc-4e8e-424d-a914-4338187ba00e";
+  const current = session([activity()]);
+  const next = {
+    ...current,
+    id: secondId,
+    topic: "Photosynthesis",
+    problems: [{ ...activity(), id: "911c9abc-4e8e-424d-a914-4338187ba00f" }],
+  };
+  let resolveNext!: (value: Response) => void;
+  const nextRequest = new Promise<Response>((resolve) => {
+    resolveNext = resolve;
+  });
+  const fetcher = vi.fn((url: string) => {
+    if (url.endsWith("/features")) return response(capabilities);
+    if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(current);
+    if (url.endsWith(`/tutor/sessions/${secondId}`)) return nextRequest;
+    if (url.endsWith("/tutor/sessions"))
+      return response([summary(current), summary(next)]);
+    throw new Error(url);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  window.history.replaceState(null, "", `/?page=practice#tutor=${sessionId}`);
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  const composer = await screen.findByLabelText("Your work or question");
+  fireEvent.click(screen.getByRole("button", { name: "Attach photo" }));
+  const picker = screen.getByLabelText("Take or choose a photo");
+  const dropzone = screen.getByRole("group", { name: "Photo upload" });
+  expect(picker).toBeEnabled();
+  expect(picker).toBeVisible();
+  window.history.replaceState(null, "", `/?page=practice#tutor=${secondId}`);
+  fireEvent(window, new PopStateEvent("popstate"));
+  await vi.waitFor(() =>
+    expect(
+      fetcher.mock.calls.some(([url]) =>
+        url.endsWith(`/tutor/sessions/${secondId}`),
+      ),
+    ).toBe(true),
+  );
+  expect(composer).toHaveAttribute("readonly");
+  expect(screen.getByRole("button", { name: "Attach photo" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Finish session" })).toBeDisabled();
+  expect(picker).toBeDisabled();
+  const transfer = {
+    files: [
+      new File(["synthetic photo"], "synthetic.jpg", { type: "image/jpeg" }),
+    ],
+    dropEffect: "copy",
+  };
+  fireEvent.dragOver(dropzone, { dataTransfer: transfer });
+  expect(transfer.dropEffect).toBe("none");
+  fireEvent.drop(dropzone, { dataTransfer: transfer });
+  fireEvent.change(picker, { target: { files: transfer.files } });
+  expect(
+    fetcher.mock.calls.some(([url]) => url.includes("/images/preview")),
+  ).toBe(false);
+  fireEvent.change(composer, {
+    target: {
+      value: "Current-session text must not become the new session’s draft.",
+    },
+  });
+  expect(composer).toHaveValue("");
+  resolveNext(new Response(JSON.stringify(next)));
+  await screen.findByRole("heading", { name: "Photosynthesis" });
+  await vi.waitFor(() => expect(composer).not.toHaveAttribute("readonly"));
+  expect(composer).toHaveValue("");
+  expect(screen.getByRole("button", { name: "Attach photo" })).toBeEnabled();
+  expect(screen.getByLabelText("Take or choose a photo")).toBeEnabled();
+  fireEvent.dragOver(screen.getByRole("group", { name: "Photo upload" }), {
+    dataTransfer: transfer,
+  });
+  expect(transfer.dropEffect).toBe("copy");
+  expect(window.location.hash).toBe(`#tutor=${secondId}`);
+});
+
+it("keeps a displayed session and its unsent draft if polling finds it unavailable", async () => {
+  let available = true;
+  const current = session([activity()]);
+  window.history.replaceState(null, "", `/?page=practice#tutor=${sessionId}`);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string) => {
+      if (url.endsWith("/features")) return response(capabilities);
+      if (url.endsWith(`/tutor/sessions/${sessionId}`))
+        return available
+          ? response(current)
+          : response({ detail: "Not found." }, 404);
+      if (url.endsWith("/tutor/sessions")) return response([summary(current)]);
+      throw new Error(url);
+    }),
+  );
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  const composer = await screen.findByLabelText("Your work or question");
+  fireEvent.change(composer, {
+    target: { value: "Keep my unsent explanation." },
+  });
+  available = false;
+  fireEvent(window, new Event("online"));
+  expect(
+    await screen.findByText(/Your current work is still here/),
+  ).toBeVisible();
+  expect(composer).toBeVisible();
+  expect(composer).toHaveValue("Keep my unsent explanation.");
+  expect(window.location.hash).toBe(`#tutor=${sessionId}`);
+});
+
+it.each(["reference_photo", "reading_photo"])(
+  "explains unavailable %s input before starting or changing material",
+  async (photoSource) => {
+    const photoStatus =
+      "Synthetic photo reading is unavailable for this account.";
+    const current = session([activity()]);
+    const fetcher = vi.fn((url: string, options: RequestInit) => {
+      if (options.method === "POST") throw new Error("Unexpected submission");
+      if (url.endsWith("/features"))
+        return response({
+          ...capabilities,
+          photos_available: false,
+          photo_status: photoStatus,
+        });
+      if (url.endsWith(`/tutor/sessions/${sessionId}`))
+        return response(current);
+      if (url.endsWith("/tutor/sessions")) return response([summary(current)]);
+      throw new Error(url);
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const view = render(<Tutor learner={learner} offline={false} act={run} />);
+    await screen.findByText("Text processing: local.");
+    selectSource(photoSource);
+    fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
+      target: { value: "Synthetic photo practice" },
+    });
+    expect(screen.getByText(photoStatus)).toBeVisible();
+    expect(screen.getByText(/Choose a pasted-text input/)).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Start session" }),
+    ).toBeDisabled();
+    selectSource("topic");
+    expect(screen.queryByText(photoStatus)).toBeNull();
+    expect(screen.getByRole("button", { name: "Start session" })).toBeEnabled();
+
+    view.unmount();
+    window.history.replaceState(null, "", `/?page=practice#tutor=${sessionId}`);
+    render(<Tutor learner={learner} offline={false} act={run} />);
+    await screen.findByLabelText("Your work or question");
+    fireEvent.click(screen.getByText("Session & material"));
+    fireEvent.click(screen.getByText("Use different practice material"));
+    selectSource(photoSource);
+    expect(screen.getByText(/Choose a pasted-text input/)).toBeVisible();
+    expect(
+      screen.getByText(photoStatus, { selector: ".notice p" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Create practice activity" }),
+    ).toBeDisabled();
+    expect(
+      fetcher.mock.calls.every(([, options]) => options?.method !== "POST"),
+    ).toBe(true);
+  },
+);
 
 it("refreshes current work and processing disclosures without downloading unrelated history again", async () => {
   const secondId = "911c9abc-4e8e-424d-a914-4338187ba00e";

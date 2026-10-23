@@ -73,6 +73,7 @@ class OperationPublic(BaseModel):
     verdict: VerdictPublic | None = None
     message: str | None = None
     source: str | None = None
+    prompt_version: str | None = None
     assistance_level: int = 0
     interpretation: str | None = None
     interpretation_version: int | None = None
@@ -228,6 +229,7 @@ def operation_public(
         verdict=VerdictPublic.model_validate(evaluation) if evaluation else None,
         message=turn.message if turn else None,
         source=turn.source if turn else None,
+        prompt_version=turn.prompt_version if turn else None,
         assistance_level=turn.assistance_level if turn else 0,
         interpretation=interpretation.transcription if interpretation else None,
         interpretation_version=interpretation.version if interpretation else None,

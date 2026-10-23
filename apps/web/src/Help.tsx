@@ -49,11 +49,7 @@ export function HelpPage({
   const recoveryRole = accountRole ?? entryRole ?? "learner";
   const link = (page: Page, label: string, help?: string) => (
     <a
-      href={pageUrl(
-        page,
-        help,
-        entryRole ? (roleForPage(page) ?? entryRole) : undefined,
-      )}
+      href={pageUrl(page, help, roleForPage(page) ?? entryRole)}
       onClick={(event) => followPage(event, onNavigate, page, help)}
     >
       {label}

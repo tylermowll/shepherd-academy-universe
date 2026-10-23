@@ -71,6 +71,11 @@ select {
 textarea {
   resize: vertical;
 }
+input::placeholder,
+textarea::placeholder {
+  color: #536456;
+  opacity: 1;
+}
 label {
   display: block;
   font-weight: 600;
@@ -126,7 +131,9 @@ legend {
   gap: 16px;
 }
 .provider-card-heading h4 {
+  min-width: 0;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 .settings-workflow {
   margin-top: 24px;
@@ -432,6 +439,7 @@ input[aria-invalid="true"] {
   right: clamp(16px, 4vw, 48px);
   bottom: 24px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 16px;
   width: min(520px, calc(100vw - 32px));
@@ -440,8 +448,9 @@ input[aria-invalid="true"] {
   box-shadow: 0 12px 30px rgb(23 61 52 / 18%);
 }
 .settings-toast p {
-  flex: 1;
+  flex: 1 0 100%;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 .operation {
   border-top: 1px solid #d9dece;
@@ -491,6 +500,12 @@ summary::marker {
   gap: 16px;
 }
 .provider-list p {
+  overflow-wrap: anywhere;
+}
+.provider-list > article {
+  min-width: 0;
+}
+.provider-list h3 {
   overflow-wrap: anywhere;
 }
 footer {
@@ -1025,6 +1040,9 @@ main:has(.tutor-workspace) {
   gap: 24px;
   align-items: start;
 }
+.learner-accounts > * {
+  min-width: 0;
+}
 .account-list {
   list-style: none;
   padding: 0;
@@ -1047,6 +1065,7 @@ main:has(.tutor-workspace) {
 }
 .learner-accounts .card {
   margin-top: 0;
+  overflow-wrap: anywhere;
 }
 @media (max-width: 960px) {
   .tutor-workspace {

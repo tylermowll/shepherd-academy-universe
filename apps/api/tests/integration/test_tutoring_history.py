@@ -1,6 +1,6 @@
 """History lists remain small and owned even with substantial retained work."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -14,7 +14,7 @@ from test_workflows import anyio_backend as anyio_backend
 from test_workflows import client, learner_ids, sign_in_learner
 from test_workflows import engine as engine
 
-from math_tutor.adapters.db.models import PracticeSession, ProblemInstance, Submission
+from math_tutor.adapters.db.models import PracticeSession, ProblemInstance, Submission, TutorTurn
 from math_tutor.adapters.db.types import utcnow
 
 
@@ -89,7 +89,16 @@ async def test_history_summaries_do_not_read_or_serialize_retained_work(
     assert all(item["activity_count"] == 1 for item in summaries)
     assert all(
         set(item)
-        == {"id", "learner_id", "status", "topic", "initiative", "difficulty", "activity_count"}
+        == {
+            "id",
+            "learner_id",
+            "status",
+            "topic",
+            "initiative",
+            "difficulty",
+            "activity_count",
+            "created_at",
+        }
         for item in summaries
     )
     assert len(response.content) < 32768
@@ -103,8 +112,72 @@ async def test_history_summaries_do_not_read_or_serialize_retained_work(
 
     detail = await adult.get(f"/api/v1/tutor/sessions/{selected_id}")
     assert detail.status_code == 200
+    assert detail.json()["created_at"] == summaries[0]["created_at"]
+    assert datetime.fromisoformat(summaries[0]["created_at"]) == now + timedelta(seconds=99)
     assert detail.json()["problems"][0]["passage"]["text"] == passage
     assert detail.json()["problems"][0]["operations"][0]["text"] == work
+
+
+@pytest.mark.anyio
+async def test_owned_response_metadata_exposes_version_without_private_provider_data(
+    adult: AsyncClient, engine: Engine
+) -> None:
+    owner, outsider = (UUID(value) for value in (await learner_ids(adult))[:2])
+    created = await adult.post(
+        "/api/v1/tutor/sessions",
+        json={"learner_id": str(owner), "topic": "Synthetic response provenance"},
+        headers={"Idempotency-Key": str(uuid4())},
+    )
+    assert created.status_code == 201, created.text
+    session_id = created.json()["id"]
+    with Session(engine) as db:
+        problem = ProblemInstance(
+            session_id=UUID(session_id),
+            template_id="ai-activity-v1",
+            template_version=1,
+            skill_id="open.subject",
+            seed=0,
+            position=0,
+            parameters={"activity_state": "ready"},
+            problem_text="Describe synthetic observations.",
+            expected_result={"private": "synthetic hidden answer"},
+        )
+        db.add(problem)
+        db.flush()
+        submission = Submission(
+            learner_id=owner,
+            problem_id=problem.id,
+            request_key=str(uuid4()),
+            payload_hash="synthetic",
+            kind="answer",
+            text="Synthetic work",
+            status="completed",
+        )
+        db.add(submission)
+        db.flush()
+        db.add(
+            TutorTurn(
+                submission_id=submission.id,
+                message="Synthetic guidance",
+                source="model",
+                prompt_version="synthetic-review-v1",
+                assistance_level=2,
+            )
+        )
+        db.commit()
+    async with client(engine) as learner, client(engine) as other:
+        await sign_in_learner(adult, learner, str(owner))
+        await sign_in_learner(adult, other, str(outsider))
+        detail = await learner.get(f"/api/v1/tutor/sessions/{session_id}")
+        forbidden = await other.get(f"/api/v1/tutor/sessions/{session_id}")
+    assert detail.status_code == 200
+    operation = detail.json()["problems"][0]["operations"][0]
+    assert operation["prompt_version"] == "synthetic-review-v1"
+    assert operation["assistance_level"] == 2
+    assert "synthetic hidden answer" not in detail.text
+    assert "expected_result" not in detail.text
+    assert forbidden.status_code == 404
+    assert "synthetic-review-v1" not in forbidden.text
 
 
 @pytest.mark.anyio

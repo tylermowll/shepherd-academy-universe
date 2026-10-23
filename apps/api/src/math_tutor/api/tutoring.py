@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 from typing import Any, Literal, cast
 from uuid import UUID
 
@@ -130,6 +131,7 @@ class TutoringSessionPublic(BaseModel):
     topic: str
     initiative: Initiative
     difficulty: Difficulty
+    created_at: datetime
     problems: list[ProblemPublic]
 
 
@@ -140,6 +142,7 @@ class TutoringSessionSummaryPublic(BaseModel):
     topic: str
     initiative: Initiative
     difficulty: Difficulty
+    created_at: datetime
     activity_count: int
 
 
@@ -242,6 +245,7 @@ def public_session(db: Session, row: PracticeSession) -> TutoringSessionPublic:
         topic=row.topic,
         initiative=cast(Initiative, row.initiative),
         difficulty=session_difficulty(row),
+        created_at=row.created_at,
         problems=[
             problem_public(db, item)
             for item in db.scalars(
@@ -329,6 +333,7 @@ def sessions(db: Database, actor: Principal) -> list[TutoringSessionSummaryPubli
             topic=row.topic,
             initiative=cast(Initiative, row.initiative),
             difficulty=session_difficulty(row),
+            created_at=row.created_at,
             activity_count=count,
         )
         for row, count in db.execute(query)

@@ -603,6 +603,17 @@
             "title": "Problem Id",
             "type": "string"
           },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          },
           "reading": {
             "anyOf": [
               {
@@ -2454,6 +2465,11 @@
       },
       "TutoringSessionPublic": {
         "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
           "difficulty": {
             "enum": [
               "introductory",
@@ -2505,6 +2521,7 @@
           "topic",
           "initiative",
           "difficulty",
+          "created_at",
           "problems"
         ],
         "title": "TutoringSessionPublic",
@@ -2515,6 +2532,11 @@
           "activity_count": {
             "title": "Activity Count",
             "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
           },
           "difficulty": {
             "enum": [
@@ -2560,6 +2582,7 @@
           "topic",
           "initiative",
           "difficulty",
+          "created_at",
           "activity_count"
         ],
         "title": "TutoringSessionSummaryPublic",

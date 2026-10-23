@@ -1388,6 +1388,10 @@ export function ProviderConnections({
             );
             openSection("tests");
           }}
+          onRefresh={async () => {
+            await onChanged();
+            setMessage("Current data & privacy settings loaded.");
+          }}
         />
       </section>
     </section>
@@ -1398,34 +1402,47 @@ function ProviderPolicy({
   policy,
   act,
   onChanged,
+  onRefresh,
 }: Pick<Props, "act" | "onChanged"> & {
   policy: Schema<"ProvidersPublic">["policy"];
+  onRefresh: () => Promise<void>;
 }) {
   const [cloud, setCloud] = useState(policy.allow_cloud_inference);
   const [audience, setAudience] = useState(policy.app_audience);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [refreshRequired, setRefreshRequired] = useState(false);
+  const inFlight = useRef(false);
+  const savedRefreshError =
+    "Data & privacy was saved, but the current settings could not be refreshed. Refresh settings to check them.";
   return (
     <form
       className="card"
       onSubmit={(event) => {
         event.preventDefault();
-        if (busy || policy.demo_mode) return;
+        if (inFlight.current || refreshRequired || policy.demo_mode) return;
+        inFlight.current = true;
         void act(async () => {
           setBusy(true);
           setError("");
+          let saved = false;
           try {
             await api("/admin/providers/policy", "POST", {
               allow_cloud_inference: cloud,
               app_audience: audience,
               acknowledge_data_boundary: true,
             } satisfies Schema<"ProviderPolicyInput">);
+            saved = true;
             await onChanged();
           } catch {
+            setRefreshRequired(saved);
             setError(
-              "Data & privacy could not be changed. Check your administrator sign-in and any restrictions set by the person running the server, then retry.",
+              saved
+                ? savedRefreshError
+                : "Data & privacy could not be changed. Check your administrator sign-in and any restrictions set by the person running the server, then retry.",
             );
           } finally {
+            inFlight.current = false;
             setBusy(false);
           }
         });
@@ -1439,7 +1456,12 @@ function ProviderPolicy({
         Who uses this app?
         <select
           value={audience}
-          disabled={busy || policy.audience_locked || policy.demo_mode}
+          disabled={
+            busy ||
+            refreshRequired ||
+            policy.audience_locked ||
+            policy.demo_mode
+          }
           onChange={(event) => {
             setAudience(event.target.value as typeof audience);
           }}
@@ -1458,7 +1480,9 @@ function ProviderPolicy({
         <input
           type="checkbox"
           checked={cloud}
-          disabled={busy || policy.cloud_locked || policy.demo_mode}
+          disabled={
+            busy || refreshRequired || policy.cloud_locked || policy.demo_mode
+          }
           onChange={(event) => {
             setCloud(event.target.checked);
           }}
@@ -1477,13 +1501,43 @@ function ProviderPolicy({
         even if a local model reads the image. Enabling this permission alone
         sends no requests.
       </p>
-      <button disabled={busy || policy.demo_mode}>
+      {busy && (
+        <p role="status">
+          {refreshRequired ? "Refreshing settings…" : "Saving data & privacy…"}
+        </p>
+      )}
+      <button disabled={busy || refreshRequired || policy.demo_mode}>
         Save data & privacy settings
       </button>
       {error && (
         <p role="alert" className="error">
           {error}
         </p>
+      )}
+      {refreshRequired && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            if (inFlight.current) return;
+            inFlight.current = true;
+            void act(async () => {
+              setBusy(true);
+              try {
+                await onRefresh();
+                setRefreshRequired(false);
+                setError("");
+              } catch {
+                setError(savedRefreshError);
+              } finally {
+                inFlight.current = false;
+                setBusy(false);
+              }
+            });
+          }}
+        >
+          Refresh settings
+        </button>
       )}
     </form>
   );

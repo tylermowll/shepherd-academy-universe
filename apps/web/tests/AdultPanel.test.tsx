@@ -470,6 +470,216 @@ describe("AI settings page", () => {
     );
   });
 
+  it("protects active-model selections and prevents duplicate saves through delayed completion and page changes", async () => {
+    let finish!: (value: Response) => void;
+    let savedRoutes = providers.routes;
+    const fetcher = vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith("/providers/routes"))
+        return new Promise<Response>((resolve) => {
+          finish = (value) => {
+            const body = JSON.parse(init?.body as string) as typeof savedRoutes;
+            savedRoutes = { tutor: body.tutor, vision: body.vision };
+            resolve(value);
+          };
+        });
+      return Promise.resolve(response({ ...providers, routes: savedRoutes }));
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const handlers = props();
+    const view = render(<AdultPanel {...handlers} page="settings" />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Active models/ }));
+    const tutor = screen.getByRole("combobox", { name: "Tutor connection" });
+    const photoReader = screen.getByRole("combobox", {
+      name: "Photo reader connection",
+    });
+    const consent = screen.getByRole("checkbox", {
+      name: "I authorize these connections to process future text and photos from every learner.",
+    });
+    const save = screen.getByRole("button", { name: "Save active models" });
+    fireEvent.change(tutor, { target: { value: "local-text" } });
+    fireEvent.click(consent);
+    fireEvent.click(save);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Saving active models…",
+    );
+    expect(tutor).toBeDisabled();
+    expect(photoReader).toBeDisabled();
+    expect(consent).toBeDisabled();
+    expect(save).toBeDisabled();
+    fireEvent.submit(save.closest("form")!);
+    fireEvent.change(tutor, { target: { value: "demo" } });
+    expect(tutor).toHaveValue("local-text");
+    expect(
+      fetcher.mock.calls.filter(([url]) => url.endsWith("/providers/routes")),
+    ).toHaveLength(1);
+
+    view.rerender(<AdultPanel {...handlers} page="help" />);
+    view.rerender(<AdultPanel {...handlers} page="settings" />);
+    expect(
+      screen.getByRole("button", { name: "Save active models" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("combobox", { name: "Tutor connection" }),
+    ).toHaveValue("local-text");
+    await act(async () => {
+      finish(response({ acknowledged: true }));
+      await Promise.resolve();
+    });
+    await screen.findByText(
+      "Active models saved. These choices apply to future work from every learner.",
+    );
+    expect(
+      screen.getByRole("combobox", { name: "Tutor connection" }),
+    ).toHaveValue("local-text");
+    expect(
+      screen.getByRole("combobox", { name: "Tutor connection" }),
+    ).toBeEnabled();
+    expect(consent).not.toBeChecked();
+    expect(save).toBeDisabled();
+    expect(failures).toHaveLength(0);
+  });
+
+  it("retains the selected active models and enables correction after a rejected save", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) =>
+        Promise.resolve(
+          url.endsWith("/providers/routes")
+            ? response({ detail: "Synthetic activation rejected." }, 409)
+            : response(providers),
+        ),
+      ),
+    );
+    render(<AdultPanel {...props()} page="settings" />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Active models/ }));
+    const tutor = screen.getByRole("combobox", { name: "Tutor connection" });
+    fireEvent.change(tutor, { target: { value: "local-text" } });
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "I authorize these connections to process future text and photos from every learner.",
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save active models" }));
+    await vi.waitFor(() =>
+      expect(failures[0]?.message).toBe("Synthetic activation rejected."),
+    );
+    expect(tutor).toHaveValue("local-text");
+    expect(tutor).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Save active models" }),
+    ).toBeEnabled();
+    expect(screen.queryByText("Saving active models…")).toBeNull();
+    expect(screen.queryByText(/Active models saved\./)).toBeNull();
+  });
+
+  it("reloads authoritative privacy settings after a confirmed save without sending the policy twice", async () => {
+    let saved = false;
+    let failRefresh = true;
+    const fetcher = vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith("/providers/policy")) {
+        expect(init?.method).toBe("POST");
+        saved = true;
+        return Promise.resolve(response({ acknowledged: true }));
+      }
+      if (saved && failRefresh) {
+        failRefresh = false;
+        return Promise.resolve(
+          response({ detail: "Synthetic refresh unavailable." }, 503),
+        );
+      }
+      return Promise.resolve(
+        response({
+          ...providers,
+          policy: { ...providers.policy, allow_cloud_inference: saved },
+        }),
+      );
+    });
+    vi.stubGlobal("fetch", fetcher);
+    render(<AdultPanel {...props()} page="settings" />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Data & privacy/ }));
+    fireEvent.click(screen.getByLabelText("Allow cloud AI for this app"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save data & privacy settings" }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Data & privacy was saved, but the current settings could not be refreshed. Refresh settings to check them.",
+    );
+    expect(screen.getByLabelText("Allow cloud AI for this app")).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Save data & privacy settings" }),
+    ).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Refresh settings" }));
+    await vi.waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    expect(screen.getByLabelText("Allow cloud AI for this app")).toBeChecked();
+    expect(screen.getByLabelText("Allow cloud AI for this app")).toBeEnabled();
+    expect(
+      fetcher.mock.calls.filter(([, init]) => init?.method === "POST"),
+    ).toHaveLength(1);
+    expect(
+      fetcher.mock.calls.filter(
+        ([url, init]) => url.endsWith("/providers") && init?.method === "GET",
+      ),
+    ).toHaveLength(3);
+    expect(
+      fetcher.mock.calls.find(([, init]) => init?.method === "POST")?.[1]?.body,
+    ).toBe(
+      JSON.stringify({
+        allow_cloud_inference: true,
+        app_audience: "mixed",
+        acknowledge_data_boundary: true,
+      }),
+    );
+    expect(screen.getByRole("tab", { name: /Data & privacy/ })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(failures).toHaveLength(0);
+  });
+
+  it("retains the confirmed active-model save receipt when only its settings refresh fails", async () => {
+    let saved = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.endsWith("/providers/routes")) {
+          saved = true;
+          return Promise.resolve(response({ acknowledged: true }));
+        }
+        return Promise.resolve(
+          saved
+            ? response(
+                { detail: "Synthetic settings refresh unavailable." },
+                503,
+              )
+            : response(providers),
+        );
+      }),
+    );
+    render(<AdultPanel {...props()} page="settings" />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Active models/ }));
+    const consent = screen.getByRole("checkbox", {
+      name: "I authorize these connections to process future text and photos from every learner.",
+    });
+    fireEvent.click(consent);
+    fireEvent.click(screen.getByRole("button", { name: "Save active models" }));
+    await vi.waitFor(() =>
+      expect(failures[0]?.message).toBe(
+        "Synthetic settings refresh unavailable.",
+      ),
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Active models saved. These choices apply to future work from every learner.",
+    );
+    expect(
+      screen.getByRole("combobox", { name: "Tutor connection" }),
+    ).toBeEnabled();
+    expect(consent).not.toBeChecked();
+    expect(
+      screen.getByRole("button", { name: "Save active models" }),
+    ).toBeDisabled();
+    expect(screen.queryByText("Saving active models…")).toBeNull();
+  });
+
   it("loads on Settings only, filters photo capability, and requires fresh consent after a selection change", async () => {
     const handlers = props();
     const { rerender } = render(<AdultPanel {...handlers} />);

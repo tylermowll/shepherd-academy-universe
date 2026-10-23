@@ -1046,6 +1046,8 @@ export interface components {
        * Format: uuid
        */
       problem_id: string;
+      /** Prompt Version */
+      prompt_version?: string | null;
       reading?: components["schemas"]["ReadingPublic"] | null;
       /**
        * Retryable
@@ -1831,6 +1833,11 @@ export interface components {
     /** TutoringSessionPublic */
     TutoringSessionPublic: {
       /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
        * Difficulty
        * @enum {string}
        */
@@ -1861,6 +1868,11 @@ export interface components {
     TutoringSessionSummaryPublic: {
       /** Activity Count */
       activity_count: number;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
       /**
        * Difficulty
        * @enum {string}

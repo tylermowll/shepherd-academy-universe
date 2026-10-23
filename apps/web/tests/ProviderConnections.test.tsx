@@ -1027,6 +1027,85 @@ describe("adult connection setup", () => {
     expect(screen.getByText(/locked cloud access/)).toBeVisible();
   });
 
+  it("distinguishes a confirmed privacy save from failed refresh and retries only the read", async () => {
+    const view = show(configuration, "policy");
+    view.onChanged
+      .mockRejectedValueOnce(
+        new TypeError("Synthetic saved-policy refresh loss"),
+      )
+      .mockRejectedValueOnce(new TypeError("Synthetic repeated refresh loss"))
+      .mockResolvedValueOnce();
+    fireEvent.click(screen.getByLabelText("Allow cloud AI for this app"));
+    const save = screen.getByRole("button", {
+      name: "Save data & privacy settings",
+    });
+    fireEvent.click(save);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Data & privacy was saved, but the current settings could not be refreshed. Refresh settings to check them.",
+    );
+    expect(save).toBeDisabled();
+    expect(screen.getByLabelText("Who uses this app?")).toBeDisabled();
+    expect(screen.getByLabelText("Allow cloud AI for this app")).toBeDisabled();
+    fireEvent.submit(save.closest("form")!);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    view.showSection("connections");
+    view.showSection("policy");
+    fireEvent.click(screen.getByRole("button", { name: "Refresh settings" }));
+    await vi.waitFor(() => expect(view.onChanged).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Data & privacy was saved",
+    );
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Refresh settings" }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Refresh settings" }));
+    await screen.findByText("Current data & privacy settings loaded.");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Refresh settings" }),
+    ).toBeNull();
+    expect(save).toBeEnabled();
+    expect(screen.getByLabelText("Allow cloud AI for this app")).toBeChecked();
+    expect(view.onChanged).toHaveBeenCalledTimes(3);
+    expect(view.onSectionChange).not.toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledExactlyOnceWith(
+      "/api/v1/admin/providers/policy",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("keeps rejected privacy edits correctable without claiming a save or offering saved-state recovery", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => response({ detail: "Synthetic server lock." }, 403)),
+    );
+    const view = show(configuration, "policy");
+    fireEvent.click(screen.getByLabelText("Allow cloud AI for this app"));
+    fireEvent.change(screen.getByLabelText("Who uses this app?"), {
+      target: { value: "adult_only" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save data & privacy settings" }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Data & privacy could not be changed.",
+    );
+    expect(screen.getByLabelText("Allow cloud AI for this app")).toBeChecked();
+    expect(screen.getByLabelText("Who uses this app?")).toHaveValue(
+      "adult_only",
+    );
+    expect(
+      screen.getByRole("button", { name: "Save data & privacy settings" }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByRole("button", { name: "Refresh settings" }),
+    ).toBeNull();
+    expect(screen.queryByText(/Data & privacy was saved/)).toBeNull();
+    expect(view.onChanged).not.toHaveBeenCalled();
+  });
+
   it("offers an explicit enable action for disabled connections", async () => {
     show({ ...configuration, providers: [{ ...saved, enabled: false }] });
     openDetails();

@@ -13,9 +13,11 @@ type Props = {
 
 export function PhoneLink({ problem, version, disabled, act, onHelp }: Props) {
   const [link, setLink] = useState<Schema<"PhoneUploadLink"> | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<"create" | "cancel" | null>(null);
+  const busy = pending !== null;
   const [expired, setExpired] = useState(false);
   const requestKey = useRef<string | null>(null);
+  const actionPending = useRef(false);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -57,7 +59,9 @@ export function PhoneLink({ problem, version, disabled, act, onHelp }: Props) {
         disabled={disabled || busy}
         onClick={() =>
           void act(async () => {
-            setBusy(true);
+            if (actionPending.current) return;
+            actionPending.current = true;
+            setPending("create");
             requestKey.current ??= newKey();
             try {
               const created = await api<Schema<"PhoneUploadLink">>(
@@ -80,17 +84,25 @@ export function PhoneLink({ problem, version, disabled, act, onHelp }: Props) {
                 requestKey.current = null;
               throw cause;
             } finally {
-              setBusy(false);
+              actionPending.current = false;
+              if (mounted.current) setPending(null);
             }
           })
         }
       >
-        {busy
+        {pending === "create"
           ? "Preparing photo link…"
           : link
             ? "New QR code"
             : "Take photo with phone"}
       </button>
+      {pending && (
+        <p role="status">
+          {pending === "create"
+            ? "Preparing your phone photo link…"
+            : "Canceling your phone photo link…"}
+        </p>
+      )}
       {link && !disabled && !expired && (
         <div className="phone-link-details">
           <h4>Scan with your phone camera</h4>
@@ -131,12 +143,25 @@ export function PhoneLink({ problem, version, disabled, act, onHelp }: Props) {
               disabled={busy}
               onClick={() =>
                 void act(async () => {
-                  await api(`/phone-uploads/${link.id}`, "DELETE");
-                  setLink(null);
+                  if (actionPending.current) return;
+                  actionPending.current = true;
+                  setPending("cancel");
+                  try {
+                    await api(`/phone-uploads/${link.id}`, "DELETE");
+                    if (mounted.current)
+                      setLink((current) =>
+                        current?.id === link.id ? null : current,
+                      );
+                  } finally {
+                    actionPending.current = false;
+                    if (mounted.current) setPending(null);
+                  }
                 })
               }
             >
-              Cancel phone link
+              {pending === "cancel"
+                ? "Canceling phone link…"
+                : "Cancel phone link"}
             </button>
           </div>
         </div>
