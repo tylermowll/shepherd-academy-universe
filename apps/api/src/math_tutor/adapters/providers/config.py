@@ -157,7 +157,7 @@ def route(
     if require_approval and provider.requires_approval:
         raise ProviderError(
             "approval_required",
-            safe_message="The AI connection has not been activated. Ask your administrator to test it in Settings, then save it under Active models.",
+            safe_message="The AI connection has not been activated. Ask your administrator to open Models in Settings, test the connection, then choose Use as tutor or Use as photo reader.",
         )
     if provider.adapter != "mock":
         if os.getenv("APP_MODE", "private") == "demo":

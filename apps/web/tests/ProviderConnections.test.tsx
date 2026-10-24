@@ -70,7 +70,7 @@ afterEach(() => {
 
 function show(
   value = configuration,
-  section: ProviderSettingsSection = "connections",
+  section: ProviderSettingsSection = "models",
 ) {
   const onChanged = vi.fn(async () => {});
   const onNavigate = vi.fn();
@@ -79,6 +79,7 @@ function show(
     configuration: value,
     act: run,
     onChanged,
+    onRoutesChanged: vi.fn(),
     onNavigate,
     onSectionChange,
   };
@@ -220,7 +221,7 @@ describe("adult connection setup", () => {
           ),
         ),
       );
-      const { onChanged } = show(configuration, "tests");
+      const { onChanged } = show(configuration, "models");
       vi.spyOn(window, "confirm").mockReturnValue(true);
       fireEvent.click(
         screen.getByRole("button", {
@@ -252,7 +253,7 @@ describe("adult connection setup", () => {
         ),
       ),
     );
-    show(configuration, "tests");
+    show(configuration, "models");
     vi.spyOn(window, "confirm").mockReturnValue(true);
     fireEvent.click(screen.getByRole("button", { name: "Test tutor" }));
     const error = await screen.findByRole("alert");
@@ -328,7 +329,7 @@ describe("adult connection setup", () => {
       }),
     );
     expect(onChanged).toHaveBeenCalledOnce();
-    expect(onSectionChange).toHaveBeenCalledWith("tests", true);
+    expect(onSectionChange).toHaveBeenCalledWith("models", true);
     expect(screen.queryByLabelText("Model name")).toBeNull();
     const savedToast = screen.getByRole("status");
     expect(savedToast).toHaveClass("settings-toast");
@@ -345,8 +346,9 @@ describe("adult connection setup", () => {
     render(
       <ProviderConnections
         configuration={configuration}
-        section="connections"
+        section="models"
         onChanged={onChanged}
+        onRoutesChanged={vi.fn()}
         onNavigate={vi.fn()}
         onSectionChange={onSectionChange}
         act={run}
@@ -370,7 +372,7 @@ describe("adult connection setup", () => {
       "The saved connection list is current. Test the connection next.",
     );
     expect(onChanged).toHaveBeenCalledTimes(2);
-    expect(onSectionChange).toHaveBeenCalledWith("tests", true);
+    expect(onSectionChange).toHaveBeenCalledWith("models", true);
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
@@ -716,16 +718,12 @@ describe("adult connection setup", () => {
     };
     const view = show({ ...configuration, providers: [pending] });
     expect(
-      screen.getByText(
-        /Saved, but not ready to assign until its required tests pass/,
-      ),
+      screen.getByText(/Run a matching test before activating this connection/),
     ).toBeVisible();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Test this connection" }),
-    );
-    expect(view.onSectionChange).toHaveBeenLastCalledWith("tests", true);
+    expect(screen.getByRole("button", { name: "Test tutor" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Use as tutor" })).toBeDisabled();
 
-    view.showSection("connections", {
+    view.showSection("models", {
       ...configuration,
       providers: [{ ...pending, boundary: "cloud" }],
     });
@@ -780,14 +778,13 @@ describe("adult connection setup", () => {
         400,
       ),
     );
-    const view = show(configuration, "tests");
+    const view = show(configuration, "models");
     fireEvent.click(screen.getByRole("button", { name: "Test tutor" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "home-vision test failed",
     );
     fireEvent.click(screen.getByRole("button", { name: "Edit connection" }));
-    expect(view.onSectionChange).toHaveBeenLastCalledWith("connections", true);
-    view.showSection("connections");
+    view.showSection("models");
     expect(await screen.findByLabelText("Model name")).toHaveValue(
       "installed-vision-model",
     );
@@ -797,7 +794,7 @@ describe("adult connection setup", () => {
   it.each(["tutor", "photo reader"])(
     "allows assignment for the tested %s role while the other role still needs testing",
     (role) => {
-      const view = show({
+      show({
         ...configuration,
         providers: [
           {
@@ -812,12 +809,19 @@ describe("adult connection setup", () => {
         screen.getByText(`Ready for ${role}.`, { exact: false }),
       ).toBeVisible();
       expect(screen.getByText(/The other test is still needed/)).toBeVisible();
-      fireEvent.click(screen.getByRole("button", { name: "Active models" }));
-      expect(view.onSectionChange).toHaveBeenLastCalledWith("roles", true);
-      view.showSection("tests");
+      fireEvent.click(
+        screen.getByRole("checkbox", {
+          name: "I authorize home-vision to process future learner work.",
+        }),
+      );
       expect(
-        screen.getByRole("button", { name: "Active models" }),
+        screen.getByRole("button", { name: `Use as ${role}` }),
       ).toBeEnabled();
+      expect(
+        screen.getByRole("button", {
+          name: `Use as ${role === "tutor" ? "photo reader" : "tutor"}`,
+        }),
+      ).toBeDisabled();
       expect(fetch).not.toHaveBeenCalled();
     },
   );
@@ -828,7 +832,7 @@ describe("adult connection setup", () => {
         ...configuration,
         providers: [{ ...saved, tutor_probed: false, vision_probed: true }],
       },
-      "tests",
+      "models",
     );
     expect(
       screen.getByText(/Photo reading passed, so this connection can accept/),
@@ -1012,7 +1016,7 @@ describe("adult connection setup", () => {
         ),
       );
       vi.spyOn(window, "confirm").mockReturnValue(true);
-      const view = show(configuration, "tests");
+      const view = show(configuration, "models");
       fireEvent.click(screen.getByRole("button", { name: `Test ${stage}` }));
       expect(screen.getByRole("status")).toHaveTextContent(
         `Testing home-vision: ${stage}…`,
@@ -1021,10 +1025,10 @@ describe("adult connection setup", () => {
         "Previous test results stay visible while this test runs.",
       );
       expect(
-        screen.getByRole("button", { name: "Refresh status" }),
+        screen.getByRole("button", { name: `Test ${stage}` }),
       ).toBeDisabled();
-      view.showSection("connections");
-      view.showSection("tests");
+      view.showSection("policy");
+      view.showSection("models");
       expect(screen.getByRole("status")).toHaveTextContent(
         `Testing home-vision: ${stage}…`,
       );
@@ -1034,7 +1038,7 @@ describe("adult connection setup", () => {
       await screen.findByText(`home-vision: ${stage} test passed.`);
       expect(screen.queryByText(/^Testing home-vision/)).toBeNull();
       expect(
-        screen.getByRole("button", { name: "Refresh status" }),
+        screen.getByRole("button", { name: `Test ${stage}` }),
       ).toBeEnabled();
     },
   );
@@ -1070,7 +1074,7 @@ describe("adult connection setup", () => {
     expect(
       screen.queryByRole("button", { name: "Edit connection" }),
     ).toBeNull();
-    view.showSection("connections", {
+    view.showSection("models", {
       ...configuration,
       routes: { tutor: saved.id, vision: saved.id },
     });
@@ -1094,7 +1098,7 @@ describe("adult connection setup", () => {
     expect(screen.queryByLabelText("API key")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Private setup help" }));
     expect(view.onNavigate).toHaveBeenCalledWith("help", "setup");
-    view.showSection("tests", {
+    view.showSection("models", {
       ...configuration,
       policy: { ...configuration.policy, demo_mode: true },
     });
@@ -1108,7 +1112,7 @@ describe("adult connection setup", () => {
         ...configuration,
         providers: [{ ...saved, boundary: "cloud", audience: "adult_only" }],
       },
-      "tests",
+      "models",
     );
     expect(screen.getByRole("button", { name: "Test tutor" })).toBeDisabled();
     fireEvent.click(
@@ -1177,7 +1181,7 @@ describe("adult connection setup", () => {
     expect(screen.getByLabelText("Allow cloud AI for this app")).toBeDisabled();
     fireEvent.submit(save.closest("form")!);
     expect(fetch).toHaveBeenCalledTimes(1);
-    view.showSection("connections");
+    view.showSection("models");
     view.showSection("policy");
     fireEvent.click(screen.getByRole("button", { name: "Refresh settings" }));
     await vi.waitFor(() => expect(view.onChanged).toHaveBeenCalledTimes(2));

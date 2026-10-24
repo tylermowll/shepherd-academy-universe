@@ -1,5 +1,28 @@
 # UI/UX review — current status
 
+## T75 model setup and activation
+
+The maintainer's reading-session report exposed two problems: a tested model
+was not the active tutor, and the demo presented fixed revision advice as if it
+had assessed the answer. A separate synthetic reproduction established that a
+stale role editor could overwrite a previously activated tutor.
+
+Settings now has Models and Data & privacy. Each model card combines editing,
+explicitly authorized role tests and role-specific activation. Current models
+names the authoritative tutor/photo-reader selections. Cards distinguish
+passing tests, active roles and edited selections needing reactivation. Saves
+include the expected current role, preserve the other role and reject stale
+choices; the client checks the saved response before showing success. Drafts,
+authorization for charged tests and data-boundary policy remain required. Demo replies
+explicitly state that they cannot review the answer and do not demand revision.
+
+The source gate passed 317 frontend, 333 backend unit and 11 toolchain tests;
+all 418 integration cases and all 60 affected desktop/mobile browser cases
+passed. The private rollout is still in progress.
+[T75](TASKS.md#t75--unify-model-setup-protect-activation-and-deploy-2026-10-24)
+records exact commands and remaining evidence. No live teaching-quality,
+physical-device or screen-reader acceptance is claimed.
+
 ## T73 account-management naming
 
 The maintainer identified a misleading page title missed by the previous review:
@@ -77,13 +100,13 @@ Focused coverage and final browser/private-update evidence are recorded in
 [T71](TASKS.md#t71--correct-account-sign-in-and-household-credential-recovery-2026-10-24).
 This is a focused access-flow correction, not a new whole-application audit.
 
-| Workflow and goal | States and review lenses | Evidence / coverage status |
-| --- | --- | --- |
+| Workflow and goal                                           | States and review lenses                                                                                                                   | Evidence / coverage status                                                                                                                                                                                                               |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Guest learner/administrator selects an account and signs in | Loading, empty, failed directory, password rejection, throttling, network/server error; clear language and one authoritative account field | Exercised: component tests; desktop/mobile Chromium directory, credential and connection journeys. Throttle/server wording also covered by components. Actual installed HTTPS credential verification passed for both existing accounts. |
-| Guest retries an expired sign-in form | Refresh only expired sign-in permission, then retry selected credentials without unrelated recovery controls | Exercised: component request ordering and refresh-failure retry; real API 403 then explicit successful recovery in desktop/mobile Chromium. |
-| Current account opens another role's sign-in | Failed credentials or role, Help, cancel and successful replacement; prior work remains until valid replacement | Exercised: components and desktop/mobile browser draft/role-switch journeys. |
-| Keyboard user completes entry | Account selection retains focus, Tab reaches Password then Sign in, errors describe the field and focus recovery | Exercised: component and desktop/mobile Chromium keyboard/focus assertions. Screen-reader behavior remains unreviewed. |
-| Saved work survives offline/reload and explicit app update | Public-only shell cache, selected account and password retained until explicit refresh | Exercised: desktop/mobile browser offline, reload, cache and explicit-refresh cases. |
+| Guest retries an expired sign-in form                       | Refresh only expired sign-in permission, then retry selected credentials without unrelated recovery controls                               | Exercised: component request ordering and refresh-failure retry; real API 403 then explicit successful recovery in desktop/mobile Chromium.                                                                                              |
+| Current account opens another role's sign-in                | Failed credentials or role, Help, cancel and successful replacement; prior work remains until valid replacement                            | Exercised: components and desktop/mobile browser draft/role-switch journeys.                                                                                                                                                             |
+| Keyboard user completes entry                               | Account selection retains focus, Tab reaches Password then Sign in, errors describe the field and focus recovery                           | Exercised: component and desktop/mobile Chromium keyboard/focus assertions. Screen-reader behavior remains unreviewed.                                                                                                                   |
+| Saved work survives offline/reload and explicit app update  | Public-only shell cache, selected account and password retained until explicit refresh                                                     | Exercised: desktop/mobile browser offline, reload, cache and explicit-refresh cases.                                                                                                                                                     |
 
 Final `make check` passed 315 frontend, 329 backend unit and 11 toolchain tests;
 409 integration cases passed. The initial focused browser run passed 54 cases;
@@ -108,15 +131,15 @@ are retained in TASKS rather than duplicated here.
 
 ## Corrections
 
-| Finding | Current behavior | Regression coverage |
-| --- | --- | --- |
-| Interrupted request traps the current tab | Text and owned-photo requests share receipt lookup and explicit server resolution. Accepted work is opened without replay; an absent request is blocked against late acceptance before its retained draft/photo is released. | Tutor and PhotoInput component cases; real stale-version/late-original browser flow; existing receipt API integration. |
-| Successful administrator change appears to fail | Account creation, credentials, age, deletion and connection actions retain their confirmed receipt. Stale writes stay blocked until GET-only refresh succeeds. | LearnerAccounts/ProviderConnections components and deletion/refresh browser flow. |
-| Phone omits downstream text processing | The existing processing label names reader and tutor locations and distinguishes feedback, passage practice and assignment-reference practice. Received receipts remain content-free. | Phone API mixed-route, purpose, private-metadata and receipt tests. |
-| Failed History load appears empty | Loading, failed and successfully empty lists have distinct states. Reload saved sessions retries reads while preserving current work. | Tutor component and saved-session browser regressions. |
-| Phone task displays raw math and overflows | The companion reuses SafeText in a compact task section, wraps identifiers and bounds intrinsically wide formulas to their own scroll area. | PhoneCapture components and 320px desktop/mobile geometry/math assertions. |
-| Reading-section change loses focus | Navigation stays mounted within the current session and restores a useful control after a learner action; polling and hidden pages do not steal focus. | Reading component and keyboard section/pace browser cases. |
-| Connection test has no visible progress | Pending status names the connection and tutor/photo-reader stage while keeping previous completed results visible. | Both component test stages and held mock-test browser state. |
+| Finding                                         | Current behavior                                                                                                                                                                                                             | Regression coverage                                                                                                    |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Interrupted request traps the current tab       | Text and owned-photo requests share receipt lookup and explicit server resolution. Accepted work is opened without replay; an absent request is blocked against late acceptance before its retained draft/photo is released. | Tutor and PhotoInput component cases; real stale-version/late-original browser flow; existing receipt API integration. |
+| Successful administrator change appears to fail | Account creation, credentials, age, deletion and connection actions retain their confirmed receipt. Stale writes stay blocked until GET-only refresh succeeds.                                                               | LearnerAccounts/ProviderConnections components and deletion/refresh browser flow.                                      |
+| Phone omits downstream text processing          | The existing processing label names reader and tutor locations and distinguishes feedback, passage practice and assignment-reference practice. Received receipts remain content-free.                                        | Phone API mixed-route, purpose, private-metadata and receipt tests.                                                    |
+| Failed History load appears empty               | Loading, failed and successfully empty lists have distinct states. Reload saved sessions retries reads while preserving current work.                                                                                        | Tutor component and saved-session browser regressions.                                                                 |
+| Phone task displays raw math and overflows      | The companion reuses SafeText in a compact task section, wraps identifiers and bounds intrinsically wide formulas to their own scroll area.                                                                                  | PhoneCapture components and 320px desktop/mobile geometry/math assertions.                                             |
+| Reading-section change loses focus              | Navigation stays mounted within the current session and restores a useful control after a learner action; polling and hidden pages do not steal focus.                                                                       | Reading component and keyboard section/pace browser cases.                                                             |
+| Connection test has no visible progress         | Pending status names the connection and tutor/photo-reader stage while keeping previous completed results visible.                                                                                                           | Both component test stages and held mock-test browser state.                                                           |
 
 Pending or failed generation is labeled Activity preparation instead of displaying
 its internal command as learner-authored chat. Failure details and retry/stop

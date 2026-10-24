@@ -183,7 +183,7 @@ describe("browser first-account setup", () => {
       finishProviders(await serve("/admin/providers", { method: "GET" }));
       await providerResponse;
     });
-    expect(screen.getByRole("tab", { name: /Connections/ })).toBeVisible();
+    expect(screen.getByRole("tab", { name: /Models/ })).toBeVisible();
     expect(screen.queryByText(/Session changed/)).toBeNull();
     expect(
       screen.queryByRole("button", { name: "Retry AI settings" }),

@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Request
 from PIL import Image, ImageDraw
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import delete, select, update
 
 from math_tutor.adapters.db.models import (
@@ -35,7 +35,7 @@ from math_tutor.adapters.providers.contracts import (
 )
 from math_tutor.api.access import Adult, Database, principal
 from math_tutor.api.learners import Acknowledged
-from math_tutor.api.provider_connections import ProviderPolicyPublic
+from math_tutor.api.provider_connections import ProviderPolicyPublic, private_setup
 from math_tutor.api.provider_connections import router as connections_router
 from math_tutor.providers import (
     complete,
@@ -109,7 +109,10 @@ class ProbeFailure(ProviderError):
     probe_step: Literal["generate", "review", "read"] | None = None
 
 
-class SelectRoutes(Routes):
+class SelectRole(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    provider_id: str = Field(min_length=1)
+    expected_provider_id: str = Field(min_length=1)
     acknowledge_data_boundary: bool
 
 
@@ -169,32 +172,39 @@ def providers(db: Database, actor: Adult) -> ProvidersPublic:
     )
 
 
-@router.post("/providers/routes", response_model=Acknowledged)
-def select_routes(body: SelectRoutes, db: Database, actor: Adult) -> Acknowledged:
+@router.post("/providers/routes/{stage}", response_model=Routes)
+def select_role(
+    stage: Literal["tutor", "vision"], body: SelectRole, db: Database, actor: Adult
+) -> Routes:
+    private_setup()
     if not body.acknowledge_data_boundary:
         raise HTTPException(422, "Acknowledge the selected data boundary.")
     config = effective_configuration(db)
-    routes = Routes(tutor=body.tutor, vision=body.vision)
+    if getattr(config.routes, stage) != body.expected_provider_id:
+        raise HTTPException(
+            409,
+            "This active model changed since you opened it. Refresh the current models before choosing again.",
+        )
+    routes = config.routes.model_copy(update={stage: body.provider_id})
     updated = config.model_copy(update={"routes": routes})
-    for stage in ("tutor", "vision"):
-        name, provider = route(updated, stage, "adult", require_approval=False)
-        if provider.credential_unavailable or not probe_is_current(db, provider, stage):
-            raise HTTPException(
-                422,
-                "Test the selected tutor and photo reader before saving their roles. Tests expire after seven days.",
-            )
-        connection = db.get(ProviderConnection, name)
-        if connection is not None:
-            connection.configuration = {
-                **connection.configuration,
-                "requires_approval": False,
-            }
+    name, provider = route(updated, stage, "adult", require_approval=False)
+    if provider.credential_unavailable or not probe_is_current(db, provider, stage):
+        raise HTTPException(
+            422,
+            "Test this connection for the selected role before activating it. Tests expire after seven days.",
+        )
+    connection = db.get(ProviderConnection, name)
+    if connection is not None:
+        connection.configuration = {
+            **connection.configuration,
+            "requires_approval": False,
+        }
     row = db.get(RouteSelection, "active")
     if row is None:
         db.add(RouteSelection(name="active", routes=routes.model_dump()))
     else:
         row.routes = routes.model_dump()
-    return Acknowledged()
+    return routes
 
 
 def probe_requests(
@@ -269,8 +279,8 @@ def probe_error(
         "invalid_request": "The server rejected the test request. Check the model name, provider type, and structured-output setting.",
         "malformed_output": "The model did not return the required tutoring format. Check the model and structured-output setting, then test again.",
         "context_limit": "The configured context limit is too small for the tutoring format. Match it to the model server's supported context size.",
-        "cloud_disabled": "Cloud calls are disabled. Open App permissions and allow cloud AI before testing this connection.",
-        "audience_blocked": "This connection's Allowed users setting does not match who uses the app. Review the connection and App permissions before testing.",
+        "cloud_disabled": "Cloud calls are disabled. Open Data & privacy in Settings and allow cloud AI before testing this connection.",
+        "audience_blocked": "This connection's Allowed users setting does not match who uses the app. Review the connection in Models and Data & privacy in Settings before testing.",
         "invalid_endpoint": "This URL is blocked or resolves outside its declared network boundary. Check the server URL and local/cloud setting.",
         "unsupported_modality": "This connection does not support the selected test. Enable photo reading only for a vision-capable model.",
         "throttled": "The model server is rate-limiting requests. Wait, then test again.",

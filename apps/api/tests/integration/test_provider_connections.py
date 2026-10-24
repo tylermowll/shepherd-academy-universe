@@ -4,7 +4,7 @@ import json
 from datetime import timedelta
 from pathlib import Path
 from threading import Event, Thread
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 import pytest
@@ -62,6 +62,31 @@ def connection(**changes: Any) -> dict[str, Any]:
 async def add(adult: AsyncClient, name: str = "local", **changes: Any) -> None:
     response = await adult.post(BASE + "/connections", json={"id": name, **connection(**changes)})
     assert response.status_code == 201, response.text
+
+
+async def select_role(
+    adult: AsyncClient,
+    provider_id: str = "local",
+    *,
+    stage: Literal["tutor", "vision"] = "tutor",
+    expected: str = "demo",
+    acknowledged: bool = True,
+) -> Response:
+    return await adult.post(
+        BASE + f"/routes/{stage}",
+        json={
+            "provider_id": provider_id,
+            "expected_provider_id": expected,
+            "acknowledge_data_boundary": acknowledged,
+        },
+    )
+
+
+async def activate_both(adult: AsyncClient, provider_id: str = "local") -> None:
+    tutor = await select_role(adult, provider_id)
+    assert tutor.status_code == 200, tutor.text
+    vision = await select_role(adult, provider_id, stage="vision")
+    assert vision.status_code == 200, vision.text
 
 
 def record_probes(engine: Engine, name: str = "local", days_old: int = 0) -> None:
@@ -177,15 +202,7 @@ async def test_meta_mixed_audience_saves_and_routes_without_provider_call(
         api_key=KEY,
     )
     record_probes(engine, "meta-mixed")
-    response = await adult.post(
-        BASE + "/routes",
-        json={
-            "tutor": "meta-mixed",
-            "vision": "meta-mixed",
-            "acknowledge_data_boundary": True,
-        },
-    )
-    assert response.status_code == 200, response.text
+    await activate_both(adult, "meta-mixed")
     saved = next(
         provider
         for provider in (await adult.get(BASE)).json()["providers"]
@@ -224,10 +241,9 @@ async def test_key_retention_replacement_endpoint_changes_and_probe_expiry(
     record_probes(engine, days_old=8)
     saved = next(p for p in (await adult.get(BASE)).json()["providers"] if p["id"] == "local")
     assert not saved["tutor_probed"] and not saved["vision_probed"]
-    selection = {"tutor": "local", "vision": "local", "acknowledge_data_boundary": True}
-    assert (await adult.post(BASE + "/routes", json=selection)).status_code == 422
+    assert (await select_role(adult)).status_code == 422
     record_probes(engine)
-    assert (await adult.post(BASE + "/routes", json=selection)).status_code == 200
+    await activate_both(adult)
     assert (await adult.delete(BASE + "/connections/local")).status_code == 409
     assert (
         await adult.put(BASE + "/connections/local", json=connection(api_key_action="remove"))
@@ -314,6 +330,8 @@ async def test_connection_authorization_csrf_demo_and_file_route_collision(
                 await browser.put(BASE + "/connections/local", json=connection())
             ).status_code == status
             assert (await browser.delete(BASE + "/connections/local")).status_code == status
+            assert (await select_role(browser, "demo")).status_code == status
+            assert (await select_role(browser, "demo", stage="vision")).status_code == status
             assert (
                 await browser.post(
                     BASE + "/policy",
@@ -327,11 +345,24 @@ async def test_connection_authorization_csrf_demo_and_file_route_collision(
     assert (
         await adult.post(BASE + "/connections", json=body, headers={"X-CSRF-Token": "wrong"})
     ).status_code == 403
+    assert (
+        await adult.post(
+            BASE + "/routes/tutor",
+            json={
+                "provider_id": "demo",
+                "expected_provider_id": "demo",
+                "acknowledge_data_boundary": True,
+            },
+            headers={"X-CSRF-Token": "wrong"},
+        )
+    ).status_code == 403
     assert (await adult.post(BASE + "/connections", json={**body, "id": "demo"})).status_code == 409
     assert (await adult.put(BASE + "/connections/demo", json=connection())).status_code == 409
     assert (await adult.delete(BASE + "/connections/demo")).status_code == 409
     monkeypatch.setenv("APP_MODE", "demo")
     assert (await adult.post(BASE + "/connections", json=body)).status_code == 403
+    assert (await select_role(adult, "demo")).status_code == 403
+    assert (await select_role(adult, "demo", stage="vision")).status_code == 403
 
 
 @pytest.mark.anyio
@@ -383,12 +414,7 @@ async def test_worker_refresh_uses_saved_key_and_rejects_pending_work_after_key_
 ) -> None:
     await add(adult, api_key_action="replace", api_key=KEY)
     record_probes(engine)
-    assert (
-        await adult.post(
-            BASE + "/routes",
-            json={"tutor": "local", "vision": "local", "acknowledge_data_boundary": True},
-        )
-    ).status_code == 200
+    await activate_both(adult)
     seen: list[str] = []
 
     def complete(provider: ProviderConfig, request: ModelRequest) -> ModelResult:
@@ -415,12 +441,7 @@ async def test_worker_refresh_uses_saved_key_and_rejects_pending_work_after_key_
     with Session(engine) as db:
         job = db.scalar(select(Job).where(Job.submission_id == UUID(work["operations"][0]["id"])))
         assert job is not None and job.state == "failed"
-    assert (
-        await adult.post(
-            BASE + "/routes",
-            json={"tutor": "local", "vision": "local", "acknowledge_data_boundary": True},
-        )
-    ).status_code == 200
+    assert (await select_role(adult, expected="local")).status_code == 200
     third = await tutor_session(adult)
     await activity(adult, third)
     assert worker.run_once(engine)
@@ -473,12 +494,7 @@ async def test_current_schema_probes_require_explicit_consent_and_do_not_activat
         config = effective_configuration(db).model_copy(update={"routes": Routes(tutor="local")})
         with pytest.raises(ProviderError, match="approval_required"):
             route(config, "tutor", "adult")
-    assert (
-        await adult.post(
-            BASE + "/routes",
-            json={"tutor": "local", "vision": "local", "acknowledge_data_boundary": True},
-        )
-    ).status_code == 200
+    await activate_both(adult)
     with Session(engine) as db:
         assert not effective_configuration(db).providers["local"].requires_approval
 
@@ -710,8 +726,7 @@ async def test_meta_effort_persists_reaches_probes_and_worker_and_invalidates_re
         test["reasoning_effort"] == "high" and test["output_limit"] == 16384
         for test in saved["recent_tests"]
     )
-    roles = {"tutor": "local", "vision": "local", "acknowledge_data_boundary": True}
-    assert (await adult.post(BASE + "/routes", json=roles)).status_code == 200
+    await activate_both(adult)
     await activity(adult, await tutor_session(adult))
     assert worker.run_once(engine)
     assert purposes == ["generate", "review", "read", "generate"]
@@ -725,7 +740,7 @@ async def test_meta_effort_persists_reaches_probes_and_worker_and_invalidates_re
     assert saved["reasoning_effort"] == "low"
     assert not saved["tutor_probed"] and not saved["vision_probed"]
     assert saved["recent_tests"][0]["reasoning_effort"] == "high"
-    assert (await adult.post(BASE + "/routes", json=roles)).status_code == 422
+    assert (await select_role(adult, expected="local")).status_code == 422
 
 
 @pytest.mark.anyio
@@ -790,8 +805,7 @@ async def test_edit_selected_local_to_cloud_requires_fresh_learner_data_consent(
 ) -> None:
     await add(adult)
     record_probes(engine)
-    roles = {"tutor": "local", "vision": "local", "acknowledge_data_boundary": True}
-    assert (await adult.post(BASE + "/routes", json=roles)).status_code == 200
+    await activate_both(adult)
     monkeypatch.delenv("ALLOW_CLOUD_INFERENCE")
     assert (
         await adult.post(
@@ -812,10 +826,8 @@ async def test_edit_selected_local_to_cloud_requires_fresh_learner_data_consent(
     record_probes(engine)  # Even successful synthetic tests cannot approve learner transfers.
     with Session(engine) as db, pytest.raises(ProviderError, match="approval_required"):
         route(effective_configuration(db), "tutor", "adult")
-    assert (
-        await adult.post(BASE + "/routes", json={**roles, "acknowledge_data_boundary": False})
-    ).status_code == 422
-    assert (await adult.post(BASE + "/routes", json=roles)).status_code == 200
+    assert (await select_role(adult, expected="local", acknowledged=False)).status_code == 422
+    assert (await select_role(adult, expected="local")).status_code == 200
     with Session(engine) as db:
         assert route(effective_configuration(db), "tutor", "adult")[1].data_boundary == "cloud"
 
@@ -897,7 +909,7 @@ async def test_failed_or_stale_probe_does_not_record_success(
 
 
 @pytest.mark.anyio
-async def test_role_approval_rolls_back_if_other_selected_stage_is_untested(
+async def test_activation_validates_only_requested_role_and_rolls_back_failed_approval(
     adult: AsyncClient, engine: Engine
 ) -> None:
     await add(adult)
@@ -911,15 +923,138 @@ async def test_role_approval_rolls_back_if_other_selected_stage_is_untested(
             )
         )
         db.commit()
-    response = await adult.post(
-        BASE + "/routes",
-        json={"tutor": "local", "vision": "local", "acknowledge_data_boundary": True},
-    )
-    assert response.status_code == 422
+    assert (await select_role(adult, stage="vision")).status_code == 422
     with Session(engine) as db:
         config = effective_configuration(db)
         assert config.providers["local"].requires_approval
         assert config.routes == Routes()
+    response = await select_role(adult)
+    assert response.status_code == 200, response.text
+    assert response.json() == {"tutor": "local", "vision": "demo"}
+    with Session(engine) as db:
+        config = effective_configuration(db)
+        assert not config.providers["local"].requires_approval
+        assert config.routes == Routes(tutor="local")
+    assert (await select_role(adult, stage="vision")).status_code == 422
+    assert (await adult.get(BASE)).json()["routes"] == {"tutor": "local", "vision": "demo"}
+
+
+@pytest.mark.anyio
+async def test_stale_tutor_activation_conflicts_without_replacing_current_tutor(
+    adult: AsyncClient, engine: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def no_call(*_args: object) -> None:
+        pytest.fail("Activating a tested connection must not make a provider call")
+
+    monkeypatch.setattr("math_tutor.api.providers.complete", no_call)
+    await add(adult, "first")
+    await add(adult, "second")
+    record_probes(engine, "first")
+    record_probes(engine, "second")
+    assert (await select_role(adult, "first")).json() == {"tutor": "first", "vision": "demo"}
+    stale = await select_role(adult, "second")
+    assert stale.status_code == 409
+    assert "changed" in stale.json()["detail"]
+    with Session(engine) as db:
+        config = effective_configuration(db)
+        assert config.routes == Routes(tutor="first")
+        assert config.providers["second"].requires_approval
+    current = await select_role(adult, "second", expected="first")
+    assert current.status_code == 200
+    assert current.json() == {"tutor": "second", "vision": "demo"}
+
+
+@pytest.mark.anyio
+async def test_photo_reader_activation_preserves_tutor_changed_by_another_editor(
+    adult: AsyncClient, engine: Engine
+) -> None:
+    await add(adult, "writer", image_input=False)
+    await add(adult, "reader")
+    record_probes(engine, "writer")
+    record_probes(engine, "reader")
+    old = (await adult.get(BASE)).json()["routes"]
+    assert old == {"tutor": "demo", "vision": "demo"}
+    assert (await select_role(adult, "writer", expected=old["tutor"])).status_code == 200
+    changed_reader = await select_role(adult, "reader", stage="vision", expected=old["vision"])
+    assert changed_reader.status_code == 200
+    assert changed_reader.json() == {"tutor": "writer", "vision": "reader"}
+    stale = await select_role(adult, "demo", stage="vision", expected=old["vision"])
+    assert stale.status_code == 409
+    assert (await adult.get(BASE)).json()["routes"] == {"tutor": "writer", "vision": "reader"}
+    with Session(engine) as db:
+        provider = effective_configuration(db).providers["reader"]
+        probe = db.get(ProviderProbe, probe_fingerprint(provider, "vision"))
+        assert probe is not None
+        probe.tested_at = utcnow() - timedelta(days=8)
+        db.commit()
+    # The unrelated reader's expired test must not block changing the tutor.
+    changed_tutor = await select_role(adult, "demo", expected="writer")
+    assert changed_tutor.status_code == 200
+    assert changed_tutor.json() == {"tutor": "demo", "vision": "reader"}
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "failure",
+    ["untested", "disabled", "photo_unsupported", "key_unavailable", "cloud_blocked", "audience"],
+)
+async def test_failed_role_activation_preserves_routes_and_approval(
+    adult: AsyncClient, engine: Engine, failure: str
+) -> None:
+    changes: dict[str, Any] = {}
+    if failure == "cloud_blocked":
+        changes.update(boundary="cloud", base_url="https://synthetic.example.invalid/v1")
+    if failure == "audience":
+        changes["audience"] = "adult_only"
+    await add(adult, image_input=failure != "photo_unsupported", **changes)
+    if failure != "untested":
+        record_probes(engine)
+    with Session(engine) as db:
+        saved = db.get(ProviderConnection, "local")
+        assert saved is not None
+        if failure == "disabled":
+            saved.configuration = {**saved.configuration, "enabled": False}
+        if failure == "key_unavailable":
+            saved.encrypted_api_key = "synthetic-unreadable-ciphertext"
+        db.commit()
+    response = await select_role(adult, stage="vision")
+    assert response.status_code == 422
+    with Session(engine) as db:
+        config = effective_configuration(db)
+        assert config.routes == Routes()
+        assert config.providers["local"].requires_approval
+
+
+@pytest.mark.anyio
+async def test_role_activation_requires_explicit_role_current_selection_and_consent(
+    adult: AsyncClient, engine: Engine
+) -> None:
+    assert (await select_role(adult, "demo", acknowledged=False)).status_code == 422
+    assert (await select_role(adult, "missing-provider")).status_code == 422
+    assert (
+        await adult.post(
+            BASE + "/routes/tutor",
+            json={"provider_id": "demo", "acknowledge_data_boundary": True},
+        )
+    ).status_code == 422
+    assert (
+        await adult.post(
+            BASE + "/routes/unknown",
+            json={
+                "provider_id": "demo",
+                "expected_provider_id": "demo",
+                "acknowledge_data_boundary": True,
+            },
+        )
+    ).status_code == 422
+    assert (
+        await adult.post(
+            BASE + "/routes",
+            json={"tutor": "demo", "vision": "demo", "acknowledge_data_boundary": True},
+        )
+    ).status_code == 404
+    with Session(engine) as db:
+        assert effective_configuration(db).routes == Routes()
 
 
 @pytest.mark.anyio
@@ -965,8 +1100,7 @@ async def test_unchanged_connection_save_preserves_approval_and_tests(
 ) -> None:
     await add(adult, api_key_action="replace", api_key=KEY)
     record_probes(engine)
-    roles = {"tutor": "local", "vision": "local", "acknowledge_data_boundary": True}
-    assert (await adult.post(BASE + "/routes", json=roles)).status_code == 200
+    await activate_both(adult)
     with Session(engine) as db:
         before = effective_configuration(db).fingerprint()
     assert (await adult.put(BASE + "/connections/local", json=connection())).status_code == 200

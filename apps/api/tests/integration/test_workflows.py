@@ -281,7 +281,8 @@ async def test_phone_discloses_reader_and_downstream_tutor_without_private_confi
     assert processing.startswith(expected_reader)
     if text_boundary is None:
         assert (
-            "The tutor is unavailable. Ask the administrator to check Active models." in processing
+            "The tutor is unavailable. Ask the administrator to check Models in Settings."
+            in processing
         )
     else:
         destination = (

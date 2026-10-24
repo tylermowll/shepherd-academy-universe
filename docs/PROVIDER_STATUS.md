@@ -31,7 +31,7 @@ example does not verify an endpoint or model.
 
 ## Test and select the tutor and photo reader
 
-1. In the administrator app, open **Settings → Connections** and select
+1. In the administrator app, open **Settings → Models** and select
    Ollama, vLLM, a compatible API, or Meta. Enter the exact installed/approved
    model ID and endpoint, and an API key if required. Review model/provider terms,
    intended audience and data handling. Set image support and context limits to
@@ -47,8 +47,9 @@ example does not verify an endpoint or model.
    `ALLOW_CLOUD_INFERENCE` and `APP_AUDIENCE` values lock their UI controls; absent
    values allow saved Settings policy, defaulting to cloud off and mixed ages.
    Local connections stay local and never fall back to cloud.
-3. Open **Connection tests**. Saved changes are visible to API and worker without
-   restarting. Explicitly authorize the synthetic test for each required role.
+3. On the saved connection in **Models**, explicitly authorize the synthetic
+   test for each required role. Saved changes are visible to API and worker without
+   restarting.
    The tutor test makes two bounded sample calls, checking activity generation
    and feedback. The photo test makes one call using the current photo-reading
    schema and must
@@ -58,9 +59,11 @@ example does not verify an endpoint or model.
    may still be billed. A matching test lasts seven days and becomes stale after
    connection, capability, key or applicable test-version changes. Current
    versions are tutor v4 and photo reader v2; pre-T44 tutor tests are stale.
-4. Open **Active models** and select the tested tutor and photo
-   reader and acknowledge where they will process data. This app-wide selection
-   changes the models used for future learner work. Record exact runtime,
+4. On the tested connection, choose **Use as tutor** or **Use as photo reader**
+   and acknowledge where it will process data. The current-model summary shows
+   the saved connection/model for each role. Each action changes only that role;
+   a stale choice is rejected and refreshed rather than overwriting a later
+   selection. This app-wide selection changes future learner work. Record exact runtime,
    model, configuration and prompt versions, date, sample counts, failures,
    latency, token usage and human review.
    A failed local connection never invokes an alternate provider.
@@ -83,7 +86,7 @@ Saved keys are encrypted in the private SQLite database and never returned in
 responses, errors or learner exports. Edit a connection to keep, replace or
 remove its key. Changing the endpoint cannot silently reuse the old credential.
 Connection or key changes invalidate prior tests. Retest the connection and select
-it again under **Active models** before learner use; a successful test alone never
+it again with **Use as tutor** or **Use as photo reader** in **Models** before learner use; a successful test alone never
 activates changed settings. If the deployment secret changes,
 replace unreadable keys in Settings and retest; preserve that secret separately
 when backing up the database (D010).

@@ -321,7 +321,7 @@ test("adult pages isolate each job and browser navigation preserves a new sessio
     "Help",
   ]);
   await navigate(page, "Settings");
-  await page.getByRole("tab", { name: /Connection tests/ }).click();
+  await page.getByRole("tab", { name: /Models/ }).click();
   await expect(page.getByRole("button", { name: "Test tutor" })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Approve device" }),

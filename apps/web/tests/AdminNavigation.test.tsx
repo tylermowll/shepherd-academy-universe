@@ -318,7 +318,7 @@ describe("administrator navigation", () => {
       target: { value: "adult_only" },
     });
     fireEvent.click(screen.getByLabelText("Allow cloud AI for this app"));
-    fireEvent.click(screen.getByRole("tab", { name: /Connections/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /Models/ }));
     fireEvent.click(screen.getByRole("tab", { name: /Data & privacy/ }));
     expect(screen.getByLabelText("Who uses this app?")).toHaveValue(
       "adult_only",
@@ -335,7 +335,7 @@ describe("administrator navigation", () => {
       "adult_only",
     );
     expect(screen.getByLabelText("Allow cloud AI for this app")).toBeChecked();
-    fireEvent.click(screen.getByRole("tab", { name: /Connections/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /Models/ }));
     expect(screen.getByLabelText("Connection name")).toHaveValue(
       "synthetic-navigation",
     );

@@ -227,9 +227,11 @@ class MockProvider:
             )
             if "This is READING COMPREHENSION." in request.system_instruction:
                 payload = ActivityPayload(
-                    problem_text="Synthetic reading question: choose a detail from the passage and explain what it suggests. Use your own words.",
+                    problem_text="Sample reading activity: choose one detail from the passage. Explain what you think it shows about a character or event, and why. Use your own words.",
                     concept_focus="Synthetic example: textual evidence",
-                    success_criteria=["Choose one detail and explain what it suggests."],
+                    success_criteria=[
+                        "Choose one detail and explain what it shows about a character or event."
+                    ],
                     passage=OriginalPassage(
                         title="Synthetic passage: The Garden Window",
                         text="Mira moved the seedling from a shaded corner toward the window each morning. After a week she asked her brother to build a sunny shelf. Together they measured the plant every day and wrote their observations in a notebook.",
@@ -260,20 +262,19 @@ class MockProvider:
             )
         elif request.purpose == "review":
             payload = FeedbackPayload(
-                teaching_action="coach",
+                teaching_action="acknowledge",
                 learning_observation=LearningObservation(
                     assessment="not_assessed",
                     evidence="Synthetic mock responses do not assess learner understanding.",
                     resolved_points=[],
                     open_points=[],
                 ),
-                strengths=["Synthetic feedback: you submitted work for discussion."],
+                strengths=[],
                 guidance=[
-                    "Connect one specific observation to the claim it supports. Explain why that observation matters instead of giving only a conclusion."
+                    "This is a sample reply. Demo mode cannot review your answer. Ask the adult who manages this app to connect an AI model for tutoring."
                 ],
-                next_step="Revise one sentence to connect your evidence and explanation.",
-                concepts=["Evidence and explanation"],
-                uncertainty_note="Synthetic mock response, not an assessment of your work.",
+                next_step="",
+                concepts=[],
             )
         return ModelResult(validated_payload=payload, model_id=request.model_id)
 

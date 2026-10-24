@@ -1831,28 +1831,30 @@
         "title": "Routes",
         "type": "object"
       },
-      "SelectRoutes": {
+      "SelectRole": {
         "additionalProperties": false,
         "properties": {
           "acknowledge_data_boundary": {
             "title": "Acknowledge Data Boundary",
             "type": "boolean"
           },
-          "tutor": {
-            "default": "demo",
-            "title": "Tutor",
+          "expected_provider_id": {
+            "minLength": 1,
+            "title": "Expected Provider Id",
             "type": "string"
           },
-          "vision": {
-            "default": "demo",
-            "title": "Vision",
+          "provider_id": {
+            "minLength": 1,
+            "title": "Provider Id",
             "type": "string"
           }
         },
         "required": [
+          "provider_id",
+          "expected_provider_id",
           "acknowledge_data_boundary"
         ],
-        "title": "SelectRoutes",
+        "title": "SelectRole",
         "type": "object"
       },
       "SessionPublic": {
@@ -3252,14 +3254,29 @@
         ]
       }
     },
-    "/api/v1/admin/providers/routes": {
+    "/api/v1/admin/providers/routes/{stage}": {
       "post": {
-        "operationId": "select_routes_api_v1_admin_providers_routes_post",
+        "operationId": "select_role_api_v1_admin_providers_routes__stage__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "stage",
+            "required": true,
+            "schema": {
+              "enum": [
+                "tutor",
+                "vision"
+              ],
+              "title": "Stage",
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SelectRoutes"
+                "$ref": "#/components/schemas/SelectRole"
               }
             }
           },
@@ -3270,7 +3287,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Acknowledged"
+                  "$ref": "#/components/schemas/Routes"
                 }
               }
             },
@@ -3287,7 +3304,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Select Routes",
+        "summary": "Select Role",
         "tags": [
           "provider administration"
         ]

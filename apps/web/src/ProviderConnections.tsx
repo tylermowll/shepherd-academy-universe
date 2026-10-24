@@ -10,6 +10,9 @@ type Draft = Required<Omit<Schema<"ProviderConnectionCreate">, "api_key">> & {
 type Props = {
   configuration: Schema<"ProvidersPublic">;
   onChanged: () => Promise<void>;
+  onRoutesChanged: (routes: Schema<"Routes">) => void;
+  statusStale?: boolean;
+  onBusyChange?: (busy: boolean) => void;
   onNavigate: Navigate;
   section: ProviderSettingsSection;
   onSectionChange: (
@@ -19,8 +22,7 @@ type Props = {
   act: (action: () => Promise<void>) => Promise<void>;
 };
 
-export type ProviderSettingsSection =
-  "connections" | "policy" | "tests" | "roles";
+export type ProviderSettingsSection = "models" | "policy";
 
 const addresses: Record<ConnectionInput["adapter"], string> = {
   ollama: "http://127.0.0.1:11434",
@@ -227,6 +229,9 @@ function RecentTests({ tests }: { tests: Schema<"ProbeResultPublic">[] }) {
 export function ProviderConnections({
   configuration,
   onChanged,
+  onRoutesChanged,
+  statusStale = false,
+  onBusyChange,
   onNavigate,
   section,
   onSectionChange,
@@ -236,15 +241,32 @@ export function ProviderConnections({
   const [editing, setEditing] = useState<Schema<"ProviderPublic"> | null>(null);
   const [terms, setTerms] = useState(false);
   const [working, setWorking] = useState(false);
+  useEffect(() => {
+    onBusyChange?.(working);
+    return () => onBusyChange?.(false);
+  }, [working, onBusyChange]);
   const [connectionRefresh, setConnectionRefresh] = useState<{
     message: string;
-    next: "connections" | "tests";
+    next: "models" | "refresh";
   } | null>(null);
   const [probe, setProbe] = useState<{
     id: string;
     stage: "tutor" | "vision";
   } | null>(null);
-  const busy = working || connectionRefresh !== null;
+  const busy = working || connectionRefresh !== null || statusStale;
+  const mutationPending = useRef(false);
+  const [authorization, setAuthorization] = useState<{
+    id: string;
+    configuration: Props["configuration"];
+  } | null>(null);
+  const authorized =
+    authorization?.configuration === configuration ? authorization.id : null;
+  const setAuthorized = (id: string | null) =>
+    setAuthorization(id ? { id, configuration } : null);
+  const [activating, setActivating] = useState<{
+    id: string;
+    stage: "tutor" | "vision";
+  } | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [saveFailure, setSaveFailure] = useState("");
@@ -373,14 +395,84 @@ export function ProviderConnections({
         if (changed)
           setConnectionRefresh({
             message: `${receipt} The saved connections could not refresh. Refresh connections to continue.`,
-            next: "connections",
+            next: "refresh",
           });
         else {
-          setErrorSection("connections");
+          setErrorSection("models");
           setError(connectionActionError(cause, provider, remove));
         }
       } finally {
         setWorking(false);
+      }
+    });
+  };
+
+  const activate = (
+    provider: Schema<"ProviderPublic">,
+    stage: "tutor" | "vision",
+  ) => {
+    if (busy || mutationPending.current || authorized !== provider.id) return;
+    mutationPending.current = true;
+    setWorking(true);
+    setActivating({ id: provider.id, stage });
+    setAuthorized(null);
+    setError("");
+    setMessage("");
+    const role = stage === "tutor" ? "tutor" : "photo reader";
+    void act(async () => {
+      let confirmed = false;
+      try {
+        const routes = await api<Schema<"Routes">>(
+          `/admin/providers/routes/${stage}`,
+          "POST",
+          {
+            provider_id: provider.id,
+            expected_provider_id: configuration.routes[stage],
+            acknowledge_data_boundary: true,
+          } satisfies Schema<"SelectRole">,
+        );
+        if (
+          typeof routes?.tutor !== "string" ||
+          typeof routes?.vision !== "string" ||
+          routes[stage] !== provider.id
+        ) {
+          setConnectionRefresh({
+            message: `The server did not confirm ${provider.id} as the ${role}. Refresh connections to check the saved choices before trying again.`,
+            next: "refresh",
+          });
+          return;
+        }
+        confirmed = true;
+        onRoutesChanged(routes);
+        setMessage(`${provider.id} / ${provider.model} is now the ${role}.`);
+        await onChanged();
+      } catch (cause) {
+        if (confirmed) {
+          setConnectionRefresh({
+            message: `${provider.id} was confirmed as the ${role}, but the connection details could not refresh. Refresh connections before making another change.`,
+            next: "refresh",
+          });
+        } else {
+          setErrorSection("models");
+          setError(
+            cause instanceof ApiError && cause.status === 409
+              ? `The current ${role} changed elsewhere. The latest saved choices are shown after refresh; review them and authorize your choice again.`
+              : `The app did not confirm this ${role} change. Refresh status and check the saved choice before trying again.`,
+          );
+          try {
+            await onChanged();
+          } catch {
+            setConnectionRefresh({
+              message:
+                "Current model choices could not refresh. Refresh connections before making another change.",
+              next: "refresh",
+            });
+          }
+        }
+      } finally {
+        mutationPending.current = false;
+        setWorking(false);
+        setActivating(null);
       }
     });
   };
@@ -400,11 +492,12 @@ export function ProviderConnections({
                   await onChanged();
                   setConnectionRefresh(null);
                   setMessage(
-                    connectionRefresh.next === "tests"
+                    connectionRefresh.next === "models"
                       ? "The saved connection list is current. Test the connection next."
                       : "Saved connections refreshed.",
                   );
-                  if (connectionRefresh.next === "tests") openSection("tests");
+                  if (connectionRefresh.next === "models")
+                    openSection("models");
                 } catch {
                   // The confirmed change remains saved; retry only this read.
                 } finally {
@@ -417,16 +510,16 @@ export function ProviderConnections({
           </button>
         </div>
       )}
-      {section === "connections" && (
+      {section === "models" && (
         <>
           <div className="section-heading">
             <div>
-              <h2 id="settings-connections-heading" tabIndex={-1}>
-                Connections
+              <h2 id="settings-models-heading" tabIndex={-1}>
+                Models
               </h2>
               <p>
-                Save the address, model name, and API key for each AI service.
-                This step does not call a model or choose what learners use.
+                Add a connection, test the roles you need, then activate it
+                below. Saving and testing leave the current models unchanged.
               </p>
             </div>
             <button
@@ -502,13 +595,13 @@ export function ProviderConnections({
                         ? `${id} saved. No model request was sent. ${cloudNeedsPolicy ? "Cloud AI is off" : "Its allowed users do not match the app audience"}, so review Data & privacy next.`
                         : `${id} saved. No model request was sent. Test the connection next.`,
                     );
-                    openSection(needsPolicy ? "policy" : "tests");
+                    openSection(needsPolicy ? "policy" : "models");
                   } catch (cause) {
                     if (saved)
                       setConnectionRefresh({
                         message:
                           "The connection was saved, but the list could not refresh. Refresh connections to continue.",
-                        next: "tests",
+                        next: "models",
                       });
                     else setSaveFailure(saveError(cause, draft));
                   } finally {
@@ -941,8 +1034,8 @@ export function ProviderConnections({
                         mean High. More thinking can take longer and use more
                         output tokens. This does not change practice difficulty.
                         After changing it, save, rerun the tutor and
-                        photo-reader tests, then save your choices in Active
-                        models.
+                        photo-reader tests, then use the activation controls on
+                        this connection.
                       </p>
                     </>
                   )}
@@ -1015,24 +1108,38 @@ export function ProviderConnections({
                   (configuration.routes.tutor === editing.id ||
                     configuration.routes.vision === editing.id) && (
                     <p className="fine">
-                      Choose a replacement in Active models before deleting this
+                      Activate a replacement below before deleting this
                       connection.
                     </p>
                   )}
               </div>
             </form>
           )}
+          {probe && (
+            <p role="status" className="notice">
+              Testing {probe.id}:{" "}
+              {probe.stage === "tutor" ? "tutor" : "photo reader"}… Previous
+              test results stay visible while this test runs.
+            </p>
+          )}
           <section aria-labelledby="saved-connections-heading">
             <div className="section-heading subsection-heading">
               <div>
                 <h3 id="saved-connections-heading">Saved connections</h3>
                 <p>
-                  These entries store how to reach each model. Testing and
-                  choosing which ones learners use are separate controls.
+                  Each connection has its own tests and activation controls. A
+                  passed test means it is ready; the active labels show what
+                  learners use.
                 </p>
               </div>
             </div>
-            {error && errorSection === "connections" && (
+            <p className="fine">
+              A tutor test sends up to two sample text requests; a photo-reader
+              test sends one sample image. Cloud providers may charge even if
+              validation fails. Tests run only when you press a test button and
+              confirm.
+            </p>
+            {error && errorSection === "models" && (
               <p role="alert" className="error">
                 {error}
               </p>
@@ -1076,47 +1183,234 @@ export function ProviderConnections({
                           ? "Cloud"
                           : "Synthetic demo"}
                     </p>
-                    {provider.key_needs_replacement ? (
+                    {(configuration.routes.tutor === provider.id ||
+                      configuration.routes.vision === provider.id) && (
+                      <p className="provider-active-roles">
+                        {configuration.routes.tutor === provider.id && (
+                          <strong>
+                            {provider.requires_approval
+                              ? "Selected tutor — activation needed"
+                              : "Active tutor"}
+                          </strong>
+                        )}
+                        {configuration.routes.vision === provider.id && (
+                          <strong>
+                            {provider.requires_approval
+                              ? "Selected photo reader — activation needed"
+                              : "Active photo reader"}
+                          </strong>
+                        )}
+                      </p>
+                    )}
+                    {provider.adapter === "mock" && (
+                      <p className="fine">
+                        Sample responses only. This connection cannot teach or
+                        interpret learner work.
+                      </p>
+                    )}
+                    {provider.key_needs_replacement && (
                       <p className="notice">
                         Replace the saved API key before testing this
                         connection.
                       </p>
-                    ) : !provider.enabled ? (
+                    )}
+                    {!provider.enabled && (
                       <p className="notice">
-                        Enable this connection before testing or assigning it.
+                        Enable this connection before testing or activating it.
                       </p>
-                    ) : blocked ? (
-                      <p className="notice">
-                        Saved, but blocked by Data & privacy.{" "}
+                    )}
+                    {blocked && (
+                      <div className="notice">
+                        <p>Saved, but blocked by Data & privacy.</p>
+                        <ul>
+                          {provider.boundary === "cloud" &&
+                            !policy.allow_cloud_inference && (
+                              <li>Cloud AI is off.</li>
+                            )}
+                          {provider.audience === "adult_only" &&
+                            policy.app_audience !== "adult_only" && (
+                              <li>
+                                Allowed users does not match who uses this app.
+                              </li>
+                            )}
+                        </ul>
                         <button onClick={() => openSection("policy")}>
                           Open Data & privacy
                         </button>
-                      </p>
-                    ) : readyRoles.length === 0 ? (
-                      <p className="notice">
-                        Saved, but not ready to assign until its required tests
-                        pass.{" "}
-                        <button onClick={() => openSection("tests")}>
-                          Test this connection
-                        </button>
-                      </p>
-                    ) : (
-                      <p className="notice">
-                        Ready for {readyRoles.join(" and ")}.{" "}
-                        <button onClick={() => openSection("roles")}>
-                          Active models
-                        </button>
-                        {needsTest && (
-                          <>
-                            {" "}
-                            The other test is still needed.{" "}
-                            <button onClick={() => openSection("tests")}>
-                              Test this connection
-                            </button>
-                          </>
-                        )}
+                      </div>
+                    )}
+                    {!provider.key_needs_replacement &&
+                      provider.enabled &&
+                      !blocked && (
+                        <p className="fine">
+                          {readyRoles.length
+                            ? `Ready for ${readyRoles.join(" and ")}.`
+                            : "Run a matching test before activating this connection."}
+                          {needsTest && readyRoles.length > 0
+                            ? " The other test is still needed."
+                            : ""}
+                        </p>
+                      )}
+                    {provider.vision_probed && !provider.tutor_probed && (
+                      <p className="fine">
+                        Photo reading passed, so this connection can accept the
+                        image request. Tutoring is a separate test: it must
+                        create an activity and return feedback in two structured
+                        text responses.
                       </p>
                     )}
+                    <dl className="readiness-list">
+                      <div>
+                        <dt>Tutor test</dt>
+                        <dd>
+                          {provider.tutor_probed ? "Passed" : "Not passed yet"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Photo-reader test</dt>
+                        <dd>
+                          {!provider.image_input
+                            ? "Not supported"
+                            : provider.vision_probed
+                              ? "Passed"
+                              : "Not passed yet"}
+                        </dd>
+                      </div>
+                    </dl>
+                    <RecentTests tests={provider.recent_tests ?? []} />
+                    <div className="actions">
+                      {(["tutor", "vision"] as const).map((stage) => (
+                        <button
+                          key={stage}
+                          disabled={
+                            busy ||
+                            (policy.demo_mode && provider.adapter !== "mock") ||
+                            !provider.enabled ||
+                            blocked ||
+                            provider.key_needs_replacement ||
+                            (stage === "vision" && !provider.image_input)
+                          }
+                          onClick={() => {
+                            if (
+                              provider.adapter !== "mock" &&
+                              !window.confirm(
+                                `Send ${stage === "tutor" ? "up to two sample text requests" : "one sample photo request"} to ${provider.id}? This provider may charge for these calls. No learner work is included.`,
+                              )
+                            )
+                              return;
+                            void act(async () => {
+                              setWorking(true);
+                              setProbe({ id: provider.id, stage });
+                              setError("");
+                              setMessage("");
+                              let tested = false;
+                              try {
+                                await api(
+                                  `/admin/providers/${provider.id}/probe`,
+                                  "POST",
+                                  {
+                                    stage,
+                                    authorize_synthetic_call: true,
+                                  } satisfies Schema<"ProbeInput">,
+                                );
+                                tested = true;
+                                await onChanged();
+                                setMessage(
+                                  `${provider.id}: ${stage === "tutor" ? "tutor" : "photo reader"} test passed.`,
+                                );
+                              } catch (cause) {
+                                setErrorSection("models");
+                                setError(
+                                  tested
+                                    ? "The test completed, but its results could not be refreshed. Refresh status before activating this connection."
+                                    : `${provider.id} test failed. ${probeError(cause)}`,
+                                );
+                                if (!tested) {
+                                  try {
+                                    await onChanged();
+                                  } catch {
+                                    setError(
+                                      (current) =>
+                                        `${current} Saved test history could not refresh; use Refresh status.`,
+                                    );
+                                  }
+                                }
+                              } finally {
+                                setProbe(null);
+                                setWorking(false);
+                              }
+                            });
+                          }}
+                        >
+                          Test {stage === "tutor" ? "tutor" : "photo reader"}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="provider-activation">
+                      <p className="fine">
+                        The tutor receives text and references, including text
+                        read from photos. The photo reader receives photos.
+                        Processing:{" "}
+                        {provider.boundary === "cloud"
+                          ? "cloud provider"
+                          : provider.boundary === "local_network"
+                            ? "your local network"
+                            : "synthetic demo"}
+                        .
+                      </p>
+                      <label className="check">
+                        <input
+                          type="checkbox"
+                          checked={authorized === provider.id}
+                          disabled={busy}
+                          onChange={(event) =>
+                            setAuthorized(
+                              event.target.checked ? provider.id : null,
+                            )
+                          }
+                        />
+                        <span>
+                          I authorize {provider.id} to process future learner
+                          work.
+                        </span>
+                      </label>
+                      <div className="actions">
+                        {(["tutor", "vision"] as const).map((stage) => (
+                          <button
+                            key={stage}
+                            type="button"
+                            disabled={
+                              busy ||
+                              authorized !== provider.id ||
+                              !provider.enabled ||
+                              blocked ||
+                              provider.key_needs_replacement ||
+                              (policy.demo_mode &&
+                                provider.adapter !== "mock") ||
+                              (stage === "tutor"
+                                ? !provider.tutor_probed
+                                : !provider.image_input ||
+                                  !provider.vision_probed) ||
+                              (configuration.routes[stage] === provider.id &&
+                                !provider.requires_approval)
+                            }
+                            onClick={() => activate(provider, stage)}
+                          >
+                            Use as{" "}
+                            {stage === "tutor" ? "tutor" : "photo reader"}
+                          </button>
+                        ))}
+                      </div>
+                      {activating?.id === provider.id && (
+                        <p role="status">
+                          Saving{" "}
+                          {activating.stage === "tutor"
+                            ? "tutor"
+                            : "photo reader"}
+                          …
+                        </p>
+                      )}
+                    </div>
                     <details>
                       <summary>Technical details and actions</summary>
                       <p>
@@ -1201,201 +1495,6 @@ export function ProviderConnections({
           </button>
         </aside>
       )}
-      {section === "tests" && (
-        <section aria-labelledby="settings-tests-heading">
-          {probe && (
-            <p role="status" className="notice">
-              Testing {probe.id}:{" "}
-              {probe.stage === "tutor" ? "tutor" : "photo reader"}… Previous
-              test results stay visible while this test runs.
-            </p>
-          )}
-          {error && errorSection === "tests" && (
-            <p role="alert" className="error">
-              {error}
-            </p>
-          )}
-          <div className="section-heading">
-            <div>
-              <h2 id="settings-tests-heading" tabIndex={-1}>
-                Connection tests
-              </h2>
-              <p>
-                Confirm that each saved connection can produce the formats the
-                tutor needs. A test never includes learner work.
-              </p>
-            </div>
-            <button disabled={busy} onClick={() => void act(onChanged)}>
-              Refresh status
-            </button>
-          </div>
-          <p className="fine">
-            A tutor test sends up to two sample text requests; a photo-reader
-            test sends one sample image. Cloud providers may charge for these
-            calls even if a response fails validation. Tests run only when you
-            press a test button and confirm.
-          </p>
-          <div className="provider-list">
-            {providers.map((provider) => {
-              const blocked = policyBlocks(provider);
-              return (
-                <article className="card" key={provider.id}>
-                  <h3>
-                    {provider.id}
-                    {!provider.enabled && " (disabled)"}
-                  </h3>
-                  <p>{provider.model}</p>
-                  {provider.vision_probed && !provider.tutor_probed && (
-                    <p className="fine">
-                      Photo reading passed, so this connection can accept the
-                      image request. Tutoring is a separate test: it must create
-                      an activity and return feedback in two structured text
-                      responses.
-                    </p>
-                  )}
-                  <dl className="readiness-list">
-                    <div>
-                      <dt>Tutor test</dt>
-                      <dd>
-                        {provider.tutor_probed ? "Passed" : "Not passed yet"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Photo-reader test</dt>
-                      <dd>
-                        {!provider.image_input
-                          ? "Not supported"
-                          : provider.vision_probed
-                            ? "Passed"
-                            : "Not passed yet"}
-                      </dd>
-                    </div>
-                  </dl>
-                  <RecentTests tests={provider.recent_tests ?? []} />
-                  {provider.key_needs_replacement && (
-                    <p className="notice">
-                      The saved API key must be replaced before testing.{" "}
-                      <button onClick={() => openSection("connections")}>
-                        Open Connections
-                      </button>
-                    </p>
-                  )}
-                  {!provider.enabled && (
-                    <p className="notice">
-                      This connection is disabled.{" "}
-                      <button onClick={() => openSection("connections")}>
-                        Open Connections
-                      </button>
-                    </p>
-                  )}
-                  {blocked && (
-                    <p className="notice">
-                      Data & privacy currently block this connection, so its
-                      test buttons are unavailable.{" "}
-                      <button onClick={() => openSection("policy")}>
-                        Open Data & privacy
-                      </button>
-                    </p>
-                  )}
-                  {provider.requires_approval &&
-                    provider.enabled &&
-                    !blocked &&
-                    !provider.key_needs_replacement &&
-                    (provider.tutor_probed ||
-                      (provider.image_input && provider.vision_probed)) && (
-                      <p className="notice">
-                        Use this connection as the tutor or photo reader once
-                        its matching test has passed. Select it in{" "}
-                        <button onClick={() => openSection("roles")}>
-                          Active models
-                        </button>
-                      </p>
-                    )}
-                  <div className="actions">
-                    {(["tutor", "vision"] as const).map((stage) => (
-                      <button
-                        key={stage}
-                        disabled={
-                          busy ||
-                          (policy.demo_mode && provider.adapter !== "mock") ||
-                          !provider.enabled ||
-                          blocked ||
-                          provider.key_needs_replacement ||
-                          (stage === "vision" && !provider.image_input)
-                        }
-                        onClick={() => {
-                          if (
-                            provider.adapter !== "mock" &&
-                            !window.confirm(
-                              `Send ${stage === "tutor" ? "up to two sample text requests" : "one sample photo request"} to ${provider.id}? This provider may charge for these calls. No learner work is included.`,
-                            )
-                          )
-                            return;
-                          void act(async () => {
-                            setWorking(true);
-                            setProbe({ id: provider.id, stage });
-                            setError("");
-                            setMessage("");
-                            let tested = false;
-                            try {
-                              await api(
-                                `/admin/providers/${provider.id}/probe`,
-                                "POST",
-                                {
-                                  stage,
-                                  authorize_synthetic_call: true,
-                                } satisfies Schema<"ProbeInput">,
-                              );
-                              tested = true;
-                              await onChanged();
-                              setMessage(
-                                `${provider.id}: ${stage === "tutor" ? "tutor" : "photo reader"} test passed.`,
-                              );
-                            } catch (cause) {
-                              setErrorSection("tests");
-                              setError(
-                                tested
-                                  ? "The test completed, but its results could not be refreshed. Refresh status before choosing active models."
-                                  : `${provider.id} test failed. ${probeError(cause)}`,
-                              );
-                              if (!tested) {
-                                try {
-                                  await onChanged();
-                                } catch {
-                                  setError(
-                                    (current) =>
-                                      `${current} Saved test history could not refresh; use Refresh status.`,
-                                  );
-                                }
-                              }
-                            } finally {
-                              setProbe(null);
-                              setWorking(false);
-                            }
-                          });
-                        }}
-                      >
-                        Test {stage === "tutor" ? "tutor" : "photo reader"}
-                      </button>
-                    ))}
-                    {provider.managed && (
-                      <button
-                        disabled={busy || policy.demo_mode}
-                        onClick={() => {
-                          start(provider);
-                          openSection("connections");
-                        }}
-                      >
-                        Edit connection
-                      </button>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-      )}
       <section
         hidden={section !== "policy"}
         aria-labelledby="settings-policy-heading"
@@ -1420,7 +1519,7 @@ export function ProviderConnections({
             setMessage(
               "Data & privacy saved. Test the permitted connections next.",
             );
-            openSection("tests");
+            openSection("models");
           }}
           onRefresh={async () => {
             await onChanged();

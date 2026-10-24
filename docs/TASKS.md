@@ -8,6 +8,18 @@ A task is complete only after its requirements and exit checks pass.
 
 ## Current checkpoint
 
+T75 implements and privately deploys T74's model-setup and demo-feedback
+corrections at the maintainer's request. Work is in progress; no new deployment
+is claimed until the validation and operational evidence below is complete.
+
+T74 investigates confusing demo tutoring and the split model-setup flow. The
+investigation is complete; application fixes and any active-model change remain
+unimplemented. Maintainer-authorized read-only runtime checks found a tested
+non-mock connection while both selected roles were demo. A synthetic reproduction
+also establishes that a stale role editor can overwrite an activated tutor.
+The exact earlier selection-change sequence is unverified. T73 remains the
+deployed application source; T74 changes this evidence log only.
+
 T73 corrects the shared account-management page to Users, with explicit
 Administrator and Learners role groups and consistent Help/settings links. It
 preserves T72's compact controls and T71's sign-in corrections. Current source,
@@ -27,9 +39,204 @@ The private installation now uses T73 image
 built from committed source `b92ce9498a3324346e789911c87bec373d2fefba`.
 All 66 served public assets match the tested build. Backend source, dependency
 locks and schema remain unchanged at `0020_request_recovery`.
-Current provider selections and live teaching quality
-remain unverified. [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
+T74 records a point-in-time check of the selected provider roles; intended-model
+activation and live teaching quality remain unverified.
+[ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
+
+## T75 — Unify model setup, protect activation and deploy (2026-10-24)
+
+**Status:** In progress. The maintainer authorized implementing the investigated
+corrections and deploying them to the existing private installation. T74's
+investigation evidence is preserved below. No Git push or paid inference is
+included in this authorization.
+
+**Scope and contracts:** SPECIFICATION sections 3, 4, 7, 8, 10, 12 and 13;
+README's model setup and provider guide; RUNBOOK's encrypted-backup/private
+container update procedure. Replace the four-part setup navigation with Models
+and Data & privacy. The maintainer's correction supersedes section 3's four-tab
+visible contract, which will be updated with the implementation. Keep save,
+explicitly authorized synthetic tests, and activation separate backend actions
+within one model-focused flow. Show current role/model identities and distinguish
+tested readiness from active use. Change role activation to a typed per-role
+request with expected-current selection and authoritative saved-route response;
+reject stale changes and preserve the other role. Retire the bulk endpoint
+without a compatibility shim and regenerate API contracts. Replace misleading
+mock coaching/revision demands with an honest non-assessing sample reply and
+clarify the sample reading activity. No schema migration, dependency, new
+provider, private-data movement or infrastructure redesign is planned.
+
+**Implementation and test plan:** Update backend contract/routing and mock
+regressions, frontend model setup/component tests, and affected isolated
+desktop/mobile browser flows in parallel. Cover per-role authorization,
+capability/policy/probe failures, stale writes, preservation of the other role,
+server-confirmed activation, editing drafts and explicit test consent. Run
+targeted checks, `make check`, `make test-integration`, and affected browser
+regressions with a clean, allowlisted synthetic environment. Review the diff,
+commit the bounded change, build from clean committed source, compare packaged
+public assets with the tested build and run container smoke. Before replacing
+the private API/worker, stop both writers and complete encrypted WAL-aware
+backup plus isolated restore verification, preserving data/settings and rollback
+image. Activate the immutable candidate and verify private HTTPS, fresh worker,
+schema, public assets and protected-route/cache boundaries. Record actual results
+and remaining limitations before claiming completion.
+
+**Implemented:** Models now keeps connection editing, role tests and activation
+on each saved card; Data & privacy remains separate. Current-model summaries
+name the saved connections/models, while cards distinguish active selections,
+test readiness and edited selections needing reactivation. Activation uses
+`POST /admin/providers/routes/{stage}` with required selected/expected-current
+connection IDs and explicit data-boundary authorization. The server validates
+only that role, rejects stale choices and returns authoritative role selections;
+the client verifies the response before success and preserves drafts on conflict
+or refresh failure. The bulk endpoint is removed and contracts regenerated.
+Mock replies now explicitly state that no answer was assessed, omit revision
+demands and use clearer sample reading instructions. Help and setup guides use
+the current flow.
+
+The deployment will also restore the maintainer's previously stated intended
+tested tutor if the saved choice is still demo. The guarded operator helper
+requires that exact connection/model and a current successful tutor test,
+rechecks routing policy, preserves the photo-reader selection and makes no
+inference call. A different intervening tutor choice is preserved.
+
+**Targeted evidence:**
+
+| Check                                                                                                              | Actual outcome                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Backend tutoring/provider contract unit tests                                                                      | 130 passed.                                                                                                                                                                                                                    |
+| Provider, learner-account and workflow integration selection                                                       | 128 passed in 29.13 seconds; final role-specific policy/auth checks passed 11 cases in 2.57 seconds. Initial sandboxed ASGI runs stalled and were interrupted; isolated local subprocess runs passed.                          |
+| Frontend Models, connections, navigation and setup components                                                      | 109 passed; role-specific consent, server-confirmed activation, stale conflict, readback failure, draft preservation and reactivation are covered.                                                                             |
+| `python3 /tmp/shepherd-t75/run.py uv run --locked --no-env-file pytest /tmp/shepherd-t75/test_operations.py -q`    | 15 synthetic encrypted-backup/state-machine cases passed in 0.94 seconds.                                                                                                                                                      |
+| `python3 /tmp/shepherd-t75/run.py uv run --locked --no-env-file pytest /tmp/shepherd-t75/test_restore_tutor.py -q` | Three synthetic restoration/refusal checks passed in 0.74 seconds. The first fixture incorrectly fingerprinted a pre-save credential revision; fingerprinting the effective saved synthetic connection corrected that fixture. |
+| `python3 /tmp/shepherd-t75/run.py uv run --locked --no-env-file python /tmp/shepherd-t75/test_backup_container.py` | Restricted container preserved a committed uncheckpointed WAL row through encrypted backup and isolated restore; synthetic source storage stayed read-only.                                                                    |
+
+The first whole-project gate caught a consent-reset effect and two unsafe test
+URL conversions in frontend lint; those were corrected without suppressions.
+The second gate caught unsupported Testing Library `exact` options in new role
+queries; exact-name matching was retained with valid options. The corrected
+whole-project gate passed. Existing build-system upper-bound and JavaScript
+chunk-size warnings remain.
+
+| Final source check                                       | Actual outcome                                                                                                                                                              |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `python3 /tmp/shepherd-t75/run.py make check`            | Passed: 333 backend unit, 317 frontend and 11 toolchain tests; locks, lint, formatting, types, builds, generated contract drift, credential scan and infrastructure checks. |
+| `python3 /tmp/shepherd-t75/run.py make test-integration` | All 418 cases passed in 75.95 seconds on disposable on-disk SQLite; no live provider requests.                                                                              |
+| Guarded runtime tutor-restoration eligibility check      | The maintainer's intended connection still passes routing policy and has a current successful tutor test. Read-only check; no selection change or inference.                |
+
+**Browser verification:** `python3 /tmp/shepherd-t75/run.py pnpm exec playwright test tests/smoke/connections.spec.ts tests/smoke/review-fixes.spec.ts tests/smoke/navigation.spec.ts tests/smoke/admin-navigation.spec.ts tests/smoke/setup.spec.ts --output /tmp/shepherd-t75/browser`
+passed all 60 affected desktop/mobile cases in 6.5 minutes, one worker and zero
+retries. Covers configuration/test/activation, selected-provider generation and
+learner feedback after reload, stale conflicts, role preservation, pending/draft
+guards, 320px reflow and setup recovery.
+
+Packaging, backup/restore and deployment completion remain pending;
+source-check passes alone do not establish release completion or teaching quality.
+
+The repository-wide mutating file-hook attempt hit the sandbox's read-only
+`.agents` mount. Automatic approval review rejected escalation because it could
+rewrite unrelated skill files. The safe replacement ran the same hooks on all
+changed files (only the already-passed duplicate project gate was skipped),
+which passed, plus read-only final-newline checks on all seven tracked skill
+files. No protected skill file was rewritten and no broader permission is needed
+for the deployment.
+
+## T74 — Diagnose demo replies and model-setup confusion (2026-10-24)
+
+**Status:** Investigation complete; remediation remains open. The maintainer
+reported vague reading instructions and repetitive revision advice, confirmed
+having saved an active tutor, questioned the split setup flow, and explicitly
+authorized inspecting the running test installation. No application code,
+provider settings or retained learner content was changed.
+
+**Scope and contracts:** SPECIFICATION sections 3, 4, 7, 8 and 13; README's
+Configure AI and Practice sections; provider selection, synthetic disclosure,
+conversation provenance, and learner-controlled progression. Review the selected
+reading/demo exchange and administrator save/test/activation transitions only.
+Use existing contract and provider-lifecycle tests plus a disposable stale-editor
+reproduction. Existing live-teaching and device/accessibility acceptance work
+remains separate.
+
+**Confirmed findings:**
+
+- API and worker both read saved tutor and photo-reader roles as `demo`. A
+  non-mock saved connection has passed both role tests. The recent reading
+  activity and matching reply were produced by `demo / fixture-v1`; no failed
+  real-model call or fallback is involved in that exchange. Read-only queries
+  selected routing names, test statuses and call provenance, excluding keys,
+  passwords and learner text. Private connection identifiers/model values and
+  raw operational output are not copied into this log.
+- `MockProvider` ignores the learner message when reviewing and always emits
+  the same claim/evidence advice and revision instruction, internally marked
+  `not_assessed`. Three different synthetic message intents produced one
+  identical feedback payload. Its reading question is also fixed and vague.
+  The UI renders revision advice before the sample disclaimer. This establishes
+  a misleading demo interaction, not an assessment of learner work.
+- Saving/tests/activation are separate backend operations and four Settings
+  sections. Saved cards show readiness from tests without explicit active-role
+  labels; the generic activation receipt names neither saved model. Normal
+  Practice navigation and polling reload provider availability, so a missing
+  refresh is not established. Failed Features reads can retain old status.
+- A synthetic stale-editor sequence first activates a non-mock tutor, then
+  posts an older tutor choice while updating the photo reader. Both requests
+  succeed; the tutor returns to demo. The API replaces both roles without an
+  expected-current check, and the frontend sends both dropdown values. This is
+  a reproduced overwrite defect, not proof of the maintainer's earlier sequence.
+  The frontend also does not compare its post-save readback with submitted roles.
+- Route selections have no change timestamp/history. A proposed timestamp-only
+  access-log extraction was rejected by automatic approval review under the
+  repository's private-log prohibition; it was not executed or bypassed. The
+  precise earlier switching sequence remains unverified.
+
+**Focused coverage:**
+
+| Workflow / role / goal                                     | States and evidence                                                                                                                                         | Coverage                                                                      |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Learner / Practice / understand the reading task and reply | Supplied desktop screenshot, generated question, submitted feedback, current banner and saved provenance; source and read-only runtime metadata             | Source-only interaction review; no fresh browser or accessibility exercise    |
+| Administrator / Settings / save, test and activate a model | Saved/tested/active, disabled/unavailable, successful activation and stale-editor overwrite; source, running role metadata and disposable SQLite/API tests  | Exercised in isolated synthetic API tests; rendered setup flow not exercised  |
+| Learner / Practice / use the selected provider             | Default mock dispatch, three distinct message intents, separately visible processing boundaries; direct synthetic reproduction and existing targeted checks | Exercised without live inference; teaching quality outside this investigation |
+
+**Actual validation:** All test processes used an allowlisted environment via
+`env -i`, no environment-file loading, `AWS_EC2_METADATA_DISABLED=true`, a
+temporary import-only database path and test-created on-disk SQLite fixtures.
+The pytest selection enabled only the AnyIO plugin explicitly.
+
+| Command / check                                                                                                                                                              | Actual outcome                                                                                                                                                                                                                  |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `git status --short` before investigation                                                                                                                                    | Clean; no unrelated edits.                                                                                                                                                                                                      |
+| `env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp LANG=C.UTF-8 AWS_EC2_METADATA_DISABLED=true APP_MODE=private .venv/bin/python /tmp/shepherd-demo-diagnosis/reproduce.py` | Default tutor is mock; three distinct synthetic inputs produce one identical feedback payload and revision demand. No server or model request.                                                                                  |
+| `docker exec -i shepherd-academy-universe-api-1 python - < /tmp/shepherd-demo-diagnosis/runtime_metadata.py` and worker summary                                              | Read-only diagnostic confirmed the same saved demo roles in both processes, fresh test evidence for the saved non-mock connection, and demo provenance for the reported exchange. No settings or content changed.               |
+| Targeted pytest command below                                                                                                                                                | 131 passed in 1.49 seconds, including the stale-editor reproduction. The initial sandboxed selection stalled at ASGI integration tests and was interrupted; the same isolated tests completed with local subprocess permission. |
+
+```sh
+env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp LANG=C.UTF-8 \
+  AWS_EC2_METADATA_DISABLED=true APP_MODE=private \
+  PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+  PYTHONPATH=/home/mowll/src/shepherd-academy-universe/apps/api/tests/integration \
+  DATABASE_URL=sqlite+pysqlite:////tmp/shepherd-demo-diagnosis/import-only.sqlite3 \
+  timeout 90s .venv/bin/python -m pytest -p anyio.pytest_plugin \
+  apps/api/tests/unit/test_tutoring_contracts.py \
+  apps/api/tests/unit/test_provider_contracts.py \
+  apps/api/tests/integration/test_provider_connections.py::test_private_connection_lifecycle_encrypts_reopens_and_never_returns_key \
+  apps/api/tests/integration/test_provider_connections.py::test_current_schema_probes_require_explicit_consent_and_do_not_activate_routes \
+  apps/api/tests/integration/test_tutoring.py::test_photo_and_text_processing_boundaries_are_separately_visible \
+  /tmp/shepherd-demo-diagnosis/test_stale_role_save.py -q
+```
+
+**Next bounded action:** Combine ordinary connection setup, role-specific
+testing and explicit activation into one guided model flow while preserving
+separate backend operations, data-boundary authorization and opt-in paid tests.
+Show current tutor/photo-reader names and distinguish tested readiness from
+actual activation. Prevent stale role saves from overwriting other changes and
+confirm saved selections on readback. Replace fake demo coaching with an honest
+sample receipt and no required revision; clarify the sample activity. That work
+requires application changes and regression coverage and is not claimed here.
+
+**Limits:** Only `docs/TASKS.md` is changed. No application correction, setting
+activation, live/paid inference, model download, migration, publication or
+deployment was performed. No fresh browser, full project gate or whole integration
+suite was needed for this investigation-only log. Real-model teaching quality
+remains open in ACCEPTANCE.
 
 ## T73 — Name the shared account-management page Users (2026-10-24)
 
@@ -72,11 +279,11 @@ No authorization, account data, backend or route behavior changed.
 `python3 /tmp/shepherd-t73/run.py` to allowlist tool environment variables, clear
 inherited provider/operator settings and disable env-file loading.
 
-| Command | Actual outcome |
-| --- | --- |
-| `pnpm --filter @math-tutor/web exec vitest run tests/App.test.tsx tests/AdminNavigation.test.tsx tests/LearnerAccounts.test.tsx tests/AdultPanel.test.tsx` | 85 passed in 5.40 seconds; existing password/CSRF and ownership tests now also establish Users title, both role groups, correct recovery instructions and learner access boundaries. |
-| `make check` | Final gate passed: 315 frontend, 329 backend unit and 11 toolchain tests; locks, lint/format, types, build, API drift, credential scan and infrastructure checks passed. The first run caught two unsupported `exact` options in new Testing Library assertions; anchored role-name expressions preserve exact matching with valid types. |
-| `uv run --locked --no-env-file pytest /tmp/shepherd-t73/test_operations.py -q` | 15 synthetic backup/preflight/activation/rollback cases passed in 0.98 seconds. |
+| Command                                                                                                                                                    | Actual outcome                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm --filter @math-tutor/web exec vitest run tests/App.test.tsx tests/AdminNavigation.test.tsx tests/LearnerAccounts.test.tsx tests/AdultPanel.test.tsx` | 85 passed in 5.40 seconds; existing password/CSRF and ownership tests now also establish Users title, both role groups, correct recovery instructions and learner access boundaries.                                                                                                                                                      |
+| `make check`                                                                                                                                               | Final gate passed: 315 frontend, 329 backend unit and 11 toolchain tests; locks, lint/format, types, build, API drift, credential scan and infrastructure checks passed. The first run caught two unsupported `exact` options in new Testing Library assertions; anchored role-name expressions preserve exact matching with valid types. |
+| `uv run --locked --no-env-file pytest /tmp/shepherd-t73/test_operations.py -q`                                                                             | 15 synthetic backup/preflight/activation/rollback cases passed in 0.98 seconds.                                                                                                                                                                                                                                                           |
 
 The affected desktop/mobile browser selection is running at this source
 checkpoint; no browser, publication or deployment completion is claimed yet.
@@ -87,17 +294,17 @@ download was run.
 
 **Final verification:**
 
-| Command | Actual outcome |
-| --- | --- |
+| Command                                                                                                                                                                                                  | Actual outcome                                                                                                                                                                                                                                                                                                                                      |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm exec playwright test tests/smoke/accounts.spec.ts tests/smoke/admin-navigation.spec.ts tests/smoke/navigation.spec.ts tests/smoke/workspace-navigation.spec.ts --output /tmp/shepherd-t73/browser` | All 26 desktop/mobile cases passed in 5.1 minutes, one worker and zero retries. Confirms Users title/navigation, both role groups, distinct administrator/learner selection, administrator identity retained while managing a learner, password/CSRF/revocation, role-specific recovery, Help/Back/reload, drafts and authorized account switching. |
-| `make hooks-files-check`, `make secret-check`, commit hooks and `git diff --check` | Passed; only the already-passed duplicate project gate was skipped in commit hooks. |
-| `docker build --pull=false --label org.opencontainers.image.revision=<source> -f /tmp/shepherd-t73/source/infra/docker/Dockerfile -t math-practice-tutor:t73-users /tmp/shepherd-t73/source` | Passed from a clean Git archive of source `b92ce9498a3324346e789911c87bec373d2fefba`, with no private configuration/data in its context. |
-| `python3 /tmp/shepherd-t73/verify_package.py` | Exact source label, non-root UID/GID 10001 and all 66 packaged public assets match the tested frontend build. |
-| `sh scripts/container-smoke.sh math-practice-tutor:t73-users` | Passed runtime/HEIF/cryptography, installer-free/non-root execution, SQLite 3.53.1/WAL/FK/FULL synchronization, migrations, worker/UI readiness, setup renewal/rejection and disabled-provider refusal. No inference. |
-| `uv run --locked --no-env-file python /tmp/shepherd-t73/test_backup_container.py` | A restricted container preserved a committed row held only in SQLite WAL through encrypted backup and isolated restore; synthetic source storage stayed read-only. |
-| `python3 /tmp/shepherd-t73/deploy.py preflight --candidate <immutable-image-id>` | Read-only preflight passed for the candidate, exact prior T72 image, original data mount and runtime restrictions. |
-| `python3 /tmp/shepherd-t73/deploy.py prepare --candidate <immutable-image-id> --execute` | Both writers stopped; encrypted WAL-aware backup and isolated restore verified before activation. |
-| `python3 /tmp/shepherd-t73/deploy.py activate --execute` | Private HTTPS, fresh worker/schema, 66 exact served public assets/update headers, protected-route 401/no-store and disabled-documentation 404 checks passed. Exactly one API/worker, zero restarts, read-only roots, restricted capabilities and loopback-only API publication. |
+| `make hooks-files-check`, `make secret-check`, commit hooks and `git diff --check`                                                                                                                       | Passed; only the already-passed duplicate project gate was skipped in commit hooks.                                                                                                                                                                                                                                                                 |
+| `docker build --pull=false --label org.opencontainers.image.revision=<source> -f /tmp/shepherd-t73/source/infra/docker/Dockerfile -t math-practice-tutor:t73-users /tmp/shepherd-t73/source`             | Passed from a clean Git archive of source `b92ce9498a3324346e789911c87bec373d2fefba`, with no private configuration/data in its context.                                                                                                                                                                                                            |
+| `python3 /tmp/shepherd-t73/verify_package.py`                                                                                                                                                            | Exact source label, non-root UID/GID 10001 and all 66 packaged public assets match the tested frontend build.                                                                                                                                                                                                                                       |
+| `sh scripts/container-smoke.sh math-practice-tutor:t73-users`                                                                                                                                            | Passed runtime/HEIF/cryptography, installer-free/non-root execution, SQLite 3.53.1/WAL/FK/FULL synchronization, migrations, worker/UI readiness, setup renewal/rejection and disabled-provider refusal. No inference.                                                                                                                               |
+| `uv run --locked --no-env-file python /tmp/shepherd-t73/test_backup_container.py`                                                                                                                        | A restricted container preserved a committed row held only in SQLite WAL through encrypted backup and isolated restore; synthetic source storage stayed read-only.                                                                                                                                                                                  |
+| `python3 /tmp/shepherd-t73/deploy.py preflight --candidate <immutable-image-id>`                                                                                                                         | Read-only preflight passed for the candidate, exact prior T72 image, original data mount and runtime restrictions.                                                                                                                                                                                                                                  |
+| `python3 /tmp/shepherd-t73/deploy.py prepare --candidate <immutable-image-id> --execute`                                                                                                                 | Both writers stopped; encrypted WAL-aware backup and isolated restore verified before activation.                                                                                                                                                                                                                                                   |
+| `python3 /tmp/shepherd-t73/deploy.py activate --execute`                                                                                                                                                 | Private HTTPS, fresh worker/schema, 66 exact served public assets/update headers, protected-route 401/no-store and disabled-documentation 404 checks passed. Exactly one API/worker, zero restarts, read-only roots, restricted capabilities and loopback-only API publication.                                                                     |
 
 The release image is
 `sha256:4e543216d69440d9cc4e17d576dc788e23a2806ffd34c6137ef444afdeb43a30`.
@@ -180,14 +387,14 @@ allowlist tool environment variables, clear inherited operator/provider settings
 and disable env-file loading. At this checkpoint the full browser regression,
 publication and deployment were still pending; final evidence follows below.
 
-| Command | Actual outcome |
-| --- | --- |
-| `pnpm --filter @math-tutor/web exec vitest run tests/Tutor.test.tsx tests/App.test.tsx tests/SignInAccounts.test.tsx tests/AdminNavigation.test.tsx` | 132 passed. Action separation and preserved draft/finish guards are checked alongside T71 sign-in/account transitions. |
-| `make check` | Passed: 329 backend unit, 11 toolchain and 315 frontend tests; locks, lint, formatting, types, build, API drift, credential scan and infrastructure checks passed. |
-| `make test-integration` | 409 passed in 74.52 seconds using disposable on-disk SQLite. The initial sandboxed ASGI run stalled and was stopped; the unchanged isolated command passed with local subprocess permission. |
+| Command                                                                                                                                                                                                                                                                                                                                | Actual outcome                                                                                                                                                                                                                                                                                                                                                                                           |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm --filter @math-tutor/web exec vitest run tests/Tutor.test.tsx tests/App.test.tsx tests/SignInAccounts.test.tsx tests/AdminNavigation.test.tsx`                                                                                                                                                                                   | 132 passed. Action separation and preserved draft/finish guards are checked alongside T71 sign-in/account transitions.                                                                                                                                                                                                                                                                                   |
+| `make check`                                                                                                                                                                                                                                                                                                                           | Passed: 329 backend unit, 11 toolchain and 315 frontend tests; locks, lint, formatting, types, build, API drift, credential scan and infrastructure checks passed.                                                                                                                                                                                                                                       |
+| `make test-integration`                                                                                                                                                                                                                                                                                                                | 409 passed in 74.52 seconds using disposable on-disk SQLite. The initial sandboxed ASGI run stalled and was stopped; the unchanged isolated command passed with local subprocess permission.                                                                                                                                                                                                             |
 | `pnpm exec playwright test tests/smoke/sign-in.spec.ts tests/smoke/admin-navigation.spec.ts tests/smoke/practice-start.spec.ts tests/smoke/navigation.spec.ts --grep 'sign-in uses one\|administrator account drafts survive\|activity and message controls\|learner navigation preserves' --output /tmp/shepherd-t72/focused-browser` | Eight desktop/mobile cases passed in 1.0 minute, zero retries. Checks 320px reflow/touch targets, bounded sign-in, natural Cancel widths, credential correction, activity/message separation, collapsed-brief controls and menu geometry/dismissal/focus at 320/375/412px. The last grep alternative matches no current case; draft guards are covered by Tutor components and the full suite selection. |
-| `uv run --locked --no-env-file pytest /tmp/shepherd-t72/test_operations.py -q` | 15 passed in 0.96 seconds: synthetic encrypted backup/restore, exact-image preflight, failed backup recovery, activation guard and rollback. |
-| `uv run --locked --no-env-file python /tmp/shepherd-t72/test_backup_container.py` | Restricted synthetic-container backup/restore preserved a committed row present only in the uncheckpointed WAL; original fixture storage remained read-only. |
+| `uv run --locked --no-env-file pytest /tmp/shepherd-t72/test_operations.py -q`                                                                                                                                                                                                                                                         | 15 passed in 0.96 seconds: synthetic encrypted backup/restore, exact-image preflight, failed backup recovery, activation guard and rollback.                                                                                                                                                                                                                                                             |
+| `uv run --locked --no-env-file python /tmp/shepherd-t72/test_backup_container.py`                                                                                                                                                                                                                                                      | Restricted synthetic-container backup/restore preserved a committed row present only in the uncheckpointed WAL; original fixture storage remained read-only.                                                                                                                                                                                                                                             |
 
 The existing build-system upper-bound and JavaScript chunk-size warnings remain.
 No live inference, model downloads or private learner content was used for these
@@ -261,18 +468,18 @@ source label and runtime UID/GID 10001 were verified. Final candidate:
 All 66 packaged assets match the source-tested build; public manifest SHA-256:
 `6caea1cea9cc476bb30a13cb45b1adfcfe605ce2450724e2fa1019ed87f23a09`.
 
-| Command | Final outcome |
-| --- | --- |
-| `make check` | Final gate passed: 329 backend unit, 11 toolchain and 315 frontend tests; locks, lint, format, types, build, API drift, credential scan and infrastructure checks passed. |
-| `make test-integration` | 409 passed in 74.52 seconds earlier in T72; backend source/contracts are unchanged by the subsequent frontend corrections. |
-| `make smoke-built` | 136 passed in 21.3 minutes against the final application build. |
-| `make hooks-files-check` and commit hooks | Repository hygiene checks passed; only the already-passed duplicate project gate was skipped at commit time. |
-| `docker build --pull=false --label org.opencontainers.image.revision=<source> -f /tmp/shepherd-t72/source/infra/docker/Dockerfile -t math-practice-tutor:t72-compact-ui /tmp/shepherd-t72/source` | Passed from clean committed source, using the unchanged locked backend/runtime and rebuilt frontend. |
-| `python3 /tmp/shepherd-t72/verify_package.py` | Exact source label, non-root user and all 66 packaged public files match the tested build. |
-| `sh scripts/container-smoke.sh math-practice-tutor:t72-compact-ui` | Passed Python/HEIF/cryptography, installer-free/non-root runtime, SQLite 3.53.1/WAL/FK/FULL synchronization, migrations, worker/UI readiness, owner setup/renewal/rejection and disabled-provider refusal. No inference. |
-| `python3 /tmp/shepherd-t72/deploy.py preflight --candidate <immutable-image-id>` | Read-only preflight passed for the final candidate, previous image, original shared data mount and runtime restrictions. |
-| `python3 /tmp/shepherd-t72/deploy.py prepare --candidate <immutable-image-id> --execute` | Both writers stopped; encrypted WAL-aware backup and isolated restore verified before activation. |
-| `python3 /tmp/shepherd-t72/deploy.py activate --execute` | Private HTTPS, fresh worker heartbeat, unchanged schema, all 66 served public hashes/update headers, protected-route 401/no-store and disabled-documentation 404 checks passed. Exactly one API and one worker, read-only roots, zero restarts and loopback-only API publication. |
+| Command                                                                                                                                                                                           | Final outcome                                                                                                                                                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `make check`                                                                                                                                                                                      | Final gate passed: 329 backend unit, 11 toolchain and 315 frontend tests; locks, lint, format, types, build, API drift, credential scan and infrastructure checks passed.                                                                                                         |
+| `make test-integration`                                                                                                                                                                           | 409 passed in 74.52 seconds earlier in T72; backend source/contracts are unchanged by the subsequent frontend corrections.                                                                                                                                                        |
+| `make smoke-built`                                                                                                                                                                                | 136 passed in 21.3 minutes against the final application build.                                                                                                                                                                                                                   |
+| `make hooks-files-check` and commit hooks                                                                                                                                                         | Repository hygiene checks passed; only the already-passed duplicate project gate was skipped at commit time.                                                                                                                                                                      |
+| `docker build --pull=false --label org.opencontainers.image.revision=<source> -f /tmp/shepherd-t72/source/infra/docker/Dockerfile -t math-practice-tutor:t72-compact-ui /tmp/shepherd-t72/source` | Passed from clean committed source, using the unchanged locked backend/runtime and rebuilt frontend.                                                                                                                                                                              |
+| `python3 /tmp/shepherd-t72/verify_package.py`                                                                                                                                                     | Exact source label, non-root user and all 66 packaged public files match the tested build.                                                                                                                                                                                        |
+| `sh scripts/container-smoke.sh math-practice-tutor:t72-compact-ui`                                                                                                                                | Passed Python/HEIF/cryptography, installer-free/non-root runtime, SQLite 3.53.1/WAL/FK/FULL synchronization, migrations, worker/UI readiness, owner setup/renewal/rejection and disabled-provider refusal. No inference.                                                          |
+| `python3 /tmp/shepherd-t72/deploy.py preflight --candidate <immutable-image-id>`                                                                                                                  | Read-only preflight passed for the final candidate, previous image, original shared data mount and runtime restrictions.                                                                                                                                                          |
+| `python3 /tmp/shepherd-t72/deploy.py prepare --candidate <immutable-image-id> --execute`                                                                                                          | Both writers stopped; encrypted WAL-aware backup and isolated restore verified before activation.                                                                                                                                                                                 |
+| `python3 /tmp/shepherd-t72/deploy.py activate --execute`                                                                                                                                          | Private HTTPS, fresh worker heartbeat, unchanged schema, all 66 served public hashes/update headers, protected-route 401/no-store and disabled-documentation 404 checks passed. Exactly one API and one worker, read-only roots, zero restarts and loopback-only API publication. |
 
 **Private update:** Backup archive
 `backups/deploy-20261024T202023Z-t72-59b1c4ceedb1/archive.enc`, SHA-256
@@ -338,16 +545,16 @@ deleted or passwordless profiles. Keep existing work and provider settings.
 `python3 /tmp/shepherd-t71/run.py` to allowlist tool environment variables,
 exclude inherited operator/provider settings and disable environment-file loading.
 
-| Command | Actual outcome |
-| --- | --- |
-| `pnpm --filter @math-tutor/web exec vitest run tests/App.test.tsx tests/SignInAccounts.test.tsx tests/AdminNavigation.test.tsx tests/Setup.test.tsx` | Final focused run: 90 passed. Covers both roles, one submitted username, loading/empty/fallback lists, local credential/network/throttle/server errors, expiry refresh ordering, Help transitions and retained drafts. |
-| `make check` | Final gate passed: 329 backend unit, 11 toolchain and 315 frontend tests; locks, lint, formatting, types, build, API drift, credential scan and infrastructure checks passed. |
-| `make test-integration` | All 409 cases passed in 74.12 seconds on disposable on-disk SQLite. Backend and contracts are unchanged by T71. |
-| Initial focused Playwright access/account/navigation/setup/bootstrap suite | 54 passed; six fixture/assertion failures: old offline wording in two cases on both projects, and a directory-loading selection race in the shared helper on both projects. Copy assertions and the helper were corrected without changing product requirements or throttles; all six subsequently passed in the final run below. |
-| `docker build --pull=false -t math-practice-tutor:t71-signin /tmp/shepherd-t71/image` | Passed. Builds from the installed immutable backend, removes its old web directory, and installs only the final verified public bundle; no private settings/data enter the build context. |
-| `sh scripts/container-smoke.sh math-practice-tutor:t71-signin` | Final candidate passed non-root runtime, SQLite 3.53.1/WAL/FK/FULL synchronization, migrations, worker/UI readiness, HEIF/cryptography, disabled-provider refusal, and synthetic owner setup/renewal/rejection. No inference. |
-| Isolated helper tests under `/tmp/shepherd-t71` | 28 passed in 3.34 seconds: atomic credential reset, exclusions, rollback, backup/restore, operational recovery and HTTPS verifier behavior. Ruff and formatting passed. A separate real restricted-container test preserved a committed row present only in uncheckpointed WAL with the original source read-only. |
-| `python3 /tmp/shepherd-t71/deploy.py preflight --candidate <candidate>` | Passed read-only image/non-root, existing-service, original-mount and privilege checks. No installed service was changed by preflight. |
+| Command                                                                                                                                              | Actual outcome                                                                                                                                                                                                                                                                                                                    |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm --filter @math-tutor/web exec vitest run tests/App.test.tsx tests/SignInAccounts.test.tsx tests/AdminNavigation.test.tsx tests/Setup.test.tsx` | Final focused run: 90 passed. Covers both roles, one submitted username, loading/empty/fallback lists, local credential/network/throttle/server errors, expiry refresh ordering, Help transitions and retained drafts.                                                                                                            |
+| `make check`                                                                                                                                         | Final gate passed: 329 backend unit, 11 toolchain and 315 frontend tests; locks, lint, formatting, types, build, API drift, credential scan and infrastructure checks passed.                                                                                                                                                     |
+| `make test-integration`                                                                                                                              | All 409 cases passed in 74.12 seconds on disposable on-disk SQLite. Backend and contracts are unchanged by T71.                                                                                                                                                                                                                   |
+| Initial focused Playwright access/account/navigation/setup/bootstrap suite                                                                           | 54 passed; six fixture/assertion failures: old offline wording in two cases on both projects, and a directory-loading selection race in the shared helper on both projects. Copy assertions and the helper were corrected without changing product requirements or throttles; all six subsequently passed in the final run below. |
+| `docker build --pull=false -t math-practice-tutor:t71-signin /tmp/shepherd-t71/image`                                                                | Passed. Builds from the installed immutable backend, removes its old web directory, and installs only the final verified public bundle; no private settings/data enter the build context.                                                                                                                                         |
+| `sh scripts/container-smoke.sh math-practice-tutor:t71-signin`                                                                                       | Final candidate passed non-root runtime, SQLite 3.53.1/WAL/FK/FULL synchronization, migrations, worker/UI readiness, HEIF/cryptography, disabled-provider refusal, and synthetic owner setup/renewal/rejection. No inference.                                                                                                     |
+| Isolated helper tests under `/tmp/shepherd-t71`                                                                                                      | 28 passed in 3.34 seconds: atomic credential reset, exclusions, rollback, backup/restore, operational recovery and HTTPS verifier behavior. Ruff and formatting passed. A separate real restricted-container test preserved a committed row present only in uncheckpointed WAL with the original source read-only.                |
+| `python3 /tmp/shepherd-t71/deploy.py preflight --candidate <candidate>`                                                                              | Passed read-only image/non-root, existing-service, original-mount and privilege checks. No installed service was changed by preflight.                                                                                                                                                                                            |
 
 Final candidate:
 `sha256:fcaf2674d7b0f1aa3ff6c07f47f04e769b217ae5d5d4f9b964c84f8b8025c46c`.
@@ -456,17 +663,17 @@ archive, excluding private settings/data. The isolated runners and reviewed
 operational helpers are under `/tmp/shepherd-t70`; source gates for the same
 production code are recorded in T69.
 
-| Command | Actual outcome |
-| --- | --- |
-| `docker build -f /tmp/shepherd-t70/source/infra/docker/Dockerfile ... /tmp/shepherd-t70/source` | Passed; full source-revision label and non-root UID/GID 10001 verified. |
-| `python3 /tmp/shepherd-t70/run.py sh /tmp/shepherd-t70/source/scripts/container-smoke.sh <image>` | Passed: runtime/native image support, SQLite 3.53.1/WAL/FK/busy timeout/FULL synchronization, migrations, API/worker/UI and synthetic owner setup/renewal/rejection. No inference. |
-| `python3 /tmp/shepherd-t69/run.py make audit` | Python and JavaScript audits passed with no known vulnerabilities. |
-| `python3 /tmp/shepherd-t70/scan.py`, then `python3 /tmp/shepherd-t70/finalize-scan.py` | Trivy 0.76.1, pinned `aquasec/trivy@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c`: zero HIGH/CRITICAL vulnerabilities including unfixed; zero secrets across all severities; CycloneDX inventory with 52 components. Fresh database published October 24 at 13:07 UTC; scans ran offline after download, with an empty ignore file. |
-| `python3 /tmp/shepherd-t70/run.py uv run --no-env-file --locked python /tmp/shepherd-t70/test-deploy.py` | All 15 mocked checks passed, including missing-ledger refusal, failure after stop/start, exact-image rollback, honest failure receipts and private diagnostic suppression. |
-| `python3 /tmp/shepherd-t70/test-backup.py` | Passed against disposable synthetic schema-0020/WAL volumes: actual helper restore/content/object checks, later deletions, session revocation, pending-job cleanup, wrong-password/tamper refusal and cleanup on failure. Existing destinations/source preserved; fixture containers/volumes removed. |
-| `python3 /tmp/shepherd-t70/deploy.py --image <image> --revision ac5114dd232e0ecadfb2d21ad9c6bc72a18cde04` | Read-only preflight passed; no service/configuration mutation. Published main matched the candidate. |
-| Same deployment command with `--execute` | Passed on attempt 1: both writers stopped, encrypted backup and isolated restore verified, unchanged migration head checked, exact candidate started and verified. Rollback was not needed. |
-| `python3 /tmp/shepherd-t70/sustained.py` | Follow-up at 16:51:47 UTC passed the same image, service, heartbeat, mount and HTTPS checks. |
+| Command                                                                                                   | Actual outcome                                                                                                                                                                                                                                                                                                                                                 |
+| --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docker build -f /tmp/shepherd-t70/source/infra/docker/Dockerfile ... /tmp/shepherd-t70/source`           | Passed; full source-revision label and non-root UID/GID 10001 verified.                                                                                                                                                                                                                                                                                        |
+| `python3 /tmp/shepherd-t70/run.py sh /tmp/shepherd-t70/source/scripts/container-smoke.sh <image>`         | Passed: runtime/native image support, SQLite 3.53.1/WAL/FK/busy timeout/FULL synchronization, migrations, API/worker/UI and synthetic owner setup/renewal/rejection. No inference.                                                                                                                                                                             |
+| `python3 /tmp/shepherd-t69/run.py make audit`                                                             | Python and JavaScript audits passed with no known vulnerabilities.                                                                                                                                                                                                                                                                                             |
+| `python3 /tmp/shepherd-t70/scan.py`, then `python3 /tmp/shepherd-t70/finalize-scan.py`                    | Trivy 0.76.1, pinned `aquasec/trivy@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c`: zero HIGH/CRITICAL vulnerabilities including unfixed; zero secrets across all severities; CycloneDX inventory with 52 components. Fresh database published October 24 at 13:07 UTC; scans ran offline after download, with an empty ignore file. |
+| `python3 /tmp/shepherd-t70/run.py uv run --no-env-file --locked python /tmp/shepherd-t70/test-deploy.py`  | All 15 mocked checks passed, including missing-ledger refusal, failure after stop/start, exact-image rollback, honest failure receipts and private diagnostic suppression.                                                                                                                                                                                     |
+| `python3 /tmp/shepherd-t70/test-backup.py`                                                                | Passed against disposable synthetic schema-0020/WAL volumes: actual helper restore/content/object checks, later deletions, session revocation, pending-job cleanup, wrong-password/tamper refusal and cleanup on failure. Existing destinations/source preserved; fixture containers/volumes removed.                                                          |
+| `python3 /tmp/shepherd-t70/deploy.py --image <image> --revision ac5114dd232e0ecadfb2d21ad9c6bc72a18cde04` | Read-only preflight passed; no service/configuration mutation. Published main matched the candidate.                                                                                                                                                                                                                                                           |
+| Same deployment command with `--execute`                                                                  | Passed on attempt 1: both writers stopped, encrypted backup and isolated restore verified, unchanged migration head checked, exact candidate started and verified. Rollback was not needed.                                                                                                                                                                    |
+| `python3 /tmp/shepherd-t70/sustained.py`                                                                  | Follow-up at 16:51:47 UTC passed the same image, service, heartbeat, mount and HTTPS checks.                                                                                                                                                                                                                                                                   |
 
 The first scanner download exceeded its 64 MiB temporary workspace; a fresh run
 with 2 GiB passed every scan. Its initial summary compared Trivy's configuration
@@ -553,14 +760,14 @@ inherited operator/provider settings and dotenv loading. A temporary PNPM wrappe
 preserves the Makefile build/test phases while passing `envDir: false` to the
 existing Vite and Vitest APIs; no gate is skipped.
 
-| Command | Actual outcome |
-| --- | --- |
-| `make test-integration` | **409 passed in 72.73s** against temporary on-disk SQLite databases. |
-| `make check` | Final run passed: **329 backend unit tests in 10.71s**, **11 toolchain tests**, **305 frontend tests in 18 files**, lint/format, Python/TypeScript types, build, generated-contract drift, credential scan and infrastructure validation. Existing >500kB JavaScript chunk warning remains. |
-| Focused Playwright selection across `review-fixes`, `reading`, `phone-navigation`, `request-recovery` | **12 passed in 1.3 minutes**, six per desktop/mobile project; all layout, focus, failed-read, receipt and no-new-work assertions retained. |
-| `make lint format-check typecheck` | Passed after the browser fixture corrections. |
-| `make secret-check` | Passed with the new shared component staged and included. |
-| `make smoke-built` | **124 passed in 19.3 minutes**, 62 desktop and 62 Pixel 7 Chromium emulation cases, one worker, zero retries. |
+| Command                                                                                               | Actual outcome                                                                                                                                                                                                                                                                              |
+| ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `make test-integration`                                                                               | **409 passed in 72.73s** against temporary on-disk SQLite databases.                                                                                                                                                                                                                        |
+| `make check`                                                                                          | Final run passed: **329 backend unit tests in 10.71s**, **11 toolchain tests**, **305 frontend tests in 18 files**, lint/format, Python/TypeScript types, build, generated-contract drift, credential scan and infrastructure validation. Existing >500kB JavaScript chunk warning remains. |
+| Focused Playwright selection across `review-fixes`, `reading`, `phone-navigation`, `request-recovery` | **12 passed in 1.3 minutes**, six per desktop/mobile project; all layout, focus, failed-read, receipt and no-new-work assertions retained.                                                                                                                                                  |
+| `make lint format-check typecheck`                                                                    | Passed after the browser fixture corrections.                                                                                                                                                                                                                                               |
+| `make secret-check`                                                                                   | Passed with the new shared component staged and included.                                                                                                                                                                                                                                   |
+| `make smoke-built`                                                                                    | **124 passed in 19.3 minutes**, 62 desktop and 62 Pixel 7 Chromium emulation cases, one worker, zero retries.                                                                                                                                                                               |
 
 Earlier checks stopped on a test-only unsupported Testing Library `exact` option,
 which was replaced with its equivalent exact-name regex. The first focused

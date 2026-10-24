@@ -352,6 +352,59 @@ def test_mock_vision_only_recognizes_exact_original_public_fixture(preview: bool
     )
 
 
+@pytest.mark.parametrize(
+    "message",
+    [
+        "What does this question mean?",
+        "Synthetic work: I connected an observation to what it shows.",
+        "I revised my explanation. Is it enough now?",
+    ],
+)
+def test_mock_discussion_work_and_revision_are_sample_receipts_without_assessment(
+    message: str,
+) -> None:
+    request = ModelRequest(
+        operation_id=uuid4(),
+        stage="tutor",
+        purpose="review",
+        model_id="fixture-v1",
+        system_instruction="Review the latest message.",
+        ordered_messages=[Message(role="user", content=message)],
+        response_schema=FeedbackPayload.model_json_schema(),
+    )
+    payload = MockProvider().complete(request).validated_payload
+    assert isinstance(payload, FeedbackPayload)
+    assert payload.teaching_action == "acknowledge"
+    assert payload.learning_observation.assessment == "not_assessed"
+    assert not payload.learning_observation.resolved_points
+    assert not payload.learning_observation.open_points
+    assert not payload.strengths and not payload.concepts
+    assert payload.next_step == ""
+    assert payload.guidance == [
+        "This is a sample reply. Demo mode cannot review your answer. Ask the adult who manages this app to connect an AI model for tutoring."
+    ]
+
+
+def test_mock_reading_activity_explains_what_to_do_without_supplying_an_answer() -> None:
+    request = ModelRequest(
+        operation_id=uuid4(),
+        stage="tutor",
+        purpose="generate",
+        model_id="fixture-v1",
+        system_instruction="This is READING COMPREHENSION.",
+        ordered_messages=[Message(role="user", content="Use a synthetic reading passage.")],
+        response_schema=ActivityPayload.model_json_schema(),
+    )
+    payload = MockProvider().complete(request).validated_payload
+    assert isinstance(payload, ActivityPayload)
+    assert "choose one detail from the passage" in payload.problem_text
+    assert "what you think it shows about a character or event, and why" in payload.problem_text
+    assert payload.success_criteria == [
+        "Choose one detail and explain what it shows about a character or event."
+    ]
+    assert payload.passage is None
+
+
 def test_context_keeps_current_work_whole_and_trims_old_history() -> None:
     provider = ProviderConfig(
         adapter="mock",

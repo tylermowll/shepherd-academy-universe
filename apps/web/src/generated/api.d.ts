@@ -193,7 +193,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/v1/admin/providers/routes": {
+  "/api/v1/admin/providers/routes/{stage}": {
     parameters: {
       query?: never;
       header?: never;
@@ -202,8 +202,8 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Select Routes */
-    post: operations["select_routes_api_v1_admin_providers_routes_post"];
+    /** Select Role */
+    post: operations["select_role_api_v1_admin_providers_routes__stage__post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -1572,20 +1572,14 @@ export interface components {
        */
       vision: string;
     };
-    /** SelectRoutes */
-    SelectRoutes: {
+    /** SelectRole */
+    SelectRole: {
       /** Acknowledge Data Boundary */
       acknowledge_data_boundary: boolean;
-      /**
-       * Tutor
-       * @default demo
-       */
-      tutor: string;
-      /**
-       * Vision
-       * @default demo
-       */
-      vision: string;
+      /** Expected Provider Id */
+      expected_provider_id: string;
+      /** Provider Id */
+      provider_id: string;
     };
     /** SessionPublic */
     SessionPublic: {
@@ -2348,16 +2342,18 @@ export interface operations {
       };
     };
   };
-  select_routes_api_v1_admin_providers_routes_post: {
+  select_role_api_v1_admin_providers_routes__stage__post: {
     parameters: {
       query?: never;
       header?: never;
-      path?: never;
+      path: {
+        stage: "tutor" | "vision";
+      };
       cookie?: never;
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["SelectRoutes"];
+        "application/json": components["schemas"]["SelectRole"];
       };
     };
     responses: {
@@ -2367,7 +2363,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["Acknowledged"];
+          "application/json": components["schemas"]["Routes"];
         };
       };
       /** @description Validation Error */

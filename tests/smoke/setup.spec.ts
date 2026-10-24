@@ -301,9 +301,7 @@ for (const lostReceipt of [false, true]) {
           .getByRole("navigation", { name: "Main navigation" })
           .getByRole("link", { name: "Settings", exact: true }),
       ).toHaveAttribute("aria-current", "page");
-      await expect(
-        page.getByRole("tab", { name: /Connections/ }),
-      ).toBeVisible();
+      await expect(page.getByRole("tab", { name: /Models/ })).toBeVisible();
       await expect(
         page.getByRole("button", { name: "Retry AI settings" }),
       ).toHaveCount(0);

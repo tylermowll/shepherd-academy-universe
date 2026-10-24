@@ -150,7 +150,7 @@ legend {
 }
 .settings-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   padding-bottom: 12px;
   border-bottom: 1px solid #c8d0c5;
@@ -218,8 +218,34 @@ legend {
   padding: 10px 14px;
   background: #f2f5ec;
 }
-.role-assignment {
-  margin-top: 24px;
+.current-models {
+  margin-bottom: 20px;
+}
+.current-models .readiness-list dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+.provider-active-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.provider-active-roles strong {
+  border: 1px solid #668779;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 0.85rem;
+  background: #eef2e7;
+}
+.provider-activation {
+  margin-block: 16px;
+  border-top: 1px solid #c8d0c5;
+  padding-top: 12px;
+}
+.provider-activation .check > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .setup-page {
   max-width: 680px;

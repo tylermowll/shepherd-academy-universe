@@ -196,7 +196,9 @@ def info(request: Request, db: Database) -> PhoneUploadInfo:
     if reader.adapter == "mock":
         processing = "Synthetic test mode only: no real handwriting reader is configured. Configure a vision model on the computer to read your work."
     if tutor is None:
-        processing += " The tutor is unavailable. Ask the administrator to check Active models."
+        processing += (
+            " The tutor is unavailable. Ask the administrator to check Models in Settings."
+        )
     elif tutor.adapter == "mock":
         processing += " The tutor returns sample responses rather than real teaching."
     else:

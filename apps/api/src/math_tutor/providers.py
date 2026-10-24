@@ -108,7 +108,7 @@ def authorize_route(
     if not probe_is_current(db, provider, stage):
         raise ProviderError(
             "probe_required",
-            safe_message="The AI connection needs a fresh test. Ask your administrator to open Connection tests in Settings.",
+            safe_message="The AI connection needs a fresh test. Ask your administrator to open Models in Settings and test this connection again.",
         )
     return name, provider
 

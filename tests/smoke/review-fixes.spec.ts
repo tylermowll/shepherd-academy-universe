@@ -231,7 +231,7 @@ test("phone-link cancellation blocks replacement until complete and the next QR 
   }
 });
 
-test("active-model saves protect pending selections and reject duplicate submission without provider writes", async ({
+test("role activation protects pending controls and rejects duplicate submission without provider writes", async ({
   page,
 }) => {
   const started = deferred();
@@ -260,71 +260,75 @@ test("active-model saves protect pending selections and reject duplicate submiss
     }
     await route.fulfill({ json: configuration });
   });
-  await page.route("**/api/v1/admin/providers/routes", async (route) => {
+  await page.route("**/api/v1/admin/providers/routes/tutor", async (route) => {
     expect(route.request().method()).toBe("POST");
     posts += 1;
-    const body = route.request().postDataJSON() as Schema<"SelectRoutes">;
+    const body = route.request().postDataJSON() as Schema<"SelectRole">;
+    expect(body.expected_provider_id).toBe("demo");
+    expect(body.provider_id).toBe(secondId);
     expect(body.acknowledge_data_boundary).toBe(true);
     started.resolve();
     await release.promise;
     configuration = {
       ...configuration!,
-      routes: { tutor: body.tutor, vision: body.vision },
+      routes: { ...configuration!.routes, tutor: body.provider_id },
     };
-    await route.fulfill({ json: {} });
+    await route.fulfill({ json: configuration.routes });
   });
   try {
     await login(page);
     await navigate(page, "Settings");
-    await activate(page.getByRole("tab", { name: /Active models/ }));
-    const tutor = page.getByRole("combobox", {
-      name: "Tutor connection",
+    await activate(page.getByRole("tab", { name: /Models/ }));
+    const card = page.getByRole("article").filter({
+      has: page.getByRole("heading", { name: secondId, exact: true }),
+    });
+    const consent = card.getByRole("checkbox", {
+      name: `I authorize ${secondId} to process future learner work.`,
       exact: true,
     });
-    const photoReader = page.getByRole("combobox", {
-      name: "Photo reader connection",
+    const save = card.getByRole("button", {
+      name: "Use as tutor",
       exact: true,
     });
-    const consent = page.getByRole("checkbox", {
-      name: "I authorize these connections to process future text and photos from every learner.",
+    const usePhoto = card.getByRole("button", {
+      name: "Use as photo reader",
       exact: true,
     });
-    const save = page.getByRole("button", {
-      name: "Save active models",
-      exact: true,
-    });
-    await tutor.selectOption(secondId);
     await activate(consent);
     await activate(save);
     await started.promise;
-    for (const control of [tutor, photoReader, consent, save])
+    for (const control of [usePhoto, consent, save])
       await expect(control).toBeDisabled();
     await expect(
-      page.getByRole("status").filter({ hasText: "Saving active models…" }),
+      page.getByRole("status").filter({ hasText: "Saving tutor…" }),
     ).toBeVisible();
     await save.evaluate((button) => {
-      (button as HTMLButtonElement).form!.requestSubmit();
+      button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
     expect(posts).toBe(1);
     await navigate(page, "Help");
     await navigate(page, "Settings");
-    await expect(tutor).toBeDisabled();
-    await expect(tutor).toHaveValue(secondId);
+    await expect(save).toBeDisabled();
+    await expect(consent).not.toBeChecked();
     release.resolve();
     await expect(
-      page.getByRole("status").filter({ hasText: "Active models saved." }),
+      page.getByRole("status").filter({
+        hasText: `${secondId} / synthetic-second-fixture is now the tutor.`,
+      }),
     ).toBeVisible();
-    await expect(tutor).toBeEnabled();
-    await expect(tutor).toHaveValue(secondId);
+    await expect(card.getByText("Active tutor", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "Current models", exact: true }),
+    ).toContainText(secondId);
     await expect(consent).not.toBeChecked();
     await expect(save).toBeDisabled();
     expect(posts).toBe(1);
     await screenshot(page, "active-model-save-protected.png");
     await page.setViewportSize({ width: 320, height: 800 });
     await expectPageFits(page);
-    const receipt = page
-      .getByRole("status")
-      .filter({ hasText: "Active models saved." });
+    const receipt = page.getByRole("status").filter({
+      hasText: `${secondId} / synthetic-second-fixture is now the tutor.`,
+    });
     await expect
       .poll(() =>
         receipt.evaluate((node) => {
@@ -343,6 +347,89 @@ test("active-model saves protect pending selections and reject duplicate submiss
   } finally {
     release.resolve();
   }
+});
+
+test("a conflicting role activation refreshes the current model without claiming success or sending a model request", async ({
+  page,
+}) => {
+  let configuration: Configuration | undefined;
+  let activations = 0;
+  let probes = 0;
+  const requested = "synthetic-requested-tutor";
+  const changed = "synthetic-other-tab-tutor";
+  await page.route("**/api/v1/admin/providers", async (route) => {
+    if (!configuration) {
+      const original = (await (await route.fetch()).json()) as Configuration;
+      const mock = original.providers.find(
+        (provider) => provider.adapter === "mock",
+      )!;
+      configuration = {
+        ...original,
+        routes: { tutor: mock.id, vision: mock.id },
+        providers: [
+          mock,
+          { ...mock, id: requested, model: "synthetic-requested-fixture" },
+          { ...mock, id: changed, model: "synthetic-other-fixture" },
+        ],
+      };
+    }
+    await route.fulfill({ json: configuration });
+  });
+  await page.route("**/api/v1/admin/providers/*/probe", async (route) => {
+    probes += 1;
+    await route.abort();
+  });
+  await page.route("**/api/v1/admin/providers/routes/tutor", async (route) => {
+    activations += 1;
+    expect(route.request().postDataJSON()).toEqual({
+      provider_id: requested,
+      expected_provider_id: "demo",
+      acknowledge_data_boundary: true,
+    } satisfies Schema<"SelectRole">);
+    configuration = {
+      ...configuration!,
+      routes: { ...configuration!.routes, tutor: changed },
+    };
+    await route.fulfill({
+      status: 409,
+      json: {
+        detail:
+          "The active tutor changed in another tab. Review the current model and try again.",
+      },
+    });
+  });
+  await login(page);
+  await navigate(page, "Settings");
+  const card = page.getByRole("article").filter({
+    has: page.getByRole("heading", { name: requested, exact: true }),
+  });
+  await activate(
+    card.getByRole("checkbox", {
+      name: `I authorize ${requested} to process future learner work.`,
+      exact: true,
+    }),
+  );
+  await activate(
+    card.getByRole("button", { name: "Use as tutor", exact: true }),
+  );
+  await expect(page.getByRole("alert")).toContainText("changed elsewhere");
+  await expect(
+    page.getByRole("region", { name: "Current models", exact: true }),
+  ).toContainText(changed);
+  await expect(card.getByText("Active tutor", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole("status").filter({
+      hasText: `${requested} / synthetic-requested-fixture is now the tutor.`,
+    }),
+  ).toHaveCount(0);
+  await expect(
+    card.getByRole("checkbox", {
+      name: `I authorize ${requested} to process future learner work.`,
+      exact: true,
+    }),
+  ).not.toBeChecked();
+  expect(activations).toBe(1);
+  expect(probes).toBe(0);
 });
 
 test("a confirmed privacy save offers a GET-only refresh after configuration loading fails", async ({
@@ -564,7 +651,7 @@ test("connection tests identify their pending stage while keeping previous resul
   try {
     await login(page);
     await navigate(page, "Settings");
-    await activate(page.getByRole("tab", { name: /Connection tests/ }));
+    await activate(page.getByRole("tab", { name: /Models/ }));
     const testPhoto = page.getByRole("button", {
       name: "Test photo reader",
       exact: true,
@@ -578,7 +665,9 @@ test("connection tests identify their pending stage while keeping previous resul
     await expect(pending).toContainText(
       "Previous test results stay visible while this test runs.",
     );
-    await expect(page.locator(".readiness-list")).toContainText("Passed");
+    await expect(page.locator(".provider-list .readiness-list")).toContainText(
+      "Passed",
+    );
     await expect(testPhoto).toBeDisabled();
     await expect(
       page.getByRole("button", { name: "Test tutor", exact: true }),
@@ -586,8 +675,8 @@ test("connection tests identify their pending stage while keeping previous resul
     await expect(
       page.getByRole("button", { name: "Refresh status", exact: true }),
     ).toBeDisabled();
-    await activate(page.getByRole("tab", { name: /Connections/ }));
-    await activate(page.getByRole("tab", { name: /Connection tests/ }));
+    await activate(page.getByRole("tab", { name: /Data & privacy/ }));
+    await activate(page.getByRole("tab", { name: /Models/ }));
     await expect(pending).toBeVisible();
     expect(probes).toBe(1);
     await screenshot(page, "connection-test-pending-stage.png");

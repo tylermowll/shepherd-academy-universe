@@ -135,15 +135,75 @@ async function modelFixture() {
 async function restoreDemoRoutes(page: Page) {
   const session = await page.request.get("/api/v1/auth/session");
   const identity = (await session.json()) as { csrf_token: string };
-  const response = await page.request.post("/api/v1/admin/providers/routes", {
-    headers: { "X-CSRF-Token": identity.csrf_token },
-    data: {
-      tutor: "demo",
-      vision: "demo",
-      acknowledge_data_boundary: true,
+  for (const stage of ["tutor", "vision"] as const) {
+    const settings = await page.request.get("/api/v1/admin/providers");
+    const current = (await settings.json()) as {
+      routes: { tutor: string; vision: string };
+    };
+    const response = await page.request.post(
+      `/api/v1/admin/providers/routes/${stage}`,
+      {
+        headers: { "X-CSRF-Token": identity.csrf_token },
+        data: {
+          provider_id: "demo",
+          expected_provider_id: current.routes[stage],
+          acknowledge_data_boundary: true,
+        },
+      },
+    );
+    expect(response.status()).toBe(200);
+    const saved = (await response.json()) as {
+      tutor: string;
+      vision: string;
+    };
+    expect(saved[stage]).toBe("demo");
+  }
+}
+
+async function assertRoleConcurrency(page: Page, provider: string) {
+  const session = await page.request.get("/api/v1/auth/session");
+  const identity = (await session.json()) as { csrf_token: string };
+  const headers = { "X-CSRF-Token": identity.csrf_token };
+  // An older editor still expects demo. Its tutor save must not undo activation.
+  const stale = await page.request.post(
+    "/api/v1/admin/providers/routes/tutor",
+    {
+      headers,
+      data: {
+        provider_id: "demo",
+        expected_provider_id: "demo",
+        acknowledge_data_boundary: true,
+      },
     },
+  );
+  expect(stale.status()).toBe(409);
+  const settings = await page.request.get("/api/v1/admin/providers");
+  const current = (await settings.json()) as {
+    routes: { tutor: string; vision: string };
+  };
+  expect(current.routes).toEqual({
+    tutor: provider,
+    vision: provider,
   });
-  expect(response.status()).toBe(200);
+  // A valid photo-reader change must leave the already selected tutor alone.
+  for (const [selected, expected] of [
+    ["demo", provider],
+    [provider, "demo"],
+  ]) {
+    const changed = await page.request.post(
+      "/api/v1/admin/providers/routes/vision",
+      {
+        headers,
+        data: {
+          provider_id: selected,
+          expected_provider_id: expected,
+          acknowledge_data_boundary: true,
+        },
+      },
+    );
+    expect(changed.status()).toBe(200);
+    expect(await changed.json()).toEqual({ tutor: provider, vision: selected });
+  }
 }
 
 test("Meta hosted policy is explicit while local model controls remain usable", async ({
@@ -309,7 +369,7 @@ test("a saved connection stays selectable while setup blockers point to their ex
       .click();
     expect(fixture.calls()).toBe(0);
 
-    await page.getByRole("tab", { name: /Connections/ }).click();
+    await page.getByRole("tab", { name: /Models/ }).click();
     const card = page
       .getByRole("article")
       .filter({ has: page.getByRole("heading", { name: id, exact: true }) });
@@ -318,63 +378,26 @@ test("a saved connection stays selectable while setup blockers point to their ex
       card.getByRole("button", { name: "Open Data & privacy", exact: true }),
     ).toBeVisible();
 
-    await page.getByRole("tab", { name: /Active models/ }).click();
+    await expect(page.getByRole("tab")).toHaveCount(2);
     await expect(
-      page.getByRole("heading", {
-        name: "Active models",
+      page.getByRole("region", { name: "Current models", exact: true }),
+    ).toContainText("demo");
+    await expect(
+      card.getByRole("button", { name: "Test tutor", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      card.getByRole("button", { name: "Test photo reader", exact: true }),
+    ).toBeDisabled();
+    await card
+      .getByLabel(`I authorize ${id} to process future learner work.`, {
         exact: true,
-      }),
-    ).toBeVisible();
-    await expect(
-      page.getByText(/used across this app for future learner work/i),
-    ).toBeVisible();
-    await expect(
-      page.getByText(
-        /Saving a connection never activates it; this final step does/i,
-      ),
-    ).toBeVisible();
-    const tutor = page.getByRole("combobox", {
-      name: "Tutor connection",
-      exact: true,
-    });
-    const photoReader = page.getByRole("combobox", {
-      name: "Photo reader connection",
-      exact: true,
-    });
-    await expect(tutor.locator(`option[value="${id}"]`)).toBeEnabled();
-    await expect(photoReader.locator(`option[value="${id}"]`)).toBeEnabled();
-    await tutor.selectOption(id);
-    await photoReader.selectOption(id);
-    await expect(tutor).toHaveValue(id);
-    await expect(photoReader).toHaveValue(id);
-    await expect(
-      page.getByText(
-        "Its Allowed users setting does not match who uses the app.",
-      ),
-    ).toHaveCount(2);
-    await expect(
-      page.getByText("Its tutor test has not passed.", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("Its photo-reader test has not passed.", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Open Data & privacy", exact: true }),
-    ).toHaveCount(2);
-    await expect(
-      page.getByRole("button", { name: "Open Connection tests", exact: true }),
-    ).toHaveCount(2);
-    await page
-      .getByLabel(
-        "I authorize these connections to process future text and photos from every learner.",
-        { exact: true },
-      )
+      })
       .check();
     await expect(
-      page.getByRole("button", {
-        name: "Save active models",
-        exact: true,
-      }),
+      card.getByRole("button", { name: "Use as tutor", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      card.getByRole("button", { name: "Use as photo reader", exact: true }),
     ).toBeDisabled();
 
     await page
@@ -418,7 +441,7 @@ test("a saved connection stays selectable while setup blockers point to their ex
     );
     expect(fixture.calls()).toBe(0);
 
-    await page.getByRole("tab", { name: /Connections/ }).click();
+    await page.getByRole("tab", { name: /Models/ }).click();
     await card
       .getByText("Technical details and actions", { exact: true })
       .click();
@@ -546,7 +569,7 @@ for (const adapter of ["vllm", "ollama", "compatible"] as const) {
         expect(fixture.calls()).toBe(4);
         await page.reload();
         await navigate(page, "Settings");
-        await page.getByRole("tab", { name: /Connection tests/ }).click();
+        await page.getByRole("tab", { name: /Models/ }).click();
         const history = card.getByRole("region", {
           name: "Recent connection tests",
         });
@@ -573,46 +596,46 @@ for (const adapter of ["vllm", "ollama", "compatible"] as const) {
       ).toBeVisible();
       expect(fixture.calls()).toBe(3 + failedCalls);
       expect(fixture.authenticatedCalls()).toBe(3 + failedCalls);
-      await page.getByRole("tab", { name: /Active models/ }).click();
-      await page
-        .getByRole("combobox", { name: "Tutor connection", exact: true })
-        .selectOption(id);
-      await page
-        .getByRole("combobox", {
-          name: "Photo reader connection",
-          exact: true,
-        })
-        .selectOption(id);
-      await page
-        .getByLabel(
-          "I authorize these connections to process future text and photos from every learner.",
-          { exact: true },
-        )
-        .check();
-      await page
-        .getByRole("button", {
-          name: "Save active models",
-          exact: true,
-        })
-        .click();
-      await expect(
-        page.getByRole("status").filter({ hasText: "Active models saved" }),
-      ).toBeVisible();
+      await expect(page.getByRole("tab", { name: /Models/ })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+      for (const role of ["tutor", "photo reader"] as const) {
+        await card
+          .getByLabel(`I authorize ${id} to process future learner work.`, {
+            exact: true,
+          })
+          .check();
+        await card
+          .getByRole("button", { name: `Use as ${role}`, exact: true })
+          .click();
+        await expect(
+          page.getByRole("status").filter({
+            hasText: `${id} / synthetic-model-v1 is now the ${role}.`,
+          }),
+        ).toBeVisible();
+        await expect(
+          card.getByText(`Active ${role}`, { exact: true }),
+        ).toBeVisible();
+      }
+      expect(fixture.calls()).toBe(3 + failedCalls);
+      if (adapter === "compatible") await assertRoleConcurrency(page, id);
 
       await page.reload();
-      await page.getByRole("tab", { name: /Active models/ }).click();
+      const currentModels = page.getByRole("region", {
+        name: "Current models",
+        exact: true,
+      });
+      await expect(currentModels).toContainText("Current tutor");
+      await expect(currentModels).toContainText("Current photo reader");
+      await expect(currentModels).toContainText(id);
+      await expect(currentModels).toContainText("synthetic-model-v1");
       await expect(
-        page.getByRole("combobox", {
-          name: "Tutor connection",
-          exact: true,
-        }),
-      ).toHaveValue(id);
+        card.getByText("Active tutor", { exact: true }),
+      ).toBeVisible();
       await expect(
-        page.getByRole("combobox", {
-          name: "Photo reader connection",
-          exact: true,
-        }),
-      ).toHaveValue(id);
+        card.getByText("Active photo reader", { exact: true }),
+      ).toBeVisible();
       const username = await createLearner(page, false);
       const learnerPage = await learnerBrowser.newPage();
       await login(learnerPage, username);
@@ -630,10 +653,27 @@ for (const adapter of ["vllm", "ollama", "compatible"] as const) {
       );
       expect(fixture.calls()).toBe(4 + failedCalls);
       expect(fixture.authenticatedCalls()).toBe(4 + failedCalls);
+      await learnerPage
+        .getByLabel("Your work or question", { exact: true })
+        .fill("I would compare the height and the color of both plants.");
+      await learnerPage
+        .getByRole("button", { name: "Send", exact: true })
+        .click();
+      await expect(learnerPage.locator(".tutor-feedback")).toContainText(
+        "Synthetic review received.",
+      );
+      await expect(learnerPage.locator(".tutor-feedback")).toContainText(
+        "Compare observations from both groups.",
+      );
+      await expect(learnerPage.locator(".tutor-feedback")).not.toContainText(
+        "Demo mode cannot review your answer",
+      );
+      expect(fixture.calls()).toBe(5 + failedCalls);
+      expect(fixture.authenticatedCalls()).toBe(5 + failedCalls);
 
       await restoreDemoRoutes(page);
       await navigate(page, "Settings");
-      await page.getByRole("tab", { name: /Connections/ }).click();
+      await page.getByRole("tab", { name: /Models/ }).click();
       const editConnection = card.getByRole("button", {
         name: "Edit connection",
         exact: true,
@@ -664,11 +704,11 @@ for (const adapter of ["vllm", "ollama", "compatible"] as const) {
         .click();
       await expect(tutorStatus).toContainText("Not passed yet");
       await expect(photoReaderStatus).toContainText("Not passed yet");
-      expect(fixture.calls()).toBe(4 + failedCalls);
+      expect(fixture.calls()).toBe(5 + failedCalls);
       // Editing persisted settings doesn't redisplay the saved secret.
       const edited = await page.request.get("/api/v1/admin/providers");
       expect(await edited.text()).not.toContain(syntheticKey);
-      await page.getByRole("tab", { name: /Connections/ }).click();
+      await page.getByRole("tab", { name: /Models/ }).click();
       const details = card.getByText("Technical details and actions", {
         exact: true,
       });

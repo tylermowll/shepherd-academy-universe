@@ -84,15 +84,17 @@ Never share live `.env`, private provider settings or learner data with coding a
 
 Sign in as administrator and open **Settings**:
 
-1. **Connections:** save the exact model, endpoint, capabilities and key if needed.
+1. **Models:** save the exact model, endpoint, capabilities and key if needed.
 2. **Data & privacy:** choose whether cloud processing is allowed and whether
    children use the app. A local connection never switches to cloud automatically.
-3. **Connection tests:** authorize sample requests to test the tutor and photo
-   reader. The tutor test checks activity creation and feedback in two requests;
+3. Return to the connection in **Models** and authorize its tutor and photo-reader
+   tests. The tutor test checks activity creation and feedback in two requests;
    the photo-reader test checks one image-reading response. These calls may incur
    provider charges.
-4. **Active models:** select the tested tutor and photo reader for future work.
-   Saving a connection or passing a test does not activate it.
+4. Choose **Use as tutor** or **Use as photo reader** on the tested connection
+   and authorize its processing location. The current-model summary confirms
+   which connection each role actually uses. Saving or testing a connection does
+   not activate it. Each role changes independently; a stale selection is rejected.
 
 The default mock supplies labeled sample responses and cannot provide real
 teaching or general handwriting recognition. An unavailable model produces a

@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from test_provider_connections import add, record_probes
+from test_provider_connections import add, record_probes, select_role
 from test_workflows import adult as adult
 from test_workflows import anyio_backend as anyio_backend
 from test_workflows import client, read_problem, send, start
@@ -291,10 +291,7 @@ async def adult_only_tutor(
     monkeypatch.setenv("APP_AUDIENCE", "adult_only")
     await add(adult, "age-restricted", audience="adult_only")
     record_probes(engine, "age-restricted")
-    response = await adult.post(
-        "/api/v1/admin/providers/routes",
-        json={"tutor": "age-restricted", "vision": "demo", "acknowledge_data_boundary": True},
-    )
+    response = await select_role(adult, "age-restricted")
     assert response.status_code == 200, response.text
 
 

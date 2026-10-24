@@ -114,7 +114,8 @@ administrator before continuing.
 Follow [provider setup](PROVIDER_STATUS.md#test-and-select-the-tutor-and-photo-reader)
 in administrator **Settings**: save the connection details and data policy,
 explicitly test **Tutor** and **Photo reader**, then select both under
-**Active models**. The provider guide includes native/Docker endpoint examples.
+**Models** with **Use as tutor** and **Use as photo reader**. The provider guide
+includes native/Docker endpoint examples.
 Saving or testing a connection does not activate it. Tests use synthetic data,
 may incur charges and require explicit authorization.
 

@@ -224,7 +224,7 @@ test("administrator connection and privacy drafts survive Settings tabs and Help
   });
   const expectedCloud = !(await cloud.isChecked());
   await cloud.setChecked(expectedCloud);
-  await page.getByRole("tab", { name: /Connections/ }).click();
+  await page.getByRole("tab", { name: /Models/ }).click();
   await page.getByRole("tab", { name: /Data & privacy/ }).click();
   await expect(audience).toHaveValue(expectedAudience);
   await expect(cloud).toBeChecked({ checked: expectedCloud });
@@ -240,7 +240,7 @@ test("administrator connection and privacy drafts survive Settings tabs and Help
     path: test.info().outputPath("privacy-draft-return.png"),
     fullPage: true,
   });
-  await page.getByRole("tab", { name: /Connections/ }).click();
+  await page.getByRole("tab", { name: /Models/ }).click();
   await expect(
     editor.getByLabel("Connection name", { exact: true }),
   ).toHaveValue("synthetic-navigation-draft");

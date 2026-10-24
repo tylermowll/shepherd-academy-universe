@@ -209,13 +209,17 @@ activity controls, guarded against pending work and unsent drafts. A finished
 session shows a recap of saved activities and messages and its latest saved
 guidance, without additional inference or a claim of mastery.
 
-Settings has four sections: **Connections**, **Data & privacy**, **Connection
-tests** and **Active models**. Connection saving, explicitly authorized
-synthetic testing and selection of the tutor or photo reader are separate
-actions. Unchanged saves preserve valid tests and selection; configuration or
-credential changes invalidate the relevant evidence. A blocked connection
-explains each missing requirement and links to it. Section 8 defines
-configuration and secret handling.
+Settings has two sections: **Models** and **Data & privacy**. Models keeps
+connection editing, explicitly authorized synthetic tests and role activation
+in one flow. Saving, testing and activation remain separate actions. Show the
+authoritative current tutor and photo-reader connection/model above the flow;
+saved cards distinguish active roles from test readiness. **Use as tutor** and
+**Use as photo reader** authorize and change only the requested role. Each
+activation includes its expected-current selection, rejects stale changes and
+returns saved role choices before success is displayed. Unchanged saves preserve
+valid tests and selection; configuration or credential changes invalidate the
+relevant evidence. A blocked connection explains each missing requirement and
+links to it. Section 8 defines configuration and secret handling.
 
 Learner usernames are unique after Unicode, whitespace and case normalization,
 and cannot conflict with the administrator username. The administrator creates

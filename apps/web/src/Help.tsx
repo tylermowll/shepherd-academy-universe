@@ -446,11 +446,11 @@ export function HelpPage({
               </p>
               <ol className="steps">
                 <li>
-                  Open {link("settings", "Settings")} and choose{" "}
-                  <strong>Add new AI connection</strong>. Select Ollama, vLLM,
-                  or your API type. Enter the server URL, exact model name, and
-                  an API key if required, then save. Saving does not activate
-                  it.
+                  Open {link("settings", "Settings")} → <strong>Models</strong>{" "}
+                  and choose <strong>Add new AI connection</strong>. Select
+                  Ollama, vLLM, or your API type. Enter the server URL, exact
+                  model name, and an API key if required, then save. Saving does
+                  not activate it.
                 </li>
                 <li>
                   For cloud AI, enable cloud processing in{" "}
@@ -458,24 +458,27 @@ export function HelpPage({
                   this app there too. These choices apply to all connections.
                 </li>
                 <li>
-                  Open <strong>Connection tests</strong> and test tutoring and,
-                  if needed, photo reading. Tests send sample material, not
-                  learner work; API providers may charge. The tutor test makes
-                  two sample calls; the photo test makes one.
+                  On the saved connection, choose <strong>Test tutor</strong>{" "}
+                  and, if needed, <strong>Test photo reader</strong>. Tests send
+                  sample material, not learner work; API providers may charge.
+                  The tutor test makes two sample calls; the photo test makes
+                  one.
                 </li>
                 <li>
-                  Open <strong>Active models</strong>. Choose the tutor and
-                  photo reader for future learner work, approve where that work
-                  will be sent, and save. Then open {link("learners", "Users")}{" "}
-                  and create a learner account. That learner signs in separately
-                  to practice.
+                  Approve where learner work will be processed, then choose{" "}
+                  <strong>Use as tutor</strong> or{" "}
+                  <strong>Use as photo reader</strong> on that connection.{" "}
+                  <strong>Current models</strong> shows the saved choices. Then
+                  open {link("learners", "Users")} and create a learner account.
+                  That learner signs in separately to practice.
                 </li>
               </ol>
               <p>
-                A saved connection can be selected before it is ready; the
-                selection form names each missing permission or test and links
-                to the step that fixes it. The demo cannot teach or read
-                handwriting. The app does not install or download models.
+                Saving or passing a test does not activate a connection. Each
+                card shows its test status and active roles; a missing
+                permission or matching test must be resolved before activation.
+                The demo cannot teach or read handwriting. The app does not
+                install or download models.
               </p>
               <ContextHelp topic="What is the model context limit?">
                 <p>
