@@ -12,8 +12,8 @@ duplicated here.
 
 | Evidence | Recorded result | Limits |
 | --- | --- | --- |
-| [T69 UI/UX corrections](TASKS.md#t69--correct-the-uiux-findings-and-publish-2026-10-24) | Full project gate passed: 329 backend unit, 11 toolchain and 305 frontend tests; 409 integration tests passed. All 124 desktop/mobile browser cases passed in 19.3 minutes. | Synthetic source checks; live models, physical devices, assistive technology and restored-host acceptance remain open. No deployment. |
-| [T67 private deployment](TASKS.md#t67--fix-review-findings-publish-and-deploy-2026-10-23) | October 23 source/image, private HTTPS/assets/auth checks, encrypted backup and isolated restore verified at schema head 0020_request_recovery. Exact identities and receipts are in T67. | Dated installation evidence; source publication does not deploy T69 or establish live teaching quality or complete host recovery. |
+| [T69 UI/UX corrections](TASKS.md#t69--correct-the-uiux-findings-and-publish-2026-10-24) | Full project gate passed: 329 backend unit, 11 toolchain and 305 frontend tests; 409 integration tests passed. All 124 desktop/mobile browser cases passed in 19.3 minutes. | Synthetic source checks; live models, physical devices, assistive technology and restored-host acceptance remain open. |
+| [T70 private deployment](TASKS.md#t70--deploy-the-uiux-corrections-2026-10-24) | October 24 source `ac5114d` deployed; package smoke, dependency/image audits, SBOM, encrypted backup/isolated restore and private HTTPS/assets/access boundaries passed at schema head 0020_request_recovery. Both services have fresh readiness and zero restarts. Exact identities and receipts are in T70. | Existing data/settings preserved; live teaching quality and full restored-host sign-in/key recovery remain unverified. |
 
 [DEPENDENCIES](DEPENDENCIES.md) owns version policy;
 [TASKS](TASKS.md) records actual commands and their evidence limits. The

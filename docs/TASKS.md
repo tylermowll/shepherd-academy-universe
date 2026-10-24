@@ -15,20 +15,91 @@ are below; the [current review](UI_UX_REVIEW.md) lists the corrected behavior an
 remaining acceptance work. Earlier task sections preserve dated evidence, not
 additional supported implementations.
 
-The latest private deployment remains T67's October 23, 2026 installation:
-source `7ce664b97530e5641cdd5ae8459f82beeabb1bf6`, image
-`sha256:9e7d5e1ffd96c32902753ed24793992daf9a77cfc0d1169adfefa50f7d14f759`,
-Python 3.15.0, FastAPI 0.162.0 and pillow-heif 1.8.1. Publication to Git does not
-update that installation. Current provider selections and live teaching quality
-remain unverified. [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
+T70 deployed T69's corrections to the existing private installation on October 24,
+2026: source `ac5114dd232e0ecadfb2d21ad9c6bc72a18cde04`, image
+`sha256:3d65ca7cc20b7ea621148e474d384d00741528617c5d4faac7d6477aee767162`.
+Its deployment evidence is below. Current provider selections and live teaching
+quality remain unverified. [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
+
+## T70 — Deploy the UI/UX corrections (2026-10-24)
+
+**Status:** Private deployment complete following the maintainer's explicit
+authorization. Both services use source `ac5114dd232e0ecadfb2d21ad9c6bc72a18cde04`
+and immutable image
+`sha256:3d65ca7cc20b7ea621148e474d384d00741528617c5d4faac7d6477aee767162`.
+This evidence-only documentation update does not change the deployed runtime.
+
+**Scope and contracts:** SPECIFICATION sections 2, 6, 12, 16–18 and RUNBOOK's
+container/backup procedures: one API and one worker on the original local data
+bind, private HTTPS, unchanged schema `0020_request_recovery`, encrypted backup,
+current deletion preservation and exact-image rollback. No application,
+dependency, API/client or schema changes. HANDOFF's stale October 11 deployment
+entry conflicted with T67 and the running image; it now points to this checkpoint.
+
+**Commands and actual evidence:** The candidate was built from a clean Git
+archive, excluding private settings/data. The isolated runners and reviewed
+operational helpers are under `/tmp/shepherd-t70`; source gates for the same
+production code are recorded in T69.
+
+| Command | Actual outcome |
+| --- | --- |
+| `docker build -f /tmp/shepherd-t70/source/infra/docker/Dockerfile ... /tmp/shepherd-t70/source` | Passed; full source-revision label and non-root UID/GID 10001 verified. |
+| `python3 /tmp/shepherd-t70/run.py sh /tmp/shepherd-t70/source/scripts/container-smoke.sh <image>` | Passed: runtime/native image support, SQLite 3.53.1/WAL/FK/busy timeout/FULL synchronization, migrations, API/worker/UI and synthetic owner setup/renewal/rejection. No inference. |
+| `python3 /tmp/shepherd-t69/run.py make audit` | Python and JavaScript audits passed with no known vulnerabilities. |
+| `python3 /tmp/shepherd-t70/scan.py`, then `python3 /tmp/shepherd-t70/finalize-scan.py` | Trivy 0.76.1, pinned `aquasec/trivy@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c`: zero HIGH/CRITICAL vulnerabilities including unfixed; zero secrets across all severities; CycloneDX inventory with 52 components. Fresh database published October 24 at 13:07 UTC; scans ran offline after download, with an empty ignore file. |
+| `python3 /tmp/shepherd-t70/run.py uv run --no-env-file --locked python /tmp/shepherd-t70/test-deploy.py` | All 15 mocked checks passed, including missing-ledger refusal, failure after stop/start, exact-image rollback, honest failure receipts and private diagnostic suppression. |
+| `python3 /tmp/shepherd-t70/test-backup.py` | Passed against disposable synthetic schema-0020/WAL volumes: actual helper restore/content/object checks, later deletions, session revocation, pending-job cleanup, wrong-password/tamper refusal and cleanup on failure. Existing destinations/source preserved; fixture containers/volumes removed. |
+| `python3 /tmp/shepherd-t70/deploy.py --image <image> --revision ac5114dd232e0ecadfb2d21ad9c6bc72a18cde04` | Read-only preflight passed; no service/configuration mutation. Published main matched the candidate. |
+| Same deployment command with `--execute` | Passed on attempt 1: both writers stopped, encrypted backup and isolated restore verified, unchanged migration head checked, exact candidate started and verified. Rollback was not needed. |
+| `python3 /tmp/shepherd-t70/sustained.py` | Follow-up at 16:51:47 UTC passed the same image, service, heartbeat, mount and HTTPS checks. |
+
+The first scanner download exceeded its 64 MiB temporary workspace; a fresh run
+with 2 GiB passed every scan. Its initial summary compared Trivy's configuration
+digest with Docker's OCI index digest. The finalizer hash-verified the archive's
+index → runtime manifest → configuration chain and finalized those successful
+reports without rescanning or changing severity/exclusions. Scanned configuration:
+`sha256:37c68e1cfb60ee8b6660ede96ff4887213a8fa76dd569c0a7468d229661460c7`.
+SBOM SHA256: `5610335cfd2e9a8e37e2d155eb3f5ed58caf596d0d2640b792ac6dfed0b48f11`.
+
+**Recovery and installed checks:** The encrypted archive is retained under
+ignored `backups/deploy-20261024-t70-ac5114dd232e/archive.enc`, SHA256
+`b1322574f262f00de6d77419d394033866909d287ea6f7b1e8448a0bbed71471`.
+Its generated passphrase was written separately with mode 600; it was never
+printed or opened. The isolated restore verified integrity/FKs, content and
+retained-object hashes, current deletions, revoked restored sessions and canceled
+restored jobs; its new plaintext rehearsal directory was removed. Original data
+and ledger were preserved. The previous image remains tagged
+`math-practice-tutor:rollback-20261024-t70-ac5114dd232e`.
+
+Private HTTPS readiness, six exact public asset hashes, update-cache/worker-scope
+headers, three anonymous protected-route 401/no-store responses and three disabled
+runtime-documentation 404 responses passed. Protected response bodies were not
+read. Exactly one API and one worker run the candidate with zero restarts,
+read-only roots, the original data bind, loopback-only API publishing and a fresh
+post-start worker heartbeat.
+
+**Documentation checks:** Credential scanning, `git diff --check` and all-files
+repository hooks passed. The first all-files run could not open sandbox-mounted
+read-only skill files for the newline check; the same unchanged hook passed with
+filesystem permission. No check or assertion was disabled.
+
+**Limits:** No private environment/provider configuration, learner material,
+uploads, archive contents or private logs were opened. Reviewed backup/restore
+programs processed retained data internally and exposed only allowlisted metadata.
+No live/paid provider probes, model downloads or cloud provisioning ran. Existing
+services resumed normal operation. Intended model selection, human teaching
+review, physical devices/accessibility and full restored-host sign-in/key recovery
+remain in ACCEPTANCE. Reviewed helpers, safe receipts and the SBOM are retained
+outside Git in ignored `backups/evidence-deploy-20261024-t70-ac5114dd232e`.
 
 ## T69 — Correct the UI/UX findings and publish (2026-10-24)
 
 **Status:** Complete. The corrections and cleaned documentation were published
 to `main` as `775e6eb84bbb94f7828adafd49533b1c17a4b78a` through normal
 commit hooks; the remote main hash was verified. The maintainer authorized all seven
-T68 corrections, documentation cleanup and push. No deployment was requested.
+T68 corrections, documentation cleanup and push. T70 records the subsequent
+deployment authorization and outcome.
 
 **Scope and contracts:** SPECIFICATION sections 3, 10–13 and 18: owned request
 receipts and in-memory drafts, honest loading/save outcomes, phone processing

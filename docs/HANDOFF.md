@@ -1,18 +1,13 @@
 # Current handoff
 
 Start with [TASKS](TASKS.md) for current status, planned work and validation
-evidence. The application is implemented through T44; T45 consolidates
-documentation, T46 retires catalog-era runtime code and redundant checks, and
-T47 consolidates Python into one root project and Python 3.15 environment.
-T48 clarifies current documentation, help and screen text.
-T49 closes photo clarification, retry, age-group correction and session-flow
-gaps; its current validation and publication status is in TASKS.
-T50 records the independent adversarial review, bounded implementation fixes
-and unresolved product/role decisions in ACCEPTANCE.
-The last recorded private deployment was October 11, 2026. That record does not
-verify the current installation, selected models or teaching quality.
+evidence. T69 fixes the seven current UI/UX findings; T70 deployed those changes
+to the existing private installation on October 24, 2026. TASKS records the exact
+source/image identities, encrypted backup, restore validation and service checks.
+Schema head remains `0020_request_recovery`. Dated implementation evidence stays
+in TASKS and its history; there is one current runtime implementation.
 
-The next operational step is to test and explicitly select the intended tutor
+The next acceptance step is to test and explicitly select the intended tutor
 and photo reader in administrator Settings. Follow
 [provider setup](PROVIDER_STATUS.md#test-and-select-the-tutor-and-photo-reader),
 then the [release acceptance checklist](ACCEPTANCE.md#items-requiring-the-maintainer).

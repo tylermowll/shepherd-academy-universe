@@ -62,5 +62,5 @@ state; that does not establish every browser/device/accessibility state.
 
 Existing History pagination/large-conversation and administrator-authorship
 follow-ups remain separate. Synthetic results do not establish WCAG conformance,
-teaching quality or release readiness. This task does not deploy the private app
-or authorize live inference.
+teaching quality or release readiness. [T70](TASKS.md#t70--deploy-the-uiux-corrections-2026-10-24)
+records the subsequent private deployment; live inference acceptance remains open.

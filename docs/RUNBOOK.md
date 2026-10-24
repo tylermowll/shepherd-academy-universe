@@ -175,7 +175,7 @@ mechanism, not committed static keys.
 non-root API, worker readiness and built UI. It creates a synthetic administrator
 through the setup link, checks renewal and stale-link rejection, and verifies
 that account creation closes setup. CI separately scans the image and generates
-a CycloneDX SBOM. See [implementation history](history/TASKS.md) for observed results.
+a CycloneDX SBOM. See [TASKS](TASKS.md) for current observed results.
 
 ## Retention, export and deletion
 
