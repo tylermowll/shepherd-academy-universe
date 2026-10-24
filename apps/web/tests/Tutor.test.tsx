@@ -865,10 +865,18 @@ describe("AI learning conversation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Attach photo" }));
     expect(screen.getByText("Upload a photo")).toBeVisible();
     expect(screen.getByLabelText("Take or choose a photo")).toBeVisible();
+    const attachments = screen.getByRole("region", {
+      name: "Photo attachments",
+    });
+    expect(attachments).toHaveFocus();
+    expect(attachments.parentElement).toContainElement(
+      screen.getByRole("log", { name: "Learning conversation" }),
+    );
+    expect(attachments.parentElement).not.toContainElement(activityControls);
+    expect(attachments.parentElement).not.toContainElement(messageForm);
     expect(
-      reply.compareDocumentPosition(screen.getByText("Upload a photo")) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
+      within(attachments).getByLabelText("Take or choose a photo"),
+    ).toBeEnabled();
     fireEvent.click(screen.getByText("Next activity options"));
     await vi.waitFor(() =>
       expect(screen.getByText("Upload a photo")).not.toBeVisible(),
@@ -950,6 +958,9 @@ describe("AI learning conversation", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Attach photo" }));
     expect(
+      screen.getByRole("region", { name: "Photo attachments" }),
+    ).toHaveFocus();
+    expect(
       screen.getByAltText("Your photograph before submission"),
     ).toBeVisible();
     current = session([
@@ -964,6 +975,8 @@ describe("AI learning conversation", () => {
         }),
       ]),
     ]);
+    const reply = screen.getByLabelText("Your work or question");
+    reply.focus();
     fireEvent(window, new Event("online"));
     await vi.waitFor(() => expect(currentLoads).toBeGreaterThanOrEqual(2));
     await vi.waitFor(() =>
@@ -972,8 +985,12 @@ describe("AI learning conversation", () => {
     expect(
       screen.getByAltText("Your photograph before submission"),
     ).not.toBeVisible();
+    expect(reply).toHaveFocus();
 
     fireEvent.click(screen.getByRole("button", { name: "Attach photo" }));
+    expect(
+      screen.getByRole("region", { name: "Photo attachments" }),
+    ).toHaveFocus();
     expect(
       screen.getByAltText("Your photograph before submission"),
     ).toBeVisible();
@@ -2453,16 +2470,26 @@ it("allows long science material while retaining the assignment-reference limit"
 
 it("stages sentence help in the existing composer without sending or discarding a draft", async () => {
   const fetcher = installSession(session([studyActivity()]));
-  render(<Tutor learner={learner} offline={false} act={run} />);
+  // Settle the session load and passive selection listener before dispatching
+  // browser selection events; element presence alone does not establish that.
+  await act(() => {
+    render(<Tutor learner={learner} offline={false} act={run} />);
+    return Promise.resolve();
+  });
   const reply = await screen.findByLabelText("Your work or question");
-  await vi.waitFor(() => expect(reply).toBeEnabled());
-  const range = document.createRange();
-  range.selectNodeContents(screen.getByLabelText("Reading passage"));
-  window.getSelection()!.removeAllRanges();
-  window.getSelection()!.addRange(range);
-  fireEvent(document, new Event("selectionchange"));
+  await vi.waitFor(() => expect(reply).not.toHaveAttribute("readonly"));
+  const selection = window.getSelection()!;
+  await act(() => {
+    const range = document.createRange();
+    range.selectNodeContents(screen.getByLabelText("Reading passage"));
+    selection.removeAllRanges();
+    selection.addRange(range);
+    fireEvent(document, new Event("selectionchange"));
+    return Promise.resolve();
+  });
+  expect(selection.toString()).toBe(materialFocus.text);
   const ask = screen.getByRole("button", { name: "Ask about selected text" });
-  expect(ask).toBeEnabled();
+  await vi.waitFor(() => expect(ask).toBeEnabled());
   fireEvent.change(reply, { target: { value: "Keep my draft" } });
   expect(ask).toBeDisabled();
   fireEvent.change(reply, { target: { value: "" } });

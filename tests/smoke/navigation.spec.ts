@@ -188,8 +188,12 @@ for (const role of ["learner", "adult"] as const) {
         .getByRole("link", { name: `${account} sign-in`, exact: true });
       await switchLink.focus();
       await expect(switchLink).toBeFocused();
-      await expect(switchLink).toHaveCSS("border-top-style", "solid");
-      await expect(switchLink).toHaveCSS("border-top-width", "1px");
+      await expect(switchLink).toHaveCSS("text-decoration-line", "underline");
+      if (test.info().project.use.hasTouch) {
+        const bounds = await switchLink.boundingBox();
+        expect(bounds).not.toBeNull();
+        expect(bounds!.height).toBeGreaterThanOrEqual(44);
+      }
       await expect(switchLink).toHaveCSS("outline-style", "solid");
       await expect(switchLink).toHaveCSS("outline-width", "3px");
       await page.keyboard.press("Enter");
@@ -404,6 +408,22 @@ test("Help and History preserve unsent work and saved sessions reopen through Hi
   const draft = "Unsent revision: I also need to compare another source.";
   await response.fill(draft);
   await openAttachments(page);
+  const attachments = page.getByRole("region", {
+    name: "Photo attachments",
+    exact: true,
+  });
+  await expect(attachments).toBeFocused();
+  const attachmentBounds = (await attachments.boundingBox())!;
+  const controlBounds = (await page
+    .getByRole("group", { name: "Activity controls", exact: true })
+    .boundingBox())!;
+  const composerBounds = (await page.locator(".tutor-response").boundingBox())!;
+  expect(attachmentBounds.y).toBeGreaterThanOrEqual(
+    controlBounds.y + controlBounds.height,
+  );
+  expect(attachmentBounds.y + attachmentBounds.height).toBeLessThanOrEqual(
+    composerBounds.y,
+  );
   await page.getByText("How do I use my phone?", { exact: true }).click();
   await page.evaluate(() =>
     window.scrollTo(0, document.documentElement.scrollHeight),

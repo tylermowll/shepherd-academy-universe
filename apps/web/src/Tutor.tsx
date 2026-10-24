@@ -119,6 +119,8 @@ export function Tutor({
       section_size: "standard",
     });
   const composer = useRef<HTMLTextAreaElement>(null);
+  const attachmentsPanel = useRef<HTMLDivElement>(null);
+  const focusAttachmentsOnOpen = useRef(false);
   const materialComposer = useRef<HTMLTextAreaElement>(null);
   const materialTools = useRef<HTMLDetailsElement>(null);
   const sourceTools = useRef<HTMLDetailsElement>(null);
@@ -468,6 +470,12 @@ export function Tutor({
   const attachmentsVisible =
     photoPending ||
     (attachmentsOpen && photoOperationRevision === attachmentsOpenedAt);
+  useEffect(() => {
+    if (!focusAttachmentsOnOpen.current) return;
+    focusAttachmentsOnOpen.current = false;
+    if (attachmentsVisible && pageActive && page === "practice" && !newSession)
+      attachmentsPanel.current?.focus();
+  }, [attachmentsVisible, pageActive, page, newSession]);
   useEffect(() => {
     const restoreSession = () => {
       const requested = new URLSearchParams(window.location.hash.slice(1)).get(
@@ -1363,14 +1371,73 @@ export function Tutor({
                     </button>
                   </div>
                 )}
-                <TutorConversation
-                  session={session}
-                  offline={offline}
-                  disabled={blocked}
-                  active={pageActive && page === "practice" && !newSession}
-                  act={act}
-                  refresh={refresh}
-                />
+                <div className="conversation-stack">
+                  <TutorConversation
+                    session={session}
+                    offline={offline}
+                    disabled={blocked}
+                    active={pageActive && page === "practice" && !newSession}
+                    act={act}
+                    refresh={refresh}
+                  />
+                  {problem && (
+                    <div
+                      ref={attachmentsPanel}
+                      id="tutor-attachments"
+                      className="tutor-attachments"
+                      role="region"
+                      aria-label="Photo attachments"
+                      tabIndex={-1}
+                      hidden={
+                        !attachmentsVisible &&
+                        problem.activity_state !== "reference_capture"
+                      }
+                    >
+                      <p className="fine">{features?.photo_status}</p>
+                      {(features?.photos_available ||
+                        photoDraft ||
+                        photoPending) && (
+                        <>
+                          <PhoneLink
+                            key={`phone-${problem.id}-${problem.version}`}
+                            problem={problem.id}
+                            version={problem.version}
+                            disabled={disabled || !features?.photos_available}
+                            act={act}
+                            onHelp={() => onNavigate?.("help", "phone")}
+                          />
+                          <PhotoInput
+                            expanded
+                            learner={learner}
+                            key={problem.id}
+                            problem={problem.id}
+                            version={problem.version}
+                            disabled={
+                              active ||
+                              working ||
+                              selecting ||
+                              pending !== null ||
+                              recovery !== null ||
+                              offline ||
+                              !features?.photos_available ||
+                              session.status !== "open"
+                            }
+                            onPendingChange={setPhotoPending}
+                            onDraftChange={setPhotoDraft}
+                            act={act}
+                            onSaved={async () => {
+                              await refresh();
+                              setAttachmentsOpen(false);
+                            }}
+                            reference={
+                              problem.activity_state === "reference_capture"
+                            }
+                          />
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <div className="tutor-response">
                   {active && (
                     <BusyStatus
@@ -1471,6 +1538,7 @@ export function Tutor({
                               disabled={blocked}
                               onClick={() => {
                                 const next = !attachmentsVisible;
+                                focusAttachmentsOnOpen.current = next;
                                 setAttachmentsOpen(next);
                                 if (next)
                                   setAttachmentsOpenedAt(
@@ -1529,59 +1597,6 @@ export function Tutor({
                         </div>
                       </form>
                     )}
-                  {problem && (
-                    <div
-                      id="tutor-attachments"
-                      className="tutor-attachments"
-                      hidden={
-                        !attachmentsVisible &&
-                        problem.activity_state !== "reference_capture"
-                      }
-                    >
-                      <p className="fine">{features?.photo_status}</p>
-                      {(features?.photos_available ||
-                        photoDraft ||
-                        photoPending) && (
-                        <>
-                          <PhoneLink
-                            key={`phone-${problem.id}-${problem.version}`}
-                            problem={problem.id}
-                            version={problem.version}
-                            disabled={disabled || !features?.photos_available}
-                            act={act}
-                            onHelp={() => onNavigate?.("help", "phone")}
-                          />
-                          <PhotoInput
-                            expanded
-                            learner={learner}
-                            key={problem.id}
-                            problem={problem.id}
-                            version={problem.version}
-                            disabled={
-                              active ||
-                              working ||
-                              selecting ||
-                              pending !== null ||
-                              recovery !== null ||
-                              offline ||
-                              !features?.photos_available ||
-                              session.status !== "open"
-                            }
-                            onPendingChange={setPhotoPending}
-                            onDraftChange={setPhotoDraft}
-                            act={act}
-                            onSaved={async () => {
-                              await refresh();
-                              setAttachmentsOpen(false);
-                            }}
-                            reference={
-                              problem.activity_state === "reference_capture"
-                            }
-                          />
-                        </>
-                      )}
-                    </div>
-                  )}
                 </div>
               </article>
             </div>

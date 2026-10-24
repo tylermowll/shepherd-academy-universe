@@ -86,6 +86,53 @@ T71's already-installed source/test/documentation changes are retained and will
 be published in the same source checkpoint. Backend, schemas, migrations,
 generated clients, dependencies and infrastructure source are unchanged.
 
+**Broader validation corrections:** The first `make smoke-built` run was stopped
+after 23 passes, three failures and one interrupted case (109 not run, 4.3
+minutes). The new toolbar left a 235px conversation where the existing test
+requires more than 240px; frame minima now reserve the toolbar's height. Two
+role-switch tests expected the deliberately removed button border; they now
+assert underlined links and comfortable touch height while retaining keyboard,
+outline, role, Back/reload and recovery checks.
+
+The next focused conversation/navigation/reading/menu selection passed 14 cases
+and failed the two desktop/mobile Help/History flows in 3.0 minutes. The trace
+showed that an open photo panel intercepted the relocated Finish action after
+returning from Help. This is an implementation defect; the existing interaction
+assertions remain unchanged while the panel is bounded to the conversation.
+
+Source `6ba406c2110f30b43e796b50a50a6e2f3c4f7153` was committed and pushed as the
+first source checkpoint; it has not been deployed. Its candidate container smoke
+passed and all 66 public assets matched the browser-tested build. The candidate's
+initial manually entered revision label was corrected from Git before smoke or
+preflight. Read-only deployment preflight passed. GitHub run `40126873498` passed
+the package, vulnerability scan and SBOM job, but its project gate failed one
+sentence-help component fixture (314/315 passed). The fixture checked textarea
+enabled state even though the application uses read-only state and dispatched a
+selection before passive effects had settled. It now settles the initial load,
+checks editability and exact selection, then awaits Ask availability; draft,
+staged-text, focus and zero-POST assertions remain. The original CI timing failure
+did not reproduce locally. The corrected Tutor/Reading component run passed
+80/80; final whole-project and browser results are still pending.
+
+The corrected photo panel remains mounted inside a relative conversation stack,
+bounded below the activity toolbar and above the message composer. Explicit
+opening focuses its labelled region; background refresh does not steal focus,
+and hiding/reopening preserves the photograph. The existing Help/History flow
+now also measures that the panel cannot cover either action area. No forced
+click or relaxed timeout was introduced.
+
+`pnpm exec playwright test tests/smoke/conversation.spec.ts
+tests/smoke/navigation.spec.ts tests/smoke/reading.spec.ts
+tests/smoke/practice-start.spec.ts --grep 'Help and History preserve|bounded
+conversation|activity and message controls|reading_text passage' --output
+/tmp/shepherd-t72/panel-browser` passed **8/8 in 1.7 minutes**, desktop/mobile,
+zero retries. Conversation space, photo-panel focus/bounds, retained draft,
+Finish access, reading and menu interactions passed. Final `make check` passed
+again with **329 backend unit, 11 toolchain and 315 frontend tests** and all
+lint/format/type/build/contract/security/infrastructure checks. The final full
+browser regression and private update remain pending at this follow-up source
+checkpoint.
+
 ## T71 — Correct account sign-in and household credential recovery (2026-10-24)
 
 **Status:** Complete and applied to the private installation. The maintainer reported
