@@ -9,8 +9,10 @@ A task is complete only after its requirements and exit checks pass.
 ## Current checkpoint
 
 T75 implements and privately deploys T74's model-setup and demo-feedback
-corrections at the maintainer's request. Work is in progress; no new deployment
-is claimed until the validation and operational evidence below is complete.
+corrections at the maintainer's request. The checked source is privately deployed,
+and the maintainer's tested tutor selection is restored. Exact validation,
+backup/restore and runtime evidence is recorded below. Source is committed
+locally; no Git push or new live inference was performed.
 
 T74 investigates confusing demo tutoring and the split model-setup flow. The
 investigation is complete; application fixes and any active-model change remain
@@ -34,22 +36,23 @@ are below; the [current review](UI_UX_REVIEW.md) lists the corrected behavior an
 remaining acceptance work. Earlier task sections preserve dated evidence, not
 additional supported implementations.
 
-The private installation now uses T73 image
-`sha256:4e543216d69440d9cc4e17d576dc788e23a2806ffd34c6137ef444afdeb43a30`,
-built from committed source `b92ce9498a3324346e789911c87bec373d2fefba`.
-All 66 served public assets match the tested build. Backend source, dependency
-locks and schema remain unchanged at `0020_request_recovery`.
-T74 records a point-in-time check of the selected provider roles; intended-model
-activation and live teaching quality remain unverified.
+The private installation now uses T75 image
+`sha256:daa3b2da47c1a056bf71e64cadef92e3af5dd9bef81486323b6fd95f8a695a9b`,
+built from committed source `359c4f9a0e646ee84983d47b5b734574d641dbee`.
+All 66 served public assets match the tested build. Provider activation and the
+model setup interface are updated; dependency locks and schema remain unchanged
+at `0020_request_recovery`. API and worker read the intended tested tutor, and
+the latest test session passes its route authorization. No inference was sent
+to establish that readback; live teaching quality remains unverified.
 [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
 
 ## T75 — Unify model setup, protect activation and deploy (2026-10-24)
 
-**Status:** In progress. The maintainer authorized implementing the investigated
-corrections and deploying them to the existing private installation. T74's
-investigation evidence is preserved below. No Git push or paid inference is
-included in this authorization.
+**Status:** Complete and privately deployed. The maintainer authorized the
+investigated corrections and deployment to the existing private installation.
+T74's investigation evidence is preserved below. Source is committed locally;
+no Git push or paid inference was performed.
 
 **Scope and contracts:** SPECIFICATION sections 3, 4, 7, 8, 10, 12 and 13;
 README's model setup and provider guide; RUNBOOK's encrypted-backup/private
@@ -94,8 +97,8 @@ Mock replies now explicitly state that no answer was assessed, omit revision
 demands and use clearer sample reading instructions. Help and setup guides use
 the current flow.
 
-The deployment will also restore the maintainer's previously stated intended
-tested tutor if the saved choice is still demo. The guarded operator helper
+The deployment also restored the maintainer's previously stated intended
+tested tutor from the saved demo choice. The guarded operator helper
 requires that exact connection/model and a current successful tutor test,
 rechecks routing policy, preserves the photo-reader selection and makes no
 inference call. A different intervening tutor choice is preserved.
@@ -130,8 +133,7 @@ retries. Covers configuration/test/activation, selected-provider generation and
 learner feedback after reload, stale conflicts, role preservation, pending/draft
 guards, 320px reflow and setup recovery.
 
-Packaging, backup/restore and deployment completion remain pending;
-source-check passes alone do not establish release completion or teaching quality.
+Source checks establish software behavior, not live teaching quality.
 
 The repository-wide mutating file-hook attempt hit the sandbox's read-only
 `.agents` mount. Automatic approval review rejected escalation because it could
@@ -140,6 +142,43 @@ changed files (only the already-passed duplicate project gate was skipped),
 which passed, plus read-only final-newline checks on all seven tracked skill
 files. No protected skill file was rewritten and no broader permission is needed
 for the deployment.
+
+**Packaging and private deployment:**
+
+| Command / operation                                                                                                                                                                                                                | Actual outcome                                                                                                                                                                                                                                   |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Local source commit and `python3 /tmp/shepherd-t75/prepare_source.py`                                                                                                                                                              | Source `359c4f9a0e646ee84983d47b5b734574d641dbee` archived from a clean checkout; private settings/data are absent from the build context. Commit hooks passed for changed files.                                                                |
+| `docker build --pull=false --label org.opencontainers.image.revision=359c4f9a0e646ee84983d47b5b734574d641dbee -f /tmp/shepherd-t75/source/infra/docker/Dockerfile -t math-practice-tutor:t75-model-setup /tmp/shepherd-t75/source` | Passed. Immutable candidate is `sha256:daa3b2da47c1a056bf71e64cadef92e3af5dd9bef81486323b6fd95f8a695a9b`.                                                                                                                                        |
+| `python3 /tmp/shepherd-t75/verify_package.py`                                                                                                                                                                                      | Exact source label, UID/GID 10001 and all 66 packaged public assets match the browser-tested build. Public manifest SHA-256 `a645482a242830132c4c831b3f2508edba7c779d5293f890b51172241d024b3e`.                                                  |
+| `python3 /tmp/shepherd-t75/run.py sh scripts/container-smoke.sh math-practice-tutor:t75-model-setup`                                                                                                                               | Passed runtime/HEIF/cryptography, installer-free/non-root execution, SQLite WAL/FK/FULL synchronization, migrations, worker/UI readiness, setup renewal/rejection and disabled-provider refusal. No inference.                                   |
+| `python3 /tmp/shepherd-t75/deploy.py preflight --candidate <immutable-image-id>`                                                                                                                                                   | Read-only candidate/prior-image, data-mount and runtime-restriction checks passed.                                                                                                                                                               |
+| `python3 /tmp/shepherd-t75/deploy.py prepare --candidate <immutable-image-id> --execute`                                                                                                                                           | Both writers stopped; encrypted WAL-aware backup and isolated restore verification passed before activation. Current deletions/retained object hashes preserved; restored sessions revoked and pending work canceled in the rehearsal.           |
+| `python3 /tmp/shepherd-t75/deploy.py activate --execute`                                                                                                                                                                           | Passed private HTTPS, fresh worker/schema, all 66 exact served public assets/update headers and protected-route/cache checks. Exactly one API/worker, zero restarts, read-only roots, restricted capabilities and loopback-only API publication. |
+| Guarded `restore_tutor.py --execute`, worker readback and `python3 /tmp/shepherd-t75/verify_tutor.py`                                                                                                                              | Intended tested tutor restored; photo-reader choice preserved. Worker verifies the selected non-mock model, fresh tutor test and latest test session's authorization. No inference request.                                                      |
+
+Encrypted backup:
+`backups/deploy-20261024T225009Z-t75-model-setup-daa3b2da47c1/archive.enc`, SHA-256
+`f161c75807418c612be242cb2b0d0d9e8f927d2846b40047965857ec9e01631c`.
+Its generated passphrase is stored separately with permissions 600, never printed
+or copied into repository evidence. The plaintext restore rehearsal was removed.
+Retained data/settings were preserved except the intended tutor-role restoration;
+no migration or reset was run on retained storage. Rollback was not needed; the
+prior image is retained as `math-practice-tutor:rollback-20261024-t75-model-setup`.
+
+Reviewed helper source, public manifests and content-free operational receipts
+are retained privately in ignored `backups/evidence-20261024-t75-model-setup`.
+The existing private HTTPS address is unchanged. Saved demo activities/replies
+remain historical records; a new session/activity uses the selected tutor.
+
+**Changed files and limits:** Backend provider activation/configuration/recovery
+copy and mock transport; frontend AdultPanel, ProviderConnections, Help and styles;
+backend/component/browser regression suites; regenerated OpenAPI/client; README,
+SPECIFICATION, PROVIDER_STATUS, PHONE_SETUP, UI_UX_REVIEW and this log. No dependency
+or migration change. No Git push, hosted CI, whole-browser rerun, live/paid model
+evaluation, model download, physical-device or screen-reader test was performed.
+The 60 affected browser cases and 418 integration cases are fresh T75 evidence;
+prior whole-browser results remain dated baseline evidence. No implementation,
+test or deployment failure remains; live teaching-quality acceptance remains open.
 
 ## T74 — Diagnose demo replies and model-setup confusion (2026-10-24)
 

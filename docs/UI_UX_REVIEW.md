@@ -18,7 +18,9 @@ explicitly state that they cannot review the answer and do not demand revision.
 
 The source gate passed 317 frontend, 333 backend unit and 11 toolchain tests;
 all 418 integration cases and all 60 affected desktop/mobile browser cases
-passed. The private rollout is still in progress.
+passed. The source-tested image is privately deployed; encrypted backup/restore,
+fresh API/worker readiness and all 66 served assets passed. The intended tested
+tutor selection was restored and verified without inference.
 [T75](TASKS.md#t75--unify-model-setup-protect-activation-and-deploy-2026-10-24)
 records exact commands and remaining evidence. No live teaching-quality,
 physical-device or screen-reader acceptance is claimed.
