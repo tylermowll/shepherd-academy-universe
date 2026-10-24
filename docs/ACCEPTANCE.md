@@ -6,12 +6,14 @@ separate evidence. This checklist does not claim production readiness.
 
 ## Current checkpoint
 
-The current source includes T72's control/layout refinements and the preserved T71
-sign-in corrections. These are the latest recorded checks; earlier runs remain
-in TASKS and its history rather than being duplicated here.
+The current source includes T73's Users page label, T72's control/layout
+refinements and the preserved T71 sign-in corrections. These are the latest
+recorded checks; earlier runs remain in TASKS and its history rather than being
+duplicated here.
 
 | Evidence | Recorded result | Limits |
 | --- | --- | --- |
+| [T73 Users naming](TASKS.md#t73--name-the-shared-account-management-page-users-2026-10-24) | Project gate passed: 315 frontend, 329 backend unit and 11 toolchain tests; all 26 focused desktop/mobile account/navigation cases passed in 5.1 minutes. Clean-source candidate smoke, encrypted backup/restore, private HTTPS/worker and 66 exact served assets passed. Source `b92ce94` is privately deployed. | Visible-copy correction; hosted CI is pending. Full 136-case browser and 409-case integration results below belong to T72. Live models, physical devices and assistive technology were not rechecked. |
 | [T72 compact controls and action placement](TASKS.md#t72--refine-control-sizing-and-action-placement-publish-and-redeploy-2026-10-24) | Final project gate passed: 329 backend unit, 11 toolchain and 315 frontend tests; 409 integration cases; all 136 desktop/mobile browser cases passed in 21.3 minutes. Clean-source candidate smoke, encrypted WAL-aware backup/restore, private HTTPS/readiness and all 66 exact served public assets passed. Source `d447134` is published and privately deployed. | Synthetic browser/device emulation; live providers, physical devices, password managers, assistive technology and restored-host sign-in/key recovery remain open. Earlier validation failures and their corrections are recorded in T72. |
 | [T71 sign-in and credential recovery](TASKS.md#t71--correct-account-sign-in-and-household-credential-recovery-2026-10-24) | Full gate passed: 329 backend unit, 11 toolchain and 315 frontend tests; 409 integration cases. Focused browser coverage spans 62 distinct desktop/mobile cases across initial and corrected final runs; final 20/20 passed. Private update, encrypted backup/restore, exact 66 served assets and actual HTTPS sign-in for one administrator and one learner passed. | Focused access-flow correction; full browser suite, real autofill/password managers, physical devices and assistive technology remain unverified. Backend/dependencies unchanged from T70. |
 | [T69 UI/UX corrections](TASKS.md#t69--correct-the-uiux-findings-and-publish-2026-10-24) | Full project gate passed: 329 backend unit, 11 toolchain and 305 frontend tests; 409 integration tests passed. All 124 desktop/mobile browser cases passed in 19.3 minutes. | Synthetic source checks; live models, physical devices, assistive technology and restored-host acceptance remain open. |

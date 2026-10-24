@@ -8,10 +8,11 @@ A task is complete only after its requirements and exit checks pass.
 
 ## Current checkpoint
 
-T72 refines control sizing, action placement, sign-in width and header spacing,
-publishes the preserved T71 sign-in corrections, and updates the private
-installation. Its full project, browser, package and installed HTTPS evidence is
-below. T71's prior credential recovery is retained; T72 does not change passwords
+T73 corrects the shared account-management page to Users, with explicit
+Administrator and Learners role groups and consistent Help/settings links. It
+preserves T72's compact controls and T71's sign-in corrections. Current source,
+focused browser, package and private-update evidence is below. T71's prior
+credential recovery is retained; these visual updates do not change passwords
 or password policy.
 
 The current product is the multi-subject tutor, with schema head
@@ -21,9 +22,9 @@ are below; the [current review](UI_UX_REVIEW.md) lists the corrected behavior an
 remaining acceptance work. Earlier task sections preserve dated evidence, not
 additional supported implementations.
 
-The private installation now uses T72 image
-`sha256:59b1c4ceedb1e5189309345aeb44f73b2b713fc7042ee4192dbf35efbb7e072e`,
-built from committed source `d447134143db72d32aa6d76d7887b977b112ac02`.
+The private installation now uses T73 image
+`sha256:4e543216d69440d9cc4e17d576dc788e23a2806ffd34c6137ef444afdeb43a30`,
+built from committed source `b92ce9498a3324346e789911c87bec373d2fefba`.
 All 66 served public assets match the tested build. Backend source, dependency
 locks and schema remain unchanged at `0020_request_recovery`.
 Current provider selections and live teaching quality
@@ -32,10 +33,11 @@ owns the remaining model, physical-device, accessibility and operational checks.
 
 ## T73 — Name the shared account-management page Users (2026-10-24)
 
-**Status:** In progress. The maintainer identified misleading navigation and
-headings: a page named Learners also contains the administrator account. Correct
-the shared page to Users and explain the account roles consistently. This is a
-follow-up to the approved UI correction/publication/private-update work.
+**Status:** Complete and privately deployed; published with its final evidence
+record. The maintainer identified misleading navigation and headings: a page
+named Learners also contains the administrator account. The shared page is now
+Users and explains the account roles consistently. This follows the approved
+UI correction/publication/private-update work.
 
 **Scope and contracts:** SPECIFICATION section 3 currently names the page
 Learners; the maintainer's correction supersedes that visible-label contract.
@@ -82,6 +84,59 @@ No new integration suite is planned for this visible-copy correction: backend,
 contracts and database are unchanged, and T72 records their 409-case pass.
 Existing build-system/chunk warnings remain. No paid/live inference or model
 download was run.
+
+**Final verification:**
+
+| Command | Actual outcome |
+| --- | --- |
+| `pnpm exec playwright test tests/smoke/accounts.spec.ts tests/smoke/admin-navigation.spec.ts tests/smoke/navigation.spec.ts tests/smoke/workspace-navigation.spec.ts --output /tmp/shepherd-t73/browser` | All 26 desktop/mobile cases passed in 5.1 minutes, one worker and zero retries. Confirms Users title/navigation, both role groups, distinct administrator/learner selection, administrator identity retained while managing a learner, password/CSRF/revocation, role-specific recovery, Help/Back/reload, drafts and authorized account switching. |
+| `make hooks-files-check`, `make secret-check`, commit hooks and `git diff --check` | Passed; only the already-passed duplicate project gate was skipped in commit hooks. |
+| `docker build --pull=false --label org.opencontainers.image.revision=<source> -f /tmp/shepherd-t73/source/infra/docker/Dockerfile -t math-practice-tutor:t73-users /tmp/shepherd-t73/source` | Passed from a clean Git archive of source `b92ce9498a3324346e789911c87bec373d2fefba`, with no private configuration/data in its context. |
+| `python3 /tmp/shepherd-t73/verify_package.py` | Exact source label, non-root UID/GID 10001 and all 66 packaged public assets match the tested frontend build. |
+| `sh scripts/container-smoke.sh math-practice-tutor:t73-users` | Passed runtime/HEIF/cryptography, installer-free/non-root execution, SQLite 3.53.1/WAL/FK/FULL synchronization, migrations, worker/UI readiness, setup renewal/rejection and disabled-provider refusal. No inference. |
+| `uv run --locked --no-env-file python /tmp/shepherd-t73/test_backup_container.py` | A restricted container preserved a committed row held only in SQLite WAL through encrypted backup and isolated restore; synthetic source storage stayed read-only. |
+| `python3 /tmp/shepherd-t73/deploy.py preflight --candidate <immutable-image-id>` | Read-only preflight passed for the candidate, exact prior T72 image, original data mount and runtime restrictions. |
+| `python3 /tmp/shepherd-t73/deploy.py prepare --candidate <immutable-image-id> --execute` | Both writers stopped; encrypted WAL-aware backup and isolated restore verified before activation. |
+| `python3 /tmp/shepherd-t73/deploy.py activate --execute` | Private HTTPS, fresh worker/schema, 66 exact served public assets/update headers, protected-route 401/no-store and disabled-documentation 404 checks passed. Exactly one API/worker, zero restarts, read-only roots, restricted capabilities and loopback-only API publication. |
+
+The release image is
+`sha256:4e543216d69440d9cc4e17d576dc788e23a2806ffd34c6137ef444afdeb43a30`.
+Public asset manifest SHA-256:
+`a0fe968cb9f79a611ca0bc22baf52db9b5136bb33ec6db64dc1170b75827e5e2`.
+The stable private HTTPS address and existing data/settings are preserved.
+
+Backup archive:
+`backups/deploy-20261024T205046Z-t73-users-4e543216d694/archive.enc`, SHA-256
+`22458dcb67796cd6561777325074dbe78e98db516bd7cbc1bdc9ac0c3f2e5855`.
+The generated passphrase is stored separately in the operator's private key
+directory with permissions 600; its value was never opened or printed by the
+coding agent. Restore verification retained current deletions/object hashes,
+checked schema/integrity/foreign keys, revoked restored sessions and canceled
+restored pending work; the plaintext rehearsal was removed. Retained installation
+data was not migrated or reset. Rollback was not needed; the prior image remains
+`math-practice-tutor:rollback-20261024-t73-users`.
+
+Reviewed helper source, public manifests and content-free operational receipts
+are retained privately in ignored `backups/evidence-20261024-t73-users`.
+No key was copied there. No live `.env`, provider configuration, private logs,
+uploads or learner records were opened by the coding agent; backup helpers
+processed retained data internally and emitted only allowlisted receipts.
+
+**Publication and limits:** Source commit `b92ce9498a3324346e789911c87bec373d2fefba`
+and this documentation-only completion record are published together, after
+local validation and private activation, so the final push starts one hosted
+workflow. Hosted CI results are pending and are not claimed here. The 136-case
+whole-browser and 409-case integration passes in T72 remain dated baseline
+evidence, not fresh T73 results. No new full-browser/integration run, live
+provider test, paid inference, model download, physical-device/password-manager
+check or screen-reader acceptance was run for this copy-only change.
+
+**Changed files:** Application App, LearnerAccounts, AdultPanel and Help; three
+component test files; seven smoke/helper files; README, SPECIFICATION, DECISIONS,
+PHONE_SETUP, RUNBOOK, UI_UX_REVIEW, ACCEPTANCE and this task log; the UI review's
+current workflow-inventory label. No backend, schemas, generated clients,
+migrations, dependencies, infrastructure source or private configuration changed.
+No task failure remains; existing acceptance follow-ups stay separate.
 
 ## T72 — Refine control sizing and action placement, publish and redeploy (2026-10-24)
 

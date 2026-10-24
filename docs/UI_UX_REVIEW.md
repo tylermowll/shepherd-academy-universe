@@ -9,6 +9,14 @@ Settings links use the same label. Administrator and Learners remain explicit
 role groups, and Add learner account names the role it creates. Existing account
 selection, authentication, ownership and password behavior remains required.
 
+The focused correction passed the project gate (315 frontend, 329 backend unit
+and 11 toolchain cases), plus all 26 affected desktop/mobile browser cases in
+5.1 minutes. Those cases verify both account groups, administrator identity during
+learner management, correct password editors and Help/recovery/navigation labels.
+The source-tested image is privately deployed behind the existing address;
+encrypted backup/restore, HTTPS/worker readiness and all 66 exact public assets
+passed. Hosted CI is pending; no new whole-app or physical-device review is claimed.
+
 [T73](TASKS.md#t73--name-the-shared-account-management-page-users-2026-10-24)
 records the focused correction's validation and deployment evidence. This does
 not claim a new whole-application audit.
