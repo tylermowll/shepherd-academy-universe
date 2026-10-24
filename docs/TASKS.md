@@ -121,8 +121,24 @@ loading. All application tests use synthetic fixtures/providers.
 | `python3 /tmp/shepherd-t76/run.py pnpm exec playwright test tests/smoke/practice-start.spec.ts --grep 'one goal-first | conditional' --output /tmp/shepherd-t76/design-browser`                                                                                                                                                                                                        | Four focused desktop/mobile cases passed in 12.7 seconds. Actual screenshots inspected at 1280px and 320px confirm fully wrapping goal labels and optional preferences. Browser interactions verify native keyboard choice, draft retention, no pre-submit writes and one exact start request. |
 | Synthetic backup/state-machine checks                                                                                 | 15 passed after adding a content-free selection digest; restricted container rehearsal preserved a committed uncheckpointed WAL row.                                                                                                                           |
 
-The full 142-case browser run is in progress against the matching final build.
-Publication/package/private deployment completion is not claimed yet.
+The first whole-browser run was stopped after 32 passes, one obsolete help-
+disclosure assertion failure, one interrupted case and 108 unrun cases in 4.8
+minutes. The test now checks the current preferences disclosure's keyboard,
+focus and content behavior while retaining its draft/role/Back assertions.
+A published-text recovery message was also corrected to name the current
+material controls. A fresh matching build and whole-browser run follow these
+changes; no whole-browser completion is claimed yet.
+
+The final rebuilt project gate passed 333 backend unit, 328 frontend and 11
+toolchain cases plus all lint/type/build/contract/security checks. The backend
+is unchanged by the last frontend recovery-copy/browser-test correction; its
+437-case full integration pass remains applicable.
+
+The initial checked source was pushed to `main` as
+`dada9fc4937b1bc68ae89544af913958412e37e0`; hosted workflow `40143415109`
+started. The final correction will be published before deployment, with actual
+remote/runtime evidence recorded below. Package/private deployment completion
+is not claimed yet.
 
 ## T75 — Unify model setup, protect activation and deploy (2026-10-24)
 

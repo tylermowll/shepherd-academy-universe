@@ -340,20 +340,47 @@ test("adult pages isolate each job and browser navigation preserves a new sessio
   await expect(page.getByRole("button", { name: "Test tutor" })).toHaveCount(0);
   await expectPageFits(page);
   await createLearner(page);
+  const draftWrites: string[] = [];
+  page.on("request", (request) => {
+    if (
+      ["POST", "PUT", "PATCH", "DELETE"].includes(request.method()) &&
+      request.url().includes("/api/v1/")
+    )
+      draftWrites.push(request.url());
+  });
   const topic = page.getByRole("textbox", {
     name: "What are you working on?",
     exact: true,
   });
   await topic.fill("Synthetic draft: comparing two scientific explanations");
-  const practiceHelp = page.getByText("What can I practice?", { exact: true });
-  const practiceHelpDetails = practiceHelp.locator("..");
-  await expect(practiceHelpDetails).not.toHaveAttribute("open", "");
-  await practiceHelp.focus();
+  const preferences = page.getByText("Adjust difficulty and guidance", {
+    exact: true,
+  });
+  const preferenceDetails = preferences.locator("..");
+  await expect(preferenceDetails).not.toHaveAttribute("open", "");
+  await preferences.focus();
   await page.keyboard.press("Enter");
-  await expect(practiceHelpDetails).toHaveAttribute("open", "");
-  await expect(practiceHelpDetails).toContainText("reference material");
+  await expect(preferenceDetails).toHaveAttribute("open", "");
+  await expect(
+    preferenceDetails.getByRole("combobox", {
+      name: "How challenging should it be?",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    preferenceDetails.getByRole("combobox", {
+      name: "How much guidance would you like?",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("radio", { name: "Practice a skill", exact: true }),
+  ).toHaveAccessibleDescription(
+    "Try a question, share your thinking and get guidance.",
+  );
   await page.keyboard.press("Enter");
-  await expect(practiceHelpDetails).not.toHaveAttribute("open", "");
+  await expect(preferenceDetails).not.toHaveAttribute("open", "");
+  await expect(preferences).toBeFocused();
   await expect(
     page.getByRole("button", { name: "Add learner account" }),
   ).toHaveCount(0);
@@ -386,6 +413,7 @@ test("adult pages isolate each job and browser navigation preserves a new sessio
   );
 
   expect(await page.evaluate(() => Object.keys(localStorage))).toEqual([]);
+  expect(draftWrites).toEqual([]);
   expect(external).toEqual([]);
 });
 

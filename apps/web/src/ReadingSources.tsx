@@ -28,7 +28,7 @@ export function ReadingSources({
       .catch(() => {
         if (revision.current === current)
           setError(
-            "Published sources could not be loaded. Choose another Practice source, then choose Published story or news again to retry.",
+            "Published sources could not be loaded. Choose another material option, then return to Choose a published text to try again.",
           );
       });
     return () => {
