@@ -8,6 +8,11 @@ A task is complete only after its requirements and exit checks pass.
 
 ## Current checkpoint
 
+T71 corrected duplicate sign-in account entry and misleading error recovery,
+updated the private installation, and completed the requested existing-active-
+account credential reset. Its source/package, browser and installed HTTPS
+evidence is below. No global default password or password policy was introduced.
+
 The current product is the multi-subject tutor, with schema head
 `0020_request_recovery`. T69 corrects the seven residual UI/UX findings from T68
 and consolidates their documentation. Its implementation and publication evidence
@@ -15,12 +20,202 @@ are below; the [current review](UI_UX_REVIEW.md) lists the corrected behavior an
 remaining acceptance work. Earlier task sections preserve dated evidence, not
 additional supported implementations.
 
-T70 deployed T69's corrections to the existing private installation on October 24,
-2026: source `ac5114dd232e0ecadfb2d21ad9c6bc72a18cde04`, image
-`sha256:3d65ca7cc20b7ea621148e474d384d00741528617c5d4faac7d6477aee767162`.
-Its deployment evidence is below. Current provider selections and live teaching
-quality remain unverified. [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
+The private installation now uses T71 image
+`sha256:fcaf2674d7b0f1aa3ff6c07f47f04e769b217ae5d5d4f9b964c84f8b8025c46c`.
+Its verified web bundle replaces T70's web files; its backend/dependencies remain
+from T70 source `ac5114dd232e0ecadfb2d21ad9c6bc72a18cde04` at unchanged schema
+`0020_request_recovery`. Current provider selections and live teaching quality
+remain unverified. [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
+
+## T72 — Refine control sizing and action placement, publish and redeploy (2026-10-24)
+
+**Status:** In progress. The maintainer approved the focused visual review's
+button and layout changes, Git publication and private redeployment. Preserve
+and publish the already-installed T71 sign-in corrections with this update.
+
+**Scope and contracts:** SPECIFICATION sections 3, 12, 13 and 18; RUNBOOK's
+container upgrade and encrypted-backup procedures. Use compact desktop controls,
+comfortable touch targets, lighter secondary actions, a bounded sign-in form
+and a tighter application header. Keep message actions beside message entry and
+place Next activity and Finish session with the current activity. Preserve
+keyboard/menu behavior, draft and pending-request guards, account isolation,
+sign-in recovery, public-only PWA caching and provider boundaries. No API,
+schema, backend, dependency or provider changes are planned.
+
+**Plan and validation:** Check the focused Tutor components and desktop/mobile
+sign-in, administration, composer/menu, finish and draft-guard journeys. Run
+`make check`, integration tests and the browser regression suite using disposable
+synthetic fixtures, mock providers and an allowlisted environment with env-file
+loading disabled. Review the complete publication diff, commit and push the
+approved source. Package and smoke-test an immutable candidate from committed
+source, then stop both writers, complete an encrypted WAL-aware backup and
+isolated restore rehearsal, activate with rollback available, and verify private
+HTTPS readiness and exact public assets. Record actual results below before
+claiming completion. Live inference and model downloads are outside this task.
+
+**Implemented:** Desktop buttons use a 38px minimum, tighter line height/padding
+and lighter secondary styling; coarse-pointer buttons, menu summaries and main
+navigation retain a 44px minimum. Mobile secondary actions keep natural widths.
+The sign-in form is centered with a 480px maximum. Header/account/navigation
+spacing is tighter and Sign out has quiet styling. The persistent Activity
+controls group contains Next activity and Finish session, remains outside the
+collapsible activity brief, and leaves Attach photo, Help and Send at the message
+composer. Existing ready-state, draft, pending-work, offline and completion
+guards remain in force, including idle reference/generation states.
+
+**Validation so far:** Commands use `python3 /tmp/shepherd-t72/run.py` to
+allowlist tool environment variables, clear inherited operator/provider settings
+and disable env-file loading. The full browser regression, publication and
+deployment remain pending in this source checkpoint.
+
+| Command | Actual outcome |
+| --- | --- |
+| `pnpm --filter @math-tutor/web exec vitest run tests/Tutor.test.tsx tests/App.test.tsx tests/SignInAccounts.test.tsx tests/AdminNavigation.test.tsx` | 132 passed. Action separation and preserved draft/finish guards are checked alongside T71 sign-in/account transitions. |
+| `make check` | Passed: 329 backend unit, 11 toolchain and 315 frontend tests; locks, lint, formatting, types, build, API drift, credential scan and infrastructure checks passed. |
+| `make test-integration` | 409 passed in 74.52 seconds using disposable on-disk SQLite. The initial sandboxed ASGI run stalled and was stopped; the unchanged isolated command passed with local subprocess permission. |
+| `pnpm exec playwright test tests/smoke/sign-in.spec.ts tests/smoke/admin-navigation.spec.ts tests/smoke/practice-start.spec.ts tests/smoke/navigation.spec.ts --grep 'sign-in uses one\|administrator account drafts survive\|activity and message controls\|learner navigation preserves' --output /tmp/shepherd-t72/focused-browser` | Eight desktop/mobile cases passed in 1.0 minute, zero retries. Checks 320px reflow/touch targets, bounded sign-in, natural Cancel widths, credential correction, activity/message separation, collapsed-brief controls and menu geometry/dismissal/focus at 320/375/412px. The last grep alternative matches no current case; draft guards are covered by Tutor components and the full suite selection. |
+| `uv run --locked --no-env-file pytest /tmp/shepherd-t72/test_operations.py -q` | 15 passed in 0.96 seconds: synthetic encrypted backup/restore, exact-image preflight, failed backup recovery, activation guard and rollback. |
+| `uv run --locked --no-env-file python /tmp/shepherd-t72/test_backup_container.py` | Restricted synthetic-container backup/restore preserved a committed row present only in the uncheckpointed WAL; original fixture storage remained read-only. |
+
+The existing build-system upper-bound and JavaScript chunk-size warnings remain.
+No live inference, model downloads or private learner content was used for these
+checks. New application changes are App/Tutor/styles; new regression assertions
+are in Tutor components and sign-in/admin-navigation/practice-start browser cases.
+T71's already-installed source/test/documentation changes are retained and will
+be published in the same source checkpoint. Backend, schemas, migrations,
+generated clients, dependencies and infrastructure source are unchanged.
+
+## T71 — Correct account sign-in and household credential recovery (2026-10-24)
+
+**Status:** Complete and applied to the private installation. The maintainer reported
+misleading Reconnect on credential rejection, conflicting account chooser and
+editable Username fields, repeated sign-in headings, and the incomplete prior
+request to reset existing household passwords. T62 reset only the administrator
+and preserved learner credentials; lowering the password minimum did not fulfill
+that broader request.
+
+**Scope and contracts:** SPECIFICATION sections 3 and 12, existing role-specific
+name-only directory, sign-in/CSRF/session replacement, account-switch draft
+preservation, Argon2id recovery and session revocation. One Account selector
+replaces duplicate entry; manual Username is available only when the directory
+fails. Sign-in errors appear inside the form, distinguish invalid credentials,
+role rejection, throttling and server/network failure, and retain the account
+choice. Remove repeated headings and explain the actual retry action.
+No public API/schema, migration, dependencies or provider behavior changes.
+
+**Plan and validation:** Exercise both roles, native keyboard selection, empty and
+failed account lists, failed-password/corrected retry, connection failure,
+throttling, and current-workspace preservation on rejected role switches.
+Run focused components, `make check`, `make test-integration` and the focused
+desktop/mobile Playwright access/account/navigation/setup journeys using
+synthetic data and an isolated environment. Validate the candidate container
+before a private update. Recover existing active account credentials through
+supported application operations with hidden input, aggregate verification only,
+no credential default in source, and no new learner access for disabled,
+deleted or passwordless profiles. Keep existing work and provider settings.
+
+**Source and package evidence:** All source commands use
+`python3 /tmp/shepherd-t71/run.py` to allowlist tool environment variables,
+exclude inherited operator/provider settings and disable environment-file loading.
+
+| Command | Actual outcome |
+| --- | --- |
+| `pnpm --filter @math-tutor/web exec vitest run tests/App.test.tsx tests/SignInAccounts.test.tsx tests/AdminNavigation.test.tsx tests/Setup.test.tsx` | Final focused run: 90 passed. Covers both roles, one submitted username, loading/empty/fallback lists, local credential/network/throttle/server errors, expiry refresh ordering, Help transitions and retained drafts. |
+| `make check` | Final gate passed: 329 backend unit, 11 toolchain and 315 frontend tests; locks, lint, formatting, types, build, API drift, credential scan and infrastructure checks passed. |
+| `make test-integration` | All 409 cases passed in 74.12 seconds on disposable on-disk SQLite. Backend and contracts are unchanged by T71. |
+| Initial focused Playwright access/account/navigation/setup/bootstrap suite | 54 passed; six fixture/assertion failures: old offline wording in two cases on both projects, and a directory-loading selection race in the shared helper on both projects. Copy assertions and the helper were corrected without changing product requirements or throttles; all six subsequently passed in the final run below. |
+| `docker build --pull=false -t math-practice-tutor:t71-signin /tmp/shepherd-t71/image` | Passed. Builds from the installed immutable backend, removes its old web directory, and installs only the final verified public bundle; no private settings/data enter the build context. |
+| `sh scripts/container-smoke.sh math-practice-tutor:t71-signin` | Final candidate passed non-root runtime, SQLite 3.53.1/WAL/FK/FULL synchronization, migrations, worker/UI readiness, HEIF/cryptography, disabled-provider refusal, and synthetic owner setup/renewal/rejection. No inference. |
+| Isolated helper tests under `/tmp/shepherd-t71` | 28 passed in 3.34 seconds: atomic credential reset, exclusions, rollback, backup/restore, operational recovery and HTTPS verifier behavior. Ruff and formatting passed. A separate real restricted-container test preserved a committed row present only in uncheckpointed WAL with the original source read-only. |
+| `python3 /tmp/shepherd-t71/deploy.py preflight --candidate <candidate>` | Passed read-only image/non-root, existing-service, original-mount and privilege checks. No installed service was changed by preflight. |
+
+Final candidate:
+`sha256:fcaf2674d7b0f1aa3ff6c07f47f04e769b217ae5d5d4f9b964c84f8b8025c46c`.
+Its 66-file public bundle manifest SHA-256 is
+`ba5e7ff88892225f36eb28d01d96a775eeeab71f74502e779b8bc7116bf11e6b`.
+The backend and dependencies are inherited unchanged from T70's installed image.
+This is a local candidate; no Git commit or publication is claimed.
+
+The initial sandbox toolchain subprocess failure was resolved by running the
+unchanged isolated gate with local execution permission. An intermediate
+component-test lint error was corrected before the final passing gate. The
+existing build-system upper-bound and JavaScript chunk-size warnings remain.
+The backup container probe caught read-only SQLite WAL auxiliary behavior before
+any private operation; the reviewed helper now stages both the stopped main file
+and WAL privately, then uses the application's SQLite backup API. The committed
+WAL-only row proof guards against silently omitting that work.
+
+**Final browser evidence:** The following command passed **20/20 cases in 3.1
+minutes**, one worker and zero retries, against the final source build:
+
+```bash
+python3 /tmp/shepherd-t71/run.py pnpm exec playwright test 'tests/smoke/(sign-in|workspace-navigation|bootstrap)\.spec\.ts$' --grep 'corrects an incorrect password|account-list failure|a sign-in connection failure|an empty account list|an expired sign-in page|persisted tutoring survives disconnect|offline shell|canceling a failed administrator|app area links'
+```
+
+This reran all six initial failures, every sign-in regression, both account-switch
+journeys and two new expired-form cases. Combined coverage is 62 distinct
+desktop/mobile cases across the initial and final runs, not a claim that a full
+browser suite passed on this revision. Screenshots support the focused layout
+review; interactive assertions establish the behavior tested.
+
+**Private installation:** `deploy.py prepare --candidate <candidate> --execute`
+stopped both writers, preserved the exact previous image, and verified encrypted
+backup plus isolated restore before the update. Archive:
+`backups/deploy-20261024T191836Z-t71-fcaf2674d7b0/archive.enc`, SHA-256
+`6eed8d8cb122be7bf5c963baade87cd20e064d3a4d24373f951d4a02047f77d6`.
+Its generated passphrase is stored separately under the operator's private
+backup-key directory with permissions 600; its value was not printed or opened
+by the coding agent. The plaintext rehearsal was removed. Current deletions,
+schema/integrity/foreign keys, restored-session revocation, pending-job cleanup
+and retained-object hashes passed.
+
+With both services stopped, `python3 /tmp/shepherd-t71/launch_reset.py` used hidden
+input and the application's existing recovery operations in one transaction.
+Aggregate receipt: **one existing administrator and one enabled learner reset**,
+credentials verified and previous sessions revoked. Disabled, deleted and
+passwordless profiles were excluded. No new account or credential default was
+created; usernames, age groups and saved work were preserved.
+
+`python3 /tmp/shepherd-t71/deploy.py activate --execute` started both services on
+the exact final candidate and original data bind. Private HTTPS readiness, a
+worker heartbeat newer than startup, zero service restarts, unchanged schema,
+66 exact public asset hashes, public update headers, three protected-route
+401/no-store responses and three disabled-documentation 404 responses passed.
+Both roots remain read-only and the API is published only on loopback. Rollback
+was not needed; the prior image is retained as
+`math-practice-tutor:rollback-20261024-t71-sign-in`.
+
+`python3 /tmp/shepherd-t71/verify_http_passwords.py --execute` then accepted the
+requested credential through actual HTTPS sign-in for **one administrator and
+one learner**, verified the matching roles internally, and immediately signed out
+both isolated verification sessions. Its receipt contains counts/booleans only.
+No private work or settings page was requested. The requested credential is not
+stored in source, command arguments, environment variables or this record.
+
+**Packaging exception and limits:** The runbook normally calls for a clean
+committed source archive. This bounded private correction used the final tested
+local frontend build over the unchanged installed backend, with an exact public
+bundle manifest and installed-asset verification; Git publication was not part
+of the request. Source changes remain uncommitted. Reviewed operational code,
+manifests and safe receipts are retained in the ignored T71 evidence directory.
+No private `.env`, provider configuration, uploads, private logs or learner
+content was opened by the coding agent. Backup/recovery programs processed
+retained data internally and exposed only the reviewed aggregate results.
+
+**Changed files:** Application `App.tsx` and `SignInAccounts.tsx`; four component
+test files (`App`, `SignInAccounts`, `AdminNavigation`, `Setup`); seven browser
+test/support files including new `sign-in.spec.ts`; SPECIFICATION, TASKS,
+UI_UX_REVIEW and ACCEPTANCE. No backend, generated API/client, schema, dependency
+or infrastructure source changed.
+
+No task failure remains. Full browser regression, physical-device/autofill and
+screen-reader acceptance, live provider/model tests, paid inference, model
+downloads, image vulnerability rescanning, Git commit and push were not run.
+The unchanged backend/package baseline is T70; this task does not claim a new
+whole-application UX audit or security certification. The separate launcher
+image-tag discovery defect is outside T71; its next bounded correction is to
+recognize the installed immutable image without starting a second application.
 
 ## T70 — Deploy the UI/UX corrections (2026-10-24)
 

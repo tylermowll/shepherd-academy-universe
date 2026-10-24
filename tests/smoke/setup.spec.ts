@@ -325,7 +325,7 @@ for (const lostReceipt of [false, true]) {
         await visitor.goto(ownerUrl);
         await expect(
           visitor.getByRole("heading", {
-            name: "Account sign-in",
+            name: "Learner sign-in",
             exact: true,
           }),
         ).toBeVisible();
@@ -350,8 +350,8 @@ for (const lostReceipt of [false, true]) {
         .getByRole("link", { name: "Administrator sign-in", exact: true })
         .click();
       await page
-        .getByLabel("Username", { exact: true })
-        .fill("synthetic-owner");
+        .getByRole("combobox", { name: "Account", exact: true })
+        .selectOption("synthetic-owner");
       await page.getByLabel("Password", { exact: true }).fill("123");
       await page.getByRole("button", { name: "Sign in", exact: true }).click();
       await expect(

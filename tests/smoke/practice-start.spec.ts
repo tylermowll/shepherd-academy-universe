@@ -41,7 +41,7 @@ test("starting with reference text creates exactly one activity without a second
   );
 });
 
-test("composer menus stay in bounds, close each other and dismiss predictably", async ({
+test("activity and message controls stay separate while menus fit and dismiss predictably", async ({
   page,
 }) => {
   await startTutor(page, "Synthetic menu interaction");
@@ -50,6 +50,34 @@ test("composer menus stay in bounds, close each other and dismiss predictably", 
     .filter({ hasText: /^Help$/ });
   const nextToggle = page.getByText("Next activity options", { exact: true });
   const menus = page.locator(".composer-menu[open]");
+  const activityControls = page.getByRole("group", {
+    name: "Activity controls",
+    exact: true,
+  });
+  const messageActions = page.locator(".composer-actions");
+  await expect(
+    activityControls.getByRole("button", {
+      name: "Finish session",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    activityControls.getByText("Next activity options", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    messageActions.getByText("Next activity options", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    messageActions.getByRole("button", { name: "Finish session", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    messageActions.getByRole("button", { name: "Send", exact: true }),
+  ).toBeVisible();
+  const activitySummary = page.locator(".activity-brief > summary");
+  await activitySummary.click();
+  await expect(activityControls).toBeVisible();
+  await expect(nextToggle).toBeVisible();
+  await activitySummary.click();
   await helpToggle.click();
   await expect(menus).toHaveCount(1);
   await nextToggle.click();
@@ -67,30 +95,47 @@ test("composer menus stay in bounds, close each other and dismiss predictably", 
     .getByRole("heading", { level: 1, name: "Practice", exact: true })
     .click();
   await expect(menus).toHaveCount(0);
-  const assertOpenMenuFits = async () => {
+  const assertOpenMenuFits = async (kind: "activity" | "message") => {
     const optionsBounds = await page
       .locator(".composer-menu[open] .composer-options")
       .boundingBox();
-    const composerBounds = await page.locator(".tutor-response").boundingBox();
+    const ownerBounds = await page
+      .locator(kind === "activity" ? ".activity-controls" : ".tutor-response")
+      .boundingBox();
+    const triggerBounds = await (
+      kind === "activity" ? nextToggle : helpToggle
+    ).boundingBox();
     const chatBounds = await page.locator(".chat-column").boundingBox();
     expect(optionsBounds).not.toBeNull();
-    expect(composerBounds).not.toBeNull();
+    expect(ownerBounds).not.toBeNull();
+    expect(triggerBounds).not.toBeNull();
     expect(chatBounds).not.toBeNull();
-    expect(optionsBounds!.x).toBeGreaterThanOrEqual(composerBounds!.x);
+    expect(optionsBounds!.x).toBeGreaterThanOrEqual(ownerBounds!.x);
     expect(optionsBounds!.x + optionsBounds!.width).toBeLessThanOrEqual(
-      composerBounds!.x + composerBounds!.width,
+      ownerBounds!.x + ownerBounds!.width,
     );
     expect(optionsBounds!.y).toBeGreaterThanOrEqual(chatBounds!.y);
     expect(optionsBounds!.y + optionsBounds!.height).toBeLessThanOrEqual(
       chatBounds!.y + chatBounds!.height,
     );
+    if (kind === "activity")
+      expect(optionsBounds!.y).toBeGreaterThanOrEqual(
+        triggerBounds!.y + triggerBounds!.height,
+      );
+    else
+      expect(optionsBounds!.y + optionsBounds!.height).toBeLessThanOrEqual(
+        triggerBounds!.y,
+      );
   };
   for (const width of [320, 375, 412]) {
     await page.setViewportSize({ width, height: 700 });
-    for (const toggle of [helpToggle, nextToggle]) {
+    for (const [kind, toggle] of [
+      ["message", helpToggle],
+      ["activity", nextToggle],
+    ] as const) {
       await toggle.click();
       await expect(menus).toHaveCount(1);
-      await assertOpenMenuFits();
+      await assertOpenMenuFits(kind);
       await page.keyboard.press("Escape");
       await expect(menus).toHaveCount(0);
     }

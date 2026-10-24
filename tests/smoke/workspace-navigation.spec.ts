@@ -1,5 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createLearner, login, navigate, startTutor } from "./support";
+import {
+  createLearner,
+  login,
+  navigate,
+  selectSignInAccount,
+  startTutor,
+} from "./support";
 
 function accountNavigation(page: Page) {
   return page.getByRole("navigation", {
@@ -99,7 +105,7 @@ async function rejectSignIn(
   password: string,
   status: number,
 ) {
-  await page.getByLabel("Username", { exact: true }).fill(username);
+  await selectSignInAccount(page, username);
   await page.getByLabel("Password", { exact: true }).fill(password);
   const submit = async () => {
     const response = page.waitForResponse(
@@ -125,14 +131,25 @@ async function rejectSignIn(
     response = await submit();
   }
   expect(response.status()).toBe(status);
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.locator("form").getByRole("alert")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Reconnect", exact: true }),
+  ).toHaveCount(0);
 }
 
-test("app area links connect administration and learning through the appropriate sign-in", async ({
+test("app area links connect administration and learning through the appropriate sign-in when account listing is unavailable", async ({
   page,
 }) => {
   await login(page);
   const alias = await createLearner(page, false);
+  // The supported manual fallback can receive an account for the wrong role.
+  // Normal directory selection only offers accounts for the requested role.
+  await page.route("**/auth/accounts?*", (route) =>
+    route.fulfill({
+      status: 503,
+      json: { detail: "Synthetic account list failure" },
+    }),
+  );
   await expect(accountNavigation(page).getByRole("link")).toHaveText([
     "Learner sign-in",
   ]);
@@ -246,6 +263,12 @@ test("canceling a failed administrator switch preserves learner work and success
   });
   const draft = "Synthetic unsent work: I will compare the two observations.";
   await work.fill(draft);
+  await page.route("**/auth/accounts?*", (route) =>
+    route.fulfill({
+      status: 503,
+      json: { detail: "Synthetic account list failure" },
+    }),
+  );
   await accountNavigation(page)
     .getByRole("link", { name: "Administrator sign-in", exact: true })
     .click();

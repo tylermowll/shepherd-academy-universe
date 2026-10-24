@@ -92,6 +92,7 @@ function fixture() {
             login_name: url.includes("role=adult")
               ? "home-admin"
               : learner.alias,
+            role: url.includes("role=adult") ? "adult" : "learner",
           },
         ]),
       );
@@ -369,7 +370,8 @@ describe("administrator navigation", () => {
     );
     const signIn = screen.getByRole("button", { name: "Sign in" });
     const fields = within(signIn.closest("form")!);
-    fireEvent.change(fields.getByLabelText("Username"), {
+    await fields.findByRole("option", { name: learner.alias });
+    fireEvent.change(fields.getByRole("combobox", { name: "Account" }), {
       target: { value: learner.alias },
     });
     fireEvent.change(fields.getByLabelText("Password", { exact: true }), {

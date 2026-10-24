@@ -17,6 +17,10 @@ const browser = (
   }
 ).jsdom;
 const originalUrl = window.location.href;
+const accountDirectory = (url: string) =>
+  url.endsWith("role=adult")
+    ? [{ login_name: "home-admin", role: "adult" }]
+    : [{ login_name: "home-learner", role: "learner" }];
 
 function summary<T extends { problems: unknown[] }>(value: T) {
   const { problems, ...metadata } = value;
@@ -33,7 +37,7 @@ beforeEach(() => {
         new Response(
           JSON.stringify(
             url.includes("/auth/accounts?")
-              ? []
+              ? accountDirectory(url)
               : {
                   authenticated: false,
                   csrf_token: "synthetic-csrf",
@@ -64,7 +68,9 @@ describe("entry", () => {
       "type",
       "password",
     );
-    expect(screen.getByLabelText("Username")).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "Account" })).toBeVisible();
+    expect(screen.queryByLabelText("Username")).toBeNull();
+    expect(screen.queryByText("Account sign-in")).toBeNull();
     const navigation = screen.getByRole("navigation", {
       name: "Sign-in navigation",
     });
@@ -185,12 +191,22 @@ describe("linked app areas", () => {
       status,
       headers: { "Content-Type": "application/json" },
     });
-  function signIn(login: string, password = "synthetic-password-only") {
+  async function signIn(login: string, password = "synthetic-password-only") {
     const submit = screen.getByRole("button", { name: "Sign in" });
     const fields = within(submit.closest("form")!);
-    fireEvent.change(fields.getByLabelText("Username"), {
-      target: { value: login },
-    });
+    await vi.waitFor(() =>
+      expect(
+        fields.queryByRole("option", { name: login }) ??
+          fields.queryByLabelText("Username"),
+      ).not.toBeNull(),
+    );
+    fireEvent.change(
+      fields.queryByLabelText("Username") ??
+        fields.getByRole("combobox", { name: "Account" }),
+      {
+        target: { value: login },
+      },
+    );
     fireEvent.change(fields.getByLabelText("Password"), {
       target: { value: password },
     });
@@ -237,12 +253,18 @@ describe("linked app areas", () => {
           response(
             url.endsWith("/auth/session")
               ? account
-              : url.endsWith("/auth/login")
-                ? { detail: "Use an account for the requested role." }
-                : url.endsWith("/features")
-                  ? features
-                  : [],
-            url.endsWith("/auth/login") ? 403 : 200,
+              : url.includes("/auth/accounts?")
+                ? { detail: "Synthetic account-directory outage." }
+                : url.endsWith("/auth/login")
+                  ? { detail: "Use an account for the requested role." }
+                  : url.endsWith("/features")
+                    ? features
+                    : [],
+            url.endsWith("/auth/login")
+              ? 403
+              : url.includes("/auth/accounts?")
+                ? 503
+                : 200,
           ),
         ),
       );
@@ -286,7 +308,7 @@ describe("linked app areas", () => {
       );
       expect(screen.queryByLabelText("Signed in account")).toBeNull();
       expect(draft).not.toBeVisible();
-      signIn("wrong-role-account");
+      await signIn("wrong-role-account");
       expect(await screen.findByRole("alert")).toHaveTextContent(
         "Use an account for the requested role.",
       );
@@ -491,6 +513,8 @@ describe("linked app areas", () => {
       const fetcher = vi.fn<
         (url: string, options?: RequestInit) => Promise<Response>
       >((url) => {
+        if (url.includes("/auth/accounts?"))
+          return Promise.resolve(response(accountDirectory(url)));
         if (url.endsWith("/auth/session"))
           return Promise.resolve(
             response({ authenticated: false, csrf_token: "synthetic-csrf" }),
@@ -506,7 +530,7 @@ describe("linked app areas", () => {
       await vi.waitFor(() =>
         expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
       );
-      signIn(signedIn.login_name);
+      await signIn(signedIn.login_name);
       expect(
         await screen.findByLabelText("Signed in account"),
       ).toHaveTextContent(signedIn.login_name);
@@ -529,6 +553,243 @@ describe("linked app areas", () => {
       });
     },
   );
+
+  it.each([
+    {
+      failure: "credentials",
+      status: 401,
+      detail: "Invalid login name or password.",
+      message:
+        "Incorrect account or password. Check your details and try again.",
+    },
+    {
+      failure: "network",
+      status: 0,
+      detail: "Synthetic offline request",
+      message:
+        "Could not reach the app. Check your connection, then select Sign in to try again.",
+    },
+    {
+      failure: "throttled",
+      status: 429,
+      detail: "Too many login attempts. Try again later.",
+      message: "Too many login attempts. Try again later.",
+    },
+    {
+      failure: "server",
+      status: 503,
+      detail: "Synthetic private server diagnostic",
+      message:
+        "Sign-in is temporarily unavailable. Select Sign in to try again.",
+    },
+  ])(
+    "keeps $failure sign-in errors beside the password and retries the selected account without refreshing the session",
+    async ({ status, detail, message }) => {
+      let attempts = 0;
+      const fetcher = vi.fn((url: string, options?: RequestInit) => {
+        if (url.endsWith("/auth/session"))
+          return Promise.resolve(
+            response({ authenticated: false, csrf_token: "synthetic-csrf" }),
+          );
+        if (url.includes("/auth/accounts?"))
+          return Promise.resolve(response(accountDirectory(url)));
+        if (url.endsWith("/auth/login")) {
+          attempts += 1;
+          if (attempts === 1)
+            return status
+              ? Promise.resolve(response({ detail }, status))
+              : Promise.reject(new TypeError(detail));
+          expect(JSON.parse(options!.body as string)).toEqual({
+            login_name: "home-learner",
+            password: "123",
+            role: "learner",
+          });
+          return Promise.resolve(response(learnerAccount));
+        }
+        if (url.endsWith("/features"))
+          return Promise.resolve(response(features));
+        return Promise.resolve(response([]));
+      });
+      vi.stubGlobal("fetch", fetcher);
+      render(<App />);
+      await signIn("home-learner", "wrong-password");
+      const error = await screen.findByRole("alert");
+      expect(error).toHaveTextContent(message);
+      const password = screen.getByLabelText("Password");
+      const form = password.closest("form")!;
+      expect(form).toContainElement(error);
+      expect(password).toHaveAttribute("aria-describedby", error.id);
+      await vi.waitFor(() => expect(password).toHaveFocus());
+      expect(password).toHaveValue("wrong-password");
+      expect(screen.getByRole("combobox", { name: "Account" })).toHaveValue(
+        "home-learner",
+      );
+      expect(screen.queryByLabelText("Username")).toBeNull();
+      expect(screen.queryByRole("button", { name: "Reconnect" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+      expect(
+        fetcher.mock.calls.filter(([url]) => url.endsWith("/auth/session")),
+      ).toHaveLength(1);
+      fireEvent.change(password, { target: { value: "123" } });
+      expect(screen.queryByRole("alert")).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+      await screen.findByRole("heading", { level: 1, name: "Practice" });
+      expect(attempts).toBe(2);
+      expect(
+        fetcher.mock.calls.filter(([url]) => url.endsWith("/auth/session")),
+      ).toHaveLength(1);
+    },
+  );
+
+  it("refreshes an expired sign-in page only when Sign in is selected again and preserves the current learner draft", async () => {
+    let attempts = 0;
+    let sessions = 0;
+    let finishLogin!: (value: Response) => void;
+    const pendingLogin = new Promise<Response>((resolve) => {
+      finishLogin = resolve;
+    });
+    const fetcher = vi.fn<
+      (url: string, options?: RequestInit) => Promise<Response>
+    >((url) => {
+      if (url.endsWith("/auth/session")) {
+        sessions += 1;
+        return Promise.resolve(
+          response({
+            ...learnerAccount,
+            csrf_token:
+              sessions === 1
+                ? learnerAccount.csrf_token
+                : "synthetic-refreshed-csrf",
+          }),
+        );
+      }
+      if (url.includes("/auth/accounts?"))
+        return Promise.resolve(response(accountDirectory(url)));
+      if (url.endsWith("/auth/login")) {
+        attempts += 1;
+        return attempts === 1
+          ? Promise.resolve(
+              response({ detail: "CSRF validation failed." }, 403),
+            )
+          : pendingLogin;
+      }
+      if (url.endsWith("/features")) return Promise.resolve(response(features));
+      return Promise.resolve(response([]));
+    });
+    vi.stubGlobal("fetch", fetcher);
+    render(<App />);
+    const topic = await screen.findByLabelText("Topic or learning goal");
+    fireEvent.change(topic, {
+      target: { value: "Preserve this unsent learner topic." },
+    });
+    fireEvent.click(
+      screen.getByRole("link", { name: "Administrator sign-in" }),
+    );
+    await signIn("home-admin", "123");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This sign-in page expired. Select Sign in to try again.",
+    );
+    expect(sessions).toBe(1);
+    expect(attempts).toBe(1);
+    expect(topic).toHaveValue("Preserve this unsent learner topic.");
+    expect(topic).not.toBeVisible();
+    expect(screen.getByRole("combobox", { name: "Account" })).toHaveValue(
+      "home-admin",
+    );
+    expect(screen.getByLabelText("Password")).toHaveValue("123");
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await vi.waitFor(() => expect(attempts).toBe(2));
+    expect(sessions).toBe(2);
+    expect(topic).toHaveValue("Preserve this unsent learner topic.");
+    expect(screen.getByRole("combobox", { name: "Account" })).toHaveValue(
+      "home-admin",
+    );
+    expect(screen.getByLabelText("Password")).toHaveValue("123");
+    expect(
+      fetcher.mock.calls
+        .map(([url]) => url)
+        .filter((url) => /\/auth\/(?:session|login)$/.test(url)),
+    ).toEqual([
+      "/api/v1/auth/session",
+      "/api/v1/auth/login",
+      "/api/v1/auth/session",
+      "/api/v1/auth/login",
+    ]);
+    const loginCalls = fetcher.mock.calls.filter(([url]) =>
+      url.endsWith("/auth/login"),
+    );
+    expect(loginCalls[1]?.[1]?.headers).toMatchObject({
+      "X-CSRF-Token": "synthetic-refreshed-csrf",
+    });
+    await act(async () => {
+      finishLogin(response(adult));
+      await pendingLogin;
+    });
+    await screen.findByRole("heading", { level: 1, name: "Learners" });
+    expect(topic).not.toBeInTheDocument();
+  });
+
+  it("keeps expired-page recovery pending when refreshing the session fails and retries before posting credentials", async () => {
+    let attempts = 0;
+    let sessions = 0;
+    const fetcher = vi.fn((url: string) => {
+      if (url.endsWith("/auth/session")) {
+        sessions += 1;
+        if (sessions === 2)
+          return Promise.reject(new TypeError("Synthetic refresh offline"));
+        return Promise.resolve(
+          response({
+            authenticated: false,
+            csrf_token:
+              sessions === 1 ? "synthetic-csrf" : "synthetic-refreshed-csrf",
+          }),
+        );
+      }
+      if (url.includes("/auth/accounts?"))
+        return Promise.resolve(response(accountDirectory(url)));
+      if (url.endsWith("/auth/login")) {
+        attempts += 1;
+        return Promise.resolve(
+          attempts === 1
+            ? response({ detail: "CSRF validation failed." }, 403)
+            : response(learnerAccount),
+        );
+      }
+      if (url.endsWith("/features")) return Promise.resolve(response(features));
+      return Promise.resolve(response([]));
+    });
+    vi.stubGlobal("fetch", fetcher);
+    render(<App />);
+    await signIn("home-learner", "123");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This sign-in page expired.",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not reach the app. Check your connection, then select Sign in to try again.",
+    );
+    expect(sessions).toBe(2);
+    expect(attempts).toBe(1);
+    expect(screen.getByRole("combobox", { name: "Account" })).toHaveValue(
+      "home-learner",
+    );
+    expect(screen.getByLabelText("Password")).toHaveValue("123");
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await screen.findByRole("heading", { level: 1, name: "Practice" });
+    expect(sessions).toBe(3);
+    expect(attempts).toBe(2);
+    expect(
+      fetcher.mock.calls
+        .map(([url]) => url)
+        .filter((url) => /\/auth\/(?:session|login)$/.test(url)),
+    ).toEqual([
+      "/api/v1/auth/session",
+      "/api/v1/auth/login",
+      "/api/v1/auth/session",
+      "/api/v1/auth/session",
+      "/api/v1/auth/login",
+    ]);
+  });
 
   it("offers both sign-in destinations to guests and preserves their URLs on reload and back", async () => {
     let view = render(<App />);
@@ -574,6 +835,57 @@ describe("linked app areas", () => {
     view.unmount();
   });
 
+  it("clears a failed learner sign-in when Help leads to administrator sign-in", async () => {
+    const fetcher = vi.fn((url: string) => {
+      if (url.endsWith("/auth/session"))
+        return Promise.resolve(
+          response({ authenticated: false, csrf_token: "synthetic-csrf" }),
+        );
+      if (url.includes("/auth/accounts?"))
+        return Promise.resolve(response(accountDirectory(url)));
+      if (url.endsWith("/auth/login"))
+        return Promise.resolve(
+          response({ detail: "Invalid login name or password." }, 401),
+        );
+      return Promise.resolve(response([]));
+    });
+    vi.stubGlobal("fetch", fetcher);
+    render(<App />);
+    await signIn("home-learner");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Incorrect account or password.",
+    );
+    fireEvent.click(screen.getByRole("link", { name: "Forgot password?" }));
+    fireEvent.click(
+      within(screen.getByRole("navigation", { name: "Help topics" })).getByRole(
+        "link",
+        { name: "Connect an AI model" },
+      ),
+    );
+    fireEvent.click(
+      within(within(screen.getByRole("article")).getByRole("list")).getByRole(
+        "link",
+        {
+          name: "Settings",
+        },
+      ),
+    );
+    const heading = screen.getByRole("heading", {
+      level: 1,
+      name: "Administrator sign-in",
+    });
+    expect(heading).toHaveFocus();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByLabelText("Password")).not.toHaveAttribute(
+      "aria-describedby",
+    );
+    await screen.findByRole("option", { name: "home-admin" });
+    expect(screen.queryByRole("option", { name: "home-learner" })).toBeNull();
+    expect(
+      fetcher.mock.calls.filter(([url]) => url.endsWith("/auth/login")),
+    ).toHaveLength(1);
+  });
+
   it.each([
     { deployment: "http://localhost:5173/", role: "adult" },
     { deployment: "http://localhost:5173/", role: "learner" },
@@ -602,8 +914,10 @@ describe("linked app areas", () => {
           .getByRole("button", { name: "Sign in" })
           .closest("form")!;
         expect(
-          within(form).getByText(`${account} account`, { exact: true }),
+          within(form).getByRole("combobox", { name: "Account" }),
         ).toBeVisible();
+        expect(within(form).queryByLabelText("Username")).toBeNull();
+        expect(within(form).queryByRole("heading")).toBeNull();
         expect(
           within(
             screen.getByRole("navigation", { name: "Sign-in navigation" }),
@@ -950,6 +1264,8 @@ describe("linked app areas", () => {
     });
     let lists = 0;
     const fetcher = vi.fn((url: string, options: RequestInit) => {
+      if (url.includes("/auth/accounts?"))
+        return Promise.resolve(response(accountDirectory(url)));
       if (url.endsWith("/auth/session"))
         return Promise.resolve(response(adult));
       if (url.endsWith("/auth/login")) {
@@ -991,7 +1307,7 @@ describe("linked app areas", () => {
       screen.queryByRole("navigation", { name: "Account navigation" }),
     ).toBeNull();
     expect(screen.getByText("home-admin")).not.toBeVisible();
-    signIn("home-learner");
+    await signIn("home-learner");
     await screen.findByRole("heading", { level: 1, name: "Practice" });
     expect(screen.getByLabelText("Signed in account")).toHaveTextContent(
       "home-learner",
@@ -1021,7 +1337,7 @@ describe("linked app areas", () => {
       "Administrator sign-in",
     );
     expect(screen.queryByRole("link", { name: "Settings" })).toBeNull();
-    signIn("home-admin");
+    await signIn("home-admin");
     await screen.findByRole("heading", { level: 1, name: "Learners" });
     expect(screen.getByLabelText("Signed in account")).toHaveTextContent(
       "home-admin",
@@ -1071,6 +1387,12 @@ describe("linked app areas", () => {
     "keeps the learner account and actual draft after a $status administrator sign-in failure and cancellation",
     async ({ status, login, detail }) => {
       const fetcher = vi.fn((url: string) => {
+        if (url.includes("/auth/accounts?"))
+          return Promise.resolve(
+            status === 403
+              ? response({}, 503)
+              : response(accountDirectory(url)),
+          );
         if (url.endsWith("/auth/session"))
           return Promise.resolve(response(learnerAccount));
         if (url.endsWith("/auth/login"))
@@ -1095,12 +1417,23 @@ describe("linked app areas", () => {
       await vi.waitFor(() =>
         expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
       );
-      signIn(login, "synthetic-password-only");
-      expect(await screen.findByRole("alert")).toHaveTextContent(detail);
+      await signIn(login, "synthetic-password-only");
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        status === 401
+          ? "Incorrect account or password. Check your details and try again."
+          : detail,
+      );
+      expect(
+        fetcher.mock.calls.filter(([url]) => url.endsWith("/auth/session")),
+      ).toHaveLength(1);
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
         "Administrator sign-in",
       );
-      expect(screen.getByLabelText("Username")).toHaveValue(login);
+      expect(
+        status === 403
+          ? screen.getByLabelText("Username")
+          : screen.getByRole("combobox", { name: "Account" }),
+      ).toHaveValue(login);
       expect(screen.queryByLabelText("Signed in account")).toBeNull();
       expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
       expect(
@@ -1153,22 +1486,28 @@ describe("linked app areas", () => {
         response(
           url.endsWith("/auth/session")
             ? adult
-            : url.endsWith("/auth/login")
-              ? { detail: "Use a learner account for Learner sign-in." }
-              : url.endsWith("/admin/providers")
-                ? {
-                    policy: {
-                      allow_cloud_inference: false,
-                      app_audience: "mixed",
-                      cloud_locked: false,
-                      audience_locked: false,
-                      demo_mode: false,
-                    },
-                    routes: { tutor: "", vision: "" },
-                    providers: [],
-                  }
-                : [],
-          url.endsWith("/auth/login") ? 403 : 200,
+            : url.includes("/auth/accounts?")
+              ? { detail: "Synthetic account-directory outage." }
+              : url.endsWith("/auth/login")
+                ? { detail: "Use a learner account for Learner sign-in." }
+                : url.endsWith("/admin/providers")
+                  ? {
+                      policy: {
+                        allow_cloud_inference: false,
+                        app_audience: "mixed",
+                        cloud_locked: false,
+                        audience_locked: false,
+                        demo_mode: false,
+                      },
+                      routes: { tutor: "", vision: "" },
+                      providers: [],
+                    }
+                  : [],
+          url.endsWith("/auth/login")
+            ? 403
+            : url.includes("/auth/accounts?")
+              ? 503
+              : 200,
         ),
       ),
     );
@@ -1184,7 +1523,7 @@ describe("linked app areas", () => {
       "Learner sign-in",
     );
     expect(name).not.toBeVisible();
-    signIn("home-admin");
+    await signIn("home-admin");
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Use a learner account for Learner sign-in.",
     );
@@ -1319,6 +1658,8 @@ describe("linked app areas", () => {
       finishLogin = resolve;
     });
     const fetcher = vi.fn((url: string) => {
+      if (url.includes("/auth/accounts?"))
+        return Promise.resolve(response(accountDirectory(url)));
       if (url.endsWith("/auth/session"))
         return Promise.resolve(response(learnerAccount));
       if (url.endsWith("/auth/login")) return pendingLogin;
@@ -1334,8 +1675,8 @@ describe("linked app areas", () => {
     await vi.waitFor(() =>
       expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
     );
-    signIn("home-admin");
-    const submit = screen.getByRole("button", { name: "Sign in" });
+    await signIn("home-admin");
+    const submit = screen.getByRole("button", { name: "Signing in…" });
     expect(submit).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
     expect(
@@ -1373,6 +1714,8 @@ describe("linked app areas", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn((url: string, options?: RequestInit) => {
+        if (url.includes("/auth/accounts?"))
+          return Promise.resolve(response(accountDirectory(url)));
         if (url.endsWith("/auth/session"))
           return Promise.resolve(response(learnerAccount));
         if (url.endsWith("/auth/login")) {
@@ -1400,11 +1743,11 @@ describe("linked app areas", () => {
       expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled(),
     );
     expect(oldTopic).toHaveValue("Previous account draft.");
-    signIn("home-admin");
+    await signIn("home-admin");
     await screen.findByRole("heading", { level: 1, name: "Learners" });
     expect(oldTopic).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("link", { name: "Learner sign-in" }));
-    signIn("home-learner");
+    await signIn("home-learner");
     await screen.findByRole("heading", { level: 1, name: "Practice" });
     expect(screen.getByLabelText("Topic or learning goal")).not.toBe(oldTopic);
     expect(screen.getByLabelText("Topic or learning goal")).toHaveValue("");
@@ -1548,7 +1891,7 @@ it("keeps a newly created learner when an older list request finishes late", asy
   expect(screen.getByLabelText("Learner username")).toHaveValue(row.alias);
 });
 
-it("retries a failed learner list when the adult reconnects", async () => {
+it("retries a failed learner list when the administrator selects Try again", async () => {
   let lists = 0;
   vi.stubGlobal(
     "fetch",
@@ -1585,7 +1928,7 @@ it("retries a failed learner list when the adult reconnects", async () => {
   );
   render(<App />);
   await screen.findByRole("alert");
-  fireEvent.click(screen.getByRole("button", { name: "Reconnect" }));
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
   await screen.findByRole("button", { name: /Recovered learner/ });
   expect(lists).toBe(2);
   expect(screen.queryByRole("alert")).toBeNull();

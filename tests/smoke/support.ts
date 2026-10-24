@@ -11,6 +11,46 @@ export async function navigate(
   await expect(link).toHaveAttribute("aria-current", "page");
 }
 
+export async function selectSignInAccount(page: Page, username: string) {
+  const account = page.getByRole("combobox", { name: "Account", exact: true });
+  const manual = page.getByRole("textbox", { name: "Username", exact: true });
+  await expect(account.or(manual)).toBeVisible();
+  await expect(
+    page.getByText("Loading account names…", { exact: true }),
+  ).toHaveCount(0);
+  if (await account.isVisible()) await account.selectOption(username);
+  else await manual.fill(username);
+}
+
+export async function submitSignIn(page: Page) {
+  const submit = async () => {
+    const response = page.waitForResponse(
+      (result) =>
+        result.url().endsWith("/auth/login") &&
+        result.request().method() === "POST",
+    );
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    return response;
+  };
+  let response = await submit();
+  // Independent browser contexts share a loopback address. Keep the production
+  // login budget when the suite exercises rejected credentials and retries.
+  if (response.status() === 429) {
+    await expect(page.getByRole("alert")).toContainText(
+      "Too many login attempts",
+    );
+    const retryAfter = Number(response.headers()["retry-after"]);
+    expect(Number.isInteger(retryAfter)).toBe(true);
+    expect(retryAfter).toBeGreaterThan(0);
+    expect(retryAfter).toBeLessThanOrEqual(60);
+    const delay = retryAfter * 1000 + 100;
+    test.setTimeout(test.info().timeout + delay);
+    await page.waitForTimeout(delay);
+    response = await submit();
+  }
+  return response;
+}
+
 export async function login(
   page: Page,
   username = "demo",
@@ -35,33 +75,9 @@ export async function login(
   )
     await page.getByRole("link", { name: title, exact: true }).click();
   const signInForm = page.locator("form").filter({ has: signInButton });
-  await signInForm.getByLabel("Username", { exact: true }).fill(username);
+  await selectSignInAccount(page, username);
   await signInForm.getByLabel("Password", { exact: true }).fill(password);
-  const signIn = async () => {
-    const response = page.waitForResponse(
-      (result) =>
-        result.url().endsWith("/auth/login") &&
-        result.request().method() === "POST",
-    );
-    await signInButton.click();
-    return response;
-  };
-  let response = await signIn();
-  // Independent browser contexts share a loopback address. The expanded suite
-  // honors the real ten-per-minute limit instead of disabling it for tests.
-  if (response.status() === 429) {
-    await expect(page.getByRole("alert")).toContainText(
-      "Too many login attempts",
-    );
-    const retryAfter = Number(response.headers()["retry-after"]);
-    expect(Number.isInteger(retryAfter)).toBe(true);
-    expect(retryAfter).toBeGreaterThan(0);
-    expect(retryAfter).toBeLessThanOrEqual(60);
-    const delay = retryAfter * 1000 + 100;
-    test.setTimeout(test.info().timeout + delay);
-    await page.waitForTimeout(delay);
-    response = await signIn();
-  }
+  const response = await submitSignIn(page);
   expect(response.status()).toBe(200);
   await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
 }

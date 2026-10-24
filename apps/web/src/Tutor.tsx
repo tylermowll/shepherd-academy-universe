@@ -1287,6 +1287,82 @@ export function Tutor({
                     )}
                   </details>
                 )}
+                {session.status === "open" && (
+                  <div
+                    className="activity-controls"
+                    role="group"
+                    aria-label="Activity controls"
+                  >
+                    {problem?.activity_state === "ready" && (
+                      <ComposerMenu
+                        title="Next activity options"
+                        className="next-menu activity-menu"
+                        disabled={blocked}
+                        onOpen={() => setAttachmentsOpen(false)}
+                      >
+                        <div className="composer-options">
+                          <button
+                            type="button"
+                            disabled={disabled || hasResponseDraft}
+                            onClick={() =>
+                              void act(() =>
+                                activity(
+                                  problem.passage ? "same_passage" : "topic",
+                                ),
+                              )
+                            }
+                          >
+                            Next activity
+                          </button>
+                          <button
+                            type="button"
+                            disabled={disabled || hasResponseDraft}
+                            onClick={() =>
+                              void act(() =>
+                                activity(
+                                  problem.passage ? "same_passage" : "topic",
+                                  "introductory",
+                                ),
+                              )
+                            }
+                          >
+                            Easier next activity
+                          </button>
+                          <button
+                            type="button"
+                            disabled={disabled || hasResponseDraft}
+                            onClick={() =>
+                              void act(() =>
+                                activity(
+                                  problem.passage ? "same_passage" : "topic",
+                                  "challenge",
+                                ),
+                              )
+                            }
+                          >
+                            Harder next activity
+                          </button>
+                        </div>
+                      </ComposerMenu>
+                    )}
+                    <button
+                      type="button"
+                      className="quiet"
+                      disabled={disabled || hasResponseDraft}
+                      onClick={() =>
+                        void act(() =>
+                          command(
+                            "finish",
+                            `/sessions/${session.id}/finish`,
+                            {},
+                          ),
+                        )
+                      }
+                    >
+                      Finish session
+                    </button>
+                  </div>
+                )}
                 <TutorConversation
                   session={session}
                   offline={offline}
@@ -1442,81 +1518,6 @@ export function Tutor({
                               </div>
                             </ComposerMenu>
                           )}
-                          {!rejectedCapture && (
-                            <ComposerMenu
-                              title="Next activity options"
-                              className="next-menu"
-                              disabled={blocked}
-                              onOpen={() => setAttachmentsOpen(false)}
-                            >
-                              <div className="composer-options">
-                                <button
-                                  type="button"
-                                  disabled={disabled || hasResponseDraft}
-                                  onClick={() =>
-                                    void act(() =>
-                                      activity(
-                                        problem.passage
-                                          ? "same_passage"
-                                          : "topic",
-                                      ),
-                                    )
-                                  }
-                                >
-                                  Next activity
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={disabled || hasResponseDraft}
-                                  onClick={() =>
-                                    void act(() =>
-                                      activity(
-                                        problem.passage
-                                          ? "same_passage"
-                                          : "topic",
-                                        "introductory",
-                                      ),
-                                    )
-                                  }
-                                >
-                                  Easier next activity
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={disabled || hasResponseDraft}
-                                  onClick={() =>
-                                    void act(() =>
-                                      activity(
-                                        problem.passage
-                                          ? "same_passage"
-                                          : "topic",
-                                        "challenge",
-                                      ),
-                                    )
-                                  }
-                                >
-                                  Harder next activity
-                                </button>
-                              </div>
-                            </ComposerMenu>
-                          )}
-                          {session.status === "open" && (
-                            <button
-                              type="button"
-                              disabled={disabled || hasResponseDraft}
-                              onClick={() =>
-                                void act(() =>
-                                  command(
-                                    "finish",
-                                    `/sessions/${session.id}/finish`,
-                                    {},
-                                  ),
-                                )
-                              }
-                            >
-                              Finish session
-                            </button>
-                          )}
                           <button
                             className="primary send-message"
                             disabled={
@@ -1527,24 +1528,6 @@ export function Tutor({
                           </button>
                         </div>
                       </form>
-                    )}
-                  {session.status === "open" &&
-                    problem?.activity_state !== "ready" &&
-                    !rejectedCapture && (
-                      <button
-                        disabled={disabled || hasResponseDraft}
-                        onClick={() =>
-                          void act(() =>
-                            command(
-                              "finish",
-                              `/sessions/${session.id}/finish`,
-                              {},
-                            ),
-                          )
-                        }
-                      >
-                        Finish session
-                      </button>
                     )}
                   {problem && (
                     <div

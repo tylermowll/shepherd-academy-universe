@@ -32,6 +32,28 @@ test("administrator account drafts survive Help, Settings and browser Back", asy
   await accounts
     .getByRole("combobox", { name: "Age group", exact: true })
     .selectOption("minor");
+  const originalViewport = page.viewportSize()!;
+  if (test.info().project.use.hasTouch)
+    await page.setViewportSize({ width: 320, height: 700 });
+  const createBounds = await accounts
+    .getByRole("button", { name: "Create learner account", exact: true })
+    .boundingBox();
+  const cancelBounds = await accounts
+    .getByRole("button", { name: "Cancel", exact: true })
+    .boundingBox();
+  expect(createBounds).not.toBeNull();
+  expect(cancelBounds).not.toBeNull();
+  expect(cancelBounds!.width).toBeLessThan(createBounds!.width);
+  if (test.info().project.use.hasTouch) {
+    expect(createBounds!.height).toBeGreaterThanOrEqual(44);
+    expect(cancelBounds!.height).toBeGreaterThanOrEqual(44);
+  }
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.setViewportSize(originalViewport);
 
   await navigate(page, "Help");
   await expect(

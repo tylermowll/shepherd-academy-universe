@@ -6,12 +6,13 @@ separate evidence. This checklist does not claim production readiness.
 
 ## Current checkpoint
 
-The current source includes T69's UI/UX corrections. These are the latest
+The current source includes T71's focused sign-in corrections. These are the latest
 recorded checks; earlier runs remain in TASKS and its history rather than being
 duplicated here.
 
 | Evidence | Recorded result | Limits |
 | --- | --- | --- |
+| [T71 sign-in and credential recovery](TASKS.md#t71--correct-account-sign-in-and-household-credential-recovery-2026-10-24) | Full gate passed: 329 backend unit, 11 toolchain and 315 frontend tests; 409 integration cases. Focused browser coverage spans 62 distinct desktop/mobile cases across initial and corrected final runs; final 20/20 passed. Private update, encrypted backup/restore, exact 66 served assets and actual HTTPS sign-in for one administrator and one learner passed. | Focused access-flow correction; full browser suite, real autofill/password managers, physical devices and assistive technology remain unverified. Backend/dependencies unchanged from T70. |
 | [T69 UI/UX corrections](TASKS.md#t69--correct-the-uiux-findings-and-publish-2026-10-24) | Full project gate passed: 329 backend unit, 11 toolchain and 305 frontend tests; 409 integration tests passed. All 124 desktop/mobile browser cases passed in 19.3 minutes. | Synthetic source checks; live models, physical devices, assistive technology and restored-host acceptance remain open. |
 | [T70 private deployment](TASKS.md#t70--deploy-the-uiux-corrections-2026-10-24) | October 24 source `ac5114d` deployed; package smoke, dependency/image audits, SBOM, encrypted backup/isolated restore and private HTTPS/assets/access boundaries passed at schema head 0020_request_recovery. Both services have fresh readiness and zero restarts. Exact identities and receipts are in T70. | Existing data/settings preserved; live teaching quality and full restored-host sign-in/key recovery remain unverified. |
 

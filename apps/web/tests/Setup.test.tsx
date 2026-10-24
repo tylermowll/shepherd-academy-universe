@@ -50,6 +50,12 @@ function install({
   let setupFailure = failure;
   const fetcher = vi.fn((url: string, options: RequestInit) => {
     if (url.endsWith("/auth/session")) return reply(session);
+    if (url.includes("/auth/accounts?"))
+      return reply(
+        url.endsWith("role=adult")
+          ? [{ login_name: "Synthetic", role: "adult" }]
+          : [],
+      );
     if (url.endsWith("/auth/setup") && options.method === "GET")
       return reply({ ...status, available: permission });
     if (url.endsWith("/auth/setup/session")) {
@@ -569,7 +575,8 @@ describe("browser first-account setup", () => {
             name: "Administrator sign-in",
           }),
         );
-        fireEvent.change(screen.getByLabelText("Username"), {
+        await screen.findByRole("option", { name: "Synthetic" });
+        fireEvent.change(screen.getByRole("combobox", { name: "Account" }), {
           target: { value: "Synthetic" },
         });
         fireEvent.change(screen.getByLabelText("Password"), {

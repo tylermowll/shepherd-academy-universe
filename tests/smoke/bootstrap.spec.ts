@@ -71,7 +71,10 @@ test("persisted tutoring survives disconnect and reload, then logout clears priv
   await context.setOffline(true);
   await page.reload();
   await expect(
-    page.getByRole("alert").filter({ hasText: "The server is unavailable." }),
+    page.getByRole("alert").filter({
+      hasText:
+        "Could not reach the app. Check your connection, then select Try again.",
+    }),
   ).toBeVisible();
   await context.setOffline(false);
   await page.reload();
@@ -106,7 +109,10 @@ test("offline shell does not cache private work or replace tutoring with templat
   await context.setOffline(true);
   await page.reload();
   await expect(
-    page.getByRole("alert").filter({ hasText: "The server is unavailable." }),
+    page.getByRole("alert").filter({
+      hasText:
+        "Could not reach the app. Check your connection, then select Try again.",
+    }),
   ).toBeVisible();
   await expect(
     page.getByText("Public offline practice pack", { exact: true }),
@@ -141,20 +147,29 @@ test("an installed update waits for the user before refreshing", async ({
   });
   await page.reload();
   await page
-    .getByLabel("Username", { exact: true })
-    .fill("unsent-synthetic-entry");
+    .getByRole("combobox", { name: "Account", exact: true })
+    .selectOption("Orbit");
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill("synthetic-unsent-password");
   await page.evaluate(async () => {
     await navigator.serviceWorker.register("/sw.js?synthetic-update=2");
   });
   await expect(
     page.getByRole("button", { name: "Refresh when ready" }),
   ).toBeVisible();
-  await expect(page.getByLabel("Username", { exact: true })).toHaveValue(
-    "unsent-synthetic-entry",
+  await expect(
+    page.getByRole("combobox", { name: "Account", exact: true }),
+  ).toHaveValue("Orbit");
+  await expect(page.getByLabel("Password", { exact: true })).toHaveValue(
+    "synthetic-unsent-password",
   );
   page.once("dialog", (dialog) => void dialog.accept());
   await page.getByRole("button", { name: "Refresh when ready" }).click();
-  await expect(page.getByLabel("Username", { exact: true })).toHaveValue("");
+  await expect(
+    page.getByRole("combobox", { name: "Account", exact: true }),
+  ).toHaveValue("");
+  await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
 });
 
 test("learner password sign-in on a second browser is isolated and revocable", async ({

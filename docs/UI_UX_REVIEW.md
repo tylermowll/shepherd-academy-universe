@@ -1,5 +1,69 @@
 # UI/UX review — current status
 
+## T72 control sizing and action placement
+
+The maintainer's focused visual review identified bulky controls and competing
+actions. Desktop buttons now use a tighter line height, smaller padding and
+lighter secondary styling; coarse-pointer buttons and navigation retain at least
+44px height. Secondary mobile actions keep natural widths. The sign-in form is
+centered and capped at 480px, and header/navigation spacing is reduced.
+
+Practice now keeps Next activity and Finish session in an Activity controls
+group beside the current activity, outside its collapsible details and the
+message form. Attach photo, Help and Send stay beside message entry. Finish
+remains available for idle reference/generation steps; unsent drafts and pending
+work continue to prevent conflicting activity/session changes. Menu exclusivity,
+outside dismissal, Escape focus and keyboard outlines remain required.
+
+Publication and private deployment evidence is recorded in
+[T72](TASKS.md#t72--refine-control-sizing-and-action-placement-publish-and-redeploy-2026-10-24).
+The prior T71 sign-in corrections below are preserved in this publication.
+This is a focused control/layout refinement. Existing physical-device,
+assistive-technology and teaching-quality acceptance work remains open.
+
+## T71 sign-in correction
+
+The maintainer's landing-page report identified gaps missed by the previous
+reviews: a credential error offered Reconnect, the account chooser competed with
+an editable autofilled Username, and repeated headings obscured the form. The
+existing browser tests explicitly expected both account controls and did not
+check whether credential-error recovery addressed the actual failure. Passing
+those checks did not establish a coherent sign-in experience.
+
+T71 replaces duplicate entry with one Account selector, keeps manual Username
+only for a failed directory request, removes repeated form headings, and puts
+actionable sign-in failures beside the Password field. Sign in retries the
+requested action; incorrect credentials do not reload the session. Expired
+sign-in permission needs its own refresh before retry, rather than displaying
+internal validation language. Existing workspace and draft isolation remain
+required. The earlier operational password reset affected only the administrator;
+the requested active-account recovery is recorded separately in TASKS.
+
+Focused coverage and final browser/private-update evidence are recorded in
+[T71](TASKS.md#t71--correct-account-sign-in-and-household-credential-recovery-2026-10-24).
+This is a focused access-flow correction, not a new whole-application audit.
+
+| Workflow and goal | States and review lenses | Evidence / coverage status |
+| --- | --- | --- |
+| Guest learner/administrator selects an account and signs in | Loading, empty, failed directory, password rejection, throttling, network/server error; clear language and one authoritative account field | Exercised: component tests; desktop/mobile Chromium directory, credential and connection journeys. Throttle/server wording also covered by components. Actual installed HTTPS credential verification passed for both existing accounts. |
+| Guest retries an expired sign-in form | Refresh only expired sign-in permission, then retry selected credentials without unrelated recovery controls | Exercised: component request ordering and refresh-failure retry; real API 403 then explicit successful recovery in desktop/mobile Chromium. |
+| Current account opens another role's sign-in | Failed credentials or role, Help, cancel and successful replacement; prior work remains until valid replacement | Exercised: components and desktop/mobile browser draft/role-switch journeys. |
+| Keyboard user completes entry | Account selection retains focus, Tab reaches Password then Sign in, errors describe the field and focus recovery | Exercised: component and desktop/mobile Chromium keyboard/focus assertions. Screen-reader behavior remains unreviewed. |
+| Saved work survives offline/reload and explicit app update | Public-only shell cache, selected account and password retained until explicit refresh | Exercised: desktop/mobile browser offline, reload, cache and explicit-refresh cases. |
+
+Final `make check` passed 315 frontend, 329 backend unit and 11 toolchain tests;
+409 integration cases passed. The initial focused browser run passed 54 cases;
+six stale-copy/loading-fixture failures were corrected and rerun successfully
+within the final 20-case run (3.1 minutes, zero retries), including two new expiry
+cases. This covers 62 distinct affected desktop/mobile cases across the two
+runs. The final image's 66 served public assets and installed HTTPS sign-in for
+both existing accounts were verified. No full browser-suite result is claimed.
+
+Physical password-manager/autofill behavior, screen readers and real phones have
+not been exercised by this correction. Existing acceptance work below remains.
+
+## T69 correction record
+
 T69 implements the seven findings from the October 24 review and the small
 activity-generation copy suggestion. All required validation gates passed; the
 implementation was published to `main` as `775e6eb`. This file keeps

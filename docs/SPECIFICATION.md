@@ -185,6 +185,14 @@ from account sign-in, explains private HTTPS, and gives a path out of demo or
 unconfigured states. Page changes preserve drafts and pending request IDs in
 memory; account changes must not restore another learner's content.
 
+Use compact desktop controls and comfortable touch targets. Primary actions have
+clear visual priority; secondary actions keep natural widths rather than expanding
+indiscriminately on phones. Bound the desktop sign-in form to a readable width
+and keep the shared header compact. Message entry groups Attach photo, Help and
+Send; Next activity and Finish session belong with the current activity, outside
+the message form. Preserve keyboard dismissal, visible focus and all unsent-draft
+and pending-work guards when actions move.
+
 History distinguishes loading and retrieval failure from a successfully empty
 list, and offers a read-only reload. Confirmed administrator changes retain their
 success receipt if the subsequent list refresh fails; stale mutation controls
@@ -212,6 +220,12 @@ accounts, sets/resets write-only passwords, and manages each learner's signed-in
 browsers. **Learner sign-in** accepts learner credentials; **Administrator
 sign-in** accepts administrator credentials (D013). The backend enforces the
 requested role before replacing a session.
+Sign-in shows one Account selector and a Password field. Show a typed Username
+field only if the account list cannot be loaded; retrying the list replaces that
+fallback rather than displaying both controls. Credential, role, throttling and
+connection failures appear beside the sign-in fields with relevant advice and
+retain the account choice. A credential failure must not offer a connection
+refresh action. The Sign in button retries sign-in.
 Administrators can correct age eligibility on the same account. Preserve saved
 work and identity; on an actual change, atomically cancel pending submissions
 and jobs and invalidate their leases so late results cannot bypass the updated

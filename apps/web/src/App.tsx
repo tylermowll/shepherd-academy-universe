@@ -5,7 +5,13 @@ import {
   useRef,
   useState,
 } from "react";
-import { api, onAuthenticationLost, setIdentity, type Schema } from "./client";
+import {
+  api,
+  ApiError,
+  onAuthenticationLost,
+  setIdentity,
+  type Schema,
+} from "./client";
 import { AdultPanel } from "./AdultPanel";
 import { Tutor } from "./Tutor";
 import { UpdateNotice } from "./UpdateNotice";
@@ -77,6 +83,9 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
   }, []);
   const [identity, setSession] = useState<Schema<"SessionStatus"> | null>(null);
   const [error, setError] = useState("");
+  const [signInError, setSignInError] = useState("");
+  const needsSignInRefresh = useRef(false);
+  const passwordInput = useRef<HTMLInputElement>(null);
   const [offline, setOffline] = useState(!navigator.onLine);
   const [learner, setLearner] = useState("");
   const [busy, setBusy] = useState(false);
@@ -135,6 +144,8 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
   const navigate: Navigate = useCallback(
     (nextPage, help) => {
       if (signingIn) return;
+      setSignInError("");
+      needsSignInRefresh.current = false;
       scrollToTop.current = true;
       const destinationRole = roleForPage(nextPage) ?? signInRole;
       const requestEntry =
@@ -175,6 +186,8 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
   const openArea = (role: SignInRole) => {
     if (signingIn) return;
     setError("");
+    setSignInError("");
+    needsSignInRefresh.current = false;
     const home = role === "adult" ? "learners" : "practice";
     if (authenticated && identity.role === role) {
       if (switchingAccount) cancelAccountSwitch();
@@ -194,6 +207,8 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
   };
   const cancelAccountSwitch = () => {
     setError("");
+    setSignInError("");
+    needsSignInRefresh.current = false;
     scrollToTop.current = true;
     window.history.replaceState(
       null,
@@ -206,7 +221,12 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
     setLocation(readLocation());
   };
   useEffect(() => {
+    if (signInError && !signingIn) passwordInput.current?.focus();
+  }, [signInError, signingIn]);
+  useEffect(() => {
     const changed = () => {
+      setSignInError("");
+      needsSignInRefresh.current = false;
       const authority = captureSetupAuthority();
       if (
         authority.token &&
@@ -290,7 +310,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
       navigate("settings");
       void refresh().catch(() => {
         setError(
-          "Your account was created, but settings could not be refreshed. Reconnect to continue.",
+          "Your account was created, but settings could not be loaded. Select Try again to continue.",
         );
       });
     },
@@ -303,7 +323,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
     );
     void refresh().catch(() => {
       setError(
-        "An administrator account already exists. Reconnect, then sign in with that account.",
+        "An administrator account already exists. Select Try again, then sign in with that account.",
       );
     });
   }, [clearSetupToken, refresh]);
@@ -314,6 +334,8 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
         actionsInFlight.current = 0;
         setAccountVersion((current) => current + 1);
         clearSetupToken();
+        setSignInError("");
+        needsSignInRefresh.current = false;
         setSession(null);
         setLearner("");
         learnerSequence.current += 1;
@@ -328,7 +350,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
         );
         setError("Your session ended. Sign in again.");
         void refresh().catch(() => {
-          setError("Your session ended. Reconnect to sign in again.");
+          setError("Your session ended. Select Try again to load sign-in.");
         });
       }),
     [refresh, clearSetupToken],
@@ -345,7 +367,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
         setError(
           cause instanceof Error
             ? cause.message
-            : "Connection lost. Reconnect to recover your saved work.",
+            : "Connection lost. Select Try again to load your saved work.",
         );
     } finally {
       if (generation === accountGeneration.current) {
@@ -362,7 +384,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
         setError(
           cause instanceof Error
             ? cause.message
-            : "Could not load learners. Reconnect to try again.",
+            : "Could not load learners. Select Try again to reload the list.",
         );
     });
     return () => {
@@ -383,7 +405,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
       .catch(() => {
         if (!canceled)
           setError(
-            "The server is unavailable. Reconnect to access your saved tutoring sessions.",
+            "Could not reach the app. Check your connection, then select Try again.",
           );
       });
     return () => {
@@ -426,7 +448,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
           Shepherd Academy Universe
         </a>
         {identity?.authenticated && !entryVisible && (
-          <>
+          <div className="account-controls">
             <span className="account-summary" aria-label="Signed in account">
               <strong>{identity.login_name || "Signed-in account"}</strong>
               <small>
@@ -434,6 +456,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
               </small>
             </span>
             <button
+              className="quiet"
               disabled={signingIn}
               onClick={() =>
                 void act(async () => {
@@ -448,7 +471,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
             >
               Sign out
             </button>
-          </>
+          </div>
         )}
       </header>
       {entryVisible ? (
@@ -548,15 +571,15 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
       />
       {offline && (
         <p role="status" className="notice">
-          You are offline. Reconnect to use the tutor or upload photos. Requests
-          already saved on the server can keep running.
+          You are offline. Restore your network connection to use the tutor or
+          upload photos. Requests already saved on the server can keep running.
         </p>
       )}
       {error && (
         <div role="alert" className="error">
           {error}{" "}
           <button disabled={signingIn} onClick={() => void act(refresh)}>
-            Reconnect
+            Try again
           </button>
         </div>
       )}
@@ -587,7 +610,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                 <p role="status">Checking account setup…</p>
               </section>
             ) : (
-              <section className="welcome" key={signInRole}>
+              <section className="welcome sign-in-page" key={signInRole}>
                 <h1 tabIndex={-1}>{signInTitle}</h1>
                 <p>
                   {signInRole === "adult"
@@ -620,25 +643,53 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                 <div className="grid">
                   <form
                     className={`card sign-in-card sign-in-card-${signInRole}`}
+                    onChange={() => setSignInError("")}
                     onSubmit={(event) => {
                       event.preventDefault();
                       if (signingIn) return;
                       const data = new FormData(event.currentTarget);
                       const loginName = data.get("login");
                       const password = data.get("password");
+                      setSignInError("");
                       setSigningIn(true);
                       void act(async () => {
-                        const session = await api<Schema<"SessionStatus">>(
-                          "/auth/login",
-                          "POST",
-                          {
-                            login_name:
-                              typeof loginName === "string" ? loginName : "",
-                            password:
-                              typeof password === "string" ? password : "",
-                            role: signInRole,
-                          } satisfies Schema<"LoginRequest">,
-                        );
+                        let session: Schema<"SessionStatus">;
+                        try {
+                          if (needsSignInRefresh.current) {
+                            await refresh();
+                            needsSignInRefresh.current = false;
+                          }
+                          session = await api<Schema<"SessionStatus">>(
+                            "/auth/login",
+                            "POST",
+                            {
+                              login_name:
+                                typeof loginName === "string" ? loginName : "",
+                              password:
+                                typeof password === "string" ? password : "",
+                              role: signInRole,
+                            } satisfies Schema<"LoginRequest">,
+                          );
+                        } catch (cause) {
+                          const expired =
+                            cause instanceof ApiError &&
+                            cause.status === 403 &&
+                            cause.message === "CSRF validation failed.";
+                          if (expired) needsSignInRefresh.current = true;
+                          setSignInError(
+                            expired
+                              ? "This sign-in page expired. Select Sign in to try again."
+                              : cause instanceof ApiError
+                                ? cause.status === 401
+                                  ? "Incorrect account or password. Check your details and try again."
+                                  : cause.status >= 500
+                                    ? "Sign-in is temporarily unavailable. Select Sign in to try again."
+                                    : cause.message
+                                : "Could not reach the app. Check your connection, then select Sign in to try again.",
+                          );
+                          return;
+                        }
+                        needsSignInRefresh.current = false;
                         accountGeneration.current += 1;
                         actionsInFlight.current = 0;
                         setAccountVersion((current) => current + 1);
@@ -671,17 +722,6 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                       }).finally(() => setSigningIn(false));
                     }}
                   >
-                    <p className="sign-in-role">
-                      {signInRole === "adult"
-                        ? "Administrator account"
-                        : "Learner account"}
-                    </p>
-                    <h2>Account sign-in</h2>
-                    <p>
-                      {signInRole === "adult"
-                        ? "Manage learner accounts and app settings."
-                        : "Open only your own practice and history."}
-                    </p>
                     <SignInAccounts
                       role={signInRole}
                       ready={!!identity && signInVisible}
@@ -690,19 +730,29 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                     <label>
                       Password
                       <input
+                        ref={passwordInput}
                         name="password"
                         type="password"
                         autoComplete="current-password"
                         required
                         minLength={3}
                         maxLength={256}
+                        disabled={signingIn}
+                        aria-describedby={
+                          signInError ? "signin-error" : undefined
+                        }
                       />
                     </label>
+                    {signInError && (
+                      <p id="signin-error" role="alert" className="error">
+                        {signInError}
+                      </p>
+                    )}
                     <button
                       className="primary"
                       disabled={busy || signingIn || !identity}
                     >
-                      Sign in
+                      {signingIn ? "Signing in…" : "Sign in"}
                     </button>
                     <p className="fine">
                       {signInRole === "adult"

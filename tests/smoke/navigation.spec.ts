@@ -34,13 +34,10 @@ test("page headings keep accessible focus without a box while keyboard controls 
   ).toBe(true);
   await expect(heading).toHaveCSS("outline-style", "none");
 
-  const choices = page
-    .getByRole("group", { name: "Choose an account" })
-    .getByRole("button");
-  await expect(choices.first()).toBeVisible();
+  const account = page.getByRole("combobox", { name: "Account", exact: true });
+  await expect(account).toBeEnabled();
   const controls = [
-    ...(await choices.all()),
-    page.getByRole("textbox", { name: "Username", exact: true }),
+    account,
     page.getByLabel("Password", { exact: true }),
     signIn,
   ];
@@ -104,9 +101,13 @@ for (const role of ["learner", "adult"] as const) {
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(
         `${account} sign-in`,
       );
+      await expect(page.locator("form h2")).toHaveCount(0);
       await expect(
-        page.locator("form").getByText(`${account} account`, { exact: true }),
+        page.getByRole("combobox", { name: "Account", exact: true }),
       ).toBeVisible();
+      await expect(
+        page.getByRole("textbox", { name: "Username", exact: true }),
+      ).toHaveCount(0);
       await expect(
         page
           .getByRole("navigation", { name: "Sign-in navigation" })
@@ -295,9 +296,8 @@ test("guests can open and reload Help without exposing account controls", async 
   await navigation
     .getByRole("link", { name: "Learner sign-in", exact: true })
     .click();
-  await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
   await expect(
-    page.getByRole("textbox", { name: "Username", exact: true }),
+    page.getByRole("combobox", { name: "Account", exact: true }),
   ).toBeVisible();
 });
 

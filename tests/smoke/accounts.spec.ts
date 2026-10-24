@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { login, navigate } from "./support";
+import { login, navigate, selectSignInAccount, submitSignIn } from "./support";
 
 test("administrator enforces the three-character boundary, prevents duplicates and resets a learner's password without losing their identity", async ({
   page,
@@ -69,18 +69,33 @@ test("administrator enforces the three-character boundary, prevents duplicates a
   try {
     const learner = await context.newPage();
     await learner.goto("/?signin=learner");
-    const accounts = learner.getByRole("group", { name: "Choose an account" });
+    const accounts = learner.getByRole("combobox", {
+      name: "Account",
+      exact: true,
+    });
     await expect(
-      accounts.getByRole("button", { name: username, exact: true }),
-    ).toBeVisible();
+      accounts.getByRole("option", { name: username, exact: true }),
+    ).toHaveCount(1);
     await expect(
-      accounts.getByRole("button", { name: "demo", exact: true }),
+      accounts.getByRole("option", { name: "demo", exact: true }),
     ).toHaveCount(0);
-    await accounts.getByRole("button", { name: username, exact: true }).click();
-    await expect(learner.getByLabel("Username", { exact: true })).toHaveValue(
-      username,
+    await accounts.selectOption(username);
+    await expect(accounts).toHaveValue(username);
+    await expect(learner.getByLabel("Username", { exact: true })).toHaveCount(
+      0,
     );
+    await accounts.focus();
+    await learner.keyboard.press("Tab");
     await expect(learner.getByLabel("Password", { exact: true })).toBeFocused();
+    await learner.getByLabel("Password", { exact: true }).fill("incorrect");
+    expect((await submitSignIn(learner)).status()).toBe(401);
+    await expect(learner.locator("form").getByRole("alert")).toContainText(
+      "Incorrect account or password",
+    );
+    await expect(accounts).toHaveValue(username);
+    await expect(
+      learner.getByRole("button", { name: "Reconnect", exact: true }),
+    ).toHaveCount(0);
     await login(learner, username, password);
     const signedIn = (await (
       await learner.request.get("/api/v1/auth/session")
@@ -162,12 +177,18 @@ test("listed administrator changes a three-character password while retaining th
   let changed = false;
   try {
     await page.goto("/?signin=adult");
-    const accounts = page.getByRole("group", { name: "Choose an account" });
-    await expect(accounts.getByRole("button")).toHaveText(["demo"]);
-    await accounts.getByRole("button", { name: "demo", exact: true }).click();
-    await expect(page.getByLabel("Username", { exact: true })).toHaveValue(
+    const accounts = page.getByRole("combobox", {
+      name: "Account",
+      exact: true,
+    });
+    await expect(accounts.getByRole("option")).toHaveText([
+      "Choose your account",
       "demo",
-    );
+    ]);
+    await accounts.selectOption("demo");
+    await expect(accounts).toHaveValue("demo");
+    await accounts.focus();
+    await page.keyboard.press("Tab");
     await expect(page.getByLabel("Password", { exact: true })).toBeFocused();
     await login(page);
     const other = await otherContext.newPage();
@@ -251,7 +272,7 @@ test("listed administrator changes a three-character password while retaining th
     );
 
     await other.goto("/?signin=adult");
-    await other.getByLabel("Username", { exact: true }).fill("demo");
+    await selectSignInAccount(other, "demo");
     await other.getByLabel("Password", { exact: true }).fill(original);
     const tryOldPassword = async () => {
       const response = other.waitForResponse((result) =>
@@ -274,6 +295,12 @@ test("listed administrator changes a three-character password while retaining th
     }
     expect(oldPassword.status()).toBe(401);
     await expect(other.getByRole("alert")).toBeVisible();
+    await expect(
+      other.getByRole("button", { name: "Reconnect", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      other.getByRole("combobox", { name: "Account", exact: true }),
+    ).toHaveValue("demo");
     await login(other, "demo", replacement);
     expect(
       await page.evaluate(

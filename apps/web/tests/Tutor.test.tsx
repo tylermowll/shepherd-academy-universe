@@ -776,7 +776,12 @@ it("finishes beside the activity controls and recaps only saved work and guidanc
   render(<Tutor learner={learner} offline={false} act={run} />);
   const composer = await screen.findByLabelText("Your work or question");
   const finish = screen.getByRole("button", { name: "Finish session" });
+  const activityControls = screen.getByRole("group", {
+    name: "Activity controls",
+  });
   expect(finish).toBeVisible();
+  expect(activityControls).toContainElement(finish);
+  expect(composer.closest("form")).not.toContainElement(finish);
   fireEvent.change(composer, { target: { value: "Unsent draft" } });
   expect(finish).toBeDisabled();
   fireEvent.change(composer, { target: { value: "" } });
@@ -796,9 +801,14 @@ it.each(["reference_capture", "generating"])(
   async (state) => {
     installSession(session([activity([], state)]));
     render(<Tutor learner={learner} offline={false} act={run} />);
+    const finish = await screen.findByRole("button", {
+      name: "Finish session",
+    });
+    expect(finish).toBeEnabled();
     expect(
-      await screen.findByRole("button", { name: "Finish session" }),
-    ).toBeEnabled();
+      screen.getByRole("group", { name: "Activity controls" }),
+    ).toContainElement(finish);
+    expect(screen.queryByText("Next activity options")).toBeNull();
   },
 );
 
@@ -817,10 +827,35 @@ it("keeps Finish session disabled while a response is active", async () => {
 });
 
 describe("AI learning conversation", () => {
-  it("keeps one composer with compact photo and next-activity controls", async () => {
+  it("separates activity controls from the message composer and protects unsent drafts", async () => {
     const fetcher = installSession(session([activity()]));
     render(<Tutor learner={learner} offline={false} act={run} />);
     const reply = await screen.findByLabelText("Your work or question");
+    const activityControls = screen.getByRole("group", {
+      name: "Activity controls",
+    });
+    const messageForm = reply.closest("form")!;
+    expect(activityControls).toContainElement(
+      screen.getByText("Next activity options"),
+    );
+    expect(activityControls).toContainElement(
+      screen.getByRole("button", { name: "Finish session" }),
+    );
+    expect(messageForm).not.toContainElement(activityControls);
+    expect(
+      within(messageForm).getByRole("button", { name: "Attach photo" }),
+    ).toBeVisible();
+    expect(
+      within(messageForm).getByText("Help", { exact: true }),
+    ).toBeVisible();
+    expect(within(messageForm).queryByText("Next activity options")).toBeNull();
+    expect(
+      within(messageForm).queryByRole("button", { name: "Finish session" }),
+    ).toBeNull();
+    expect(
+      activityControls.compareDocumentPosition(reply) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(
       screen.getByRole("log", { name: "Learning conversation" }),
     ).toBeVisible();
@@ -840,6 +875,17 @@ describe("AI learning conversation", () => {
     );
     const easier = screen.getByRole("button", { name: "Easier next activity" });
     expect(easier).toBeVisible();
+    fireEvent.change(reply, { target: { value: "My unsent work" } });
+    for (const action of within(activityControls).getAllByRole("button"))
+      expect(action).toBeDisabled();
+    expect(
+      within(messageForm).getByRole("button", { name: "Send" }),
+    ).toBeEnabled();
+    expect(
+      fetcher.mock.calls.some(([, options]) => options.method === "POST"),
+    ).toBe(false);
+    fireEvent.change(reply, { target: { value: "" } });
+    expect(easier).toBeEnabled();
     fireEvent.click(easier);
     await vi.waitFor(() => {
       const sent = fetcher.mock.calls.find(([url]) =>

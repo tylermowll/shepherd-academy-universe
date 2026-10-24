@@ -13,14 +13,19 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("sign-in account names", () => {
   it.each(["adult", "learner"] as const)(
-    "lists the %s names, fills Username and focuses Password",
+    "uses one %s account selector and submits only the chosen username",
     async (role) => {
       const fetcher = vi.fn(() =>
-        Promise.resolve(response([{ login_name: "River", role }])),
+        Promise.resolve(
+          response([
+            { login_name: "River", role },
+            { login_name: "Sky", role },
+          ]),
+        ),
       );
       vi.stubGlobal("fetch", fetcher);
       render(
-        <form>
+        <form aria-label="Sign in">
           <SignInAccounts role={role} ready disabled={false} />
           <label>
             Password
@@ -28,20 +33,52 @@ describe("sign-in account names", () => {
           </label>
         </form>,
       );
-      fireEvent.click(await screen.findByRole("button", { name: "River" }));
+      await screen.findByRole("option", { name: "River" });
+      const account = screen.getByRole("combobox", { name: "Account" });
+      account.focus();
+      fireEvent.change(account, { target: { value: "Sky" } });
       expect(fetcher).toHaveBeenCalledWith(
         `/api/v1/auth/accounts?role=${role}`,
         expect.objectContaining({ cache: "no-store" }),
       );
-      expect(screen.getByLabelText("Username")).toHaveValue("River");
-      expect(screen.getByLabelText("Password")).toHaveFocus();
-      expect(screen.getByRole("button", { name: "River" })).toHaveAttribute(
-        "aria-pressed",
-        "true",
-      );
+      expect(screen.queryByLabelText("Username")).toBeNull();
+      expect(account).toHaveAttribute("autocomplete", "username");
+      expect(account).toHaveFocus();
+      expect(account).toHaveValue("Sky");
+      const form = screen.getByRole<HTMLFormElement>("form", {
+        name: "Sign in",
+      });
+      expect(new FormData(form).getAll("login")).toEqual(["Sky"]);
     },
   );
-  it("preserves typed credentials while account loading fails and retries without blocking manual entry", async () => {
+  it("requires an account while its directory is loading or empty", async () => {
+    let finish!: (value: Response) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            finish = resolve;
+          }),
+      ),
+    );
+    render(<SignInAccounts role="learner" ready disabled={false} />);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Loading account names",
+    );
+    expect(screen.getByRole("combobox", { name: "Account" })).toBeInvalid();
+    expect(screen.queryByLabelText("Username")).toBeNull();
+    await act(async () => {
+      finish(response([]));
+      await Promise.resolve();
+    });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Ask your administrator to create your learner account.",
+    );
+    expect(screen.getByRole("combobox", { name: "Account" })).toBeInvalid();
+    expect(screen.queryByLabelText("Username")).toBeNull();
+  });
+  it("offers manual username entry only after loading fails and preserves a matching username on retry", async () => {
     const fetcher = vi
       .fn()
       .mockResolvedValueOnce(response({}, 503))
@@ -50,20 +87,51 @@ describe("sign-in account names", () => {
       );
     vi.stubGlobal("fetch", fetcher);
     render(<SignInAccounts role="learner" ready disabled={false} />);
-    fireEvent.change(screen.getByLabelText("Username"), {
-      target: { value: "manual-user" },
-    });
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Could not load account names. Enter your username below",
+    const username = await screen.findByLabelText("Username");
+    expect(screen.queryByRole("combobox")).toBeNull();
+    fireEvent.change(username, { target: { value: "River" } });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Could not load account names. Enter your username",
     );
-    expect(screen.getByLabelText("Username")).toHaveValue("manual-user");
+    expect(username).toHaveAttribute("autocomplete", "username");
     fireEvent.click(
       screen.getByRole("button", { name: "Reload account list" }),
     );
-    expect(await screen.findByRole("button", { name: "River" })).toBeVisible();
-    expect(screen.getByLabelText("Username")).toHaveValue("manual-user");
+    await screen.findByRole("option", { name: "River" });
+    expect(screen.getByRole("combobox", { name: "Account" })).toHaveValue(
+      "River",
+    );
+    expect(screen.queryByLabelText("Username")).toBeNull();
   });
-  it("waits for session bootstrap and discards a previous role's delayed list", async () => {
+  it("requires a listed account after retry rather than submitting an unlisted manual username", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(response({}, 503))
+      .mockResolvedValueOnce(
+        response([{ login_name: "River", role: "learner" }]),
+      );
+    vi.stubGlobal("fetch", fetcher);
+    render(
+      <form aria-label="Sign in">
+        <SignInAccounts role="learner" ready disabled={false} />
+      </form>,
+    );
+    fireEvent.change(await screen.findByLabelText("Username"), {
+      target: { value: "unlisted-account" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Reload account list" }),
+    );
+    await screen.findByRole("option", { name: "River" });
+    const account = screen.getByRole("combobox", { name: "Account" });
+    expect(account).toHaveValue("");
+    expect(account).toBeInvalid();
+    const form = screen.getByRole<HTMLFormElement>("form", {
+      name: "Sign in",
+    });
+    expect(new FormData(form).getAll("login")).toEqual([""]);
+  });
+  it("waits for session bootstrap and discards a previous role's delayed list and selection", async () => {
     let finish!: (value: Response) => void;
     const fetcher = vi.fn((url: string) =>
       url.endsWith("role=learner")
@@ -81,12 +149,28 @@ describe("sign-in account names", () => {
     expect(fetcher).not.toHaveBeenCalled();
     view.rerender(<SignInAccounts role="learner" ready disabled={false} />);
     view.rerender(<SignInAccounts role="adult" ready disabled={false} />);
-    await screen.findByRole("button", { name: "home-admin" });
+    await screen.findByRole("option", { name: "home-admin" });
     await act(async () => {
       finish(response([{ login_name: "River", role: "learner" }]));
       await Promise.resolve();
     });
-    expect(screen.queryByRole("button", { name: "River" })).toBeNull();
-    expect(screen.getByRole("button", { name: "home-admin" })).toBeVisible();
+    expect(screen.queryByRole("option", { name: "River" })).toBeNull();
+    expect(screen.getByRole("combobox", { name: "Account" })).toHaveValue("");
+    fireEvent.change(screen.getByRole("combobox", { name: "Account" }), {
+      target: { value: "home-admin" },
+    });
+    view.rerender(<SignInAccounts role="learner" ready disabled={false} />);
+    expect(screen.getByRole("combobox", { name: "Account" })).toHaveValue("");
+  });
+  it("disables the credential control during sign-in", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(response([{ login_name: "River", role: "learner" }])),
+      ),
+    );
+    render(<SignInAccounts role="learner" ready disabled />);
+    await screen.findByRole("option", { name: "River" });
+    expect(screen.getByRole("combobox", { name: "Account" })).toBeDisabled();
   });
 });
