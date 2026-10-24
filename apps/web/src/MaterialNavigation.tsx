@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Schema } from "./client";
 
 type Activity = Schema<"TutorActivityInput">;
@@ -75,35 +75,94 @@ export function MaterialNavigation({
   disabled: boolean;
   onChange: (value: MaterialChange) => void;
 }) {
+  const navigation = useRef<HTMLElement>(null);
+  const previous = useRef<HTMLButtonElement>(null);
+  const next = useRef<HTMLButtonElement>(null);
+  const pace = useRef<HTMLElement>(null);
+  const pendingFocus = useRef<{
+    target: "previous" | "next" | "pace";
+    origin: Element | null;
+  } | null>(null);
+  const savedPreferences = `${focus.mode}:${focus.section_size}`;
+  const [saved, setSaved] = useState(savedPreferences);
   const [preferences, setPreferences] = useState<MaterialPreferences>({
     reading_mode: focus.mode,
     section_size: focus.section_size,
   });
+  if (saved !== savedPreferences) {
+    setSaved(savedPreferences);
+    setPreferences({
+      reading_mode: focus.mode,
+      section_size: focus.section_size,
+    });
+  }
+  useEffect(() => {
+    const request = pendingFocus.current;
+    if (!request || disabled) return;
+    pendingFocus.current = null;
+    if (
+      navigation.current?.closest("[hidden]") ||
+      (document.activeElement !== document.body &&
+        document.activeElement !== request.origin)
+    )
+      return;
+    const button =
+      request.target === "previous"
+        ? previous.current
+        : request.target === "next"
+          ? next.current
+          : null;
+    const alternative =
+      request.target === "previous" ? next.current : previous.current;
+    const destination =
+      request.target === "pace"
+        ? pace.current
+        : button && !button.disabled
+          ? button
+          : alternative && !alternative.disabled
+            ? alternative
+            : pace.current;
+    destination?.focus();
+  }, [disabled, focus.mode, focus.section_index, focus.section_size]);
   const changed =
     preferences.reading_mode !== focus.mode ||
     preferences.section_size !== focus.section_size;
   return (
-    <section className="material-navigation" aria-label="Material navigation">
+    <section
+      ref={navigation}
+      className="material-navigation"
+      aria-label="Material navigation"
+    >
       {focus.mode === "guided" && (
         <>
           <div className="actions">
             <button
+              ref={previous}
               type="button"
               disabled={disabled || focus.section_index === 0}
-              onClick={() =>
-                onChange({ section_index: focus.section_index - 1 })
-              }
+              onClick={(event) => {
+                pendingFocus.current = {
+                  target: "previous",
+                  origin: event.currentTarget,
+                };
+                onChange({ section_index: focus.section_index - 1 });
+              }}
             >
               Previous section
             </button>
             <button
+              ref={next}
               type="button"
               disabled={
                 disabled || focus.section_index + 1 >= focus.section_count
               }
-              onClick={() =>
-                onChange({ section_index: focus.section_index + 1 })
-              }
+              onClick={(event) => {
+                pendingFocus.current = {
+                  target: "next",
+                  origin: event.currentTarget,
+                };
+                onChange({ section_index: focus.section_index + 1 });
+              }}
             >
               Next section
             </button>
@@ -115,10 +174,14 @@ export function MaterialNavigation({
         </>
       )}
       <details>
-        <summary>Reading pace</summary>
+        <summary ref={pace}>Reading pace</summary>
         <form
           onSubmit={(event) => {
             event.preventDefault();
+            pendingFocus.current = {
+              target: "pace",
+              origin: document.activeElement,
+            };
             onChange(preferences);
           }}
         >

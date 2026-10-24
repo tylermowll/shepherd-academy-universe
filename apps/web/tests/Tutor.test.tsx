@@ -2583,6 +2583,228 @@ it("keeps an unaccepted request blocked until server resolution prevents a late 
   ).toHaveLength(1);
 });
 
+it("distinguishes failed History loading from an empty account and reloads with GET only", async () => {
+  const saved = session([activity()]);
+  let failed = true;
+  window.location.hash = `tutor=${sessionId}`;
+  const fetcher = vi.fn((url: string, options: RequestInit) => {
+    expect(options.method).toBe("GET");
+    if (url.endsWith("/features")) return response(capabilities);
+    if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(saved);
+    if (url.endsWith("/tutor/sessions"))
+      return failed
+        ? response({ detail: "Synthetic list unavailable" }, 503)
+        : response([summary(saved)]);
+    throw new Error(url);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  render(<Tutor learner={learner} offline={false} page="history" act={run} />);
+  await screen.findByText(
+    "Saved sessions could not load. Your saved work has not been removed.",
+  );
+  expect(screen.queryByText("No saved sessions yet")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Continue session" })).toBeNull();
+  failed = false;
+  fireEvent.click(
+    screen.getByRole("button", { name: "Reload saved sessions" }),
+  );
+  expect(
+    await screen.findByRole("button", { name: "Continue session" }),
+  ).toBeEnabled();
+  expect(screen.queryByText(/Saved sessions could not load/)).toBeNull();
+  expect(
+    fetcher.mock.calls.every(
+      ([, options]) => !options || options.method === "GET",
+    ),
+  ).toBe(true);
+});
+
+it("keeps failed activity preparation recoverable without presenting an internal learner message", async () => {
+  installSession(
+    session([
+      activity(
+        [
+          operation({
+            kind: "generation",
+            status: "failed",
+            text: "Create a new practice activity.",
+            reading: null,
+            interpretation: null,
+            feedback: null,
+            safe_error:
+              "The tutor could not prepare this activity. Your session is saved.",
+            retryable: true,
+          }),
+        ],
+        "generating",
+      ),
+    ]),
+  );
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  expect(
+    await screen.findByText(
+      "The tutor could not prepare this activity. Your session is saved.",
+    ),
+  ).toBeVisible();
+  expect(screen.queryByText("Create a new practice activity.")).toBeNull();
+  expect(
+    screen.getByRole("button", { name: "Retry tutor response" }),
+  ).toBeEnabled();
+});
+
+it("resolves a permanently stale in-tab request without losing or replaying its draft", async () => {
+  let saved = session([activity()]);
+  let submissions = 0;
+  let resolutions = 0;
+  let checks = 0;
+  const fetcher = vi.fn((url: string, options: RequestInit) => {
+    if (url.endsWith("/features")) return response(capabilities);
+    if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(saved);
+    if (url.endsWith("/tutor/sessions")) return response([summary(saved)]);
+    if (url.endsWith("/submissions")) {
+      submissions++;
+      if (submissions === 1)
+        return Promise.reject(new TypeError("Lost acknowledgement"));
+      return response(
+        { detail: "Problem changed. Refresh before continuing." },
+        409,
+      );
+    }
+    if (url.endsWith("/resolve")) {
+      resolutions++;
+      expect(JSON.parse(options.body as string)).toEqual({
+        learner_id: learner,
+      });
+      return response({ status: "not_accepted", receipt: null });
+    }
+    if (url.includes("/tutor/request-receipts/")) {
+      checks++;
+      return response({ detail: "No saved request" }, 404);
+    }
+    throw new Error(url);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  window.location.hash = `tutor=${sessionId}`;
+  const errors: unknown[] = [];
+  const act = async (action: () => Promise<void>) => {
+    try {
+      await action();
+    } catch (cause) {
+      errors.push(cause);
+    }
+  };
+  render(<Tutor learner={learner} offline={false} act={act} />);
+  const draft = "Retain my reasoning while the other browser moves on.";
+  const composer = await screen.findByRole("textbox", {
+    name: "Your work or question",
+  });
+  fireEvent.change(composer, { target: { value: draft } });
+  fireEvent.click(screen.getByRole("button", { name: /^Send$/ }));
+  const retry = await screen.findByRole("button", {
+    name: "Retry saved request",
+  });
+  saved = session([{ ...activity(), version: 2 }]);
+  fireEvent.click(retry);
+  await vi.waitFor(() => expect(errors).toHaveLength(2));
+  fireEvent.click(screen.getByRole("button", { name: "Check saved request" }));
+  await screen.findByText(
+    /The server has not confirmed whether your request was saved/,
+  );
+  expect(checks).toBe(1);
+  expect(composer).toHaveValue(draft);
+  expect(composer).toHaveAttribute("readonly");
+  expect(resolutions).toBe(0);
+  expect(
+    window.sessionStorage.getItem(`shepherd:tutor-request:${learner}`),
+  ).not.toBeNull();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Resolve interrupted request" }),
+  );
+  await screen.findByText(/The server will reject it if it arrives later/);
+  await vi.waitFor(() => expect(composer).not.toHaveAttribute("readonly"));
+  expect(composer).toHaveValue(draft);
+  expect(screen.getByRole("button", { name: /^Send$/ })).toBeEnabled();
+  expect(submissions).toBe(2);
+  expect(resolutions).toBe(1);
+  expect(
+    window.sessionStorage.getItem(`shepherd:tutor-request:${learner}`),
+  ).toBeNull();
+});
+
+it("checks an accepted in-tab submission without replay and clears only its submitted draft", async () => {
+  const draft = "My claim is supported by observations of nesting birds.";
+  const initial = session([activity()]);
+  const saved = session([
+    activity([operation({ text: draft, reading: null, interpretation: null })]),
+  ]);
+  let accepted = false;
+  let sessionUnavailable = false;
+  let submissions = 0;
+  let checks = 0;
+  const fetcher = vi.fn((url: string) => {
+    if (url.endsWith("/features")) return response(capabilities);
+    if (url.endsWith(`/tutor/sessions/${sessionId}`))
+      return sessionUnavailable
+        ? response({ detail: "Not found" }, 404)
+        : response(accepted ? saved : initial);
+    if (url.endsWith("/tutor/sessions")) return response([summary(initial)]);
+    if (url.endsWith("/submissions")) {
+      submissions++;
+      accepted = true;
+      return Promise.reject(new TypeError("Lost accepted acknowledgement"));
+    }
+    if (url.includes("/tutor/request-receipts/")) {
+      checks++;
+      expect(url).toContain(`?learner_id=${learner}`);
+      return response({
+        kind: "submission",
+        session_id: sessionId,
+        activity_id: problemId,
+        submission_id: "911c9abc-4e8e-424d-a914-4338187ba00d",
+      });
+    }
+    throw new Error(url);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  window.location.hash = `tutor=${sessionId}`;
+  const act = async (action: () => Promise<void>) => {
+    try {
+      await action();
+    } catch {
+      /* App shows safe acknowledgement error. */
+    }
+  };
+  render(<Tutor learner={learner} offline={false} act={act} />);
+  const composer = await screen.findByRole("textbox", {
+    name: "Your work or question",
+  });
+  fireEvent.change(composer, { target: { value: draft } });
+  fireEvent.click(screen.getByRole("button", { name: /^Send$/ }));
+  await screen.findByRole("button", { name: "Retry saved request" });
+  expect(checks).toBe(0);
+  sessionUnavailable = true;
+  fireEvent.click(screen.getByRole("button", { name: "Check saved request" }));
+  await screen.findByText(
+    /Your request was saved, but its current state could not be refreshed/,
+  );
+  expect(composer).toHaveValue(draft);
+  expect(composer).toHaveAttribute("readonly");
+  expect(
+    window.sessionStorage.getItem(`shepherd:tutor-request:${learner}`),
+  ).not.toBeNull();
+  sessionUnavailable = false;
+  fireEvent.click(screen.getByRole("button", { name: "Check saved request" }));
+  await screen.findByText(/Your interrupted request was saved/);
+  expect(composer).toHaveValue("");
+  expect(composer).not.toHaveAttribute("readonly");
+  expect(screen.getByText(draft)).toBeVisible();
+  expect(submissions).toBe(1);
+  expect(checks).toBe(2);
+  expect(
+    window.sessionStorage.getItem(`shepherd:tutor-request:${learner}`),
+  ).toBeNull();
+});
+
 it("retains an oversized response without submitting it and permits a valid Unicode response", async () => {
   const fetcher = installSession(session([studyActivity()]));
   render(<Tutor learner={learner} offline={false} act={run} />);

@@ -235,7 +235,16 @@ export function ProviderConnections({
   const [draft, setDraft] = useState<Draft | null>(null);
   const [editing, setEditing] = useState<Schema<"ProviderPublic"> | null>(null);
   const [terms, setTerms] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [working, setWorking] = useState(false);
+  const [connectionRefresh, setConnectionRefresh] = useState<{
+    message: string;
+    next: "connections" | "tests";
+  } | null>(null);
+  const [probe, setProbe] = useState<{
+    id: string;
+    stage: "tutor" | "vision";
+  } | null>(null);
+  const busy = working || connectionRefresh !== null;
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [saveFailure, setSaveFailure] = useState("");
@@ -329,6 +338,7 @@ export function ProviderConnections({
     provider: Schema<"ProviderPublic">,
     remove = false,
   ) => {
+    if (busy) return;
     if (
       remove &&
       !window.confirm(
@@ -337,8 +347,13 @@ export function ProviderConnections({
     )
       return;
     void act(async () => {
-      setBusy(true);
+      setWorking(true);
       setError("");
+      setMessage("");
+      let changed = false;
+      const receipt = remove
+        ? `${provider.id} and its saved API key were deleted.`
+        : `${provider.id} ${provider.enabled ? "disabled" : "enabled"}. Test it before selecting it for practice.`;
       try {
         await api(
           `/admin/providers/connections/${provider.id}`,
@@ -350,24 +365,58 @@ export function ProviderConnections({
                 enabled: !provider.enabled,
               } satisfies ConnectionInput),
         );
+        changed = true;
         if (remove && editing?.id === provider.id) cancel();
+        setMessage(receipt);
         await onChanged();
-        setMessage(
-          remove
-            ? `${provider.id} and its saved API key were deleted.`
-            : `${provider.id} ${provider.enabled ? "disabled" : "enabled"}. Test it before selecting it for practice.`,
-        );
       } catch (cause) {
-        setErrorSection("connections");
-        setError(connectionActionError(cause, provider, remove));
+        if (changed)
+          setConnectionRefresh({
+            message: `${receipt} The saved connections could not refresh. Refresh connections to continue.`,
+            next: "connections",
+          });
+        else {
+          setErrorSection("connections");
+          setError(connectionActionError(cause, provider, remove));
+        }
       } finally {
-        setBusy(false);
+        setWorking(false);
       }
     });
   };
 
   return (
     <section className="connection-setup">
+      {connectionRefresh && (
+        <div role="alert" className="error">
+          <p>{connectionRefresh.message}</p>
+          <button
+            type="button"
+            disabled={working}
+            onClick={() =>
+              void act(async () => {
+                setWorking(true);
+                try {
+                  await onChanged();
+                  setConnectionRefresh(null);
+                  setMessage(
+                    connectionRefresh.next === "tests"
+                      ? "The saved connection list is current. Test the connection next."
+                      : "Saved connections refreshed.",
+                  );
+                  if (connectionRefresh.next === "tests") openSection("tests");
+                } catch {
+                  // The confirmed change remains saved; retry only this read.
+                } finally {
+                  setWorking(false);
+                }
+              })
+            }
+          >
+            Refresh connections
+          </button>
+        </div>
+      )}
       {section === "connections" && (
         <>
           <div className="section-heading">
@@ -406,32 +455,6 @@ export function ProviderConnections({
                 server, or a hosted API connection.
               </p>
             )}
-          {saveFailure && !draft && (
-            <div role="alert" className="error">
-              <p>{saveFailure}</p>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() =>
-                  void act(async () => {
-                    setBusy(true);
-                    try {
-                      await onChanged();
-                      setSaveFailure("");
-                      setMessage(
-                        "The saved connection list is current. Test the connection next.",
-                      );
-                      openSection("tests");
-                    } finally {
-                      setBusy(false);
-                    }
-                  })
-                }
-              >
-                Refresh connections
-              </button>
-            </div>
-          )}
           {draft && (
             <form
               className="card connection-editor"
@@ -448,7 +471,7 @@ export function ProviderConnections({
                   ...(draft.api_key_action === "replace" ? { api_key } : {}),
                 } satisfies ConnectionInput;
                 void act(async () => {
-                  setBusy(true);
+                  setWorking(true);
                   setSaveFailure("");
                   let saved = false;
                   try {
@@ -481,13 +504,15 @@ export function ProviderConnections({
                     );
                     openSection(needsPolicy ? "policy" : "tests");
                   } catch (cause) {
-                    setSaveFailure(
-                      saved
-                        ? "The connection was saved, but the list could not refresh. Refresh connections to continue."
-                        : saveError(cause, draft),
-                    );
+                    if (saved)
+                      setConnectionRefresh({
+                        message:
+                          "The connection was saved, but the list could not refresh. Refresh connections to continue.",
+                        next: "tests",
+                      });
+                    else setSaveFailure(saveError(cause, draft));
                   } finally {
-                    setBusy(false);
+                    setWorking(false);
                   }
                 });
               }}
@@ -1178,6 +1203,13 @@ export function ProviderConnections({
       )}
       {section === "tests" && (
         <section aria-labelledby="settings-tests-heading">
+          {probe && (
+            <p role="status" className="notice">
+              Testing {probe.id}:{" "}
+              {probe.stage === "tutor" ? "tutor" : "photo reader"}… Previous
+              test results stay visible while this test runs.
+            </p>
+          )}
           {error && errorSection === "tests" && (
             <p role="alert" className="error">
               {error}
@@ -1300,7 +1332,8 @@ export function ProviderConnections({
                           )
                             return;
                           void act(async () => {
-                            setBusy(true);
+                            setWorking(true);
+                            setProbe({ id: provider.id, stage });
                             setError("");
                             setMessage("");
                             let tested = false;
@@ -1336,7 +1369,8 @@ export function ProviderConnections({
                                 }
                               }
                             } finally {
-                              setBusy(false);
+                              setProbe(null);
+                              setWorking(false);
                             }
                           });
                         }}

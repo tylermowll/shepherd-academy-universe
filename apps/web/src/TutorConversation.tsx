@@ -156,18 +156,22 @@ function TutorMessage({
       className="operation tutor-operation"
       aria-label={reading ? "Photo exchange" : "Message exchange"}
     >
-      {(operation.text || reading || operation.kind === "hint") && (
-        <div className="learner-message">
-          <p className="eyebrow">You{reading ? " · Photo" : ""}</p>
-          {operation.text && <p className="user-text">{operation.text}</p>}
-          {operation.kind === "hint" && !operation.text && (
-            <p>{requestedHelp ?? "Requested help with this activity."}</p>
-          )}
-          {operation.work_text && (
-            <p className="user-text">{operation.work_text}</p>
-          )}
-        </div>
+      {operation.kind === "generation" && (
+        <p className="eyebrow">Activity preparation</p>
       )}
+      {operation.kind !== "generation" &&
+        (operation.text || reading || operation.kind === "hint") && (
+          <div className="learner-message">
+            <p className="eyebrow">You{reading ? " · Photo" : ""}</p>
+            {operation.text && <p className="user-text">{operation.text}</p>}
+            {operation.kind === "hint" && !operation.text && (
+              <p>{requestedHelp ?? "Requested help with this activity."}</p>
+            )}
+            {operation.work_text && (
+              <p className="user-text">{operation.work_text}</p>
+            )}
+          </div>
+        )}
       {reading && (
         <section className="photo-reading" aria-label="Reading from your photo">
           <details open>

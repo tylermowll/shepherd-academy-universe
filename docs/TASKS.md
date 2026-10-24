@@ -8,55 +8,160 @@ A task is complete only after its requirements and exit checks pass.
 
 ## Current checkpoint
 
-The application is implemented through T44, with the October 11 dependency
-refresh, T45 documentation consolidation, T46 legacy cleanup and T47 root Python
-project consolidation. T48 reviewed documentation and help wording; T49
-closed process gaps found in the subsequent flow review. T50 records the
-independent adversarial review and its bounded corrections. T51 records the
-initial October 18 deployment; T52 links learning/administration and deploys the
-maintainer's subsequent lock update. T53 applies the maintainer's six-character
-account password minimum on both HTTP and HTTPS. T54 records the subsequent
-source-only dependency refresh; T55 reviews and publishes the reconciled October
-19 lock. T56 updates the persistent development tools and project dependencies.
-T57 repairs the maintainer workstation's missing JavaScript toolchain and checks
-the subsequent Python lock refresh. T58 upgrades the available development tools
-and compatible dependencies, publishes them and updates the private local app.
-T59 removes the oversized page-heading focus box while preserving accessible
-focus management and visible keyboard focus on controls, and deploys the fix.
-T60 separates Management and Learning with role-specific sign-in, deployment-relative
-links and explicit learner-account management actions, and deploys the result.
-T61 clarifies the selected sign-in role, makes role-specific password recovery
-discoverable and deploys the checked UI/help changes. T62 simplifies household
-account access with the maintainer-approved three-character password minimum,
-sign-in account names and portal password changes; see its status below. T63 adds
-a repository-specific UI/UX review skill spanning learner and administrator
-workflows; it does not establish that those workflows passed a new audit. T64
-validates and publishes the remaining account/skill changes with the maintainer's
-latest root lockfile update. T65 applies the review skill, preserves administrator
-work across navigation and deploys the checked result with that exact lockfile.
-T66 records a whole-application UI/UX review with eight confirmed findings and
-explicit browser/manual limits. T67 implements the corrections and two review
-follow-ups, passes the final gates, publishes the source and deploys the result.
-The schema head is `0020_request_recovery`. The latest private deployment uses
-committed source `7ce664b97530e5641cdd5ae8459f82beeabb1bf6` and immutable image
+The current product is the multi-subject tutor, with schema head
+`0020_request_recovery`. T69 corrects the seven residual UI/UX findings from T68
+and consolidates their documentation. Its implementation and publication evidence
+are below; the [current review](UI_UX_REVIEW.md) lists the corrected behavior and
+remaining acceptance work. Earlier task sections preserve dated evidence, not
+additional supported implementations.
+
+The latest private deployment remains T67's October 23, 2026 installation:
+source `7ce664b97530e5641cdd5ae8459f82beeabb1bf6`, image
 `sha256:9e7d5e1ffd96c32902753ed24793992daf9a77cfc0d1169adfefa50f7d14f759`,
-with Python 3.15.0, FastAPI 0.162.0 and pillow-heif 1.8.1, verified on
-**October 23, 2026**. T67 below records checks against the committed source,
-encrypted backup/isolated restore, cutover, served assets and authorization
-checks. This final documentation update records evidence without changing that
-runtime. T65 preserves the previous October 22 installation; the earlier installation
-is preserved in the [October 11 release record](history/TASKS.md#release-publication-2026-10-11).
-This is dated evidence; current provider selections and live teaching quality
-have not been verified.
+Python 3.15.0, FastAPI 0.162.0 and pillow-heif 1.8.1. Publication to Git does not
+update that installation. Current provider selections and live teaching quality
+remain unverified. [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
+owns the remaining model, physical-device, accessibility and operational checks.
 
-The maintainer refreshed the former `apps/api/uv.lock` before T46 publication.
-T47 preserves those versions and artifacts in the root `uv.lock`, adding the
-CloudFormation validator. T51–T53 and T58 verify the consolidated project's current
-container packaging and private installation; October 11's evidence is historical.
+## T69 — Correct the UI/UX findings and publish (2026-10-24)
 
-The remaining release work is in [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer).
-T47 records the Python project consolidation. T46 records the earlier cleanup
-and publication checks. Browser-model research and AWS hosting remain optional.
+**Status:** Implementation and all required gates passed; publication to `main`
+is pending. The maintainer authorized all seven
+T68 corrections, documentation cleanup and push. No deployment was requested.
+
+**Scope and contracts:** SPECIFICATION sections 3, 10–13 and 18: owned request
+receipts and in-memory drafts, honest loading/save outcomes, phone processing
+locations and safe rendering, keyboard focus and visible test progress. Current
+API shapes and schema head are unchanged; no new dependencies, services,
+compatibility shims or development-schema bridges were introduced.
+
+**Implemented:** `RequestRecovery` now supplies one receipt lookup/resolution UI
+for restored and current-tab typed requests and ordinary owned photos. A 404
+lookup remains blocked until explicit server resolution. Accepted work is opened
+without replay, and only its matching submitted draft is cleared. A missing or
+superseded follow-up session read retains the pending identity and draft. An
+unaccepted request is closed against late acceptance before releasing retained
+text/photo. Phone-token uploads retain their independent scope.
+
+`Tutor` distinguishes History loading, failure and successful-empty responses,
+with GET-only reload. Account and connection mutations retain confirmed success
+if the list refresh fails and block the affected stale controls until read-only
+recovery. Connection tests identify their pending connection/stage. The phone
+API discloses reader and downstream tutor locations without private metadata;
+its received receipt stays empty. Phone tasks reuse SafeText and scoped wrapping.
+Material navigation stays mounted within a session, restores a useful control
+following learner actions and avoids stealing focus on polling/hidden pages.
+Internal generation text no longer appears as learner-authored chat; failure and
+retry/stop controls remain.
+
+**Documentation:** README, Help and SPECIFICATION describe the current recovery
+and display behavior. UI_UX_REVIEW is a concise correction record; superseded
+committed review prose remains in Git history, and T68's dated evidence remains
+in this task log. TASKS and ACCEPTANCE checkpoints now point
+to current evidence instead of repeating old release narratives. Existing manual
+acceptance requirements remain explicit.
+
+**Commands and actual evidence:** Checks use
+`python3 /tmp/shepherd-t69/run.py` as an environment-isolating prefix. It excludes
+inherited operator/provider settings and dotenv loading. A temporary PNPM wrapper
+preserves the Makefile build/test phases while passing `envDir: false` to the
+existing Vite and Vitest APIs; no gate is skipped.
+
+| Command | Actual outcome |
+| --- | --- |
+| `make test-integration` | **409 passed in 72.73s** against temporary on-disk SQLite databases. |
+| `make check` | Final run passed: **329 backend unit tests in 10.71s**, **11 toolchain tests**, **305 frontend tests in 18 files**, lint/format, Python/TypeScript types, build, generated-contract drift, credential scan and infrastructure validation. Existing >500kB JavaScript chunk warning remains. |
+| Focused Playwright selection across `review-fixes`, `reading`, `phone-navigation`, `request-recovery` | **12 passed in 1.3 minutes**, six per desktop/mobile project; all layout, focus, failed-read, receipt and no-new-work assertions retained. |
+| `make lint format-check typecheck` | Passed after the browser fixture corrections. |
+| `make secret-check` | Passed with the new shared component staged and included. |
+| `make smoke-built` | **124 passed in 19.3 minutes**, 62 desktop and 62 Pixel 7 Chromium emulation cases, one worker, zero retries. |
+
+Earlier checks stopped on a test-only unsupported Testing Library `exact` option,
+which was replaced with its equivalent exact-name regex. The first focused
+browser run was **6 passed/6 failed**: the formula legally wrapped, keyboard
+focus ran before controls enabled (or wrongly required editable success after a
+valid context-limit failure), and the History fixture recovered on normal page
+navigation. Fixtures now require intrinsically wide math, wait for enabled or
+terminal controls and hold History failure until explicit reload. No product
+assertion or privacy rule was removed. Sandboxed phone integration attempts
+stalled before test bodies in the existing async fixture; the same selection and
+full gate passed with loopback socket permission.
+
+**Final review:** Independent source review found no blocking issue in ownership,
+receipt/key handling, administrator outcomes, focus or phone rendering. Production
+file hashes remained unchanged during the full browser run. The generated client,
+lockfiles and schema are unchanged; final whitespace and credential checks passed.
+
+**Remaining checks:** Live providers/teaching quality, actual phones/camera/HEIC,
+Safari, installed-PWA background behavior, manual zoom/text spacing,
+screen readers/accessible math, comprehensive contrast/targets and full restored
+host recovery remain in ACCEPTANCE. No private environment/provider configuration,
+real learner material, uploads or private logs were opened. No live/paid inference,
+model downloads, cloud provisioning or deployment ran. Artifacts and logs are
+synthetic and retained outside Git under `/tmp/shepherd-t69`.
+
+## T68 — Review the whole application after T67 (2026-10-24)
+
+**Status:** Source and synthetic-browser review complete. T69 implements the
+corrections. This dated evidence is not a complete manual accessibility audit or
+a release-readiness claim.
+
+**Scope and contracts:** The maintainer requested the repository's UI/UX review
+skill across the application. Reviewed source `ef2c6dc` from a clean working tree,
+covering all 23 implemented workflow groups, with separate administrator and
+learner journeys. Applied usability, accessibility and writing lenses against
+README, SPECIFICATION sections 1–4, 10–13 and 18, current T67 evidence and
+ACCEPTANCE. No application, schema/client, dependency or permanent test changes.
+Only this task log and `docs/UI_UX_REVIEW.md` changed.
+
+**Findings:** The review recorded a permanent-rejection retry trap without in-tab
+resolution; completed
+administrator actions misreported after refresh failure; incomplete phone
+disclosure for a local reader plus cloud tutor (source-only); failed History
+loading presented as an empty account; phone task math/wrapping problems; lost
+focus continuity on section changes; and missing visible connection-test progress.
+The focus result is narrowly reported: BODY receives focus and the following Tab
+returns to the passage title, not the masthead. Pending generation appearing as
+learner-authored chat is a separate design suggestion; the specification's
+successful-generation hiding requirement is already satisfied. T67's historical
+corrections and existing ACCEPTANCE follow-ups stay separate.
+
+**Actual checks:** A fresh Vite build with `envDir: false` and
+`node scripts/build-pwa.mjs` passed; the existing >500kB JavaScript chunk warning
+remains. Isolated `make smoke-built` passed **114 cases in 18.3 minutes**, 57 each
+on Chrome 156.0.8078.47 desktop and Pixel 7 Chromium emulation, one worker and
+zero retries. The first sandbox attempt could not bind loopback and exited before
+tests; the same harness then ran with socket permission. No live environment
+files or inherited operator/provider settings were loaded.
+
+Temporary focused probes initially produced **14 passed, 2 failed in 2.1 minutes**.
+Both failed recovery cases reached a real stale-version 409 but could not match
+the remounted composer with an exact label-text selector. A 15-second-wait rerun
+still failed both; snapshots retained the draft. Using the accessible textbox
+role and the actual read-only textarea contract produced **2 passes in 9.2
+seconds**, retaining the draft-value, disabled Finish, real 409 and missing
+Check/Resolve assertions. All 16 distinct probe cases consequently have passing
+evidence across those runs; defect-probe passes establish reproduction, not fixes.
+The probes also completed synthetic age correction, authenticated no-store export,
+canceled deletion and confirmed deletion. TypeScript passed with the expanded
+temporary probes. The report contains exact commands, coverage and measurements;
+desktop phone-task scrollWidth measured **2,111px at a 320px viewport**. Screenshots
+were inspected alongside interaction, HTTP, focus/Tab and geometry evidence.
+
+The temporary probe was removed from the repository; its initial/final source,
+logs, screenshots and failure traces remain under
+`/tmp/shepherd-ux-review-20261024`. Final `git diff --check` passed. Backend
+unit/integration, full `make check`, dependency audits and deployment gates were
+not rerun for these documentation-only changes.
+
+**Limits and next bounded action:** No private settings/provider configuration,
+learner material, uploads or private logs were opened. No live/paid inference,
+model downloads, provisioning, deployment or Git push ran. Physical phone/camera/
+HEIC, Safari, installed-PWA/background behavior, actual browser zoom/text spacing,
+screen readers/accessible math, comprehensive contrast/targets, live teaching and
+full host recovery remain unverified. Prioritize an in-tab receipt lookup/resolve
+slice for ambiguous typed/photo requests that preserves drafts and safely handles
+both absent/stale and already-accepted work. This review implements no corrections.
 
 ## T67 — Fix review findings, publish and deploy (2026-10-23)
 
@@ -177,9 +282,8 @@ restarts and a fresh worker heartbeat.
 was inspected. No live or paid provider tests, model downloads or cloud
 provisioning were run. Actual-device, assistive-technology, real-model
 quality and full operational-recovery checks remain in ACCEPTANCE; synthetic
-results do not establish WCAG conformance or teaching quality. See the
-[remediation record](UI_UX_REVIEW.md#october-23-2026--t67-remediation) for the
-relationship to T66's historical findings.
+results do not establish WCAG conformance or teaching quality. The implemented
+corrections and final gates above supersede T66's historical findings.
 
 ## T66 — Whole-application UI/UX review (2026-10-23)
 
@@ -196,8 +300,7 @@ Reviewed source `b593765` from a clean working tree. Only `docs/UI_UX_REVIEW.md`
 and this task log changed; no application, dependency, API/schema or permanent
 test changes were made.
 
-**Findings:** The [October 23 report](UI_UX_REVIEW.md#october-23-2026--whole-application-review)
-records eight confirmed issues: a missing saved-session bookmark blocks new
+**Findings:** The dated review recorded eight confirmed issues: a missing saved-session bookmark blocks new
 practice and History; a delayed active-model save erases newer selections;
 cross-role Help destinations open the wrong workspace; successful privacy saves
 can be reported as unsuccessful after a refresh failure; delayed phone-link
@@ -278,7 +381,7 @@ an enabled composer before selecting text. Its normal hook exposed a readiness
 race after the earlier full gate passed; all behavior assertions remain intact,
 and this test-only correction changes no deployed runtime code.
 
-**Review and checks:** [The review report](UI_UX_REVIEW.md) records all 23
+**Review and checks:** This review covered all 23
 workflow groups with baseline source-only coverage, the synthetic browser failure
 before the fix, corrections, independent review and manual/device limits.
 `make check` passed: 329 backend unit, 11 toolchain and 252 frontend tests, lint,

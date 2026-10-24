@@ -66,6 +66,108 @@ describe("learner account management", () => {
     expect(choose).toHaveBeenCalledExactlyOnceWith(learner.id);
     expect(fetcher).not.toHaveBeenCalled();
   });
+
+  it.each(["create", "credentials", "age", "delete"] as const)(
+    "keeps the confirmed %s outcome and blocks another write until the account list refreshes",
+    async (operation) => {
+      const fetcher = vi.fn((_url: RequestInfo | URL, init?: RequestInit) =>
+        Promise.resolve(response(init?.method === "GET" ? [] : learner)),
+      );
+      vi.stubGlobal("fetch", fetcher);
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      const refresh = vi
+        .fn<() => Promise<void>>()
+        .mockRejectedValueOnce(new TypeError("Synthetic refresh unavailable"))
+        .mockRejectedValueOnce(
+          new TypeError("Synthetic refresh still unavailable"),
+        )
+        .mockResolvedValueOnce();
+      const choose = vi.fn();
+      render(
+        <LearnerAccounts
+          learner={operation === "create" ? "" : learner.id}
+          learners={operation === "create" ? [] : [learner]}
+          onLearner={choose}
+          onRefresh={refresh}
+          administrator="home-admin"
+          onSessionChange={vi.fn()}
+          act={async (action) => action()}
+        />,
+      );
+      const action = screen.getByRole("button", {
+        name: {
+          create: "Create learner account",
+          credentials: "Save sign-in details",
+          age: "Save age group",
+          delete: "Delete learner",
+        }[operation],
+      });
+      if (operation === "create" || operation === "credentials") {
+        fireEvent.change(screen.getByLabelText("Learner username"), {
+          target: { value: "Synthetic updated River" },
+        });
+        fireEvent.change(
+          screen.getByLabelText(
+            operation === "create" ? "Password" : "New password",
+          ),
+          {
+            target: { value: "synthetic-new-password" },
+          },
+        );
+      } else if (operation === "age")
+        fireEvent.change(screen.getByLabelText("Age group"), {
+          target: { value: "minor" },
+        });
+      fireEvent.click(action);
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "This change was saved, but the account list could not refresh. Refresh accounts to continue.",
+      );
+      expect(screen.getByRole("status")).toHaveTextContent(
+        {
+          create: "Learner account created.",
+          credentials:
+            "Password changed. This learner's browsers are signed out.",
+          age: "Age group saved. Pending requests were stopped; saved work is kept.",
+          delete: "Learner account deleted.",
+        }[operation],
+      );
+      expect(action).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: "Add learner account" }),
+      ).toBeDisabled();
+      if (operation === "create" || operation === "credentials")
+        expect(
+          screen.getByLabelText(
+            operation === "create" ? "Password" : "New password",
+          ),
+        ).toHaveValue("");
+      if (operation === "delete") fireEvent.click(action);
+      else fireEvent.submit(action.closest("form")!);
+      const writes = () =>
+        fetcher.mock.calls.filter(([, init]) => init?.method !== "GET");
+      expect(writes()).toHaveLength(1);
+      expect(choose).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: "Refresh accounts" }));
+      await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(2));
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "This change was saved",
+      );
+      await vi.waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Refresh accounts" }),
+        ).toBeEnabled(),
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Refresh accounts" }));
+      await vi.waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+      expect(refresh).toHaveBeenCalledTimes(3);
+      expect(writes()).toHaveLength(1);
+      if (operation === "create" || operation === "delete")
+        expect(choose).toHaveBeenCalledExactlyOnceWith(
+          operation === "create" ? learner.id : "",
+        );
+      else expect(action).toBeEnabled();
+    },
+  );
 });
 
 describe("learner passwords on HTTPS", () => {

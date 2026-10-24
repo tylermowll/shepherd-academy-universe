@@ -176,8 +176,9 @@ an existing conversation draft first.
 
 Photos accept JPG, PNG, WebP, HEIC or HEIF up to **8 MiB**, including drag and drop.
 The server resizes them when needed, converts them to JPEG and removes metadata.
-The phone QR page needs no learner login and grants only temporary upload access. It shows an
-upload receipt; the computer shows the reading and feedback. If a photo reading
+The phone QR page needs no learner login and grants only temporary upload access.
+Before upload, it explains where the photo and extracted text will be processed.
+It shows an upload receipt; the computer shows the reading and feedback. If a photo reading
 is rejected, the tutor can still discuss that report, clearly marked as uncertain.
 For a reference photo, ask what needs clarification, retake the photo, or edit
 the uncertain reading as text and use the corrected material to create practice.
@@ -186,9 +187,11 @@ Discussing a rejected report does not automatically accept its reading.
 ## Recovery, privacy and operation
 
 Switching app tabs preserves drafts in memory. Reloading, closing the browser tab
-or switching learners can lose unsent drafts. After reload, interrupted requests
-can be checked with **Check saved request** or **Resolve interrupted request**;
-the app checks the saved request without resending work. Closing the tab loses
+or switching learners can lose unsent drafts. Use **Check saved request** for an
+interrupted text or photo submission, in the current tab or after reload. If it
+was not saved, **Resolve interrupted request** safely releases it before you
+continue. These actions do not resend work; current-tab resolution preserves
+your draft or prepared photo. Closing the tab loses
 the request reference; use **History** for already saved work. The phone upload
 page has its own recovery flow.
 

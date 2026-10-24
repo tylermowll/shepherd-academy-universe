@@ -185,6 +185,12 @@ from account sign-in, explains private HTTPS, and gives a path out of demo or
 unconfigured states. Page changes preserve drafts and pending request IDs in
 memory; account changes must not restore another learner's content.
 
+History distinguishes loading and retrieval failure from a successfully empty
+list, and offers a read-only reload. Confirmed administrator changes retain their
+success receipt if the subsequent list refresh fails; stale mutation controls
+remain blocked until a read-only refresh succeeds. Reading-section actions keep
+useful keyboard focus when the activity changes.
+
 Choose practice material by purpose (topic practice, passage study or assignment
 concepts), then show the relevant input methods. Keep assignment references
 separate from passages and learner work. Finish session is available with the
@@ -758,6 +764,13 @@ A provider failure never becomes a learner's wrong-answer verdict.
 Advertise retry availability only when the job's retry and call budgets, current
 activity/version, open session and absence of a conflicting operation permit the
 transition. The retry endpoint enforces the same conditions.
+
+Owned typed and photo requests expose receipt lookup and safe resolution in the
+current tab as well as after reload. An ambiguous request remains blocked until
+its saved receipt is recovered or server resolution prevents later acceptance.
+Current-tab resolution preserves unsent text or the prepared photo; recovering
+accepted work clears only its matching submitted draft. The phone companion
+keeps its separate upload-token receipt flow.
 
 Poll while the page is visible and reconnect by operation ID. Browser session
 storage may retain only opaque pending command IDs, learner IDs and command

@@ -423,6 +423,257 @@ test("a confirmed privacy save offers a GET-only refresh after configuration loa
   expect(refreshFailures).toBe(1);
 });
 
+test("a confirmed connection deletion retains its receipt until a GET-only refresh replaces stale controls", async ({
+  page,
+}) => {
+  const connectionId = "synthetic-delete-connection";
+  let configuration: Configuration | undefined;
+  let deletes = 0;
+  let reads = 0;
+  let refreshFailures = 0;
+  await page.route("**/api/v1/admin/providers", async (route) => {
+    expect(route.request().method()).toBe("GET");
+    reads += 1;
+    if (!configuration) {
+      const response = await route.fetch();
+      expect(response.ok()).toBe(true);
+      const original = (await response.json()) as Configuration;
+      const mock = original.providers.find(
+        (provider) => provider.adapter === "mock",
+      );
+      expect(mock).toBeDefined();
+      configuration = {
+        ...original,
+        routes: { tutor: mock!.id, vision: mock!.id },
+        providers: [
+          mock!,
+          {
+            ...mock!,
+            id: connectionId,
+            adapter: "ollama",
+            boundary: "local_network",
+            managed: true,
+            enabled: true,
+            key_configured: false,
+          },
+        ],
+      };
+    }
+    if (deletes && refreshFailures === 0) {
+      refreshFailures += 1;
+      await route.fulfill({
+        status: 503,
+        json: { detail: "Synthetic connection-list refresh unavailable." },
+      });
+    } else await route.fulfill({ json: configuration });
+  });
+  await page.route(
+    `**/api/v1/admin/providers/connections/${connectionId}`,
+    async (route) => {
+      expect(route.request().method()).toBe("DELETE");
+      deletes += 1;
+      configuration = {
+        ...configuration!,
+        providers: configuration!.providers.filter(
+          (provider) => provider.id !== connectionId,
+        ),
+      };
+      await route.fulfill({ status: 200, json: {} });
+    },
+  );
+  await login(page);
+  await navigate(page, "Settings");
+  const card = page.locator(".provider-list > article").filter({
+    has: page.getByRole("heading", { name: connectionId, exact: true }),
+  });
+  await activate(
+    card.getByText("Technical details and actions", { exact: true }),
+  );
+  page.once("dialog", (dialog) => void dialog.accept());
+  const remove = card.getByRole("button", {
+    name: "Delete connection",
+    exact: true,
+  });
+  await activate(remove);
+  await expect(page.getByRole("alert")).toContainText(
+    `${connectionId} and its saved API key were deleted.`,
+  );
+  await expect(page.getByRole("alert")).toContainText(
+    "The saved connections could not refresh.",
+  );
+  await expect(page.getByRole("alert")).not.toContainText("Could not delete");
+  await expect(card).toBeVisible();
+  await expect(remove).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Add new AI connection", exact: true }),
+  ).toBeDisabled();
+  await screenshot(page, "connection-deleted-refresh-pending.png");
+  const failedReads = reads;
+  await activate(
+    page.getByRole("button", { name: "Refresh connections", exact: true }),
+  );
+  await expect(card).toHaveCount(0);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText(
+    "Saved connections refreshed.",
+  );
+  expect(reads).toBe(failedReads + 1);
+  expect(deletes).toBe(1);
+  expect(refreshFailures).toBe(1);
+});
+
+test("connection tests identify their pending stage while keeping previous results visible", async ({
+  page,
+}) => {
+  const started = deferred();
+  const release = deferred();
+  let configuration: Configuration | undefined;
+  let mockId = "";
+  let probes = 0;
+  await page.route("**/api/v1/admin/providers", async (route) => {
+    expect(route.request().method()).toBe("GET");
+    if (!configuration) {
+      const response = await route.fetch();
+      expect(response.ok()).toBe(true);
+      const original = (await response.json()) as Configuration;
+      const mock = original.providers.find(
+        (provider) => provider.adapter === "mock",
+      );
+      expect(mock).toBeDefined();
+      mockId = mock!.id;
+      configuration = {
+        ...original,
+        routes: { tutor: mockId, vision: mockId },
+        providers: [mock!],
+      };
+    }
+    await route.fulfill({ json: configuration });
+  });
+  await page.route("**/api/v1/admin/providers/*/probe", async (route) => {
+    expect(route.request().method()).toBe("POST");
+    expect(route.request().url()).toContain(`/${mockId}/probe`);
+    expect(route.request().postDataJSON()).toEqual({
+      stage: "vision",
+      authorize_synthetic_call: true,
+    } satisfies Schema<"ProbeInput">);
+    probes += 1;
+    started.resolve();
+    await release.promise;
+    await route.fulfill({ json: {} });
+  });
+  try {
+    await login(page);
+    await navigate(page, "Settings");
+    await activate(page.getByRole("tab", { name: /Connection tests/ }));
+    const testPhoto = page.getByRole("button", {
+      name: "Test photo reader",
+      exact: true,
+    });
+    await activate(testPhoto);
+    await started.promise;
+    const pending = page
+      .getByRole("status")
+      .filter({ hasText: `Testing ${mockId}: photo reader…` });
+    await expect(pending).toBeVisible();
+    await expect(pending).toContainText(
+      "Previous test results stay visible while this test runs.",
+    );
+    await expect(page.locator(".readiness-list")).toContainText("Passed");
+    await expect(testPhoto).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Test tutor", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Refresh status", exact: true }),
+    ).toBeDisabled();
+    await activate(page.getByRole("tab", { name: /Connections/ }));
+    await activate(page.getByRole("tab", { name: /Connection tests/ }));
+    await expect(pending).toBeVisible();
+    expect(probes).toBe(1);
+    await screenshot(page, "connection-test-pending-stage.png");
+    release.resolve();
+    await expect(
+      page
+        .getByRole("status")
+        .filter({ hasText: `${mockId}: photo reader test passed.` }),
+    ).toBeVisible();
+    await expect(pending).toHaveCount(0);
+    await expect(testPhoto).toBeEnabled();
+    expect(probes).toBe(1);
+  } finally {
+    release.resolve();
+  }
+});
+
+test("History distinguishes a failed list from an empty account and reloads saved sessions without creating work", async ({
+  page,
+}) => {
+  const savedTopic = "Synthetic History list recovery";
+  await startTutor(page, savedTopic);
+  const savedHash = new URL(page.url()).hash;
+  let reads = 0;
+  let writes = 0;
+  let unavailable = true;
+  page.on("request", (request) => {
+    if (
+      request.method() === "POST" &&
+      (request.url().endsWith("/tutor/sessions") ||
+        request.url().endsWith("/activities") ||
+        request.url().endsWith("/submissions"))
+    )
+      writes += 1;
+  });
+  await page.route("**/api/v1/tutor/sessions", async (route) => {
+    expect(route.request().method()).toBe("GET");
+    reads += 1;
+    if (unavailable)
+      await route.fulfill({
+        status: 503,
+        json: { detail: "Synthetic saved-session list unavailable." },
+      });
+    else await route.continue();
+  });
+  await page.reload();
+  await navigate(page, "History");
+  const failure = page
+    .getByRole("status")
+    .filter({ hasText: "Saved sessions could not load." });
+  await expect(failure).toContainText("Your saved work has not been removed.");
+  await expect(
+    page.getByRole("heading", { name: "No saved sessions yet", exact: true }),
+  ).toHaveCount(0);
+  const savedCard = page.locator(".session-card").filter({
+    has: page.getByRole("heading", { name: savedTopic, exact: true }),
+  });
+  await expect(savedCard).toHaveCount(0);
+  await screenshot(page, "history-list-failure-recovery.png");
+  const failedReads = reads;
+  unavailable = false;
+  const reloaded = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/tutor/sessions") &&
+      response.request().method() === "GET",
+  );
+  await activate(
+    page.getByRole("button", { name: "Reload saved sessions", exact: true }),
+  );
+  expect((await reloaded).status()).toBe(200);
+  await expect(savedCard).toBeVisible();
+  await expect(failure).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "No saved sessions yet", exact: true }),
+  ).toHaveCount(0);
+  expect(reads).toBe(failedReads + 1);
+  await activate(
+    savedCard.getByRole("button", { name: "Continue session", exact: true }),
+  );
+  await expect(
+    page.getByRole("textbox", { name: "Your work or question", exact: true }),
+  ).toBeEditable();
+  expect(new URL(page.url()).hash).toBe(savedHash);
+  expect(writes).toBe(0);
+});
+
 test("a missing initial session leaves actual saved History, dates and new practice usable", async ({
   page,
 }) => {

@@ -6,7 +6,7 @@ from collections.abc import AsyncIterator, Iterator
 from datetime import timedelta
 from io import BytesIO
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 from uuid import UUID, uuid4
 
 import pytest
@@ -31,12 +31,13 @@ from math_tutor.adapters.db.models import (
     PracticeSession,
     ProblemInstance,
     ProgressEvent,
+    ProviderProbe,
     Submission,
     TutorTurn,
 )
 from math_tutor.adapters.db.types import utcnow
 from math_tutor.adapters.images import delete_image, normalize, object_path
-from math_tutor.adapters.providers.config import ProviderConfig
+from math_tutor.adapters.providers.config import Configuration, ProviderConfig, Routes
 from math_tutor.adapters.providers.contracts import (
     Capabilities,
     ModelRequest,
@@ -48,6 +49,7 @@ from math_tutor.adapters.providers.transports import HTTPProvider
 from math_tutor.api.app import create_app
 from math_tutor.demo import DEMO_PASSWORD, seed
 from math_tutor.providers import complete as provider_complete
+from math_tutor.providers import probe_fingerprint
 from math_tutor.retention import sweep
 from math_tutor.tutoring import make_request
 
@@ -140,7 +142,9 @@ async def test_phone_photo_to_computer_automatic_reading(
         assert (
             await phone.post("/api/v1/phone-upload/preview", content=photo_bytes())
         ).status_code == 409
-        assert (await phone.get("/api/v1/phone-upload")).json()["problem_text"] == ""
+        receipt = (await phone.get("/api/v1/phone-upload")).json()
+        assert receipt["received"] is True
+        assert receipt["problem_text"] == receipt["processing"] == ""
 
         def read_handwriting(_provider: ProviderConfig, request: ModelRequest) -> ModelResult:
             if request.purpose != "read":
@@ -178,6 +182,119 @@ async def test_phone_photo_to_computer_automatic_reading(
             assert db.scalar(select(func.count()).select_from(Submission)) == 1
             assert db.scalar(select(func.count()).select_from(Job)) == 1
             assert db.scalar(select(func.count()).select_from(ProgressEvent)) == 0
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "photo_boundary,text_boundary,source,purpose",
+    [
+        ("local_network", "cloud", "topic", "give tutoring feedback"),
+        ("cloud", "local_network", "topic", "give tutoring feedback"),
+        (
+            "local_network",
+            "cloud",
+            "reference_photo",
+            "create different practice from this material",
+        ),
+        ("local_network", "cloud", "reading_photo", "create practice about this passage"),
+        ("local_network", None, "topic", ""),
+    ],
+)
+async def test_phone_discloses_reader_and_downstream_tutor_without_private_configuration(
+    adult: AsyncClient,
+    engine: Engine,
+    monkeypatch: pytest.MonkeyPatch,
+    photo_boundary: Literal["local_network", "cloud"],
+    text_boundary: Literal["local_network", "cloud"] | None,
+    source: str,
+    purpose: str,
+) -> None:
+    from math_tutor.api import phone as phone_api
+
+    _, problem = await start(adult, (await learner_ids(adult))[0])
+    with Session(engine) as db:
+        row = db.get(ProblemInstance, UUID(problem["id"]))
+        assert row is not None
+        row.parameters = {**row.parameters, "reference_source": source}
+        db.commit()
+    configuration = Configuration(
+        allow_cloud_inference=True,
+        app_audience="mixed",
+        routes=Routes(vision="synthetic-private-reader", tutor="synthetic-private-tutor"),
+        providers={
+            "synthetic-private-reader": ProviderConfig(
+                adapter="compatible",
+                model="synthetic-private-reader-model",
+                enabled=True,
+                base_url="https://synthetic-reader.invalid/v1",
+                data_boundary=photo_boundary,
+                audience="mixed",
+                eligibility_record="Synthetic disclosure fixture",
+                capabilities=Capabilities(image_input=True),
+            ),
+            "synthetic-private-tutor": ProviderConfig(
+                adapter="compatible",
+                model="synthetic-private-tutor-model",
+                enabled=True,
+                base_url="https://synthetic-tutor.invalid/v1",
+                data_boundary=text_boundary or "local_network",
+                audience="mixed",
+                eligibility_record="Synthetic disclosure fixture",
+            ),
+        },
+    )
+    if text_boundary is None:
+        configuration = configuration.model_copy(
+            update={
+                "providers": {
+                    "synthetic-private-reader": configuration.providers["synthetic-private-reader"]
+                }
+            }
+        )
+
+    with Session(engine) as db:
+        for stage in ("vision", "tutor"):
+            identifier = getattr(configuration.routes, stage)
+            if identifier not in configuration.providers:
+                continue
+            db.add(
+                ProviderProbe(
+                    fingerprint=probe_fingerprint(configuration.providers[identifier], stage),
+                    provider_id=identifier,
+                    stage=stage,
+                )
+            )
+        db.commit()
+    monkeypatch.setattr(phone_api, "effective_configuration", lambda _db: configuration)
+    link = await phone_link(adult, problem)
+    async with client(engine) as phone:
+        phone.headers["X-Photo-Token"] = link["url"].split("#capture=")[1]
+        response = await phone.get("/api/v1/phone-upload")
+    assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "no-store"
+    processing = response.json()["processing"]
+    expected_reader = (
+        "An external model provider will read this photo."
+        if photo_boundary == "cloud"
+        else "Your computer or a model on its private network will read this photo."
+    )
+    assert processing.startswith(expected_reader)
+    if text_boundary is None:
+        assert (
+            "The tutor is unavailable. Ask the administrator to check Active models." in processing
+        )
+    else:
+        destination = (
+            "an external model provider"
+            if text_boundary == "cloud"
+            else "your computer or a model on its private network"
+        )
+        assert f"The extracted text goes to {destination} to {purpose}." in processing
+    assert "synthetic-private" not in response.text
+    assert "synthetic-reader.invalid" not in response.text
+    assert "synthetic-tutor.invalid" not in response.text
+    with Session(engine) as db:
+        assert db.scalar(select(func.count()).select_from(ModelCall)) == 0
 
 
 @pytest.mark.anyio

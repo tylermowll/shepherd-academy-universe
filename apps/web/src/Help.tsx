@@ -588,10 +588,13 @@ export function HelpPage({
               <ContextHelp topic="An activity or photo is stuck">
                 <p>
                   Check that the app server and its background worker are
-                  running. Reconnect and reopen the session in History. Use the
-                  retry button on the failed request; it keeps the original
-                  submission. If a provider test fails, check Settings and its
-                  server configuration.
+                  running. If a submission was interrupted, choose Check saved
+                  request without reloading; this keeps your draft or prepared
+                  photo. Resolve interrupted request reopens saved work or
+                  safely releases an unsaved request without sending it again.
+                  For a saved response that failed, use its retry button. If a
+                  provider test fails, check Settings and its server
+                  configuration.
                 </p>
               </ContextHelp>
               <ContextHelp topic="The tutor misread my handwriting">

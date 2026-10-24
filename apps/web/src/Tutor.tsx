@@ -12,6 +12,7 @@ import { ReadingSources } from "./ReadingSources";
 import { ActivityPurpose } from "./ActivityPurpose";
 import { PracticeSource } from "./PracticeSource";
 import { SessionReview } from "./SessionReview";
+import { RequestRecovery } from "./RequestRecovery";
 import { characterCount } from "./text-limits";
 import {
   forgetRequest,
@@ -99,6 +100,10 @@ export function Tutor({
   const [history, setHistory] = useState<
     Schema<"TutoringSessionSummaryPublic">[]
   >([]);
+  const [historyState, setHistoryState] = useState<
+    "loading" | "ready" | "failed"
+  >("loading");
+  const [refreshingHistory, setRefreshingHistory] = useState(false);
   const [session, setSession] =
     useState<Schema<"TutoringSessionPublic"> | null>(null);
   const [features, setFeatures] = useState<Schema<"Features"> | null>(null);
@@ -150,6 +155,39 @@ export function Tutor({
     pending !== null ||
     photoPending ||
     recovery !== null;
+  const recoveryIdentity: PendingRequestIdentity | null =
+    recovery ??
+    (pending && ["session", "activity", "submission"].includes(pending.kind)
+      ? {
+          key: pending.key,
+          kind: pending.kind as PendingRequestIdentity["kind"],
+          owner: learner,
+        }
+      : null);
+  const clearCommandDraft = useCallback((request: Command) => {
+    if (
+      request.kind === "submission" &&
+      (request.body as Schema<"SubmissionInput">).kind !== "hint"
+    )
+      setText("");
+    if (request.kind === "activity") {
+      const source = (request.body as Schema<"TutorActivityInput">).source;
+      if (source === "reference_text" || source === "reading_text")
+        setReference("");
+      setPublished(null);
+      if (source === "published") setSource("topic");
+    }
+    if (request.kind === "session") {
+      setTopic("");
+      setReference("");
+      setPublished(null);
+      if (
+        (request.body as Schema<"TutoringSessionInput">).initial_activity
+          ?.source === "published"
+      )
+        setSource("topic");
+    }
+  }, []);
 
   const commitSession = useCallback(
     (loaded: Schema<"TutoringSessionPublic">, addToHistory = false) => {
@@ -206,15 +244,18 @@ export function Tutor({
           ? api<Schema<"TutoringSessionPublic">>(`/tutor/sessions/${id}`)
           : Promise.resolve(null),
       ]);
-      if (!mounted.current || sequence !== loadSequence.current) return;
-      if (sessions.status === "fulfilled" && sessions.value)
+      if (!mounted.current || sequence !== loadSequence.current) return false;
+      let opened = false;
+      if (sessions.status === "fulfilled" && sessions.value) {
         setHistory(
           sessions.value.filter((item) => item.learner_id === learner),
         );
+        setHistoryState("ready");
+      } else if (sessions.status === "rejected") setHistoryState("failed");
       if (capabilities.status === "fulfilled") setFeatures(capabilities.value);
       setConnectionError("");
       if (loaded.status === "fulfilled") {
-        if (loaded.value) commitSession(loaded.value);
+        if (loaded.value) opened = commitSession(loaded.value);
       } else if (
         loaded.reason instanceof ApiError &&
         loaded.reason.status === 404
@@ -238,7 +279,7 @@ export function Tutor({
         );
       } else throw loaded.reason;
       if (capabilities.status === "rejected") throw capabilities.reason;
-      if (sessions.status === "rejected") throw sessions.reason;
+      return opened;
     },
     [commitSession, learner],
   );
@@ -248,8 +289,8 @@ export function Tutor({
       selectingSession.current += 1;
       setSelecting(true);
       try {
-        await load(id);
-        return selectedSession.current === id;
+        const opened = await load(id);
+        return opened && selectedSession.current === id;
       } catch (cause) {
         window.history.replaceState(
           null,
@@ -265,70 +306,57 @@ export function Tutor({
     [load],
   );
 
+  const releaseUnacceptedRequest = async (identity: PendingRequestIdentity) => {
+    forgetRequest(identity);
+    if (pendingCommand.current?.key === identity.key) {
+      pendingCommand.current = null;
+      setPending(null);
+    }
+    setRecovery(null);
+    setRecoveryNotice(
+      "The interrupted request was not saved. The server will reject it if it arrives later. Your draft is still here; re-enter anything lost before this tab was reopened.",
+    );
+    if (selectedSession.current) {
+      setWorking(true);
+      try {
+        await refresh();
+      } catch {
+        if (mounted.current)
+          setConnectionError(
+            "The interrupted request was cleared, but the current activity could not refresh. Reconnect to continue; your draft is still here.",
+          );
+      } finally {
+        if (mounted.current) setWorking(false);
+      }
+    }
+  };
+
   const openRecoveredRequest = useCallback(
-    async (receipt: Schema<"TutorRequestReceiptPublic">) => {
-      if (!recovery || receipt.kind !== recovery.kind)
+    async (
+      receipt: Schema<"TutorRequestReceiptPublic">,
+      identity: PendingRequestIdentity,
+    ) => {
+      const opened = await load(receipt.session_id);
+      if (!mounted.current) return;
+      if (!opened || selectedSession.current !== receipt.session_id)
         throw new Error(
-          "The interrupted request could not be matched. Choose Check saved request to try again.",
+          "The saved request could not be opened. Check its saved request again before continuing.",
         );
-      await load(receipt.session_id);
-      if (!mounted.current || selectedSession.current !== receipt.session_id)
-        return;
-      forgetRequest(recovery);
+      const request = pendingCommand.current;
+      if (request?.key === identity.key) {
+        clearCommandDraft(request);
+        pendingCommand.current = null;
+        setPending(null);
+      }
+      forgetRequest(identity);
       setRecovery(null);
       setNewSession(false);
       setRecoveryNotice(
         "Your interrupted request was saved. Its session is open below. Your work has not been sent again.",
       );
     },
-    [load, recovery],
+    [clearCommandDraft, load],
   );
-
-  const recoverSavedRequest = useCallback(async () => {
-    if (!recovery) return;
-    setRecovering(true);
-    try {
-      const receipt = await api<Schema<"TutorRequestReceiptPublic">>(
-        `/tutor/request-receipts/${recovery.key}?learner_id=${learner}`,
-      );
-      if (mounted.current) await openRecoveredRequest(receipt);
-    } catch (cause) {
-      if (mounted.current) {
-        setRecoveryNotice(
-          cause instanceof ApiError && cause.status === 404
-            ? "The server has not confirmed whether your request was saved. Choose Check saved request to try again. Resolve interrupted request will reopen saved work or clear the request so you can continue. After a reload, this tab remembers which request to check, but loses unsent text and photos."
-            : "Your interrupted request could not be checked. Reconnect and choose Check saved request before continuing.",
-        );
-      }
-      if (!(cause instanceof ApiError && cause.status === 404)) throw cause;
-    } finally {
-      if (mounted.current) setRecovering(false);
-    }
-  }, [learner, openRecoveredRequest, recovery]);
-
-  const resolveSavedRequest = async () => {
-    if (!recovery) return;
-    setRecovering(true);
-    try {
-      const result = await api<Schema<"TutorRequestResolutionPublic">>(
-        `/tutor/request-receipts/${recovery.key}/resolve`,
-        "POST",
-        { learner_id: learner },
-      );
-      if (!mounted.current) return;
-      if (result.status === "accepted" && result.receipt)
-        await openRecoveredRequest(result.receipt);
-      else if (result.status === "not_accepted") {
-        forgetRequest(recovery);
-        setRecovery(null);
-        setRecoveryNotice(
-          "The interrupted request was not saved. The server will reject it if it arrives later. Re-enter any lost text or photo when you are ready.",
-        );
-      }
-    } finally {
-      if (mounted.current) setRecovering(false);
-    }
-  };
 
   useEffect(() => {
     mounted.current = true;
@@ -344,9 +372,8 @@ export function Tutor({
     if (pageActive && !offline && selectingSession.current === 0)
       void act(async () => {
         await load(selectedSession.current || undefined);
-        if (recovery) await recoverSavedRequest();
       });
-  }, [act, load, offline, page, pageActive, recovery, recoverSavedRequest]);
+  }, [act, load, offline, page, pageActive]);
 
   const sessionId = session?.id;
   useEffect(() => {
@@ -386,6 +413,15 @@ export function Tutor({
   const refresh = useCallback(async () => {
     if (selectedSession.current) await load(selectedSession.current, false);
   }, [load]);
+  const refreshHistory = async () => {
+    if (refreshingHistory) return;
+    setRefreshingHistory(true);
+    try {
+      await load(selectedSession.current || undefined);
+    } finally {
+      if (mounted.current) setRefreshingHistory(false);
+    }
+  };
   const problem = session?.problems.find((item) => item.status === "assigned");
   const activeOperation = problem?.operations.find((operation) =>
     activeStatuses.includes(operation.status),
@@ -524,35 +560,9 @@ export function Tutor({
       if (identity) forgetRequest(identity);
       if (!mounted.current) return;
       setPending(null);
-      if (
-        request.kind === "submission" &&
-        (request.body as Schema<"SubmissionInput">).kind !== "hint"
-      )
-        setText("");
-      if (
-        request.kind === "activity" &&
-        ["reference_text", "reading_text"].includes(
-          (request.body as Schema<"TutorActivityInput">).source ?? "topic",
-        )
-      )
-        setReference("");
-      if (request.kind === "activity") {
-        setPublished(null);
-        if (
-          (request.body as Schema<"TutorActivityInput">).source === "published"
-        )
-          setSource("topic");
-      }
+      clearCommandDraft(request);
       if (created) {
         setNewSession(false);
-        setTopic("");
-        setReference("");
-        setPublished(null);
-        if (
-          (request.body as Schema<"TutoringSessionInput">).initial_activity
-            ?.source === "published"
-        )
-          setSource("topic");
         if (!commitSession(created, true)) {
           setConnectionError(
             "The saved session could not be opened for this learner. Reconnect to refresh your sessions.",
@@ -871,7 +881,7 @@ export function Tutor({
     <section
       className="tutor"
       aria-label="AI tutor"
-      aria-busy={working || selecting || active}
+      aria-busy={working || selecting || active || recovering}
     >
       {selecting && <BusyStatus message="Opening saved session…" />}
       {navigationNotice && changingSessionDisabled && (
@@ -890,6 +900,25 @@ export function Tutor({
       >
         <h2 id="saved-sessions-heading">Saved sessions</h2>
         <p>Open a saved session to review your work or keep practicing.</p>
+        {historyState === "loading" && (
+          <p role="status">Loading saved sessions…</p>
+        )}
+        {historyState === "failed" && (
+          <div role="status" className="error">
+            <p>
+              Saved sessions could not load. Your saved work has not been
+              removed.
+            </p>
+            <button
+              disabled={offline || refreshingHistory}
+              onClick={() => void act(refreshHistory)}
+            >
+              {refreshingHistory
+                ? "Loading saved sessions…"
+                : "Reload saved sessions"}
+            </button>
+          </div>
+        )}
         {history.length === 100 && (
           <p className="fine">
             Showing the 100 most recent sessions. Older retained work is
@@ -908,7 +937,7 @@ export function Tutor({
             another session.
           </p>
         )}
-        {features && history.length === 0 && (
+        {historyState === "ready" && history.length === 0 && (
           <div className="card empty-state">
             <h3>No saved sessions yet</h3>
             <p>Your sessions will appear here after you start practicing.</p>
@@ -1145,29 +1174,24 @@ export function Tutor({
           </form>
         )}
         {working && <BusyStatus message="Saving your request…" />}
-        {(recovery || recoveryNotice) && (
+        {recoveryNotice && (
           <div role="status" className="notice">
-            <p>
-              {recoveryNotice ||
-                "Checking whether the server saved your interrupted request…"}
-            </p>
-            {recovery && (
-              <div className="actions">
-                <button
-                  disabled={offline || recovering}
-                  onClick={() => void act(recoverSavedRequest)}
-                >
-                  Check saved request
-                </button>
-                <button
-                  disabled={offline || recovering}
-                  onClick={() => void act(resolveSavedRequest)}
-                >
-                  Resolve interrupted request
-                </button>
-              </div>
-            )}
+            <p>{recoveryNotice}</p>
           </div>
+        )}
+        {recoveryIdentity && !working && (
+          <RequestRecovery
+            key={recoveryIdentity.key}
+            identity={recoveryIdentity}
+            offline={offline}
+            autoCheck={Boolean(recovery)}
+            act={act}
+            onBusyChange={setRecovering}
+            onAccepted={(receipt) =>
+              openRecoveredRequest(receipt, recoveryIdentity)
+            }
+            onNotAccepted={() => releaseUnacceptedRequest(recoveryIdentity)}
+          />
         )}
         {pending && !working && (
           <div role="status" className="notice">
@@ -1176,7 +1200,7 @@ export function Tutor({
               keeps the original request and avoids a duplicate.
             </p>
             <button
-              disabled={offline}
+              disabled={offline || recovering}
               onClick={() => void act(() => sendCommand(pending))}
             >
               Retry saved request
@@ -1222,7 +1246,7 @@ export function Tutor({
                   )}
                   {problem?.material_focus && session.status === "open" && (
                     <MaterialNavigation
-                      key={`${problem.id}-${problem.material_focus.mode}-${problem.material_focus.section_size}-${problem.material_focus.section_index}`}
+                      key={session.id}
                       focus={problem.material_focus}
                       disabled={disabled || hasResponseDraft}
                       onChange={(change) =>

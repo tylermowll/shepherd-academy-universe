@@ -186,14 +186,34 @@ def info(request: Request, db: Database) -> PhoneUploadInfo:
     problem = db.get(ProblemInstance, grant.problem_id)
     assert problem is not None
     config = effective_configuration(db)
-    provider = config.providers[config.routes.vision]
+    reader = config.providers[config.routes.vision]
+    tutor = config.providers.get(config.routes.tutor)
     processing = (
         "An external model provider will read this photo."
-        if provider.data_boundary == "cloud"
+        if reader.data_boundary == "cloud"
         else "Your computer or a model on its private network will read this photo."
     )
-    if provider.adapter == "mock":
+    if reader.adapter == "mock":
         processing = "Synthetic test mode only: no real handwriting reader is configured. Configure a vision model on the computer to read your work."
+    if tutor is None:
+        processing += " The tutor is unavailable. Ask the administrator to check Active models."
+    elif tutor.adapter == "mock":
+        processing += " The tutor returns sample responses rather than real teaching."
+    else:
+        destination = (
+            "an external model provider"
+            if tutor.data_boundary == "cloud"
+            else "your computer or a model on its private network"
+        )
+        source = problem.parameters.get("reference_source")
+        purpose = (
+            "create different practice from this material"
+            if source == "reference_photo"
+            else "create practice about this passage"
+            if source == "reading_photo"
+            else "give tutoring feedback"
+        )
+        processing += f" The extracted text goes to {destination} to {purpose}."
     return PhoneUploadInfo(
         expires_at=grant.expires_at,
         received=False,

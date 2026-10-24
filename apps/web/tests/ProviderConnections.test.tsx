@@ -910,6 +910,135 @@ describe("adult connection setup", () => {
     expect(onChanged).toHaveBeenCalledTimes(2);
   });
 
+  it.each([
+    ["disable", true, "disabled", "PUT"],
+    ["enable", false, "enabled", "PUT"],
+    ["delete", true, "and its saved API key were deleted", "DELETE"],
+  ] as const)(
+    "retains the confirmed %s receipt and retries only refreshing stale connections",
+    async (action, enabled, result, method) => {
+      const view = show({
+        ...configuration,
+        providers: [{ ...saved, enabled }],
+      });
+      view.onChanged
+        .mockRejectedValueOnce(new TypeError("Synthetic refresh lost"))
+        .mockRejectedValueOnce(new TypeError("Synthetic refresh still lost"))
+        .mockResolvedValueOnce();
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      openDetails();
+      const button = screen.getByRole("button", {
+        name: `${action[0]!.toUpperCase()}${action.slice(1)} connection`,
+      });
+      fireEvent.click(button);
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        `home-vision ${result}`,
+      );
+      expect(screen.getByRole("alert")).not.toHaveTextContent("Could not");
+      expect(button).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: "Add new AI connection" }),
+      ).toBeDisabled();
+      fireEvent.click(button);
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(fetch).toHaveBeenLastCalledWith(
+        "/api/v1/admin/providers/connections/home-vision",
+        expect.objectContaining({ method }),
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Refresh connections" }),
+      );
+      await vi.waitFor(() => expect(view.onChanged).toHaveBeenCalledTimes(2));
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        `home-vision ${result}`,
+      );
+      await vi.waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Refresh connections" }),
+        ).toBeEnabled(),
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Refresh connections" }),
+      );
+      await screen.findByText("Saved connections refreshed.");
+      expect(view.onChanged).toHaveBeenCalledTimes(3);
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole("alert")).toBeNull();
+      expect(button).toBeEnabled();
+      expect(view.onSectionChange).not.toHaveBeenCalled();
+    },
+  );
+
+  it("keeps a rejected connection action correctable without claiming it was saved", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        response(
+          {
+            detail:
+              "Choose a replacement tutor or photo reader before deleting this connection.",
+          },
+          409,
+        ),
+      ),
+    );
+    const view = show();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    openDetails();
+    const remove = screen.getByRole("button", { name: "Delete connection" });
+    fireEvent.click(remove);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not delete home-vision. Choose a replacement tutor or photo reader before deleting this connection.",
+    );
+    expect(remove).toBeEnabled();
+    expect(
+      screen.queryByRole("button", { name: "Refresh connections" }),
+    ).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(view.onChanged).not.toHaveBeenCalled();
+  });
+
+  it.each(["tutor", "photo reader"] as const)(
+    "identifies a pending %s test and keeps its prior results distinct",
+    async (stage) => {
+      let finish!: (result: Response) => void;
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(
+          () =>
+            new Promise<Response>((resolve) => {
+              finish = resolve;
+            }),
+        ),
+      );
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      const view = show(configuration, "tests");
+      fireEvent.click(screen.getByRole("button", { name: `Test ${stage}` }));
+      expect(screen.getByRole("status")).toHaveTextContent(
+        `Testing home-vision: ${stage}…`,
+      );
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Previous test results stay visible while this test runs.",
+      );
+      expect(
+        screen.getByRole("button", { name: "Refresh status" }),
+      ).toBeDisabled();
+      view.showSection("connections");
+      view.showSection("tests");
+      expect(screen.getByRole("status")).toHaveTextContent(
+        `Testing home-vision: ${stage}…`,
+      );
+      finish(
+        new Response(JSON.stringify({ status: "passed" }), { status: 200 }),
+      );
+      await screen.findByText(`home-vision: ${stage} test passed.`);
+      expect(screen.queryByText(/^Testing home-vision/)).toBeNull();
+      expect(
+        screen.getByRole("button", { name: "Refresh status" }),
+      ).toBeEnabled();
+    },
+  );
+
   it("closes an editor when that connection is deleted", async () => {
     show();
     fireEvent.click(screen.getByRole("button", { name: "Edit connection" }));

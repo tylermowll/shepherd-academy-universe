@@ -1,6 +1,65 @@
 import { openAttachments } from "./support";
 import { expect, test } from "@playwright/test";
 import { createActivity, login, startTutor } from "./support";
+import type { Schema } from "../../apps/web/src/client";
+
+test("phone tasks render math and keep long text and formulas within a narrow page", async ({
+  page,
+}) => {
+  const identifier = "synthetic".repeat(16);
+  const sum = Array.from({ length: 40 }, (_, index) => `x_{${index + 1}}`).join(
+    "+",
+  );
+  const formula = `\\frac{${sum}}{2}`;
+  const info: Schema<"PhoneUploadInfo"> = {
+    expires_at: new Date(Date.now() + 60_000).toISOString(),
+    received: false,
+    problem_text: `**Compare** $\\frac{1}{2}$ with a diagram. Label it ${identifier}. Explain $${formula}$.`,
+    processing:
+      "Synthetic test: the photo reader and tutor use sample responses.",
+  };
+  await page.route("**/api/v1/phone-upload", (route) =>
+    route.fulfill({ json: info }),
+  );
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto("/#capture=synthetic-phone-layout-token");
+  const task = page.getByRole("region", { name: "Photo task", exact: true });
+  await expect(task.locator("strong")).toHaveText("Compare");
+  await expect(task.locator(".katex")).toHaveCount(2);
+  await expect(task.locator("math")).toHaveCount(2);
+  await expect(task).toContainText(identifier);
+  await expect(task).not.toContainText("$\\frac{1}{2}$");
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+  });
+  const geometry = await page.evaluate(() => ({
+    window: innerWidth,
+    client: document.documentElement.clientWidth,
+    document: document.documentElement.scrollWidth,
+    body: document.body.scrollWidth,
+  }));
+  expect(geometry.client).toBe(320);
+  expect(geometry.window).toBe(320);
+  expect(geometry.document).toBeLessThanOrEqual(320);
+  expect(geometry.body).toBeLessThanOrEqual(320);
+  const math = await task
+    .locator(".katex")
+    .last()
+    .evaluate((node) => ({
+      client: node.clientWidth,
+      scroll: node.scrollWidth,
+    }));
+  expect(math.client).toBeGreaterThan(0);
+  expect(math.scroll).toBeGreaterThan(math.client);
+  await test.info().attach("phone-task-layout", {
+    body: JSON.stringify({ geometry, math }),
+    contentType: "application/json",
+  });
+  await page.screenshot({
+    path: test.info().outputPath("phone-task-reflow-320.png"),
+    fullPage: true,
+  });
+});
 
 test("a signed-in phone opens and replaces photo links in its existing tab without signing out", async ({
   page,

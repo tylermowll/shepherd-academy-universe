@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ApiError, imageRequest, newKey } from "./client";
 import { BusyStatus } from "./BusyStatus";
+import { RequestRecovery } from "./RequestRecovery";
 import {
   forgetRequest,
   rememberRequest,
@@ -45,6 +46,8 @@ export function PhotoInput({
   const [crop, setCrop] = useState(0);
   const [pending, setPending] = useState<PendingPhoto | null>(null);
   const [working, setWorking] = useState(false);
+  const [recovering, setRecovering] = useState(false);
+  const [recoveryNotice, setRecoveryNotice] = useState("");
   const [dragging, setDragging] = useState(false);
   const uploading = useRef(false);
   const mounted = useRef(true);
@@ -130,15 +133,26 @@ export function PhotoInput({
         } else request.ambiguous = true;
         throw cause;
       }
-      setPending(null);
-      if (identity) forgetRequest(identity);
-      onPendingChange(false);
-      setBlob(null);
-      setUrl("");
-      await onSaved();
+      await acceptPhoto(identity);
     } finally {
       setWorking(false);
     }
+  }
+  async function acceptPhoto(
+    identity: PendingRequestIdentity | null,
+    recovered = false,
+  ) {
+    setPending(null);
+    if (identity) forgetRequest(identity);
+    onPendingChange(false);
+    setBlob(null);
+    setUrl("");
+    setRecoveryNotice(
+      recovered
+        ? "Your photograph was saved. Its reading and guidance appear with the activity; it has not been sent again."
+        : "",
+    );
+    await onSaved();
   }
   async function preparePhoto(files: File[]) {
     if (disabled || working || pending || uploading.current || !files.length)
@@ -149,6 +163,7 @@ export function PhotoInput({
       throw new Error("Choose a photograph under 8 MiB.");
     uploading.current = true;
     setWorking(true);
+    setRecoveryNotice("");
     try {
       const response = await imageRequest(
         companionToken ? "/phone-upload/preview" : "/images/preview",
@@ -260,6 +275,7 @@ export function PhotoInput({
                   if (uploading.current || pending) return;
                   uploading.current = true;
                   setWorking(true);
+                  setRecoveryNotice("");
                   onPendingChange(true);
                   let request: PendingPhoto | undefined;
                   let started = false;
@@ -323,11 +339,51 @@ export function PhotoInput({
           </p>
           <button
             onClick={() => void act(() => sendPhoto(pending))}
-            disabled={!navigator.onLine}
+            disabled={!navigator.onLine || recovering}
           >
             Retry saved photograph
           </button>
+          {learner && !companionToken && (
+            <RequestRecovery
+              key={pending.key}
+              identity={{
+                key: pending.key,
+                kind: "submission",
+                owner: learner,
+              }}
+              offline={!navigator.onLine}
+              act={act}
+              onBusyChange={setRecovering}
+              onAccepted={() =>
+                acceptPhoto(
+                  {
+                    key: pending.key,
+                    kind: "submission",
+                    owner: learner,
+                  },
+                  true,
+                )
+              }
+              onNotAccepted={() => {
+                forgetRequest({
+                  key: pending.key,
+                  kind: "submission",
+                  owner: learner,
+                });
+                setPending(null);
+                onPendingChange(false);
+                setRecoveryNotice(
+                  "The interrupted photograph was not saved. The server will reject it if it arrives later. Your prepared photo is still here; you can remove it or submit it when photo input is available.",
+                );
+              }}
+            />
+          )}
         </div>
+      )}
+      {recoveryNotice && (
+        <p role="status" className="notice">
+          {recoveryNotice}
+        </p>
       )}
     </details>
   );

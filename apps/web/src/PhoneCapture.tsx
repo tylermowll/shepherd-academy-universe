@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, type Schema } from "./client";
 import { PhotoInput } from "./PhotoInput";
+import { SafeText } from "./SafeText";
 
 async function phoneInfo(token: string): Promise<Schema<"PhoneUploadInfo">> {
   const response = await fetch("/api/v1/phone-upload", {
@@ -109,7 +110,13 @@ export function PhoneCapture({ token }: { token: string }) {
           </p>
           {info && (
             <>
-              <h2 className="math-problem">{info.problem_text}</h2>
+              <section
+                className="phone-task"
+                aria-labelledby="phone-task-heading"
+              >
+                <h2 id="phone-task-heading">Photo task</h2>
+                <SafeText text={info.problem_text} />
+              </section>
               <p>{info.processing}</p>
               <p className="fine">
                 This link expires at{" "}

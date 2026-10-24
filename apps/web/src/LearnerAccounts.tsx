@@ -12,6 +12,7 @@ type Props = {
   administrator: string;
   onSessionChange: (session: Schema<"SessionStatus">) => void;
 };
+type SavedChange = { message: string; select?: string };
 
 function field(data: FormData, name: string): string {
   const value = data.get(name);
@@ -33,6 +34,11 @@ export function LearnerAccounts({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [refreshRequired, setRefreshRequired] = useState<SavedChange | null>(
+    null,
+  );
+  const inFlight = useRef(false);
+  const blocked = busy || refreshRequired !== null;
   const [devices, setDevices] = useState<
     Schema<"LearnerDevicePublic">[] | null
   >(null);
@@ -74,6 +80,8 @@ export function LearnerAccounts({
     };
   }, [chosenId, creating, managingAdministrator, deviceRefresh]);
   const run = (action: (current: () => boolean) => Promise<void>) => {
+    if (inFlight.current || refreshRequired) return;
+    inFlight.current = true;
     const started = version.current;
     setBusy(true);
     setError("");
@@ -89,9 +97,32 @@ export function LearnerAccounts({
               : "The change was not confirmed. Check your connection and try again.",
           );
       } finally {
+        inFlight.current = false;
         if (started === version.current) setBusy(false);
       }
     });
+  };
+  const refreshChange = async (change: SavedChange, current: () => boolean) => {
+    if (!current()) return;
+    setMessage(change.message);
+    try {
+      await onRefresh();
+      if (!current()) return;
+      setRefreshRequired(null);
+      setError("");
+      if (change.select !== undefined) {
+        setAdding(false);
+        setBusy(false);
+        if (visible.current) onLearner(change.select);
+      }
+    } catch {
+      if (current()) {
+        setRefreshRequired(change);
+        setError(
+          "This change was saved, but the account list could not refresh. Refresh accounts to continue.",
+        );
+      }
+    }
   };
   return (
     <section aria-label="Learner accounts">
@@ -106,7 +137,7 @@ export function LearnerAccounts({
           <ul className="account-list">
             <li>
               <button
-                disabled={busy}
+                disabled={blocked}
                 aria-pressed={managingAdministrator}
                 onClick={() => {
                   if (!managingAdministrator) {
@@ -125,7 +156,7 @@ export function LearnerAccounts({
             {learners.map((item) => (
               <li key={item.id}>
                 <button
-                  disabled={busy}
+                  disabled={blocked}
                   aria-pressed={
                     !managingAdministrator && !creating && learner === item.id
                   }
@@ -150,7 +181,7 @@ export function LearnerAccounts({
             ))}
           </ul>
           <button
-            disabled={busy}
+            disabled={blocked}
             onClick={() => {
               setManagingAdministrator(false);
               setAdding(true);
@@ -166,6 +197,30 @@ export function LearnerAccounts({
             <p role="alert" className="error">
               {error}
             </p>
+          )}
+          {refreshRequired && (
+            <button
+              disabled={busy}
+              onClick={() => {
+                if (inFlight.current) return;
+                inFlight.current = true;
+                const started = version.current;
+                setBusy(true);
+                void act(async () => {
+                  try {
+                    await refreshChange(
+                      refreshRequired,
+                      () => started === version.current,
+                    );
+                  } finally {
+                    inFlight.current = false;
+                    if (started === version.current) setBusy(false);
+                  }
+                });
+              }}
+            >
+              Refresh accounts
+            </button>
           )}
           {message && (
             <p role="status" className="success-notice">
@@ -200,12 +255,10 @@ export function LearnerAccounts({
                     newKey(),
                   );
                   form.reset();
-                  await onRefresh();
-                  if (!current()) return;
-                  setAdding(false);
-                  setBusy(false);
-                  setMessage("Learner account created.");
-                  if (visible.current) onLearner(row.id);
+                  await refreshChange(
+                    { message: "Learner account created.", select: row.id },
+                    current,
+                  );
                 });
               }}
             >
@@ -217,7 +270,7 @@ export function LearnerAccounts({
                   required
                   maxLength={64}
                   autoComplete="off"
-                  disabled={busy}
+                  disabled={blocked}
                 />
               </label>
               <p className="fine">
@@ -233,7 +286,7 @@ export function LearnerAccounts({
                   minLength={minimumPassword}
                   maxLength={256}
                   autoComplete="new-password"
-                  disabled={busy}
+                  disabled={blocked}
                 />
               </label>
               <p className="fine">
@@ -242,7 +295,7 @@ export function LearnerAccounts({
               </p>
               <label>
                 Age group
-                <select name="eligibility" disabled={busy}>
+                <select name="eligibility" disabled={blocked}>
                   <option value="unknown">Not specified</option>
                   <option value="minor">Under 18</option>
                   <option value="adult">18 or older</option>
@@ -253,13 +306,13 @@ export function LearnerAccounts({
                 connections.
               </p>
               <div className="actions">
-                <button className="primary" disabled={busy}>
+                <button className="primary" disabled={blocked}>
                   Create learner account
                 </button>
                 {learners.length > 0 && (
                   <button
                     type="button"
-                    disabled={busy}
+                    disabled={blocked}
                     onClick={() => setAdding(false)}
                   >
                     Cancel
@@ -300,15 +353,15 @@ export function LearnerAccounts({
                       ...(password ? { password } : {}),
                     } satisfies Schema<"LearnerAccountUpdate">);
                     form.reset();
-                    await onRefresh();
-                    if (current()) {
-                      setMessage(
-                        password
+                    if (current()) setDeviceRefresh((value) => value + 1);
+                    await refreshChange(
+                      {
+                        message: password
                           ? "Password changed. This learner's browsers are signed out."
                           : "Username saved.",
-                      );
-                      setDeviceRefresh((value) => value + 1);
-                    }
+                      },
+                      current,
+                    );
                   });
                 }}
               >
@@ -320,7 +373,7 @@ export function LearnerAccounts({
                     defaultValue={chosen.alias}
                     required
                     maxLength={64}
-                    disabled={busy}
+                    disabled={blocked}
                   />
                 </label>
                 <label>
@@ -332,7 +385,7 @@ export function LearnerAccounts({
                     minLength={minimumPassword}
                     maxLength={256}
                     autoComplete="new-password"
-                    disabled={busy}
+                    disabled={blocked}
                   />
                 </label>
                 <p className="fine">
@@ -341,7 +394,7 @@ export function LearnerAccounts({
                     ? "Leave blank to keep the current password. Changing it signs out this learner's browsers."
                     : "Set a password to let this learner sign in. Setting it ends any previous browser access."}
                 </p>
-                <button disabled={busy}>Save sign-in details</button>
+                <button disabled={blocked}>Save sign-in details</button>
               </form>
               <form
                 key={`${chosen.id}-${chosen.eligibility}`}
@@ -356,13 +409,15 @@ export function LearnerAccounts({
                       alias: chosen.alias,
                       eligibility,
                     } satisfies Schema<"LearnerAccountUpdate">);
-                    await onRefresh();
-                    if (current())
-                      setMessage(
-                        eligibility === chosen.eligibility
-                          ? "Age group saved."
-                          : "Age group saved. Pending requests were stopped; saved work is kept. New requests use this age group.",
-                      );
+                    await refreshChange(
+                      {
+                        message:
+                          eligibility === chosen.eligibility
+                            ? "Age group saved."
+                            : "Age group saved. Pending requests were stopped; saved work is kept. New requests use this age group.",
+                      },
+                      current,
+                    );
                   });
                 }}
               >
@@ -372,7 +427,7 @@ export function LearnerAccounts({
                   <select
                     name="eligibility"
                     defaultValue={chosen.eligibility}
-                    disabled={busy}
+                    disabled={blocked}
                   >
                     <option value="unknown">Not specified</option>
                     <option value="minor">Under 18</option>
@@ -385,7 +440,7 @@ export function LearnerAccounts({
                   keeps their saved work. A request already sent to a provider
                   cannot be recalled.
                 </p>
-                <button disabled={busy}>Save age group</button>
+                <button disabled={blocked}>Save age group</button>
               </form>
               <section aria-label="Signed-in browsers">
                 <h3>Signed-in browsers</h3>
@@ -395,7 +450,7 @@ export function LearnerAccounts({
                   into this account.
                 </p>
                 <button
-                  disabled={busy}
+                  disabled={blocked}
                   onClick={() => setDeviceRefresh((value) => value + 1)}
                 >
                   Refresh browsers
@@ -419,7 +474,7 @@ export function LearnerAccounts({
                       <li key={device.id}>
                         Signed in {new Date(device.created_at).toLocaleString()}{" "}
                         <button
-                          disabled={busy}
+                          disabled={blocked}
                           onClick={() =>
                             run(async (current) => {
                               await api(
@@ -438,7 +493,7 @@ export function LearnerAccounts({
                   </ul>
                 )}
                 <button
-                  disabled={busy}
+                  disabled={blocked}
                   onClick={() =>
                     run(async (current) => {
                       await api(`/admin/learners/${chosen.id}/revoke`, "POST");
@@ -458,7 +513,7 @@ export function LearnerAccounts({
                 <h3>Saved work</h3>
                 <div className="actions">
                   <button
-                    disabled={busy}
+                    disabled={blocked}
                     onClick={() =>
                       run(async () => {
                         const result = await api<Schema<"LearnerExport">>(
@@ -482,7 +537,7 @@ export function LearnerAccounts({
                   </button>
                   <button
                     className="danger"
-                    disabled={busy}
+                    disabled={blocked}
                     onClick={() => {
                       if (
                         !window.confirm(
@@ -492,12 +547,10 @@ export function LearnerAccounts({
                         return;
                       run(async (current) => {
                         await api(`/admin/learners/${chosen.id}`, "DELETE");
-                        await onRefresh();
-                        if (current()) {
-                          setBusy(false);
-                          if (visible.current) onLearner("");
-                          setMessage("Learner account deleted.");
-                        }
+                        await refreshChange(
+                          { message: "Learner account deleted.", select: "" },
+                          current,
+                        );
                       });
                     }}
                   >

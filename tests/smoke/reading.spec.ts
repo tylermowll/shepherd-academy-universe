@@ -150,16 +150,23 @@ test("long science material has independent section pacing, saved navigation and
   await expect(
     page.getByRole("button", { name: "Previous section", exact: true }),
   ).toBeDisabled();
-  // Progress is learner controlled: no answer or AI completion gate is required.
-  await page.getByRole("button", { name: "Next section", exact: true }).click();
-  await expect(position).toHaveText(/Section 2 of \d+/);
-  const second = await passage.innerText();
-  expect(second).not.toBe(first);
   const composer = page.getByRole("textbox", {
     name: "Your work or question",
     exact: true,
   });
+  const nextSection = page.getByRole("button", {
+    name: "Next section",
+    exact: true,
+  });
+  // Progress is learner controlled: no answer or AI completion gate is required.
+  await expect(nextSection).toBeEnabled();
+  await nextSection.focus();
+  await page.keyboard.press("Enter");
+  await expect(position).toHaveText(/Section 2 of \d+/);
+  const second = await passage.innerText();
+  expect(second).not.toBe(first);
   await expect(composer).toBeEditable();
+  await expect(nextSection).toBeFocused();
   await composer.fill("An unfinished explanation");
   await expect(
     page.getByRole("button", { name: "Next section", exact: true }),
@@ -181,22 +188,39 @@ test("long science material has independent section pacing, saved navigation and
     .getByRole("button", { name: "Continue session", exact: true })
     .click();
   await expect(position).toHaveText(/Section 2 of \d+/);
-  await page
-    .getByRole("button", { name: "Previous section", exact: true })
-    .click();
+  const previousSection = page.getByRole("button", {
+    name: "Previous section",
+    exact: true,
+  });
+  await expect(previousSection).toBeEnabled();
+  await previousSection.focus();
+  await page.keyboard.press("Enter");
   await expect(position).toHaveText(/Section 1 of \d+/);
   await expect(passage).toHaveText(first);
   await expect(composer).toBeEditable();
+  await expect(nextSection).toBeFocused();
   const navigation = page.getByRole("region", { name: "Material navigation" });
   await navigation.getByText("Reading pace", { exact: true }).click();
   await navigation
     .getByRole("combobox", { name: "Reading mode", exact: true })
     .selectOption("whole");
-  await navigation
-    .getByRole("button", { name: "Apply reading pace", exact: true })
-    .click();
+  const applyPace = navigation.getByRole("button", {
+    name: "Apply reading pace",
+    exact: true,
+  });
+  await expect(applyPace).toBeEnabled();
+  await applyPace.focus();
+  await page.keyboard.press("Enter");
   await expect(position).toHaveText("Whole text");
   await expect(passage).toContainText("Observation 36:");
+  // Whole-text generation can exceed the mock model's context. The saved
+  // passage and pacing controls remain available after either terminal result.
+  await expect(
+    page.getByRole("button", { name: "Finish session", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    navigation.getByText("Reading pace", { exact: true }),
+  ).toBeFocused();
   await expect(
     page.getByText("Saved automatically · Harder difficulty", { exact: true }),
   ).toBeVisible();
@@ -205,6 +229,10 @@ test("long science material has independent section pacing, saved navigation and
       () => document.documentElement.scrollWidth <= innerWidth + 1,
     ),
   ).toBe(true);
+  await page.screenshot({
+    path: test.info().outputPath("reading-pace-keyboard-focus.png"),
+    fullPage: true,
+  });
 });
 
 test("literal material and Unicode input survive intact with explicit overflow and faithful selected help", async ({

@@ -42,6 +42,34 @@ describe("phone camera permission", () => {
     expect(localStorage.length).toBe(0);
   });
 
+  it("safely renders the photo task's formatting and shows downstream processing before upload", async () => {
+    const processing =
+      "Your computer will read this photo. The extracted text goes to an external model provider to give tutoring feedback.";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            received: false,
+            problem_text:
+              'Compare **halves** with $\\frac{1}{2}$. <img src="untrusted" onerror="run()">',
+            processing,
+            expires_at: new Date(Date.now() + 300_000).toISOString(),
+          }),
+        ),
+      ),
+    );
+    render(<PhoneCapture token={"a".repeat(64)} />);
+    const task = await screen.findByRole("region", { name: "Photo task" });
+    expect(task.querySelector("strong")).toHaveTextContent("halves");
+    expect(task.querySelector(".katex math")).not.toBeNull();
+    expect(task.querySelector(".katex-html")).not.toHaveTextContent("\\frac");
+    expect(task).toHaveTextContent('<img src="untrusted" onerror="run()">');
+    expect(task.querySelector("img")).toBeNull();
+    expect(screen.getByText(processing)).toBeVisible();
+    expect(screen.getByLabelText("Take or choose a photo")).toBeVisible();
+  });
+
   it("shows only a receipt when the link already received its photo", async () => {
     vi.stubGlobal(
       "fetch",
