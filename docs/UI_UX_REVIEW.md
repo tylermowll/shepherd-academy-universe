@@ -1,7 +1,8 @@
 # UI/UX review — current status
 
 T69 implements the seven findings from the October 24 review and the small
-activity-generation copy suggestion. All required validation gates passed. This file keeps
+activity-generation copy suggestion. All required validation gates passed; the
+implementation was published to `main` as `775e6eb`. This file keeps
 the current correction record; dated commands, review limits and publication
 evidence live in [TASKS](TASKS.md#t69--correct-the-uiux-findings-and-publish-2026-10-24).
 Earlier committed reviews remain in Git history; T68's dated findings and commands

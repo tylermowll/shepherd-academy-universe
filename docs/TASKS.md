@@ -25,8 +25,9 @@ owns the remaining model, physical-device, accessibility and operational checks.
 
 ## T69 — Correct the UI/UX findings and publish (2026-10-24)
 
-**Status:** Implementation and all required gates passed; publication to `main`
-is pending. The maintainer authorized all seven
+**Status:** Complete. The corrections and cleaned documentation were published
+to `main` as `775e6eb84bbb94f7828adafd49533b1c17a4b78a` through normal
+commit hooks; the remote main hash was verified. The maintainer authorized all seven
 T68 corrections, documentation cleanup and push. No deployment was requested.
 
 **Scope and contracts:** SPECIFICATION sections 3, 10–13 and 18: owned request
@@ -91,6 +92,14 @@ full gate passed with loopback socket permission.
 receipt/key handling, administrator outcomes, focus or phone rendering. Production
 file hashes remained unchanged during the full browser run. The generated client,
 lockfiles and schema are unchanged; final whitespace and credential checks passed.
+
+**Publication:** `git fetch origin main` confirmed a normal fast-forward from
+`ef2c6dc`. The implementation commit passed the repository's ordinary commit
+hooks, including the full project-check hook. `git push origin HEAD:main`
+succeeded, and `git ls-remote origin refs/heads/main` matched the implementation
+commit exactly. This documentation-only follow-up records the receipt without
+changing the tested production source. `git diff --check`, the final credential
+scan and all-files repository hooks passed.
 
 **Remaining checks:** Live providers/teaching quality, actual phones/camera/HEIC,
 Safari, installed-PWA background behavior, manual zoom/text spacing,
