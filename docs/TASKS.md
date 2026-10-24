@@ -8,10 +8,11 @@ A task is complete only after its requirements and exit checks pass.
 
 ## Current checkpoint
 
-T71 corrected duplicate sign-in account entry and misleading error recovery,
-updated the private installation, and completed the requested existing-active-
-account credential reset. Its source/package, browser and installed HTTPS
-evidence is below. No global default password or password policy was introduced.
+T72 refines control sizing, action placement, sign-in width and header spacing,
+publishes the preserved T71 sign-in corrections, and updates the private
+installation. Its full project, browser, package and installed HTTPS evidence is
+below. T71's prior credential recovery is retained; T72 does not change passwords
+or password policy.
 
 The current product is the multi-subject tutor, with schema head
 `0020_request_recovery`. T69 corrects the seven residual UI/UX findings from T68
@@ -20,19 +21,21 @@ are below; the [current review](UI_UX_REVIEW.md) lists the corrected behavior an
 remaining acceptance work. Earlier task sections preserve dated evidence, not
 additional supported implementations.
 
-The private installation now uses T71 image
-`sha256:fcaf2674d7b0f1aa3ff6c07f47f04e769b217ae5d5d4f9b964c84f8b8025c46c`.
-Its verified web bundle replaces T70's web files; its backend/dependencies remain
-from T70 source `ac5114dd232e0ecadfb2d21ad9c6bc72a18cde04` at unchanged schema
-`0020_request_recovery`. Current provider selections and live teaching quality
+The private installation now uses T72 image
+`sha256:59b1c4ceedb1e5189309345aeb44f73b2b713fc7042ee4192dbf35efbb7e072e`,
+built from committed source `d447134143db72d32aa6d76d7887b977b112ac02`.
+All 66 served public assets match the tested build. Backend source, dependency
+locks and schema remain unchanged at `0020_request_recovery`.
+Current provider selections and live teaching quality
 remain unverified. [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
 
 ## T72 — Refine control sizing and action placement, publish and redeploy (2026-10-24)
 
-**Status:** In progress. The maintainer approved the focused visual review's
-button and layout changes, Git publication and private redeployment. Preserve
-and publish the already-installed T71 sign-in corrections with this update.
+**Status:** Complete, published and privately deployed. The maintainer approved
+the focused visual review's button/layout changes, Git publication and private
+redeployment. T71's already-installed sign-in corrections are preserved and
+published with this update.
 
 **Scope and contracts:** SPECIFICATION sections 3, 12, 13 and 18; RUNBOOK's
 container upgrade and encrypted-backup procedures. Use compact desktop controls,
@@ -64,10 +67,10 @@ collapsible activity brief, and leaves Attach photo, Help and Send at the messag
 composer. Existing ready-state, draft, pending-work, offline and completion
 guards remain in force, including idle reference/generation states.
 
-**Validation so far:** Commands use `python3 /tmp/shepherd-t72/run.py` to
+**First source-checkpoint validation:** Commands use `python3 /tmp/shepherd-t72/run.py` to
 allowlist tool environment variables, clear inherited operator/provider settings
-and disable env-file loading. The full browser regression, publication and
-deployment remain pending in this source checkpoint.
+and disable env-file loading. At this checkpoint the full browser regression,
+publication and deployment were still pending; final evidence follows below.
 
 | Command | Actual outcome |
 | --- | --- |
@@ -112,7 +115,7 @@ selection before passive effects had settled. It now settles the initial load,
 checks editability and exact selection, then awaits Ask availability; draft,
 staged-text, focus and zero-POST assertions remain. The original CI timing failure
 did not reproduce locally. The corrected Tutor/Reading component run passed
-80/80; final whole-project and browser results are still pending.
+80/80 before the final whole-project and browser runs below.
 
 The corrected photo panel remains mounted inside a relative conversation stack,
 bounded below the activity toolbar and above the message composer. Explicit
@@ -132,6 +135,67 @@ again with **329 backend unit, 11 toolchain and 315 frontend tests** and all
 lint/format/type/build/contract/security/infrastructure checks. The final full
 browser regression and private update remain pending at this follow-up source
 checkpoint.
+
+**Final verification and publication:** The final `make smoke-built` run passed
+**136/136 desktop/mobile Chromium cases in 21.3 minutes**, one worker and zero
+retries. It retains conversation-space, pointer-interaction, draft, pending-work,
+photo clarification, keyboard, navigation, role/isolation, recovery and public-only
+cache assertions. The initial three browser failures, two subsequently discovered
+photo-panel failures and CI fixture failure above are resolved. No assertion was
+relaxed to accept the implementation defects.
+
+Source commits `6ba406c2110f30b43e796b50a50a6e2f3c4f7153` and
+`d447134143db72d32aa6d76d7887b977b112ac02` were pushed to `origin/main`.
+The release was built with the checked-in Dockerfile from a clean Git archive of
+the latter commit. No private settings/data entered the build context. Its exact
+source label and runtime UID/GID 10001 were verified. Final candidate:
+`sha256:59b1c4ceedb1e5189309345aeb44f73b2b713fc7042ee4192dbf35efbb7e072e`.
+All 66 packaged assets match the source-tested build; public manifest SHA-256:
+`6caea1cea9cc476bb30a13cb45b1adfcfe605ce2450724e2fa1019ed87f23a09`.
+
+| Command | Final outcome |
+| --- | --- |
+| `make check` | Final gate passed: 329 backend unit, 11 toolchain and 315 frontend tests; locks, lint, format, types, build, API drift, credential scan and infrastructure checks passed. |
+| `make test-integration` | 409 passed in 74.52 seconds earlier in T72; backend source/contracts are unchanged by the subsequent frontend corrections. |
+| `make smoke-built` | 136 passed in 21.3 minutes against the final application build. |
+| `make hooks-files-check` and commit hooks | Repository hygiene checks passed; only the already-passed duplicate project gate was skipped at commit time. |
+| `docker build --pull=false --label org.opencontainers.image.revision=<source> -f /tmp/shepherd-t72/source/infra/docker/Dockerfile -t math-practice-tutor:t72-compact-ui /tmp/shepherd-t72/source` | Passed from clean committed source, using the unchanged locked backend/runtime and rebuilt frontend. |
+| `python3 /tmp/shepherd-t72/verify_package.py` | Exact source label, non-root user and all 66 packaged public files match the tested build. |
+| `sh scripts/container-smoke.sh math-practice-tutor:t72-compact-ui` | Passed Python/HEIF/cryptography, installer-free/non-root runtime, SQLite 3.53.1/WAL/FK/FULL synchronization, migrations, worker/UI readiness, owner setup/renewal/rejection and disabled-provider refusal. No inference. |
+| `python3 /tmp/shepherd-t72/deploy.py preflight --candidate <immutable-image-id>` | Read-only preflight passed for the final candidate, previous image, original shared data mount and runtime restrictions. |
+| `python3 /tmp/shepherd-t72/deploy.py prepare --candidate <immutable-image-id> --execute` | Both writers stopped; encrypted WAL-aware backup and isolated restore verified before activation. |
+| `python3 /tmp/shepherd-t72/deploy.py activate --execute` | Private HTTPS, fresh worker heartbeat, unchanged schema, all 66 served public hashes/update headers, protected-route 401/no-store and disabled-documentation 404 checks passed. Exactly one API and one worker, read-only roots, zero restarts and loopback-only API publication. |
+
+**Private update:** Backup archive
+`backups/deploy-20261024T202023Z-t72-59b1c4ceedb1/archive.enc`, SHA-256
+`4f6896fc1da47486b5d389fdab02befe0e120c78ac5af889937109142634172c`.
+The generated key is stored separately in the operator's private backup-key
+directory with permissions 600; its value was never opened or printed by the
+coding agent. Restore checks preserved current deletions and retained-object
+hashes, verified schema/integrity/foreign keys, revoked restored sessions and
+canceled restored pending work. The isolated plaintext rehearsal was removed.
+The installation continues using its original data mount and private settings.
+No credential reset or migration was performed on retained data. Rollback was
+not needed; the exact prior image is retained as
+`math-practice-tutor:rollback-20261024-t72-compact-ui`.
+
+Reviewed helper source, public manifests and private operational receipts are
+retained in ignored `backups/evidence-20261024-t72-compact-ui`; no backup key was
+copied there. No private `.env`, provider configuration, uploads, learner records
+or private logs were opened by the coding agent. Backup programs processed
+retained content internally and emitted only allowlisted booleans and hashes.
+
+GitHub [run 40127726268](https://github.com/tylermowll/shepherd-academy-universe/actions/runs/40127726268)
+for the corrected release completed successfully with both checks and package
+jobs. This includes its project/integration/browser gates, synthetic evaluation,
+dependency auditing, container smoke, vulnerability scan and SBOM. Its hosted
+browser stage was still running when the private update completed and subsequently
+passed. This documentation-only follow-up does not change the deployed runtime.
+
+No T72 task failure remains. Live-provider/model tests, paid inference, model
+downloads, physical-device/password-manager checks and screen-reader acceptance
+were not run. Existing acceptance follow-ups and the separate launcher image-tag
+discovery defect remain outside this bounded visual update.
 
 ## T71 — Correct account sign-in and household credential recovery (2026-10-24)
 

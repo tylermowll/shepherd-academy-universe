@@ -15,6 +15,19 @@ remains available for idle reference/generation steps; unsent drafts and pending
 work continue to prevent conflicting activity/session changes. Menu exclusivity,
 outside dismissal, Escape focus and keyboard outlines remain required.
 
+The photo panel is bounded to the conversation area so it cannot cover activity
+or message controls. Explicit opening focuses its labelled region; hiding it
+preserves the photo draft and background refresh does not steal focus.
+
+Final validation passed the project gate (315 frontend, 329 backend unit and 11
+toolchain tests), 409 integration cases and all 136 desktop/mobile browser cases
+in 21.3 minutes. Browser assertions cover 320px reflow, coarse-pointer targets,
+natural secondary widths, conversation space, panel bounds and pointer access,
+keyboard menus, draft guards and the full existing workflows. The tested image
+is privately deployed; encrypted backup/restore, readiness and all 66 exact
+served public assets passed. Initial layout/test-fixture failures and their
+corrections are preserved in T72's dated evidence.
+
 Publication and private deployment evidence is recorded in
 [T72](TASKS.md#t72--refine-control-sizing-and-action-placement-publish-and-redeploy-2026-10-24).
 The prior T71 sign-in corrections below are preserved in this publication.
