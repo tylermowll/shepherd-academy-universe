@@ -162,7 +162,7 @@ test("app area links connect administration and learning through the appropriate
   await expect(page).toHaveURL(/[?&]signin=learner(?:[&#]|$)/);
   await expectStandaloneEntry(page);
   // A named Help destination resumes that page. The next handoff must preserve
-  // its new draft rather than reuse the older Learners return path.
+  // its new draft rather than reuse the older Users return path.
   await page
     .getByRole("navigation", { name: "Sign-in navigation" })
     .getByRole("link", { name: "Help", exact: true })
@@ -191,13 +191,13 @@ test("app area links connect administration and learning through the appropriate
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Settings");
   await expect(connectionName).toHaveValue("Synthetic unsaved second handoff");
   await connectionName.fill("");
-  await navigate(page, "Learners");
+  await navigate(page, "Users");
   await accountNavigation(page)
     .getByRole("link", { name: "Learner sign-in", exact: true })
     .click();
   await expectCopiedEntryLinks(page, "learner", "adult");
   await page.goBack();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Learners");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Users");
   await page.goForward();
   await expectStandaloneEntry(page);
   await rejectSignIn(page, "demo", "synthetic-demo-password-only", 403);
@@ -238,7 +238,7 @@ test("app area links connect administration and learning through the appropriate
   await expect(page).not.toHaveURL(/[?&]signin=/);
   await expect(
     page.getByRole("navigation", { name: "Main navigation" }).getByRole("link"),
-  ).toHaveText(["Learners", "Settings", "Help"]);
+  ).toHaveText(["Users", "Settings", "Help"]);
   await expect(
     page.getByRole("button", { name: "Add learner account" }),
   ).toBeVisible();

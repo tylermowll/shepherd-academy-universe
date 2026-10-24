@@ -73,7 +73,7 @@ test("signed-in Help links request the destination role and preserve drafts on c
       exact: true,
     }),
   ).toBeFocused();
-  await navigate(page, "Learners");
+  await navigate(page, "Users");
   await expect(accountDraft).toHaveValue("Synthetic retained Help draft");
 
   const copied = await page.context().newPage();

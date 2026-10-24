@@ -226,7 +226,7 @@ describe("linked app areas", () => {
       targetPage: "practice",
       targetRole: "learner",
       entry: "Learner sign-in",
-      home: "Learners",
+      home: "Users",
     },
     {
       account: learnerAccount,
@@ -373,7 +373,7 @@ describe("linked app areas", () => {
       {
         account,
         page: "learners",
-        heading: "Learners",
+        heading: "Users",
         role: "adult",
         entry: "Administrator sign-in",
       },
@@ -450,6 +450,22 @@ describe("linked app areas", () => {
     });
     vi.stubGlobal("fetch", fetcher);
     render(<App />);
+    const users = within(
+      await screen.findByRole("region", { name: "User accounts" }),
+    );
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Users",
+    );
+    expect(document.title).toBe("Users · Shepherd Academy Universe");
+    expect(
+      users.getByRole("heading", {
+        level: 2,
+        name: /^Administrator$/,
+      }),
+    ).toBeVisible();
+    expect(
+      users.getByRole("heading", { level: 2, name: /^Learners$/ }),
+    ).toBeVisible();
     fireEvent.click(
       await screen.findByRole("button", {
         name: "home-admin Manage administrator",
@@ -471,7 +487,7 @@ describe("linked app areas", () => {
       "home-admin",
     );
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Learners",
+      "Users",
     );
     fireEvent.click(
       screen.getByRole("button", { name: "Add learner account" }),
@@ -535,7 +551,7 @@ describe("linked app areas", () => {
         await screen.findByLabelText("Signed in account"),
       ).toHaveTextContent(signedIn.login_name);
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-        signedIn.role === "adult" ? "Learners" : "Practice",
+        signedIn.role === "adult" ? "Users" : "Practice",
       );
       expect(
         window.location.pathname +
@@ -725,7 +741,7 @@ describe("linked app areas", () => {
       finishLogin(response(adult));
       await pendingLogin;
     });
-    await screen.findByRole("heading", { level: 1, name: "Learners" });
+    await screen.findByRole("heading", { level: 1, name: "Users" });
     expect(topic).not.toBeInTheDocument();
   });
 
@@ -935,7 +951,7 @@ describe("linked app areas", () => {
         if (role === "learner") {
           expect(article).toHaveTextContent(/contact your administrator/i);
           for (const step of [
-            "Learners",
+            "Users",
             "Manage account",
             "Sign-in details",
             "New password",
@@ -1312,7 +1328,7 @@ describe("linked app areas", () => {
     expect(screen.getByLabelText("Signed in account")).toHaveTextContent(
       "home-learner",
     );
-    expect(screen.queryByRole("link", { name: "Learners" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Users" })).toBeNull();
     await act(async () => {
       resolveOld(
         response([
@@ -1338,7 +1354,7 @@ describe("linked app areas", () => {
     );
     expect(screen.queryByRole("link", { name: "Settings" })).toBeNull();
     await signIn("home-admin");
-    await screen.findByRole("heading", { level: 1, name: "Learners" });
+    await screen.findByRole("heading", { level: 1, name: "Users" });
     expect(screen.getByLabelText("Signed in account")).toHaveTextContent(
       "home-admin",
     );
@@ -1597,7 +1613,7 @@ describe("linked app areas", () => {
     );
     vi.stubGlobal("fetch", fetcher);
     render(<App />);
-    await screen.findByRole("heading", { level: 1, name: "Learners" });
+    await screen.findByRole("heading", { level: 1, name: "Users" });
 
     fireEvent.click(screen.getByRole("link", { name: "Learner sign-in" }));
     fireEvent.click(screen.getByRole("link", { name: "Help" }));
@@ -1705,7 +1721,7 @@ describe("linked app areas", () => {
       await pendingLogin;
     });
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Learners" }),
+      await screen.findByRole("heading", { level: 1, name: "Users" }),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeEnabled();
   });
@@ -1744,7 +1760,7 @@ describe("linked app areas", () => {
     );
     expect(oldTopic).toHaveValue("Previous account draft.");
     await signIn("home-admin");
-    await screen.findByRole("heading", { level: 1, name: "Learners" });
+    await screen.findByRole("heading", { level: 1, name: "Users" });
     expect(oldTopic).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("link", { name: "Learner sign-in" }));
     await signIn("home-learner");
@@ -1871,7 +1887,7 @@ it("keeps a newly created learner when an older list request finishes late", asy
     }),
   );
   render(<App />);
-  fireEvent.click(await screen.findByRole("link", { name: "Learners" }));
+  fireEvent.click(await screen.findByRole("link", { name: "Users" }));
   fireEvent.change(screen.getByLabelText("Learner username"), {
     target: { value: "Synthetic" },
   });

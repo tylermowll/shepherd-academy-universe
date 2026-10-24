@@ -135,7 +135,7 @@ function fixture() {
   return { state, fetcher };
 }
 
-function navigate(name: "Learners" | "Settings" | "Help") {
+function navigate(name: "Users" | "Settings" | "Help") {
   fireEvent.click(
     within(
       screen.getByRole("navigation", { name: "Main navigation" }),
@@ -192,12 +192,10 @@ describe("administrator navigation", () => {
       target: { value: "adult" },
     });
     navigate("Help");
-    expect(
-      screen.queryByRole("region", { name: "Learner accounts" }),
-    ).toBeNull();
+    expect(screen.queryByRole("region", { name: "User accounts" })).toBeNull();
     navigate("Settings");
     await screen.findByRole("button", { name: "Add new AI connection" });
-    navigate("Learners");
+    navigate("Users");
     expect(screen.getByLabelText("Learner username")).toHaveValue(
       "Synthetic unsaved learner",
     );
@@ -226,7 +224,7 @@ describe("administrator navigation", () => {
     navigate("Help");
     navigate("Settings");
     await screen.findByRole("button", { name: "Add new AI connection" });
-    navigate("Learners");
+    navigate("Users");
     const panel = within(
       screen.getByRole("region", { name: "Administrator account" }),
     );
@@ -272,7 +270,7 @@ describe("administrator navigation", () => {
     ).toBeNull();
     navigate("Settings");
     await screen.findByRole("button", { name: "Add new AI connection" });
-    navigate("Learners");
+    navigate("Users");
     const restored = within(
       screen.getByRole("region", { name: "Administrator account" }),
     );
@@ -327,7 +325,7 @@ describe("administrator navigation", () => {
     );
     expect(screen.getByLabelText("Allow cloud AI for this app")).toBeChecked();
     navigate("Help");
-    navigate("Learners");
+    navigate("Users");
     navigate("Settings");
     expect(screen.getByRole("tab", { name: /Data & privacy/ })).toHaveAttribute(
       "aria-selected",
@@ -390,7 +388,7 @@ describe("administrator navigation", () => {
       }),
     ).toBeNull();
     expect(
-      screen.queryByRole("region", { name: "Learner accounts", hidden: true }),
+      screen.queryByRole("region", { name: "User accounts", hidden: true }),
     ).toBeNull();
     expect(
       Array.from(view.container.querySelectorAll("input")).map(
@@ -425,7 +423,7 @@ describe("administrator navigation", () => {
       }),
     ).toBeNull();
     expect(
-      screen.queryByRole("region", { name: "Learner accounts", hidden: true }),
+      screen.queryByRole("region", { name: "User accounts", hidden: true }),
     ).toBeNull();
     await act(async () => {
       finish(
@@ -455,7 +453,7 @@ describe("administrator navigation", () => {
     navigate("Help");
     navigate("Settings");
     await screen.findByRole("button", { name: "Add new AI connection" });
-    navigate("Learners");
+    navigate("Users");
     expect(screen.getByRole("status")).toHaveTextContent("Username saved.");
     fireEvent.click(
       screen.getByRole("button", { name: "home-admin Manage administrator" }),

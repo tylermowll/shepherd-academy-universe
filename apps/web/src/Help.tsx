@@ -152,13 +152,12 @@ export function HelpPage({
                 <>
                   <h3>Change your administrator password</h3>
                   <p>
-                    While signed in to Management, open{" "}
-                    <strong>Learners</strong>, choose{" "}
-                    <strong>Manage administrator</strong> beside your account,
-                    and enter your current password and a new password twice.
-                    Choose <strong>Change administrator password</strong>. This
-                    browser stays signed in; other administrator browsers are
-                    signed out.
+                    While signed in to Management, open <strong>Users</strong>,
+                    choose <strong>Manage administrator</strong> beside your
+                    account, and enter your current password and a new password
+                    twice. Choose <strong>Change administrator password</strong>
+                    . This browser stays signed in; other administrator browsers
+                    are signed out.
                   </p>
                   <h3>Recover an existing administrator account</h3>
                   <p>
@@ -211,7 +210,7 @@ export function HelpPage({
                   <p>Your administrator can reset your password:</p>
                   <ol className="steps">
                     <li>
-                      Open <strong>Learners</strong> and choose{" "}
+                      Open <strong>Users</strong> and choose{" "}
                       <strong>Manage account</strong> beside your account.
                     </li>
                     <li>
@@ -242,8 +241,8 @@ export function HelpPage({
               </p>
               <ol className="steps">
                 <li>
-                  Open {link("learners", "Learners")} as administrator and
-                  choose <strong>Add learner account</strong>.
+                  Open {link("learners", "Users")} as administrator and choose{" "}
+                  <strong>Add learner account</strong>.
                 </li>
                 <li>
                   Choose a unique username, set a password, and select an age
@@ -261,9 +260,9 @@ export function HelpPage({
                 Management, choose <strong>Learner sign-in</strong> and enter
                 that learner's username and password. In Learning, choose{" "}
                 <strong>Administrator sign-in</strong> to manage the app.
-                Management has Learners, Settings and Help; Learning has
-                Practice, History and Help. Each sign-in screen offers Help and
-                a link to the other sign-in screen.
+                Management has Users, Settings and Help; Learning has Practice,
+                History and Help. Each sign-in screen offers Help and a link to
+                the other sign-in screen.
               </p>
               <p>
                 Opening the other sign-in keeps your current account and unsent
@@ -327,7 +326,7 @@ export function HelpPage({
                 Open the app’s shared HTTPS address and sign in with your
                 learner username and password. Your administrator creates the
                 account and can reset the password in{" "}
-                {link("learners", "Learners")}.
+                {link("learners", "Users")}.
               </p>
               <p>
                 Signing in opens the learner's practice and history. The photo
@@ -467,9 +466,9 @@ export function HelpPage({
                 <li>
                   Open <strong>Active models</strong>. Choose the tutor and
                   photo reader for future learner work, approve where that work
-                  will be sent, and save. Then open{" "}
-                  {link("learners", "Learners")} and create a learner account.
-                  That learner signs in separately to practice.
+                  will be sent, and save. Then open {link("learners", "Users")}{" "}
+                  and create a learner account. That learner signs in separately
+                  to practice.
                 </li>
               </ol>
               <p>
@@ -580,7 +579,7 @@ export function HelpPage({
               <ContextHelp topic="I cannot sign in as a learner">
                 <p>
                   Ask your administrator to check the username and set or reset
-                  the password in Learners. Use the same app address on both
+                  the password in Users. Use the same app address on both
                   devices. Learner passwords cannot be reset from the sign-in
                   page.
                 </p>
@@ -641,7 +640,7 @@ export function HelpPage({
                 Submitted work is saved to the computer running the app. A
                 learner reviews their own sessions in History. The administrator
                 can download that learner&apos;s saved practice as JSON or
-                delete the learner and saved work in Learners.
+                delete the learner and saved work in Users.
               </p>
               <p>
                 Photos are removed after processing. Failed or unprocessed

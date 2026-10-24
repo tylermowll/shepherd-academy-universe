@@ -1,5 +1,18 @@
 # UI/UX review — current status
 
+## T73 account-management naming
+
+The maintainer identified a misleading page title missed by the previous review:
+Learners included the administrator account. The shared tab, heading and document
+title now say Users, and its introduction covers both account roles. Help and
+Settings links use the same label. Administrator and Learners remain explicit
+role groups, and Add learner account names the role it creates. Existing account
+selection, authentication, ownership and password behavior remains required.
+
+[T73](TASKS.md#t73--name-the-shared-account-management-page-users-2026-10-24)
+records the focused correction's validation and deployment evidence. This does
+not claim a new whole-application audit.
+
 ## T72 control sizing and action placement
 
 The maintainer's focused visual review identified bulky controls and competing

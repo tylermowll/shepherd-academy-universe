@@ -133,7 +133,7 @@ for (const role of ["learner", "adult"] as const) {
       if (role === "learner") {
         await expect(article).toContainText(/contact your administrator/i);
         for (const step of [
-          "Learners",
+          "Users",
           "Manage account",
           "Sign-in details",
           "New password",
@@ -316,7 +316,7 @@ test("adult pages isolate each job and browser navigation preserves a new sessio
   await login(page);
   const navigation = page.getByRole("navigation", { name: "Main navigation" });
   await expect(navigation.getByRole("link")).toHaveText([
-    "Learners",
+    "Users",
     "Settings",
     "Help",
   ]);
@@ -330,7 +330,7 @@ test("adult pages isolate each job and browser navigation preserves a new sessio
     page.getByRole("button", { name: "Download and load experiment" }),
   ).toHaveCount(0);
   await expectPageFits(page);
-  await navigate(page, "Learners");
+  await navigate(page, "Users");
   await expect(
     page.getByRole("button", { name: "Add learner account" }),
   ).toBeVisible();
@@ -482,7 +482,7 @@ test("an adult practices through a distinct learner account and browser Back res
   page,
 }) => {
   await login(page);
-  await navigate(page, "Learners");
+  await navigate(page, "Users");
   await page
     .getByRole("button", { name: "Add learner account", exact: true })
     .click();

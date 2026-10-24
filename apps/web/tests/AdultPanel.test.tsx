@@ -460,7 +460,7 @@ describe("AI settings page", () => {
     );
     const status = screen.getByRole("status");
     expect(status).toHaveClass("settings-toast");
-    fireEvent.click(screen.getByRole("button", { name: "Open Learners" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open Users" }));
     expect(handlers.onNavigate).toHaveBeenCalledWith("learners");
     fireEvent.click(screen.getByRole("tab", { name: /Connections/ }));
     expect(screen.queryByRole("status")).toBeNull();

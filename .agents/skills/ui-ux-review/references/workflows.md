@@ -29,7 +29,7 @@ results.
 
 ## Account administration
 
-Management → Learners selects an account for administration; **Manage account**
+Management → Users selects an account for administration; **Manage account**
 does not sign in as that learner. Inspect destructive actions and their copy
 without affecting real accounts. Exercise mutations only in an authorized,
 disposable synthetic fixture environment.

@@ -30,6 +30,59 @@ Current provider selections and live teaching quality
 remain unverified. [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
 
+## T73 — Name the shared account-management page Users (2026-10-24)
+
+**Status:** In progress. The maintainer identified misleading navigation and
+headings: a page named Learners also contains the administrator account. Correct
+the shared page to Users and explain the account roles consistently. This is a
+follow-up to the approved UI correction/publication/private-update work.
+
+**Scope and contracts:** SPECIFICATION section 3 currently names the page
+Learners; the maintainer's correction supersedes that visible-label contract.
+Use Users for the management tab, heading, document title, settings links and
+Help instructions. Its account region and introduction cover both administrator
+and learner accounts. Keep Administrator and Learner as explicit account roles,
+and Add learner account as the action that creates a learner. Internal route
+keys, generated API contracts, permissions, credentials, account-switch behavior
+and data ownership retain their current implementation. No backend, migration,
+dependency or provider changes are required.
+
+**Plan and validation:** Update visible copy, applicable documentation and
+existing component/browser expectations together. Verify that Users includes
+both roles, selected-administrator password editing remains scoped correctly,
+learner management stays distinct from learner sign-in, and recovery/navigation
+instructions point to the current label. Run focused components, `make check`
+and the affected desktop/mobile access, account and navigation browser cases
+using the isolated synthetic/mock harness. Publish the reviewed source, build
+and smoke-test its clean-source candidate, complete the encrypted backup/restore
+procedure, and privately deploy behind the existing stable address. Record
+actual results and remaining checks before marking this task complete.
+
+**Implemented:** Users is now the management tab, page/document title and
+settings shortcut; its accessible region is User accounts. The page description
+and introduction explain that it contains both administrator and learner
+accounts. Help, README, phone setup, password-recovery instructions, D013 and the
+review workflow inventory use the same page label. Explicit Administrator and
+Learners role groups and Add learner account remain scoped to the actual roles.
+No authorization, account data, backend or route behavior changed.
+
+**Source-checkpoint evidence:** Checks use
+`python3 /tmp/shepherd-t73/run.py` to allowlist tool environment variables, clear
+inherited provider/operator settings and disable env-file loading.
+
+| Command | Actual outcome |
+| --- | --- |
+| `pnpm --filter @math-tutor/web exec vitest run tests/App.test.tsx tests/AdminNavigation.test.tsx tests/LearnerAccounts.test.tsx tests/AdultPanel.test.tsx` | 85 passed in 5.40 seconds; existing password/CSRF and ownership tests now also establish Users title, both role groups, correct recovery instructions and learner access boundaries. |
+| `make check` | Final gate passed: 315 frontend, 329 backend unit and 11 toolchain tests; locks, lint/format, types, build, API drift, credential scan and infrastructure checks passed. The first run caught two unsupported `exact` options in new Testing Library assertions; anchored role-name expressions preserve exact matching with valid types. |
+| `uv run --locked --no-env-file pytest /tmp/shepherd-t73/test_operations.py -q` | 15 synthetic backup/preflight/activation/rollback cases passed in 0.98 seconds. |
+
+The affected desktop/mobile browser selection is running at this source
+checkpoint; no browser, publication or deployment completion is claimed yet.
+No new integration suite is planned for this visible-copy correction: backend,
+contracts and database are unchanged, and T72 records their 409-case pass.
+Existing build-system/chunk warnings remain. No paid/live inference or model
+download was run.
+
 ## T72 — Refine control sizing and action placement, publish and redeploy (2026-10-24)
 
 **Status:** Complete, published and privately deployed. The maintainer approved

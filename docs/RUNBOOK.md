@@ -41,7 +41,7 @@ HTTP and HTTPS, without uppercase or symbol requirements. Existing passwords of
 at least three characters work over HTTPS without a reset; updates preserve stored
 credentials. Role-specific sign-in screens list account names.
 
-A signed-in administrator can change their password under **Learners**, by
+A signed-in administrator can change their password under **Users**, by
 selecting the administrator account and entering the current password plus a
 confirmed new password. This replaces the current session and signs out other
 administrator browsers. Learner passwords are changed through **Manage account**.
@@ -50,7 +50,7 @@ For administrator recovery in a native installation, use the existing login name
 with `make admin`. For Docker, use the reset command in the
 [container package](#container-package). Recovery never requires deleting the
 database or changing the session secret. Reset learner passwords under
-**Learners**. A password reset signs out that account's browsers.
+**Users**. A password reset signs out that account's browsers.
 
 For unattended use, run the API and worker separately under the host service
 manager, with the same private settings and local data directory. Use a dedicated

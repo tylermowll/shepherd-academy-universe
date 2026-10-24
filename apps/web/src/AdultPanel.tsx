@@ -484,7 +484,7 @@ export function AdultPanel({
         >
           <p>{message}</p>
           <button type="button" onClick={() => onNavigate("learners")}>
-            Open Learners
+            Open Users
           </button>
           <button type="button" onClick={() => setMessage("")}>
             Dismiss

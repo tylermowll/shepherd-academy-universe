@@ -32,7 +32,7 @@ import { captureSetupAuthority, type SetupAuthority } from "./setup-authority";
 const pageNames: Record<Page, string> = {
   practice: "Practice",
   history: "History",
-  learners: "Learners",
+  learners: "Users",
   settings: "Settings",
   help: "Help",
 };
@@ -823,7 +823,7 @@ export function App({ setupAuthority }: { setupAuthority?: SetupAuthority }) {
                       : page === "history"
                         ? "Review or continue a saved session."
                         : page === "learners"
-                          ? "Manage learner accounts, passwords, and signed-in browsers."
+                          ? "Manage administrator and learner accounts."
                           : "Choose the AI models that process your work."}
                   </p>
                 </div>

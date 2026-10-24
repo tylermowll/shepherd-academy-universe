@@ -6,7 +6,7 @@ test("administrator enforces the three-character boundary, prevents duplicates a
   browser,
 }) => {
   await login(page);
-  await navigate(page, "Learners");
+  await navigate(page, "Users");
   const username = `Synthetic password boundary ${Date.now()}`;
   const password = "123";
   const mutations: string[] = [];
@@ -157,7 +157,7 @@ test("administrator enforces the three-character boundary, prevents duplicates a
       page
         .getByRole("navigation", { name: "Main navigation" })
         .getByRole("link"),
-    ).toHaveText(["Learners", "Settings", "Help"]);
+    ).toHaveText(["Users", "Settings", "Help"]);
     await page.screenshot({
       path: test.info().outputPath("learner-accounts.png"),
       fullPage: true,
@@ -193,7 +193,7 @@ test("listed administrator changes a three-character password while retaining th
     await login(page);
     const other = await otherContext.newPage();
     await login(other);
-    await navigate(page, "Learners");
+    await navigate(page, "Users");
     await page
       .getByRole("button", { name: "demo Manage administrator", exact: true })
       .click();

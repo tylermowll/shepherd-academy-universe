@@ -3,14 +3,14 @@ import type { Schema } from "../../apps/web/src/client";
 import { login, navigate } from "./support";
 
 function accountPanel(page: Page) {
-  return page.getByRole("region", { name: "Learner accounts", exact: true });
+  return page.getByRole("region", { name: "User accounts", exact: true });
 }
 
 test("administrator account drafts survive Help, Settings and browser Back", async ({
   page,
 }) => {
   await login(page);
-  await navigate(page, "Learners");
+  await navigate(page, "Users");
   const writes: string[] = [];
   page.on("request", (request) => {
     if (
@@ -20,6 +20,29 @@ test("administrator account drafts survive Help, Settings and browser Back", asy
       writes.push(request.url());
   });
   const accounts = accountPanel(page);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Users");
+  await expect(
+    accounts.getByRole("heading", { name: "Administrator", exact: true }),
+  ).toBeVisible();
+  await expect(
+    accounts.getByRole("heading", { name: "Learners", exact: true }),
+  ).toBeVisible();
+  await accounts
+    .getByRole("button", { name: "Orbit Manage account", exact: true })
+    .click();
+  await expect(
+    accounts.getByRole("region", { name: "Selected learner", exact: true }),
+  ).toContainText("Orbit");
+  await expect(
+    accounts.getByRole("region", {
+      name: "Administrator account",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Signed in account")).toContainText("demo");
+  await expect(page.getByLabel("Signed in account")).toContainText(
+    "Administrator",
+  );
   await accounts
     .getByRole("button", { name: "Add learner account", exact: true })
     .click();
@@ -68,7 +91,7 @@ test("administrator account drafts survive Help, Settings and browser Back", asy
   await expect(
     page.getByRole("heading", { level: 1, name: "Settings", exact: true }),
   ).toBeFocused();
-  await navigate(page, "Learners");
+  await navigate(page, "Users");
   await expect(
     accounts.getByLabel("Learner username", { exact: true }),
   ).toHaveValue(draftName);
@@ -97,6 +120,10 @@ test("administrator account drafts survive Help, Settings and browser Back", asy
     name: "Administrator account",
     exact: true,
   });
+  await expect(administrator).toBeVisible();
+  await expect(
+    accounts.getByRole("region", { name: "Selected learner", exact: true }),
+  ).toHaveCount(0);
   await administrator
     .getByLabel("Current password", { exact: true })
     .fill("synthetic-current-navigation-password-only");
@@ -108,7 +135,7 @@ test("administrator account drafts survive Help, Settings and browser Back", asy
     .fill(draftPassword);
   await navigate(page, "Help");
   await navigate(page, "Settings");
-  await navigate(page, "Learners");
+  await navigate(page, "Users");
   await expect(
     administrator.getByLabel("Current password", { exact: true }),
   ).toHaveValue("synthetic-current-navigation-password-only");
@@ -202,7 +229,7 @@ test("administrator connection and privacy drafts survive Settings tabs and Help
   await expect(audience).toHaveValue(expectedAudience);
   await expect(cloud).toBeChecked({ checked: expectedCloud });
   await navigate(page, "Help");
-  await navigate(page, "Learners");
+  await navigate(page, "Users");
   await navigate(page, "Settings");
   await expect(
     page.getByRole("tab", { name: /Data & privacy/ }),

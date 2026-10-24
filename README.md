@@ -105,7 +105,7 @@ Normal setup needs no provider YAML. See [provider setup](docs/PROVIDER_STATUS.m
 for advanced file configuration and [backup recovery](docs/RUNBOOK.md) for key
 storage and recovery.
 
-Open **Learners** to create learner usernames, passwords and age groups. Each
+Open **Users** to create learner usernames, passwords and age groups. Each
 learner opens **Learner sign-in** with their own credentials and sees only their
 own work. Choose **Manage account** beside a learner to update their sign-in
 details, browsers and saved work. The administrator is also listed here; choose
@@ -120,7 +120,7 @@ pages manage accounts, connections, exports, revocation and deletion; learner
 pages show **Practice**, **History** and **Help**.
 
 **Management** and **Learning** are separate views in this app. Management has
-**Learners**, **Settings** and **Help**, with a **Learner sign-in** link to study.
+**Users**, **Settings** and **Help**, with a **Learner sign-in** link to study.
 Learning has **Practice**, **History** and **Help**, with an **Administrator
 sign-in** link to manage the app. Each sign-in screen has its own heading,
 **Help** and a link to the other sign-in screen. The app opens at **Learner

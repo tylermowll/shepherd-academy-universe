@@ -157,18 +157,21 @@ itself solve on-device inference.
 
 Keep learner navigation separate from administrator controls. The learner cannot edit endpoints, credentials, retention, age eligibility, or system safety rules.
 
-**Management** shows administrators **Learners**, **Settings** and **Help**;
+**Management** shows administrators **Users**, **Settings** and **Help**;
 **Learning** shows learners **Practice**, **History** and **Help**. Practice
 requires a learner sign-in. Management links to **Learner sign-in**; Learning
-links to **Administrator sign-in**. Learner-list actions say **Manage account**
-and select a record for administration while retaining the administrator account.
+links to **Administrator sign-in**. Users includes the administrator and learner
+accounts, with clearly labelled Administrator and Learners role groups. Learner
+list actions say **Manage account** and select a record for administration while
+retaining the administrator account. **Add learner account** creates that role;
+the generic page name does not imply permission to create other administrators.
 
 The default anonymous opening is **Learner sign-in**. Each role has a standalone
 sign-in screen with its own heading, **Help** and a link to the other sign-in
 screen; prior-account navigation, identity and learner lists are absent. Links
 retain the current app host and path, and support reloads and bookmarks.
 Help topics retain the selected sign-in context. Links labeled Practice or
-History request learner access; Learners or Settings request administrator
+History request learner access; Users or Settings request administrator
 access. If already signed in for that destination, open the named page.
 Opening another role's sign-in preserves the current session and unsent work.
 Canceling or following the current role's sign-in link returns to the prior

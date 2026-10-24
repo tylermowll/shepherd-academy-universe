@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 export async function navigate(
   page: Page,
-  name: "Practice" | "History" | "Learners" | "Settings" | "Help",
+  name: "Practice" | "History" | "Users" | "Settings" | "Help",
 ) {
   const link = page
     .getByRole("navigation", { name: "Main navigation" })
@@ -83,7 +83,7 @@ export async function login(
 }
 
 export async function createLearner(page: Page, signIn = true) {
-  await navigate(page, "Learners");
+  await navigate(page, "Users");
   await page
     .getByRole("button", { name: "Add learner account", exact: true })
     .click();

@@ -125,11 +125,10 @@ export function LearnerAccounts({
     }
   };
   return (
-    <section aria-label="Learner accounts">
+    <section aria-label="User accounts">
       <p>
-        Create one account per learner. They sign in with the username and
-        password you set here. Choose Manage account beside a learner to update
-        their sign-in details, browsers, and saved work.
+        The administrator manages the app. Learner accounts keep practice and
+        saved work separate.
       </p>
       <div className="learner-accounts">
         <aside aria-label="Choose an account">

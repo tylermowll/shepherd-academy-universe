@@ -37,7 +37,7 @@ Administrator and learner passwords use the same 3–256-character policy on
 HTTP and HTTPS. Existing passwords of at least three characters work on the phone
 without a reset, and updates preserve stored credentials. For a forgotten
 administrator password, follow [password recovery](RUNBOOK.md#native-local-host);
-learner password resets remain under **Learners** and sign out that learner's
+learner password resets remain under **Users** and sign out that learner's
 browsers.
 
 ### Tailscale private access
@@ -125,7 +125,7 @@ The app computer must reach the model server. The iPhone never calls it directly
 
 ## 5. Create a learner account and start practice
 
-Create a learner account under **Learners**, record its username and password
+Create a learner account under **Users**, record its username and password
 securely, then sign out. Sign in with that learner account and open **Practice**.
 Enter a topic; **Tutor options** controls how much the tutor leads. Choose
 **Start session** to create both the session and its first practice activity. No
@@ -145,7 +145,7 @@ independently of that login, including when the browser reuses an open tab.
 
 For the entire tutor on the phone, open the same HTTPS address and sign in with
 the learner username and password created by the administrator. The administrator
-can reset that password and manage signed-in browsers in **Learners**. This
+can reset that password and manage signed-in browsers in **Users**. This
 account sign-in is separate from sending a photo through the QR link.
 
 The in-app **Help → Phone setup** page also explains these workflows.

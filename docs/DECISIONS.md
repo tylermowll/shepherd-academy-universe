@@ -293,7 +293,7 @@ verification limits belong in [PROVIDER_STATUS](PROVIDER_STATUS.md).
 
 One administrator manages distinct learner usernames and passwords. Learner
 sessions access only their owned Practice and History; administrator navigation
-is Learners, Settings and Help, with synthetic connection testing in Settings.
+is Users, Settings and Help, with synthetic connection testing in Settings.
 Administrators who study use a separate learner account. No public signup,
 external identity service or email recovery is added.
 
@@ -321,6 +321,12 @@ work; the current role's sign-in link returns to that workspace. A successful
 sign-in for the requested role replaces the session and clears prior-account
 browser content. Account ownership and permissions continue to follow the
 authenticated role.
+
+**T73 label clarification (2026-10-24):** The shared account-management page is
+named **Users** because it contains both the administrator and learner accounts.
+Its explicit role groups and role-specific creation, sign-in and permissions
+remain separate. This corrects the earlier Learners page label; internal route
+and API identifiers retain their current names.
 
 ## D014 — Browser permission for completing setup (2026-09-08)
 

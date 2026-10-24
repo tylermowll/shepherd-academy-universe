@@ -182,7 +182,7 @@ test("learner password sign-in on a second browser is isolated and revocable", a
   try {
     const learner = await device.newPage();
     await login(learner, alias);
-    await navigate(page, "Learners");
+    await navigate(page, "Users");
     await expect(
       learner.getByRole("button", { name: "Start session", exact: true }),
     ).toBeVisible();
