@@ -74,7 +74,10 @@ test("the tutor continues from a phone photo through guidance, revision, discuss
       page.getByText("Upload a photo", { exact: true }),
     ).not.toBeVisible();
     await expect(page.locator(".tutor-feedback").first()).toContainText(
-      /Synthetic/i,
+      "This is a sample reply. Demo mode cannot review your answer.",
+    );
+    await expect(page.locator(".tutor-feedback").first()).not.toContainText(
+      "Revise one sentence",
     );
     await expect(
       page.getByRole("heading", {

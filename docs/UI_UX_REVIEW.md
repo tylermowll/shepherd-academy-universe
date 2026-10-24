@@ -1,5 +1,34 @@
 # UI/UX review — current status
 
+## T76 adaptive learning setup
+
+The maintainer's screenshot shows the first letters clipped in the open
+three-choice Practice purpose menu. The form also put difficulty and tutor
+style before its main purpose. The approved correction replaces that popup
+with seven visible native radio goals, followed by a free-text topic and
+relevant material choices on the same form. Difficulty/guidance are optional,
+with conversational labels and one selected-style explanation. Source-photo
+intake opens inline on the same route after its owned capture activity exists.
+
+Each intent has defined backend instructions and typed saved metadata; material
+input remains separate from teaching intent. Photos, request recovery, supplied
+sections and distinct homework practice retain their existing boundaries. The
+photo input remains mounted during ambiguous receipt recovery, including when
+historical skipped capture activities exist.
+
+| Learner workflow                                 | Evidence / coverage                                                                                                                                                     |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Choose a goal, switch material and retain drafts | Component checks and four focused desktop/mobile browser cases passed; one exact start request includes selected intent/source/preferences.                             |
+| Read the goal choices and use the keyboard       | Actual 1280px/320px screenshots reviewed; wrapping geometry, native keyboard selection and optional preferences checked in the browser.                                 |
+| Supply a photo without another setup page        | Inline intake screenshot reviewed; desktop reading/photo progression and lost-receipt recovery passed in the ongoing broader run. Physical camera behavior is untested. |
+| Recover or navigate while work is pending        | Existing component/API guards passed; whole-browser completion remains pending.                                                                                         |
+
+The source gate and all 437 integration cases pass. The final source is published
+to `main`; whole-browser verification and private activation remain in progress.
+[T76](TASKS.md#t76--start-learning-with-one-adaptive-form-publish-and-deploy-2026-10-24)
+owns the final source, publication and deployment evidence. This is a focused
+workflow correction, not a new whole-app accessibility or teaching-quality audit.
+
 ## T75 model setup and activation
 
 The maintainer's reading-session report exposed two problems: a tested model

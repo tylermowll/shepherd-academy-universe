@@ -140,6 +140,14 @@ started. The final correction will be published before deployment, with actual
 remote/runtime evidence recorded below. Package/private deployment completion
 is not claimed yet.
 
+The fresh whole-browser run then exposed a retained T75 assertion expecting
+`Synthetic` in demo feedback. The current non-assessing sample reply is correct;
+the assertion now requires that explicit sample/no-assessment text and rejects
+the old revision demand. All photo order, ownership, progression and privacy
+assertions remain. Application source/build is unchanged by this test-only
+correction. Remaining whole-run cases continue, followed by the corrected tutor
+case on both desktop and mobile; exact final outcomes will be recorded below.
+
 ## T75 — Unify model setup, protect activation and deploy (2026-10-24)
 
 **Status:** Complete and privately deployed. The maintainer authorized the
