@@ -391,7 +391,7 @@ def test_mock_reading_activity_explains_what_to_do_without_supplying_an_answer()
         stage="tutor",
         purpose="generate",
         model_id="fixture-v1",
-        system_instruction="This is READING COMPREHENSION.",
+        system_instruction="This activity uses STUDY MATERIAL.",
         ordered_messages=[Message(role="user", content="Use a synthetic reading passage.")],
         response_schema=ActivityPayload.model_json_schema(),
     )

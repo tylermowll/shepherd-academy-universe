@@ -1,4 +1,42 @@
 import { expect, test, type Page } from "@playwright/test";
+import type { Schema } from "../../apps/web/src/client";
+
+export const learningIntentNames = {
+  understand: "Understand a topic",
+  practice: "Practice a skill",
+  read: "Read and discuss a text",
+  write: "Work on my writing",
+  review: "Review for a test",
+  homework: "Learn from my homework",
+  other: "Something else",
+} as const;
+
+export async function chooseLearningIntent(
+  page: Page,
+  intent: keyof typeof learningIntentNames,
+) {
+  await page
+    .getByRole("radio", { name: learningIntentNames[intent], exact: true })
+    .check();
+}
+
+type MaterialSource = NonNullable<Schema<"TutorActivityInput">["source"]>;
+
+export function materialInput(page: Page, source: MaterialSource) {
+  return page.getByRole("radio").and(page.locator(`input[value="${source}"]`));
+}
+
+export async function chooseMaterialInput(page: Page, source: MaterialSource) {
+  await materialInput(page, source).check();
+}
+
+export async function openLearningPreferences(page: Page) {
+  const trigger = page.getByText("Adjust difficulty and guidance", {
+    exact: true,
+  });
+  if ((await trigger.locator("..").getAttribute("open")) === null)
+    await trigger.click();
+}
 
 export async function navigate(
   page: Page,
@@ -112,13 +150,10 @@ export async function startTutor(page: Page, topic: string) {
   await login(page);
   const alias = await createLearner(page);
   await page
-    .getByRole("textbox", { name: "Topic or learning goal", exact: true })
+    .getByRole("textbox", { name: "What are you working on?", exact: true })
     .fill(topic);
   await page
-    .getByRole("combobox", { name: "Tutor style", exact: true })
-    .selectOption("balanced");
-  await page
-    .getByRole("button", { name: "Start session", exact: true })
+    .getByRole("button", { name: "Start learning", exact: true })
     .click();
   // Starting now creates the first activity in the same transaction.
   await expect(page.locator(".tutor-activity")).toBeVisible();
@@ -149,6 +184,16 @@ export async function openPracticeMaterial(page: Page) {
 }
 
 export async function openAttachments(page: Page) {
+  const sourcePhoto = page.getByRole("region", {
+    name: "Add your photo",
+    exact: true,
+  });
+  if (await sourcePhoto.isVisible()) {
+    await expect(
+      sourcePhoto.getByLabel("Take or choose a photo"),
+    ).toBeVisible();
+    return;
+  }
   const trigger = page.getByRole("button", {
     name: "Attach photo",
     exact: true,

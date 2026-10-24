@@ -8,19 +8,20 @@ A task is complete only after its requirements and exit checks pass.
 
 ## Current checkpoint
 
+T76 implements the maintainer-approved goal-first learning form, then publishes
+to `main` and privately deploys it. Work is in progress; T75 remains the current
+private release until the new validation/deployment evidence is complete.
+
 T75 implements and privately deploys T74's model-setup and demo-feedback
 corrections at the maintainer's request. The checked source is privately deployed,
 and the maintainer's tested tutor selection is restored. Exact validation,
 backup/restore and runtime evidence is recorded below. Source is committed
 locally; no Git push or new live inference was performed.
 
-T74 investigates confusing demo tutoring and the split model-setup flow. The
-investigation is complete; application fixes and any active-model change remain
-unimplemented. Maintainer-authorized read-only runtime checks found a tested
-non-mock connection while both selected roles were demo. A synthetic reproduction
-also establishes that a stale role editor can overwrite an activated tutor.
-The exact earlier selection-change sequence is unverified. T73 remains the
-deployed application source; T74 changes this evidence log only.
+T74's investigation established confusing demo feedback and a stale-role
+overwrite defect; T75 implements its corrections. The exact earlier private
+selection-change sequence remains unverified. Dated task sections below retain
+their original investigation and release evidence.
 
 T73 corrects the shared account-management page to Users, with explicit
 Administrator and Learners role groups and consistent Help/settings links. It
@@ -46,6 +47,82 @@ the latest test session passes its route authorization. No inference was sent
 to establish that readback; live teaching quality remains unverified.
 [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
+
+## T76 — Start learning with one adaptive form, publish and deploy (2026-10-24)
+
+**Status:** In progress. The maintainer approved the design review's changes,
+publication to `main`, and deployment to the existing private installation.
+The supplied screenshot shows clipped labels in the three-choice Practice
+purpose popup, plus difficulty/guidance controls appearing before the main goal.
+The review recommended visible wrapping choices, conditional material fields,
+conversational wording and optional preferences. No paid inference is authorized.
+
+**Scope and contracts:** SPECIFICATION sections 1, 3, 4, 9, 10, 12 and 13;
+README's Practice and reading section; RUNBOOK's encrypted-backup/private update
+procedure. The approved goal-first design supersedes section 3's three-purpose
+visible setup contract. Offer understand, practice, read, write, review, homework
+and other intents, each with defined tutor instructions. Persist typed
+`learning_intent` in the existing session profile JSON, expose it in current API
+schemas and regenerate contracts. Keep material source separate from learning
+intent, preserve supplied-source/assignment boundaries, and retain one atomic
+initial session/activity request. No SQL migration, dependency, new service,
+provider change or model download is planned.
+
+**Implementation and test plan:** Use native radio choices with wrapping labels
+before the free-text learning topic. Reveal relevant material controls in the
+same form, retain typed drafts when selections change, and keep Standard/balanced
+defaults in a collapsed difficulty/guidance area. Replace duplicate/stiff copy.
+Photo references still require an owned capture activity; show their existing
+photo intake inline on the same Practice route after starting, without a new
+upload queue or extra page. Preserve uncertain readings/conversation and all
+request-recovery, offline, pending-work, ownership and privacy boundaries.
+
+Cover intent persistence/idempotency/authorization, distinct prompts and active-
+assignment safeguards; component conditional rendering, draft retention and
+recovery; and desktop/mobile wrapping, keyboard choices, material transitions,
+one accepted start request, photo capture and navigation. Run focused checks,
+`make check`, `make test-integration` and relevant isolated browser checks using
+synthetic providers/data and an allowlisted environment. Review/commit and push
+the checked source to `main`, package clean committed source, verify exact public
+assets and container smoke, then stop both writers for encrypted WAL-aware backup
+and isolated restore verification. Deploy the immutable image with rollback,
+verify private HTTPS/worker/schema/assets/access boundaries and preservation of
+model selections. Record exact results before marking complete. Live teaching
+quality and physical-device/accessibility acceptance remain separate.
+
+**Implemented:** Seven native radio goals appear before the free-text topic;
+material fields adapt inline to the selected goal. Optional preferences use
+conversational question labels and concise selected-style guidance. Photo-source
+intake opens inline on the same Practice route; its component stays mounted
+through ambiguous upload/recovery and worker progress, including when historical
+skipped captures remain saved. Existing-session material choices also use
+wrapping radio labels. Source/material/typed drafts and request identities are
+preserved across selection and navigation.
+
+The typed session intent is stored in existing profile JSON and exposed in the
+regenerated API client. Generation and guidance use distinct intent instructions
+and v5 provenance while preserving supplied-section and assignment safeguards.
+Default practice has one canonical request representation, so omitted/explicit
+default intent remains idempotent; changed intent with the same key is rejected.
+Homework material stays saved but is excluded from feedback even when a client
+supplies it through a reading source.
+
+**Source-checkpoint evidence:** Commands run through
+`python3 /tmp/shepherd-t76/run.py` allowlist the environment and disable env-file
+loading. All application tests use synthetic fixtures/providers.
+
+| Command / check                                                                                                       | Actual outcome                                                                                                                                                                                                                                                 |
+| --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend learning-intent, reading, memory and tutoring selection                                                       | 97 passed in 21.85 seconds; unit/boundary selection 74 passed. Initial retained-request hash failure was corrected with canonical default omission and explicit/omitted default equivalence coverage.                                                          |
+| Final history/intent correction selection                                                                             | 22 passed in 5.32 seconds. History's exact public-field list adds only learning_intent; no-private-work/query/size assertions remain. Worked examples are permitted only with content distinct from the active task.                                           |
+| Frontend Tutor/App/Reading/SessionReview components                                                                   | 148 passed after adding all-goal, conditional draft, preference, retry and historical-photo-capture coverage. An existing lost-photo-receipt test caught component remount loss; recovery ownership was corrected without relaxing assertions.                 |
+| `python3 /tmp/shepherd-t76/run.py make check`                                                                         | Final gate passed: backend unit tests, all frontend tests, 11 toolchain tests, locks, lint, formatting, types, builds, contract drift, credential scan and infrastructure checks. Existing build-system upper-bound and JavaScript chunk-size warnings remain. |
+| `python3 /tmp/shepherd-t76/run.py make test-integration`                                                              | All 437 cases passed in 80.15 seconds on disposable on-disk SQLite. The first full run found one outdated exact public-field expectation (436 passed); updating it for the typed intent retained the original privacy assertions.                              |
+| `python3 /tmp/shepherd-t76/run.py pnpm exec playwright test tests/smoke/practice-start.spec.ts --grep 'one goal-first | conditional' --output /tmp/shepherd-t76/design-browser`                                                                                                                                                                                                        | Four focused desktop/mobile cases passed in 12.7 seconds. Actual screenshots inspected at 1280px and 320px confirm fully wrapping goal labels and optional preferences. Browser interactions verify native keyboard choice, draft retention, no pre-submit writes and one exact start request. |
+| Synthetic backup/state-machine checks                                                                                 | 15 passed after adding a content-free selection digest; restricted container rehearsal preserved a committed uncheckpointed WAL row.                                                                                                                           |
+
+The full 142-case browser run is in progress against the matching final build.
+Publication/package/private deployment completion is not claimed yet.
 
 ## T75 — Unify model setup, protect activation and deploy (2026-10-24)
 

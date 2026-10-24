@@ -159,7 +159,7 @@ def evidence(passage: ReadingPassage, parameters: dict[str, Any] | None = None) 
             source_length += prior_end - prior_start
             first -= 1
         source["scope"] = (
-            "Guided reading: ask about the selected section, using earlier sections only for context. "
+            "Guided study: use the selected section for the learning goal, using earlier sections only for context. "
             "Later sections are unread and excluded. Do not reveal or infer later events from prior knowledge. "
             + (
                 "Earlier context is bounded and may omit intervening sections; do not invent links across omitted text. "

@@ -7,6 +7,8 @@ import {
   navigate,
   openAttachments,
   startTutor,
+  chooseLearningIntent,
+  chooseMaterialInput,
 } from "./support";
 
 type Configuration = Schema<"ProvidersPublic">;
@@ -97,7 +99,7 @@ test("signed-in Help links request the destination role and preserve drafts on c
   );
   await login(page, alias);
   const topicDraft = page.getByRole("textbox", {
-    name: "Topic or learning goal",
+    name: "What are you working on?",
     exact: true,
   });
   await topicDraft.fill("Synthetic retained topic draft");
@@ -801,12 +803,12 @@ test("a missing initial session leaves actual saved History, dates and new pract
     page.getByText("Checking tutor availability…", { exact: true }),
   ).toHaveCount(0);
   const topic = page.getByRole("textbox", {
-    name: "Topic or learning goal",
+    name: "What are you working on?",
     exact: true,
   });
   await topic.fill("Synthetic fresh practice after a missing URL");
   await expect(
-    page.getByRole("button", { name: "Start session", exact: true }),
+    page.getByRole("button", { name: "Start learning", exact: true }),
   ).toBeEnabled();
   await topic.fill("");
   await navigate(page, "History");
@@ -833,7 +835,7 @@ test("a missing initial session leaves actual saved History, dates and new pract
   );
   await topic.fill("Synthetic fresh practice after a missing URL");
   await activate(
-    page.getByRole("button", { name: "Start session", exact: true }),
+    page.getByRole("button", { name: "Start learning", exact: true }),
   );
   await expect(page.locator(".tutor-activity")).toBeVisible();
   await expect(
@@ -866,24 +868,18 @@ test("both unavailable photo sources explain the cause and topic practice remain
   await login(page);
   await createLearner(page);
   await page
-    .getByRole("textbox", { name: "Topic or learning goal", exact: true })
+    .getByRole("textbox", { name: "What are you working on?", exact: true })
     .fill("Synthetic photo availability review");
-  const purpose = page.getByRole("combobox", {
-    name: "Practice purpose",
-    exact: true,
-  });
   const start = page.getByRole("button", {
-    name: "Start session",
+    name: "Start learning",
     exact: true,
   });
   for (const [selectedPurpose, source] of [
-    ["study", "reading_photo"],
-    ["assignment", "reference_photo"],
+    ["read", "reading_photo"],
+    ["homework", "reference_photo"],
   ] as const) {
-    await purpose.selectOption(selectedPurpose);
-    await page
-      .getByRole("combobox", { name: "Material input", exact: true })
-      .selectOption(source);
+    await chooseLearningIntent(page, selectedPurpose);
+    await chooseMaterialInput(page, source);
     await expect(start).toBeDisabled();
     await expect(page.getByText(photoStatus, { exact: true })).toBeVisible();
     await expect(
@@ -891,7 +887,7 @@ test("both unavailable photo sources explain the cause and topic practice remain
     ).toBeVisible();
   }
   await screenshot(page, "unavailable-photo-input-explained.png");
-  await purpose.selectOption("topic");
+  await chooseLearningIntent(page, "practice");
   await expect(page.getByText(photoStatus, { exact: true })).toHaveCount(0);
   await expect(start).toBeEnabled();
   await activate(start);

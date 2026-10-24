@@ -1246,6 +1246,69 @@ main:has(.tutor-workspace) {
   border-radius: 0.65rem;
   padding: 1rem;
 }
+.learning-goal,
+.material-choices {
+  min-width: 0;
+  margin-block: 16px;
+}
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.tutor-sidebar .choice-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.choice-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #c4cdc1;
+  border-radius: 8px;
+  background: #fffef8;
+  cursor: pointer;
+}
+.choice-card:has(input:checked) {
+  border-color: #37674f;
+  background: #eef2e7;
+}
+.choice-card:has(input:focus-visible) {
+  outline: 3px solid #37674f;
+  outline-offset: 3px;
+}
+.choice-card > input {
+  flex: 0 0 20px;
+  width: 20px;
+  min-height: 20px;
+  height: 20px;
+  margin: 3px 0 0;
+  padding: 0;
+}
+.choice-card > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.choice-card strong,
+.choice-card .fine {
+  display: block;
+}
+.choice-card .fine {
+  font-weight: 400;
+}
+.session-preferences {
+  margin-block: 20px;
+}
+.source-photo-intake {
+  margin-bottom: 20px;
+}
+@media (max-width: 520px) {
+  .choice-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .reading-passage {
   margin-block: 0.75rem;
 }

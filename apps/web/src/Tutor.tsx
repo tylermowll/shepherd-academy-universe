@@ -11,6 +11,8 @@ import { ReadingPassage } from "./ReadingPassage";
 import { ReadingSources } from "./ReadingSources";
 import { ActivityPurpose } from "./ActivityPurpose";
 import { PracticeSource } from "./PracticeSource";
+import { LearningGoal } from "./LearningGoal";
+import { materialChoices, type LearningIntent } from "./practice-options";
 import { SessionReview } from "./SessionReview";
 import { RequestRecovery } from "./RequestRecovery";
 import { characterCount } from "./text-limits";
@@ -108,6 +110,8 @@ export function Tutor({
     useState<Schema<"TutoringSessionPublic"> | null>(null);
   const [features, setFeatures] = useState<Schema<"Features"> | null>(null);
   const [topic, setTopic] = useState("");
+  const [learningIntent, setLearningIntent] =
+    useState<LearningIntent>("practice");
   const [initiative, setInitiative] = useState<Initiative>("balanced");
   const [difficulty, setDifficulty] = useState<Difficulty>("standard");
   const [source, setSource] = useState<Source>("topic");
@@ -139,6 +143,7 @@ export function Tutor({
   const [recoveryNotice, setRecoveryNotice] = useState("");
   const [photoPending, setPhotoPending] = useState(false);
   const [photoDraft, setPhotoDraft] = useState(false);
+  const [capturePhotoId, setCapturePhotoId] = useState<string | null>(null);
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
   const [attachmentsOpenedAt, setAttachmentsOpenedAt] = useState("");
   const [newSession, setNewSession] = useState(false);
@@ -183,11 +188,11 @@ export function Tutor({
       setTopic("");
       setReference("");
       setPublished(null);
-      if (
-        (request.body as Schema<"TutoringSessionInput">).initial_activity
-          ?.source === "published"
-      )
-        setSource("topic");
+      const body = request.body as Schema<"TutoringSessionInput">;
+      if (body.initial_activity?.source === "published")
+        setSource(
+          materialChoices(body.learning_intent ?? "practice")[0]!.value,
+        );
     }
   }, []);
 
@@ -207,12 +212,19 @@ export function Tutor({
       selectedSession.current = loaded.id;
       displayedSession.current = loaded.id;
       setSession(loaded);
+      const capture = loaded.problems.find(
+        (item) =>
+          item.status === "assigned" &&
+          item.activity_state === "reference_capture",
+      );
+      if (capture) setCapturePhotoId(capture.id);
       setHistory((current) => {
         const summary: Schema<"TutoringSessionSummaryPublic"> = {
           id: loaded.id,
           learner_id: loaded.learner_id,
           status: loaded.status,
           topic: loaded.topic,
+          learning_intent: loaded.learning_intent,
           initiative: loaded.initiative,
           difficulty: loaded.difficulty,
           activity_count: loaded.problems.length,
@@ -425,6 +437,11 @@ export function Tutor({
     }
   };
   const problem = session?.problems.find((item) => item.status === "assigned");
+  const sourcePhotoFlow =
+    problem?.activity_state === "reference_capture" ||
+    Boolean(
+      problem && capturePhotoId === problem.id && (photoDraft || photoPending),
+    );
   const activeOperation = problem?.operations.find((operation) =>
     activeStatuses.includes(operation.status),
   );
@@ -464,8 +481,11 @@ export function Tutor({
     (source === "published" && published) ||
     photoDraft,
   );
-  const hasDraft =
-    hasResponseDraft || Boolean((newSession || !session) && topic.trim());
+  const hasSetupDraft = Boolean(
+    (newSession || !session) &&
+    (topic.trim() || reference.trim() || passageTitle.trim() || published),
+  );
+  const hasDraft = hasResponseDraft || hasSetupDraft;
   const changingSessionDisabled = blocked || active || offline || hasDraft;
   const attachmentsVisible =
     photoPending ||
@@ -521,8 +541,8 @@ export function Tutor({
     onBusyChange?.(blocked);
   }, [blocked, onBusyChange]);
   useEffect(() => {
-    onDraftChange?.(hasResponseDraft || Boolean(topic.trim()));
-  }, [hasResponseDraft, topic, onDraftChange]);
+    onDraftChange?.(hasResponseDraft || hasSetupDraft || Boolean(topic.trim()));
+  }, [hasResponseDraft, hasSetupDraft, topic, onDraftChange]);
   useEffect(
     () => () => {
       onBusyChange?.(false);
@@ -685,7 +705,7 @@ export function Tutor({
         }}
       >
         <label>
-          Tutor style for this session
+          How much guidance would you like?
           <select
             name="initiative"
             defaultValue={session.initiative}
@@ -695,7 +715,7 @@ export function Tutor({
           </select>
         </label>
         <label>
-          Activity difficulty
+          How challenging should it be?
           <select
             name="difficulty"
             defaultValue={session.difficulty}
@@ -706,9 +726,9 @@ export function Tutor({
         </label>
         <button disabled={disabled}>Save session settings</button>
         <p className="fine">
-          Difficulty changes future activities and guidance. Tutor style changes
-          how often the tutor suggests next steps. Homework is used to create
-          different practice on the same concepts.
+          These choices change future activities and how often the tutor
+          suggests a next step. Homework is used to create different practice on
+          the same concepts.
         </p>
       </form>
     </details>
@@ -722,6 +742,7 @@ export function Tutor({
           setPublished(null);
         }}
         disabled={blocked || active}
+        intent={newSession || !session ? learningIntent : undefined}
       />
       {(source === "reference_photo" || source === "reading_photo") &&
         features &&
@@ -753,19 +774,19 @@ export function Tutor({
             Use stories, articles, science explanations, history sources, or
             other study text. Work through sections or discuss the whole text.
           </p>
-          <MaterialOptions
-            value={materialPreferences}
-            onChange={setMaterialPreferences}
-            disabled={blocked || active}
-          />
+          {session && !newSession && (
+            <MaterialOptions
+              value={materialPreferences}
+              onChange={setMaterialPreferences}
+              disabled={blocked || active}
+            />
+          )}
         </>
       )}
       {(source === "reference_text" || source === "reference_photo") && (
         <p className="notice">
-          The tutor uses your material to create different practice on the same
-          concepts. It does not answer the original assignment. For reading
-          practice, include the passage; the tutor cannot access a book from its
-          title.
+          We’ll use the ideas in your homework to make different practice. The
+          tutor will help you learn without completing the assignment for you.
         </p>
       )}
       {(source === "reading_text" || source === "reading_photo") && (
@@ -830,9 +851,12 @@ export function Tutor({
       )}
       {(source === "reference_photo" || source === "reading_photo") && (
         <p>
-          After you start, send a photo from your phone or upload one here. The
-          tutor reads it to create practice. Reading passages stay available for
-          questions and feedback.
+          Choose{" "}
+          {newSession || !session
+            ? "Start learning"
+            : "Create practice activity"}
+          , then add your photo right here. You can upload one or use your
+          phone. The tutor will read it before we continue.
         </p>
       )}
     </>
@@ -882,6 +906,50 @@ export function Tutor({
         </ContextHelp>
       </details>
       {sessionSettings}
+    </>
+  );
+
+  const photoTools = problem && (
+    <>
+      <p className="fine">{features?.photo_status}</p>
+      {(features?.photos_available || photoDraft || photoPending) && (
+        <>
+          <PhoneLink
+            key={`phone-${problem.id}-${problem.version}`}
+            problem={problem.id}
+            version={problem.version}
+            disabled={disabled || !features?.photos_available}
+            act={act}
+            onHelp={() => onNavigate?.("help", "phone")}
+          />
+          <PhotoInput
+            expanded
+            learner={learner}
+            key={problem.id}
+            problem={problem.id}
+            version={problem.version}
+            disabled={
+              active ||
+              working ||
+              selecting ||
+              pending !== null ||
+              recovery !== null ||
+              offline ||
+              !features?.photos_available ||
+              session?.status !== "open"
+            }
+            onPendingChange={setPhotoPending}
+            onDraftChange={setPhotoDraft}
+            act={act}
+            onSaved={async () => {
+              await refresh();
+              setAttachmentsOpen(false);
+              setCapturePhotoId(null);
+            }}
+            reference={problem.activity_state === "reference_capture"}
+          />
+        </>
+      )}
     </>
   );
 
@@ -998,22 +1066,20 @@ export function Tutor({
       <div hidden={page !== "practice"}>
         <div className="section-heading">
           <div>
-            <h2>
-              {newSession || !session
-                ? "Start a practice session"
-                : session.topic}
-            </h2>
+            <h2>{newSession || !session ? "Start learning" : session.topic}</h2>
             {!session && (
-              <p>
-                Choose a topic or add reference material. Start session creates
-                your first activity.
-              </p>
+              <p>Choose what you want to work on. We’ll take it from there.</p>
             )}
           </div>
           {session && !newSession && (
             <button
               disabled={changingSessionDisabled}
-              onClick={() => setNewSession(true)}
+              onClick={() => {
+                const choices = materialChoices(learningIntent);
+                if (!choices.some((choice) => choice.value === source))
+                  setSource(choices[0]!.value);
+                setNewSession(true);
+              }}
             >
               New session
             </button>
@@ -1061,6 +1127,7 @@ export function Tutor({
                 command("session", "/tutor/sessions", {
                   learner_id: learner,
                   topic,
+                  learning_intent: learningIntent,
                   initiative,
                   difficulty,
                   initial_activity: {
@@ -1087,15 +1154,35 @@ export function Tutor({
               );
             }}
           >
+            <LearningGoal
+              value={learningIntent}
+              disabled={blocked || offline}
+              onChange={(intent) => {
+                setLearningIntent(intent);
+                const choices = materialChoices(intent);
+                if (!choices.some((choice) => choice.value === source))
+                  setSource(choices[0]!.value);
+              }}
+            />
             <label>
-              Topic or learning goal
+              What are you working on?
               <input
                 value={topic}
                 onChange={(event) => setTopic(event.target.value)}
                 aria-invalid={topicOverflow || undefined}
                 required
                 disabled={blocked}
-                placeholder="e.g. photosynthesis, persuasive writing, or a book passage"
+                placeholder={
+                  {
+                    understand: "e.g. how photosynthesis works",
+                    practice: "e.g. adding fractions",
+                    read: "e.g. the characters in this story",
+                    write: "e.g. writing a clear argument",
+                    review: "e.g. reviewing cell biology",
+                    homework: "e.g. the ideas in this assignment",
+                    other: "Tell the tutor what you have in mind",
+                  }[learningIntent]
+                }
               />
               {topicOverflow && (
                 <span role="status">
@@ -1103,34 +1190,23 @@ export function Tutor({
                 </span>
               )}
             </label>
-            <ContextHelp topic="What can I practice?">
-              <p>
-                Use any subject or question: fractions, persuasive writing,
-                photosynthesis, or a passage you are reading. You can add
-                reference material below before starting the session.
-              </p>
-            </ContextHelp>
-            <label>
-              Activity difficulty
-              <select
-                value={difficulty}
-                onChange={(event) =>
-                  setDifficulty(event.target.value as Difficulty)
-                }
-                disabled={blocked}
-              >
-                <DifficultyOptions />
-              </select>
-            </label>
-            <p className="fine">
-              Choose Easier to work on the basics or Harder for questions that
-              need more steps and explanation. You can change this during the
-              session.
-            </p>
-            <fieldset className="tutor-preferences">
-              <legend>Tutor style</legend>
+            {sourceFields}
+            <details className="session-preferences">
+              <summary>Adjust difficulty and guidance</summary>
               <label>
-                Tutor style
+                How challenging should it be?
+                <select
+                  value={difficulty}
+                  onChange={(event) =>
+                    setDifficulty(event.target.value as Difficulty)
+                  }
+                  disabled={blocked}
+                >
+                  <DifficultyOptions />
+                </select>
+              </label>
+              <label>
+                How much guidance would you like?
                 <select
                   value={initiative}
                   onChange={(event) =>
@@ -1142,13 +1218,29 @@ export function Tutor({
                 </select>
               </label>
               <p className="fine">
-                “Suggest what to do next” suggests next steps regularly. “Decide
-                together” offers a suggestion and lets you choose. “Follow my
-                questions” waits for you to ask for help. All three give
-                feedback on your work.
+                {
+                  {
+                    tutor_led:
+                      "The tutor will suggest a useful next step while you work.",
+                    balanced: "You and the tutor will decide what to try next.",
+                    learner_led:
+                      "You choose the direction; the tutor follows your questions.",
+                  }[initiative]
+                }
               </p>
-            </fieldset>
-            {sourceFields}
+              {[
+                "reading_text",
+                "reading_photo",
+                "reading_generated",
+                "published",
+              ].includes(source) && (
+                <MaterialOptions
+                  value={materialPreferences}
+                  onChange={setMaterialPreferences}
+                  disabled={blocked}
+                />
+              )}
+            </details>
             <div className="actions">
               <button
                 className="primary"
@@ -1167,7 +1259,7 @@ export function Tutor({
                   (source === "published" && !published)
                 }
               >
-                Start session
+                Start learning
               </button>
               {session && (
                 <button
@@ -1224,6 +1316,20 @@ export function Tutor({
               </p>
             )}
             {session.status !== "open" && <SessionReview session={session} />}
+            {sourcePhotoFlow && problem && session.status === "open" && (
+              <section
+                className="card source-photo-intake"
+                aria-label="Add your photo"
+              >
+                <h3>Add your photo</h3>
+                <p>
+                  {problem.reference_source === "reading_photo"
+                    ? "Upload the text you want to read, or use your phone."
+                    : "Upload your homework, or use your phone. We’ll make different practice from its ideas."}
+                </p>
+                {photoTools}
+              </section>
+            )}
             <div
               className={`tutor-workspace${problem?.passage ? " reading-workspace" : ""}`}
             >
@@ -1380,7 +1486,7 @@ export function Tutor({
                     act={act}
                     refresh={refresh}
                   />
-                  {problem && (
+                  {problem && !sourcePhotoFlow && (
                     <div
                       ref={attachmentsPanel}
                       id="tutor-attachments"
@@ -1388,53 +1494,9 @@ export function Tutor({
                       role="region"
                       aria-label="Photo attachments"
                       tabIndex={-1}
-                      hidden={
-                        !attachmentsVisible &&
-                        problem.activity_state !== "reference_capture"
-                      }
+                      hidden={!attachmentsVisible}
                     >
-                      <p className="fine">{features?.photo_status}</p>
-                      {(features?.photos_available ||
-                        photoDraft ||
-                        photoPending) && (
-                        <>
-                          <PhoneLink
-                            key={`phone-${problem.id}-${problem.version}`}
-                            problem={problem.id}
-                            version={problem.version}
-                            disabled={disabled || !features?.photos_available}
-                            act={act}
-                            onHelp={() => onNavigate?.("help", "phone")}
-                          />
-                          <PhotoInput
-                            expanded
-                            learner={learner}
-                            key={problem.id}
-                            problem={problem.id}
-                            version={problem.version}
-                            disabled={
-                              active ||
-                              working ||
-                              selecting ||
-                              pending !== null ||
-                              recovery !== null ||
-                              offline ||
-                              !features?.photos_available ||
-                              session.status !== "open"
-                            }
-                            onPendingChange={setPhotoPending}
-                            onDraftChange={setPhotoDraft}
-                            act={act}
-                            onSaved={async () => {
-                              await refresh();
-                              setAttachmentsOpen(false);
-                            }}
-                            reference={
-                              problem.activity_state === "reference_capture"
-                            }
-                          />
-                        </>
-                      )}
+                      {photoTools}
                     </div>
                   )}
                 </div>

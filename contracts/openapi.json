@@ -2451,6 +2451,20 @@
             "title": "Learner Id",
             "type": "string"
           },
+          "learning_intent": {
+            "default": "practice",
+            "enum": [
+              "understand",
+              "practice",
+              "read",
+              "write",
+              "review",
+              "homework",
+              "other"
+            ],
+            "title": "Learning Intent",
+            "type": "string"
+          },
           "topic": {
             "maxLength": 500,
             "minLength": 1,
@@ -2498,6 +2512,20 @@
           "learner_id": {
             "format": "uuid",
             "title": "Learner Id",
+            "type": "string"
+          },
+          "learning_intent": {
+            "default": "practice",
+            "enum": [
+              "understand",
+              "practice",
+              "read",
+              "write",
+              "review",
+              "homework",
+              "other"
+            ],
+            "title": "Learning Intent",
             "type": "string"
           },
           "problems": {
@@ -2566,6 +2594,20 @@
           "learner_id": {
             "format": "uuid",
             "title": "Learner Id",
+            "type": "string"
+          },
+          "learning_intent": {
+            "default": "practice",
+            "enum": [
+              "understand",
+              "practice",
+              "read",
+              "write",
+              "review",
+              "homework",
+              "other"
+            ],
+            "title": "Learning Intent",
             "type": "string"
           },
           "status": {

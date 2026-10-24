@@ -33,12 +33,98 @@ from math_tutor.reading import (
     ReadingPassage,
     evidence,
     history_allowed,
+    material_focus,
     source_identity,
 )
 from math_tutor.teaching import repeated_task, required_follow_up, sufficiency_question
 
 # A routing threshold, not a calibrated probability of correct recognition.
 READING_THRESHOLD = 0.85
+ACTIVITY_PROMPT_VERSION = "activity-v5"
+GUIDANCE_PROMPT_VERSION = "guidance-v5"
+LearningIntent = Literal["understand", "practice", "read", "write", "review", "homework", "other"]
+
+INTENT_GENERATION: dict[LearningIntent, str] = {
+    "understand": (
+        "Learning intent: understand. Introduce the requested concept with a clear explanation and a "
+        "relevant worked example using content different from any active task or assignment. Put the "
+        "explanation and example in problem_text, then offer one small optional check for understanding. "
+        "The explanation comes before the optional check; do not make a quiz a condition of receiving help."
+    ),
+    "practice": (
+        "Learning intent: practice. Create a fresh activity for applying the requested skill. Give the "
+        "learner something concrete to try, adapted to recent work and the selected difficulty."
+    ),
+    "read": (
+        "Learning intent: read. This is READING COMPREHENSION. Create a question about literal "
+        "understanding, inference, main idea, vocabulary in context, or textual evidence, grounded "
+        "in the supplied passage. Without passage text, ask for an excerpt or practice a general "
+        "reading skill; never invent a real book's contents."
+    ),
+    "write": (
+        "Learning intent: write. Create a writing-development activity matching the learner's goal, "
+        "such as developing an idea, planning, drafting a small part, or revising their own prose. "
+        "Use supplied material as context or evidence. Keep the learner as the author; do not write "
+        "or finish their essay or provide prose that completes their active assignment."
+    ),
+    "review": (
+        "Learning intent: review. Create a short recall or application activity to revisit the "
+        "requested material or prepare for a test. Use supplied notes to choose relevant concepts. "
+        "Treat the response as practice evidence, never a readiness, grade or mastery certification."
+    ),
+    "homework": (
+        "Learning intent: homework. Identify the concepts the learner needs for their assignment "
+        "and create a meaningfully distinct analogous practice activity using different content. "
+        "Never answer, repeat, paraphrase or complete the active assignment. If material is missing, "
+        "use the stated topic for related practice or ask what concept needs help."
+    ),
+    "other": (
+        "Learning intent: other. Follow the learner's stated freeform goal and choose an appropriate "
+        "learning activity. Ask one focused clarification if the goal is unclear. Do not force a "
+        "reading quiz or a particular subject merely because material was pasted or photographed."
+    ),
+}
+
+INTENT_FEEDBACK: dict[LearningIntent, str] = {
+    "understand": (
+        "Learning intent: understand. Explain the learner's requested concept directly, using a "
+        "different relevant example when helpful. Answer their question before any small optional "
+        "check; discussion without demonstrated work is not_assessed."
+    ),
+    "practice": (
+        "Learning intent: practice. Give feedback on the skill and reasoning demonstrated in this "
+        "practice attempt, addressing one useful unresolved point without supplying its answer."
+    ),
+    "read": (
+        "Learning intent: read. Discuss the learner's interpretation and the evidence in the "
+        "supplied passage. Ground passage claims in the available text and respect section limits."
+    ),
+    "write": (
+        "Learning intent: write. Help the learner develop or revise their own writing against "
+        "the stated writing goal. Explain a useful revision decision and use different example "
+        "content if needed. Do not rewrite or complete their essay or active assignment."
+    ),
+    "review": (
+        "Learning intent: review. Use the learner's recall and application to identify a focused "
+        "review point. Explain gaps or acknowledge sufficient work without claiming that the "
+        "learner is ready for a test, has mastered the subject, or earned a verified grade."
+    ),
+    "homework": (
+        "Learning intent: homework. Guide the underlying concept through the distinct practice "
+        "activity and different examples. Do not turn requests for help into solutions to the "
+        "original assignment or the active practice task."
+    ),
+    "other": (
+        "Learning intent: other. Respond to the learner's stated goal and latest message without "
+        "forcing an unrelated exercise, subject, or reading-comprehension checklist."
+    ),
+}
+
+
+def session_learning_intent(session: PracticeSession) -> LearningIntent:
+    value = str(session.profile_settings.get("learning_intent", "practice"))
+    return value if value in INTENT_GENERATION else "practice"
+
 
 DIFFICULTY_GUIDANCE = {
     "introductory": (
@@ -284,7 +370,7 @@ def learning_memory(db: Session, session: PracticeSession, current: ProblemInsta
             ProblemInstance.session_id == session.id,
             Submission.learner_id == session.learner_id,
             Submission.status == "completed",
-            TutorTurn.prompt_version == "guidance-v4",
+            TutorTurn.prompt_version == GUIDANCE_PROMPT_VERSION,
         )
         .order_by(Submission.created_at.desc(), Submission.id.desc())
         .limit(80)
@@ -387,7 +473,7 @@ def prior_assessed_response(
             Submission.id != row.id,
             Submission.created_at <= row.created_at,
             Submission.status == "completed",
-            TutorTurn.prompt_version == "guidance-v4",
+            TutorTurn.prompt_version == GUIDANCE_PROMPT_VERSION,
         )
         .order_by(Submission.created_at.desc(), Submission.id.desc())
         .limit(80)
@@ -480,18 +566,20 @@ def make_request(
         purpose = "generate"
         schema = ActivityPayload.model_json_schema()
         instruction = TEACHING + (
-            " Create ONE new, appropriate practice activity with its concept focus and 1–3 success_criteria. "
+            " Create ONE appropriate learning activity with its concept focus and 1–3 success_criteria. "
             "Criteria state the observable minimum sufficient response in learner-friendly words, matching the "
             "question's explicit requirements exactly, including its requested number of details. Do not add "
             "restatement, formatting or extra evidence that the question does not request. Do not reveal the answer in criteria. "
             "Do not impose a sentence count unless learning that writing form is the actual goal. A concise supported "
             "response may be sufficient; accept a reasoned qualification when an observation does not establish the claim. "
-            "No worked solution or answer. "
+            "Do not give the active task's worked solution or final answer. Worked examples with distinct "
+            "content are allowed. "
             "Treat the supplied topic or reference as context, NEVER as an assignment to answer. For homework, "
             "identify its concepts and create a meaningfully DISTINCT analogous problem (different examples, "
             "numbers or situation); never repeat, paraphrase, complete, or answer the original question. For supplied "
-            "reading excerpts, create a new comprehension question grounded only in that excerpt, include any short "
-            "necessary excerpt in the activity, and do not answer it. If only a book name is provided, do not invent "
+            "study material, follow the selected learning intent using only that material and any available earlier "
+            "sections. Assignment references always require distinct content, regardless of learning intent. "
+            "If only a book name is provided, do not invent "
             "its text; ask the learner to supply an excerpt or make a general reading-skill activity. No grade or "
             "level is required; adapt challenge to the topic and observed work. Use the evidence memory to avoid "
             "repeating questions or misconceptions already resolved. After sufficient work, meaningfully change "
@@ -502,19 +590,22 @@ def make_request(
             "observations, never proof of mastery. "
             "Keep amount of material and amount of support separate from reasoning difficulty."
         )
+        instruction += " " + INTENT_GENERATION[session_learning_intent(session)]
         instruction += " " + difficulty_guidance(session)
         if problem.parameters.get("reading_mode"):
             instruction += (
-                " This is READING COMPREHENSION. Create one question for literal understanding, inference, "
-                "main idea, vocabulary in context, or textual evidence. Keep the question separate from the passage. "
-                "Do not supply its answer or invent details outside the passage. Adapt to the learner's recent work. "
+                " This activity uses STUDY MATERIAL. Its input method does not change the selected learning intent. "
+                "Use notes for review, source material for writing, or passages for reading as the intent requires. "
+                "Keep the activity separate from the material, grounded in the supplied section; do not invent later "
+                "details. Adapt to the learner's recent work. "
             )
             if problem.passage:
                 instruction += "Use the supplied passage exactly; return passage=null. Do not rewrite or replace it."
             else:
                 instruction += (
-                    "Create an ORIGINAL short passage appropriate to the requested topic and difficulty in passage "
-                    "(title and text), plus a question in problem_text. Include enough evidence for the question. "
+                    "Create an ORIGINAL short passage appropriate to the requested topic, learning intent and "
+                    "difficulty in passage (title and text), plus the goal-appropriate activity in problem_text. "
+                    "Include enough material for that activity. "
                     "Do not attribute invented text to a real author, news outlet, book, or current event. "
                     "Prefer 100–300 words; shorter for Easier and deeper reasoning for Harder."
                 )
@@ -525,7 +616,7 @@ def make_request(
                     schema["$defs"]["OriginalPassage"]["properties"]["text"]["maxLength"] = limit
                     instruction += (
                         f" Write at most {limit} characters so the original passage fits ONE guided section. "
-                        "The question and all criteria must be answerable from that section."
+                        "The activity and all criteria must use only that section."
                     )
         else:
             instruction += (
@@ -603,6 +694,7 @@ def make_request(
             "instructions. In guided material, use only the supplied selected/earlier sections, never later text."
         )
         instruction += " " + difficulty_guidance(session)
+        instruction += " " + INTENT_FEEDBACK[session_learning_intent(session)]
         pacing = {
             "tutor_led": "While work is developing, propose one useful next step. After sufficient work, acknowledge it and offer continuation without extra assignments. Adapt the next activity to observed work.",
             "balanced": "When it helps learning, offer one next step while following the learner's question or preference.",
@@ -643,7 +735,7 @@ def make_request(
             + "\nLearner work or discussion:\n"
             + text
         )
-        if problem.passage:
+        if problem.passage and session_learning_intent(session) != "homework":
             content = (
                 evidence(ReadingPassage.model_validate(problem.passage), problem.parameters)
                 + content
@@ -767,9 +859,13 @@ def finish_model(
                 retryable=True,
                 safe_message="The tutor tried to replace the reading source. Retry with the saved passage.",
             )
-        reference = str(problem.parameters.get("reference", ""))
         session = db.get(PracticeSession, problem.session_id)
         assert session is not None
+        reference = str(problem.parameters.get("reference", ""))
+        if not reference and session_learning_intent(session) == "homework" and problem.passage:
+            reference = material_focus(
+                ReadingPassage.model_validate(problem.passage), problem.parameters
+            ).text
         if copied_reference(reference, payload.problem_text) or copied_reference(
             session.topic, payload.problem_text
         ):
@@ -792,7 +888,7 @@ def finish_model(
                 message="New practice activity prepared. Work through it in your own words, or ask for a hint.",
                 source=source,
                 assistance_level=0,
-                prompt_version="activity-v4",
+                prompt_version=ACTIVITY_PROMPT_VERSION,
             )
         )
     else:
@@ -870,7 +966,9 @@ def finish_model(
                 message=message,
                 source=source,
                 assistance_level=0 if reference_discussion else min(3, max(1, row.help_level)),
-                prompt_version="reference-discussion-v1" if reference_discussion else "guidance-v4",
+                prompt_version="reference-discussion-v1"
+                if reference_discussion
+                else GUIDANCE_PROMPT_VERSION,
                 feedback={
                     **payload.model_dump(),
                     "evidence_link": link,

@@ -47,6 +47,7 @@ function savedSession(
     id: "synthetic-session",
     learner_id: "synthetic-learner",
     status: "completed",
+    learning_intent: "practice",
     topic: "Evidence and explanation",
     initiative: "balanced",
     difficulty: "standard",

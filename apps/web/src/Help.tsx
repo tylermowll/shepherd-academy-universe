@@ -89,10 +89,13 @@ export function HelpPage({
                   {link("practice", "Practice")}.
                 </li>
                 <li>
-                  Enter a topic, such as “writing a persuasive paragraph.” Start
-                  the session to create your first activity from that topic or
-                  reference material. Choose Easier, Standard, or Harder for
-                  activity difficulty; you can change it during the session.
+                  Choose what you would like help with, then tell the tutor what
+                  you are working on. Add a text, notes or homework if that fits
+                  your goal. Choose <strong>Start learning</strong> when you are
+                  ready. You can change the defaults under{" "}
+                  <strong>Adjust difficulty and guidance</strong>: choose how
+                  challenging the work should be and how much guidance you would
+                  like.
                 </li>
                 <li>
                   Write your work or question and choose <strong>Send</strong>.
@@ -114,23 +117,24 @@ export function HelpPage({
               </p>
               <ContextHelp topic="Can I use my homework?">
                 <p>
-                  Yes. Paste an assignment or photograph it as reference
-                  material. The tutor creates different practice using the same
-                  concepts. It does not complete your assignment. For reading
-                  practice, include the passage you want to discuss.
+                  Choose <strong>Learn from my homework</strong>, then paste the
+                  assignment or add a photo. The tutor makes different practice
+                  using the same ideas. It does not complete your assignment.
+                  For reading practice, include the passage you want to discuss.
                 </p>
               </ContextHelp>
               <ContextHelp topic="How do I practice reading comprehension?">
                 <p>
-                  Choose a pasted or photographed passage, let the tutor write
-                  an original passage, or choose Published story or news. Review
-                  the preview and source details before starting. Next activity
-                  options keep using the same text; choose different practice
-                  material to change it. Include the passage itself; a book
-                  title alone does not give the tutor its text.
+                  Choose <strong>Read and discuss a text</strong>, then paste or
+                  photograph a text, ask the tutor to write one, or choose a
+                  published text. Review the preview and source details before
+                  starting. Next activity options keep using the same text;
+                  choose different practice material to change it. Include the
+                  passage itself; a book title alone does not give the tutor its
+                  text.
                 </p>
               </ContextHelp>
-              <ContextHelp topic="Why is Start session unavailable?">
+              <ContextHelp topic="Why is Start learning unavailable?">
                 <p>
                   The demo cannot accept personal work. A private app and a
                   selected AI tutor are needed. Follow{" "}

@@ -640,10 +640,10 @@ for (const adapter of ["vllm", "ollama", "compatible"] as const) {
       const learnerPage = await learnerBrowser.newPage();
       await login(learnerPage, username);
       await learnerPage
-        .getByLabel("Topic or learning goal", { exact: true })
+        .getByLabel("What are you working on?", { exact: true })
         .fill("Synthetic connection workflow");
       await learnerPage
-        .getByRole("button", { name: "Start session", exact: true })
+        .getByRole("button", { name: "Start learning", exact: true })
         .click();
       await expect(
         learnerPage.getByLabel("Your work or question", { exact: true }),

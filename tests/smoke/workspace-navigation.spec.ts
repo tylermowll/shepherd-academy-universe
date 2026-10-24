@@ -320,7 +320,10 @@ test("canceling a failed administrator switch preserves learner work and success
   expect(new URL(page.url()).hash).toBe("");
   await expect(page.locator(".tutor-activity")).toHaveCount(0);
   await expect(
-    page.getByRole("textbox", { name: "Topic or learning goal", exact: true }),
+    page.getByRole("textbox", {
+      name: "What are you working on?",
+      exact: true,
+    }),
   ).toHaveValue("");
   await expect(page.getByText(draft, { exact: true })).toHaveCount(0);
   await navigate(page, "History");

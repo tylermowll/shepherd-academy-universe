@@ -2,6 +2,7 @@ import {
   openAttachments,
   openSessionTools,
   openPracticeMaterial,
+  chooseMaterialInput,
 } from "./support";
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
@@ -171,12 +172,8 @@ test("reading and history reference material produces analogous practice instead
   const source =
     "My assigned homework: explain why the invented narrator Mira distrusts the mayor in chapter three of The Copper Lantern. Write the final paragraph for me.";
   await openPracticeMaterial(page);
-  await page
-    .getByRole("combobox", { name: "Practice purpose", exact: true })
-    .selectOption("assignment");
-  await page
-    .getByRole("combobox", { name: "Material input", exact: true })
-    .selectOption("reference_text");
+
+  await chooseMaterialInput(page, "reference_text");
   await page
     .getByRole("textbox", { name: "Reference material", exact: true })
     .fill(source);
@@ -203,7 +200,7 @@ test("reading and history reference material produces analogous practice instead
   await page.getByText("Session settings", { exact: true }).click();
   await page
     .getByRole("combobox", {
-      name: "Tutor style for this session",
+      name: "How much guidance would you like?",
       exact: true,
     })
     .selectOption("learner_led");
@@ -215,7 +212,7 @@ test("reading and history reference material produces analogous practice instead
   await page.getByText("Session settings", { exact: true }).click();
   await expect(
     page.getByRole("combobox", {
-      name: "Tutor style for this session",
+      name: "How much guidance would you like?",
       exact: true,
     }),
   ).toHaveValue("learner_led");
@@ -256,12 +253,8 @@ test("a source photograph is read only to create distinct practice, not reviewed
 }) => {
   await startTutor(page, "Science: explain the evidence behind a comparison");
   await openPracticeMaterial(page);
-  await page
-    .getByRole("combobox", { name: "Practice purpose", exact: true })
-    .selectOption("assignment");
-  await page
-    .getByRole("combobox", { name: "Material input", exact: true })
-    .selectOption("reference_photo");
+
+  await chooseMaterialInput(page, "reference_photo");
   await page
     .getByRole("button", { name: "Create practice activity", exact: true })
     .click();
@@ -312,19 +305,15 @@ test("a source photograph is read only to create distinct practice, not reviewed
   await expect(page.locator(".verdict")).toHaveCount(0);
 });
 
-for (const source of ["reference_photo", "reading_photo"]) {
+for (const source of ["reference_photo", "reading_photo"] as const) {
   test(`an unclear ${source} can be discussed, repaired with typed material, and finished`, async ({
     page,
   }) => {
     const topic = "Synthetic study: compare observations";
     await startTutor(page, topic);
     await openPracticeMaterial(page);
-    await page
-      .getByRole("combobox", { name: "Practice purpose", exact: true })
-      .selectOption(source === "reading_photo" ? "study" : "assignment");
-    await page
-      .getByRole("combobox", { name: "Material input", exact: true })
-      .selectOption(source);
+
+    await chooseMaterialInput(page, source);
     await page
       .getByRole("button", { name: "Create practice activity", exact: true })
       .click();
@@ -332,7 +321,7 @@ for (const source of ["reference_photo", "reading_photo"]) {
       page.getByLabel("Your work or question", { exact: true }),
     ).toHaveCount(0);
     await expect(
-      page.getByText("Upload a photo", { exact: true }),
+      page.getByRole("region", { name: "Add your photo", exact: true }),
     ).toBeVisible();
     await page
       .getByLabel("Take or choose a photo")

@@ -26,7 +26,7 @@ from math_tutor.adapters.providers.contracts import (
     ModelResult,
 )
 from math_tutor.reading import SECTION_LENGTHS, OriginalPassage, SectionSize
-from math_tutor.tutoring import learning_memory
+from math_tutor.tutoring import GUIDANCE_PROMPT_VERSION, learning_memory
 
 
 @pytest.mark.anyio
@@ -293,7 +293,7 @@ async def test_memory_survives_discussion_window_and_rejects_wrong_owner_or_forg
                     message="Synthetic reply",
                     source="synthetic",
                     assistance_level=1,
-                    prompt_version="guidance-v4",
+                    prompt_version=GUIDANCE_PROMPT_VERSION,
                     feedback=feedback,
                 )
             )
@@ -315,7 +315,7 @@ async def test_memory_survives_discussion_window_and_rejects_wrong_owner_or_forg
                 message="Historical reassurance remains visible.",
                 source="synthetic",
                 assistance_level=1,
-                prompt_version="guidance-v3",
+                prompt_version="guidance-v4",
                 feedback={
                     "teaching_action": "acknowledge",
                     "learning_observation": {

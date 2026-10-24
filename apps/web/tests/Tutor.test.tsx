@@ -38,6 +38,9 @@ const session = (problems: unknown[] = []) => ({
   id: sessionId,
   learner_id: learner,
   topic: "Persuasive writing",
+  learning_intent: "practice" as NonNullable<
+    Schema<"TutoringSessionInput">["learning_intent"]
+  >,
   initiative: "balanced",
   difficulty: "standard",
   status: "open",
@@ -99,19 +102,28 @@ function installSession(value: ReturnType<typeof session>) {
 }
 
 function selectSource(source: string) {
-  fireEvent.change(screen.getByLabelText("Practice purpose"), {
-    target: {
-      value: source.startsWith("reference_")
-        ? "assignment"
-        : source === "topic"
-          ? "topic"
-          : "study",
-    },
+  const startForm = screen.queryByRole("group", {
+    name: "What would you like help with?",
   });
-  if (source !== "topic")
-    fireEvent.change(screen.getByLabelText("Material input"), {
-      target: { value: source },
-    });
+  if (startForm) {
+    const goal = source.startsWith("reference_")
+      ? "Learn from my homework"
+      : source === "topic"
+        ? "Practice a skill"
+        : "Read and discuss a text";
+    fireEvent.click(screen.getByRole("radio", { name: goal }));
+  }
+  const input = [
+    ...document.querySelectorAll<HTMLInputElement>(
+      'input[name="material-source"]',
+    ),
+  ].find((node) => node.value === source);
+  if (input) fireEvent.click(input);
+}
+
+function openLearningPreferences() {
+  const summary = screen.getByText("Adjust difficulty and guidance");
+  if (!summary.closest("details")!.open) fireEvent.click(summary);
 }
 
 beforeEach(() => {
@@ -153,9 +165,9 @@ it("recovers an unavailable initial session while keeping availability and saved
   expect(window.location.search).toBe("?page=practice");
   expect(screen.queryByText("Checking tutor availability…")).toBeNull();
   expect(screen.queryByRole("button", { name: "Reconnect" })).toBeNull();
-  const topic = screen.getByLabelText("Topic or learning goal");
+  const topic = screen.getByLabelText("What are you working on?");
   fireEvent.change(topic, { target: { value: "A new synthetic topic" } });
-  expect(screen.getByRole("button", { name: "Start session" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Start learning" })).toBeEnabled();
   fireEvent.change(topic, { target: { value: "" } });
   const navigation = screen.getByRole("navigation", {
     name: "Main navigation",
@@ -441,17 +453,19 @@ it.each(["reference_photo", "reading_photo"])(
     const view = render(<Tutor learner={learner} offline={false} act={run} />);
     await screen.findByText("Text processing: local.");
     selectSource(photoSource);
-    fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
+    fireEvent.change(screen.getByLabelText("What are you working on?"), {
       target: { value: "Synthetic photo practice" },
     });
     expect(screen.getByText(photoStatus)).toBeVisible();
     expect(screen.getByText(/Choose a pasted-text input/)).toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Start session" }),
+      screen.getByRole("button", { name: "Start learning" }),
     ).toBeDisabled();
     selectSource("topic");
     expect(screen.queryByText(photoStatus)).toBeNull();
-    expect(screen.getByRole("button", { name: "Start session" })).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Start learning" }),
+    ).toBeEnabled();
 
     view.unmount();
     window.history.replaceState(null, "", `/?page=practice#tutor=${sessionId}`);
@@ -560,27 +574,15 @@ it("explains the history limit when the most recent 100 summaries are shown", as
   ).toHaveLength(100);
 });
 
-it("separates the practice purpose from its relevant material inputs", async () => {
+it("offers all existing material methods as wrapping radio choices when changing a session", async () => {
   installSession(session());
   render(<Tutor learner={learner} offline={false} act={run} />);
   await screen.findByText("Choose practice material");
-  const purpose = screen.getByLabelText("Practice purpose");
-  expect(within(purpose).getAllByRole("option")).toHaveLength(3);
+  expect(
+    document.querySelectorAll('input[name="material-source"]'),
+  ).toHaveLength(7);
+  expect(screen.queryByLabelText("Practice purpose")).toBeNull();
   expect(screen.queryByLabelText("Material input")).toBeNull();
-  fireEvent.change(purpose, { target: { value: "study" } });
-  expect(
-    within(screen.getByLabelText("Material input")).getAllByRole("option"),
-  ).toHaveLength(4);
-  expect(
-    screen.queryByRole("option", { name: /assignment or reference/ }),
-  ).toBeNull();
-  fireEvent.change(purpose, { target: { value: "assignment" } });
-  expect(
-    within(screen.getByLabelText("Material input")).getAllByRole("option"),
-  ).toHaveLength(2);
-  expect(
-    screen.queryByRole("option", { name: "Published story or news" }),
-  ).toBeNull();
 });
 
 it.each(["reference_photo", "reading_photo"])(
@@ -1007,22 +1009,25 @@ describe("AI learning conversation", () => {
     });
     vi.stubGlobal("fetch", fetcher);
     render(<Tutor learner={learner} offline={false} act={run} />);
-    fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
+    fireEvent.change(screen.getByLabelText("What are you working on?"), {
       target: { value: "Persuasive writing" },
     });
-    expect(screen.getByRole("group", { name: "Tutor style" })).toBeVisible();
-    fireEvent.change(screen.getByLabelText("Tutor style"), {
-      target: { value: "learner_led" },
-    });
-    fireEvent.change(screen.getByLabelText("Activity difficulty"), {
+    openLearningPreferences();
+    fireEvent.change(
+      screen.getByLabelText("How much guidance would you like?"),
+      {
+        target: { value: "learner_led" },
+      },
+    );
+    fireEvent.change(screen.getByLabelText("How challenging should it be?"), {
       target: { value: "challenge" },
     });
     await vi.waitFor(() =>
       expect(
-        screen.getByRole("button", { name: "Start session" }),
+        screen.getByRole("button", { name: "Start learning" }),
       ).toBeEnabled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Start session" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
     expect(
       await screen.findByRole("button", { name: "Create practice activity" }),
     ).toBeEnabled();
@@ -1033,6 +1038,7 @@ describe("AI learning conversation", () => {
     expect(JSON.parse(sent![1].body as string)).toEqual({
       learner_id: learner,
       topic: "Persuasive writing",
+      learning_intent: "practice",
       initiative: "learner_led",
       difficulty: "challenge",
       initial_activity: { source: "topic" },
@@ -1046,12 +1052,12 @@ describe("AI learning conversation", () => {
     render(<Tutor learner={learner} offline={false} act={run} />);
     await screen.findByText("Choose practice material");
     selectSource("reference_text");
-    expect(screen.getByText(/The tutor uses your material/)).toHaveTextContent(
-      "create different practice",
-    );
-    expect(screen.getByText(/The tutor uses your material/)).toHaveTextContent(
-      "cannot access a book from its title",
-    );
+    expect(
+      screen.getByText(/We’ll use the ideas in your homework/),
+    ).toHaveTextContent("make different practice");
+    expect(
+      screen.getByText(/We’ll use the ideas in your homework/),
+    ).toHaveTextContent("without completing the assignment");
     fireEvent.change(screen.getByLabelText("Reference material"), {
       target: {
         value: "Homework: argue whether a historical decision was justified.",
@@ -1092,90 +1098,131 @@ describe("AI learning conversation", () => {
     expect(screen.queryByLabelText("Your work or question")).toBeNull();
   });
 
-  it("keeps a lost reference-photo receipt reachable after capture completes", async () => {
-    let current = session([activity([], "reference_capture")]);
-    let currentLoads = 0;
-    const errors: unknown[] = [];
-    const NativeUrl = URL;
-    vi.stubGlobal(
-      "URL",
-      Object.assign(class extends NativeUrl {}, {
-        createObjectURL: vi.fn(() => "blob:reference-preview"),
-        revokeObjectURL: vi.fn(),
-      }),
-    );
-    window.location.hash = `tutor=${sessionId}`;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn((url: string) => {
-        if (url.endsWith("/features")) return response(capabilities);
-        if (url.endsWith(`/tutor/sessions/${sessionId}`)) {
-          currentLoads += 1;
-          return response(current);
-        }
-        if (url.endsWith("/tutor/sessions"))
-          return response([summary(current)]);
-        if (url.endsWith("/images/preview"))
-          return Promise.resolve(
-            new Response(new Blob(["preview"], { type: "image/png" })),
-          );
-        if (url.includes(`/problems/${problemId}/photos?`))
-          return Promise.reject(new TypeError("Synthetic lost receipt"));
-        throw new Error(url);
-      }),
-    );
-    render(
-      <Tutor
-        learner={learner}
-        offline={false}
-        act={async (action) => {
-          try {
-            await action();
-          } catch (cause) {
-            errors.push(cause);
+  it.each([false, true])(
+    "keeps a lost source-photo receipt after capture completes with historical capture=%s",
+    async (withHistory) => {
+      const historical = withHistory
+        ? [
+            {
+              ...activity([], "reference_capture"),
+              id: "911c9abc-4e8e-424d-a914-4338187ba00f",
+              status: "skipped",
+            },
+          ]
+        : [];
+      let current = session([...historical, activity([], "reference_capture")]);
+      const uploads: Array<{ key: string; blob: BodyInit | null | undefined }> =
+        [];
+      let currentLoads = 0;
+      const errors: unknown[] = [];
+      const NativeUrl = URL;
+      vi.stubGlobal(
+        "URL",
+        Object.assign(class extends NativeUrl {}, {
+          createObjectURL: vi.fn(() => "blob:reference-preview"),
+          revokeObjectURL: vi.fn(),
+        }),
+      );
+      window.location.hash = `tutor=${sessionId}`;
+      vi.stubGlobal(
+        "fetch",
+        vi.fn((url: string, options: RequestInit) => {
+          if (url.endsWith("/features")) return response(capabilities);
+          if (url.endsWith(`/tutor/sessions/${sessionId}`)) {
+            currentLoads += 1;
+            return response(current);
           }
-        }}
-      />,
-    );
-    fireEvent.change(await screen.findByLabelText("Take or choose a photo"), {
-      target: {
-        files: [new File(["photo"], "reference.png", { type: "image/png" })],
-      },
-    });
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Submit this photograph" }),
-    );
-    expect(
-      await screen.findByRole("button", { name: "Retry saved photograph" }),
-    ).toBeVisible();
-    expect(errors).toHaveLength(1);
+          if (url.endsWith("/tutor/sessions"))
+            return response([summary(current)]);
+          if (url.endsWith("/images/preview"))
+            return Promise.resolve(
+              new Response(new Blob(["preview"], { type: "image/png" })),
+            );
+          if (url.includes(`/problems/${problemId}/photos?`)) {
+            uploads.push({
+              key: (options.headers as Record<string, string>)[
+                "Idempotency-Key"
+              ]!,
+              blob: options.body,
+            });
+            return uploads.length === 1
+              ? Promise.reject(new TypeError("Synthetic lost receipt"))
+              : response({});
+          }
+          throw new Error(url);
+        }),
+      );
+      render(
+        <Tutor
+          learner={learner}
+          offline={false}
+          act={async (action) => {
+            try {
+              await action();
+            } catch (cause) {
+              errors.push(cause);
+            }
+          }}
+        />,
+      );
+      fireEvent.change(await screen.findByLabelText("Take or choose a photo"), {
+        target: {
+          files: [new File(["photo"], "reference.png", { type: "image/png" })],
+        },
+      });
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Submit this photograph" }),
+      );
+      expect(
+        await screen.findByRole("button", { name: "Retry saved photograph" }),
+      ).toBeVisible();
+      expect(errors).toHaveLength(1);
+      const preview = screen.getByAltText("Your photograph before submission");
 
-    current = session([
-      activity(
-        [
-          operation({
-            status: "failed",
-            interpretation: null,
-            interpretation_version: null,
-            reading: null,
-            feedback: null,
-            safe_error: "The reference photograph could not be read.",
-          }),
-        ],
-        "ready",
-      ),
-    ]);
-    fireEvent(window, new Event("online"));
-    await vi.waitFor(() => expect(currentLoads).toBeGreaterThanOrEqual(2));
-    await screen.findByLabelText("Your work or question");
-    expect(
-      screen.getByRole("button", { name: "Retry saved photograph" }),
-    ).toBeVisible();
-    expect(screen.getByRole("button", { name: "Attach photo" })).toBeDisabled();
-    expect(
-      screen.getByRole("button", { name: "Attach photo" }),
-    ).toHaveAttribute("aria-expanded", "true");
-  });
+      current = session([
+        ...historical,
+        activity(
+          [
+            operation({
+              status: "failed",
+              interpretation: null,
+              interpretation_version: null,
+              reading: null,
+              feedback: null,
+              safe_error: "The reference photograph could not be read.",
+            }),
+          ],
+          "ready",
+        ),
+      ]);
+      fireEvent(window, new Event("online"));
+      await vi.waitFor(() => expect(currentLoads).toBeGreaterThanOrEqual(2));
+      await screen.findByLabelText("Your work or question");
+      expect(
+        screen.getByRole("button", { name: "Retry saved photograph" }),
+      ).toBeVisible();
+      expect(
+        screen.getByRole("button", { name: "Attach photo" }),
+      ).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: "Attach photo" }),
+      ).toHaveAttribute("aria-expanded", "true");
+      expect(screen.getByAltText("Your photograph before submission")).toBe(
+        preview,
+      );
+      expect(preview).toBeVisible();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Retry saved photograph" }),
+      );
+      await vi.waitFor(() => expect(uploads).toHaveLength(2));
+      expect(uploads[1]!.key).toBe(uploads[0]!.key);
+      expect(uploads[1]!.blob).toBe(uploads[0]!.blob);
+      expect(errors).toHaveLength(1);
+      expect(
+        screen.queryByRole("button", { name: "Retry saved photograph" }),
+      ).toBeNull();
+    },
+  );
 
   it("shows the reading before specific guidance with no approval request or button", async () => {
     const fetcher = installSession(session([activity([operation()])]));
@@ -1281,10 +1328,13 @@ describe("AI learning conversation", () => {
     render(<Tutor learner={learner} offline={false} act={run} />);
     fireEvent.click(await screen.findByText("Session & material"));
     fireEvent.click(screen.getByText("Session settings"));
-    fireEvent.change(screen.getByLabelText("Tutor style for this session"), {
-      target: { value: "tutor_led" },
-    });
-    fireEvent.change(screen.getByLabelText("Activity difficulty"), {
+    fireEvent.change(
+      screen.getByLabelText("How much guidance would you like?"),
+      {
+        target: { value: "tutor_led" },
+      },
+    );
+    fireEvent.change(screen.getByLabelText("How challenging should it be?"), {
       target: { value: "introductory" },
     });
     fireEvent.click(
@@ -1393,19 +1443,19 @@ describe("AI learning conversation", () => {
         }}
       />,
     );
-    fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
+    fireEvent.change(screen.getByLabelText("What are you working on?"), {
       target: { value: "Persuasive writing" },
     });
     await vi.waitFor(() =>
       expect(
-        screen.getByRole("button", { name: "Start session" }),
+        screen.getByRole("button", { name: "Start learning" }),
       ).toBeEnabled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Start session" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
     const retry = await screen.findByRole("button", {
       name: "Retry saved request",
     });
-    expect(screen.getByLabelText("Topic or learning goal")).toBeDisabled();
+    expect(screen.getByLabelText("What are you working on?")).toBeDisabled();
     fireEvent.click(retry);
     expect(
       await screen.findByRole("button", { name: "Create practice activity" }),
@@ -1452,15 +1502,15 @@ describe("AI learning conversation", () => {
         }}
       />,
     );
-    fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
+    fireEvent.change(screen.getByLabelText("What are you working on?"), {
       target: { value: "Persuasive writing" },
     });
     await vi.waitFor(() =>
       expect(
-        screen.getByRole("button", { name: "Start session" }),
+        screen.getByRole("button", { name: "Start learning" }),
       ).toBeEnabled(),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Start session" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
 
     expect(
       await screen.findByText(
@@ -1468,7 +1518,7 @@ describe("AI learning conversation", () => {
       ),
     ).toBeVisible();
     expect(screen.getByLabelText("Your work or question")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Start session" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Start learning" })).toBeNull();
     expect(
       screen.queryByRole("button", { name: "Retry saved request" }),
     ).toBeNull();
@@ -1500,7 +1550,7 @@ describe("AI learning conversation", () => {
     );
     render(<App />);
     expect(
-      await screen.findByLabelText("Topic or learning goal"),
+      await screen.findByLabelText("What are you working on?"),
     ).toBeVisible();
     expect(
       screen.queryByText(
@@ -1524,7 +1574,7 @@ describe("AI learning conversation", () => {
     const view = render(<Tutor {...props} />);
     const input = await screen.findByLabelText("Your work or question");
     expect(screen.getAllByText(activity().problem_text)).toHaveLength(1);
-    expect(screen.queryByLabelText("Topic or learning goal")).toBeNull();
+    expect(screen.queryByLabelText("What are you working on?")).toBeNull();
     fireEvent.change(input, {
       target: { value: "An unsent observation about birds." },
     });
@@ -1548,7 +1598,7 @@ describe("AI learning conversation", () => {
     fireEvent.change(input, { target: { value: "" } });
     expect(draftChanged).toHaveBeenLastCalledWith(false);
     fireEvent.click(screen.getByRole("button", { name: "New session" }));
-    expect(screen.getByLabelText("Topic or learning goal")).toBeVisible();
+    expect(screen.getByLabelText("What are you working on?")).toBeVisible();
     expect(input).not.toBeVisible();
     fireEvent.click(
       screen.getByRole("button", { name: "Back to current session" }),
@@ -1986,11 +2036,11 @@ describe("AI learning conversation", () => {
     expect(
       await screen.findByText("Tutoring is not available yet"),
     ).toBeVisible();
-    fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
+    fireEvent.change(screen.getByLabelText("What are you working on?"), {
       target: { value: "Photosynthesis" },
     });
     expect(
-      screen.getByRole("button", { name: "Start session" }),
+      screen.getByRole("button", { name: "Start learning" }),
     ).toBeDisabled();
     expect(
       screen.getByText(
@@ -2005,10 +2055,10 @@ describe("AI learning conversation", () => {
     view.rerender(<Tutor {...props} active />);
     await vi.waitFor(() =>
       expect(
-        screen.getByRole("button", { name: "Start session" }),
+        screen.getByRole("button", { name: "Start learning" }),
       ).toBeEnabled(),
     );
-    expect(screen.getByLabelText("Topic or learning goal")).toHaveValue(
+    expect(screen.getByLabelText("What are you working on?")).toHaveValue(
       "Photosynthesis",
     );
     expect(
@@ -2108,8 +2158,10 @@ it.each(["reading_text", "reading_photo", "reading_generated"])(
     });
     vi.stubGlobal("fetch", fetcher);
     render(<Tutor learner={learner} offline={false} act={run} />);
-    await screen.findByLabelText("Practice purpose");
-    fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
+    await screen.findByRole("group", {
+      name: "What would you like help with?",
+    });
+    fireEvent.change(screen.getByLabelText("What are you working on?"), {
       target: { value: "Reading comprehension" },
     });
     selectSource(source);
@@ -2119,13 +2171,13 @@ it.each(["reading_text", "reading_photo", "reading_generated"])(
       });
     if (source === "reading_text") {
       expect(
-        screen.getByRole("button", { name: "Start session" }),
+        screen.getByRole("button", { name: "Start learning" }),
       ).toBeDisabled();
       fireEvent.change(screen.getByLabelText("Reading passage"), {
         target: { value: "Mira built a sunny shelf for the seedling." },
       });
     }
-    fireEvent.click(screen.getByRole("button", { name: "Start session" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
     await vi.waitFor(() => {
       const sent = fetcher.mock.calls.find(
         ([url, options]) =>
@@ -2175,19 +2227,19 @@ it("starts published reading only after a selected preview supplies its source t
   });
   vi.stubGlobal("fetch", fetcher);
   render(<Tutor learner={learner} offline={false} act={run} />);
-  await screen.findByLabelText("Practice purpose");
-  fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
+  await screen.findByRole("group", { name: "What would you like help with?" });
+  fireEvent.change(screen.getByLabelText("What are you working on?"), {
     target: { value: "Reading inference" },
   });
   selectSource("published");
   await screen.findByRole("option", { name: "Synthetic source" });
-  expect(screen.getByRole("button", { name: "Start session" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Start learning" })).toBeDisabled();
   expect(
     fetcher.mock.calls.some(([url]) => url.endsWith("/reading/import")),
   ).toBe(false);
   fireEvent.click(screen.getByRole("button", { name: "Load published text" }));
   await screen.findByText("Synthetic public story");
-  fireEvent.click(screen.getByRole("button", { name: "Start session" }));
+  fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
   await vi.waitFor(() => {
     const sent = fetcher.mock.calls.find(
       ([url, options]) =>
@@ -2404,7 +2456,7 @@ it("allows long science material while retaining the assignment-reference limit"
   });
   vi.stubGlobal("fetch", fetcher);
   render(<Tutor learner={learner} offline={false} act={run} />);
-  await screen.findByLabelText("Practice purpose");
+  await screen.findByRole("group", { name: "What would you like help with?" });
   selectSource("reference_text");
   expect(screen.getByLabelText("Reference material")).not.toHaveAttribute(
     "maxlength",
@@ -2419,7 +2471,7 @@ it("allows long science material while retaining the assignment-reference limit"
   expect(
     screen.getByText(/This material exceeds 8,000 characters/),
   ).toBeVisible();
-  expect(screen.getByRole("button", { name: "Start session" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Start learning" })).toBeDisabled();
   selectSource("reading_text");
   expect(screen.getByLabelText("Reading passage")).not.toHaveAttribute(
     "maxlength",
@@ -2440,7 +2492,7 @@ it("allows long science material while retaining the assignment-reference limit"
   expect(
     screen.getByText(/This material exceeds 50,000 characters/),
   ).toBeVisible();
-  fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
+  fireEvent.change(screen.getByLabelText("What are you working on?"), {
     target: { value: "Science: understand energy transfer" },
   });
   const material =
@@ -2451,7 +2503,7 @@ it("allows long science material while retaining the assignment-reference limit"
   fireEvent.change(screen.getByLabelText("Reading mode"), {
     target: { value: "whole" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Start session" }));
+  fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
   await vi.waitFor(() => {
     const sent = fetcher.mock.calls.find(
       ([url, options]) =>
@@ -2571,10 +2623,10 @@ it("recovers an accepted session after a lost receipt and reload without storing
     }
   };
   let view = render(<Tutor learner={learner} offline={false} act={act} />);
-  fireEvent.change(await screen.findByLabelText("Topic or learning goal"), {
+  fireEvent.change(await screen.findByLabelText("What are you working on?"), {
     target: { value: "Private synthetic topic must remain in memory only" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Start session" }));
+  fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
   await screen.findByRole("button", { name: "Retry saved request" });
   expect(storedIdentity).toEqual({
     key: requestKey,
@@ -2625,8 +2677,8 @@ it("keeps an unaccepted request blocked until server resolution prevents a late 
   await screen.findByText(
     /The server has not confirmed whether your request was saved/,
   );
-  expect(screen.getByLabelText("Topic or learning goal")).toBeDisabled();
-  expect(screen.getByRole("button", { name: "Start session" })).toBeDisabled();
+  expect(screen.getByLabelText("What are you working on?")).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Start learning" })).toBeDisabled();
   expect(
     window.sessionStorage.getItem(`shepherd:tutor-request:${learner}`),
   ).not.toBeNull();
@@ -2636,7 +2688,7 @@ it("keeps an unaccepted request blocked until server resolution prevents a late 
       fetcher.mock.calls.filter(([url]) => url.includes("?learner_id=")).length,
     ).toBe(2),
   );
-  expect(screen.getByRole("button", { name: "Start session" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Start learning" })).toBeDisabled();
   await vi.waitFor(() =>
     expect(
       screen.getByRole("button", { name: "Resolve interrupted request" }),
@@ -2647,7 +2699,7 @@ it("keeps an unaccepted request blocked until server resolution prevents a late 
   );
   await screen.findByText(/The server will reject it if it arrives later/);
   expect(resolutions).toBe(1);
-  expect(screen.getByLabelText("Topic or learning goal")).toBeEnabled();
+  expect(screen.getByLabelText("What are you working on?")).toBeEnabled();
   expect(
     window.sessionStorage.getItem(`shepherd:tutor-request:${learner}`),
   ).toBeNull();
@@ -2904,5 +2956,270 @@ it("retains an oversized response without submitting it and permits a valid Unic
       (JSON.parse(request![1].body as string) as Schema<"SubmissionInput">)
         .text,
     ).toBe(valid);
+  });
+});
+
+describe("goal-first session setup", () => {
+  const goals = [
+    ["understand", "Understand a topic", "topic"],
+    ["practice", "Practice a skill", "topic"],
+    ["read", "Read and discuss a text", "reading_generated"],
+    ["write", "Work on my writing", "topic"],
+    ["review", "Review for a test", "topic"],
+    ["homework", "Learn from my homework", "reference_text"],
+    ["other", "Something else", "topic"],
+  ] as const;
+
+  function startServer() {
+    let saved = session([activity()]);
+    const fetcher = vi.fn((url: string, options: RequestInit) => {
+      if (url.endsWith("/features")) return response(capabilities);
+      if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(saved);
+      if (url.endsWith("/tutor/sessions")) {
+        if (options.method !== "POST") return response([]);
+        const body = JSON.parse(
+          options.body as string,
+        ) as Schema<"TutoringSessionInput">;
+        saved = {
+          ...saved,
+          topic: body.topic,
+          learning_intent: body.learning_intent ?? "practice",
+        };
+        return response({ ...saved, learning_intent: body.learning_intent });
+      }
+      throw new Error(url);
+    });
+    vi.stubGlobal("fetch", fetcher);
+    return fetcher;
+  }
+
+  it.each(goals)(
+    "starts %s with a real saved intent and only its relevant material fields",
+    async (intent, label, source) => {
+      const fetcher = startServer();
+      render(<Tutor learner={learner} offline={false} act={run} />);
+      const goal = screen.getByRole("group", {
+        name: "What would you like help with?",
+      });
+      expect(within(goal).getAllByRole("radio")).toHaveLength(7);
+      fireEvent.click(screen.getByRole("radio", { name: label }));
+      const topic = screen.getByRole("textbox", {
+        name: "What are you working on?",
+      });
+      expect(
+        goal.compareDocumentPosition(topic) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      fireEvent.change(topic, {
+        target: { value: "An original synthetic learning goal" },
+      });
+      expect(
+        screen.getByText("Adjust difficulty and guidance").closest("details"),
+      ).not.toHaveAttribute("open");
+      if (source === "reading_generated")
+        fireEvent.click(
+          screen.getByRole("radio", { name: "Ask the tutor to write a text" }),
+        );
+      if (source === "reference_text")
+        fireEvent.change(screen.getByLabelText("Reference material"), {
+          target: {
+            value: "Synthetic assignment used only for different practice.",
+          },
+        });
+      if (intent === "write" || intent === "practice")
+        expect(
+          screen.queryByRole("group", { name: "What will we use?" }),
+        ).toBeNull();
+      await vi.waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Start learning" }),
+        ).toBeEnabled(),
+      );
+      expect(
+        fetcher.mock.calls.filter(([, options]) => options.method === "POST"),
+      ).toHaveLength(0);
+      fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
+      await screen.findByLabelText("Your work or question");
+      const posts = fetcher.mock.calls.filter(
+        ([, options]) => options.method === "POST",
+      );
+      expect(posts).toHaveLength(1);
+      expect(JSON.parse(posts[0]![1].body as string)).toMatchObject({
+        learning_intent: intent,
+        difficulty: "standard",
+        initiative: "balanced",
+        initial_activity: { source },
+      });
+    },
+  );
+
+  it("retains topic, material and optional preferences across changing goals without sending hidden drafts", async () => {
+    const fetcher = startServer();
+    const onDraftChange = vi.fn();
+    render(
+      <Tutor
+        learner={learner}
+        offline={false}
+        act={run}
+        onDraftChange={onDraftChange}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("radio", { name: "Read and discuss a text" }),
+    );
+    fireEvent.change(screen.getByLabelText("Reading passage"), {
+      target: { value: "Keep this original text while choosing a goal." },
+    });
+    fireEvent.change(screen.getByLabelText("Passage title (optional)"), {
+      target: { value: "Keep this title" },
+    });
+    fireEvent.click(screen.getByRole("radio", { name: "Work on my writing" }));
+    expect(screen.queryByLabelText("Reading passage")).toBeNull();
+    await vi.waitFor(() =>
+      expect(onDraftChange).toHaveBeenLastCalledWith(true),
+    );
+    fireEvent.change(screen.getByLabelText("What are you working on?"), {
+      target: { value: "Make a clear argument" },
+    });
+    openLearningPreferences();
+    fireEvent.change(
+      screen.getByLabelText("How much guidance would you like?"),
+      {
+        target: { value: "learner_led" },
+      },
+    );
+    fireEvent.change(screen.getByLabelText("How challenging should it be?"), {
+      target: { value: "challenge" },
+    });
+    fireEvent.click(screen.getByText("Adjust difficulty and guidance"));
+    fireEvent.click(screen.getByRole("radio", { name: "Review for a test" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Paste my notes" }));
+    expect(screen.getByLabelText("Reading passage")).toHaveValue(
+      "Keep this original text while choosing a goal.",
+    );
+    expect(screen.getByLabelText("Passage title (optional)")).toHaveValue(
+      "Keep this title",
+    );
+    expect(screen.getByLabelText("What are you working on?")).toHaveValue(
+      "Make a clear argument",
+    );
+    openLearningPreferences();
+    expect(
+      screen.getByLabelText("How much guidance would you like?"),
+    ).toHaveValue("learner_led");
+    expect(screen.getByLabelText("How challenging should it be?")).toHaveValue(
+      "challenge",
+    );
+    expect(
+      screen.getByText(
+        "You choose the direction; the tutor follows your questions.",
+      ),
+    ).toBeVisible();
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Start learning" }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
+    await screen.findByLabelText("Your work or question");
+    const post = fetcher.mock.calls.find(
+      ([, options]) => options.method === "POST",
+    )!;
+    expect(JSON.parse(post[1].body as string)).toMatchObject({
+      learning_intent: "review",
+      topic: "Make a clear argument",
+      initiative: "learner_led",
+      difficulty: "challenge",
+      initial_activity: {
+        source: "reading_text",
+        reference_text: "Keep this original text while choosing a goal.",
+        passage_title: "Keep this title",
+      },
+    });
+  });
+
+  it("retries an uncertain start with the same intent, payload and request key", async () => {
+    const posts: Array<{ key: string; body: unknown }> = [];
+    const saved = { ...session([activity()]), learning_intent: "review" };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, options: RequestInit) => {
+        if (url.endsWith("/features")) return response(capabilities);
+        if (url.endsWith(`/tutor/sessions/${sessionId}`))
+          return response(saved);
+        if (url.endsWith("/tutor/sessions")) {
+          if (options.method !== "POST") return response([]);
+          posts.push({
+            key: (options.headers as Record<string, string>)[
+              "Idempotency-Key"
+            ]!,
+            body: JSON.parse(options.body as string),
+          });
+          return posts.length === 1
+            ? Promise.reject(new TypeError("Synthetic lost acknowledgement"))
+            : response(saved);
+        }
+        throw new Error(url);
+      }),
+    );
+    render(
+      <Tutor
+        learner={learner}
+        offline={false}
+        act={async (action) => {
+          try {
+            await action();
+          } catch {
+            /* App displays the failure. */
+          }
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "Review for a test" }));
+    fireEvent.change(screen.getByLabelText("What are you working on?"), {
+      target: { value: "Original synthetic review topic" },
+    });
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Start learning" }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
+    const retry = await screen.findByRole("button", {
+      name: "Retry saved request",
+    });
+    expect(
+      screen.getByRole("radio", { name: "Review for a test" }),
+    ).toBeDisabled();
+    fireEvent.click(retry);
+    await screen.findByLabelText("Your work or question");
+    expect(posts).toHaveLength(2);
+    expect(posts[1]).toEqual(posts[0]);
+    expect(posts[0]!.body).toMatchObject({ learning_intent: "review" });
+  });
+
+  it("opens source-photo intake inline and keeps normal photo attachments separate", async () => {
+    const saved = session([
+      {
+        ...activity([], "reference_capture"),
+        reference_source: "reading_photo",
+      },
+    ]);
+    installSession(saved);
+    render(<Tutor learner={learner} offline={false} act={run} />);
+    const intake = await screen.findByRole("region", {
+      name: "Add your photo",
+    });
+    expect(
+      within(intake).getByLabelText("Take or choose a photo"),
+    ).toBeVisible();
+    expect(
+      within(intake).getByRole("button", { name: "Take photo with phone" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("region", { name: "Photo attachments" }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Submit this photograph" }),
+    ).toBeNull();
   });
 });

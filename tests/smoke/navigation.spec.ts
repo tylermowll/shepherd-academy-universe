@@ -341,7 +341,7 @@ test("adult pages isolate each job and browser navigation preserves a new sessio
   await expectPageFits(page);
   await createLearner(page);
   const topic = page.getByRole("textbox", {
-    name: "Topic or learning goal",
+    name: "What are you working on?",
     exact: true,
   });
   await topic.fill("Synthetic draft: comparing two scientific explanations");
@@ -369,9 +369,9 @@ test("adult pages isolate each job and browser navigation preserves a new sessio
   await expectPageFits(page);
   await navigate(page, "History");
   await expect(topic).not.toBeVisible();
-  await expect(page.getByRole("button", { name: "Start session" })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByRole("button", { name: "Start learning" }),
+  ).toHaveCount(0);
   await expectPageFits(page);
   await page.goBack();
   await expect(
@@ -520,12 +520,12 @@ test("an adult practices through a distinct learner account and browser Back res
   const topicA = "Synthetic adult practice: compare scientific explanations";
   const topicB = "Synthetic adult practice: evaluate a historical source";
   const topicField = page.getByRole("textbox", {
-    name: "Topic or learning goal",
+    name: "What are you working on?",
     exact: true,
   });
   await topicField.fill(topicA);
   await page
-    .getByRole("button", { name: "Start session", exact: true })
+    .getByRole("button", { name: "Start learning", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: topicA, level: 2, exact: true }),
@@ -535,7 +535,7 @@ test("an adult practices through a distinct learner account and browser Back res
   await page.getByRole("button", { name: "New session", exact: true }).click();
   await topicField.fill(topicB);
   await page
-    .getByRole("button", { name: "Start session", exact: true })
+    .getByRole("button", { name: "Start learning", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: topicB, level: 2, exact: true }),

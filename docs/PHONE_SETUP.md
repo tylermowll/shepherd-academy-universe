@@ -128,8 +128,10 @@ The app computer must reach the model server. The iPhone never calls it directly
 
 Create a learner account under **Users**, record its username and password
 securely, then sign out. Sign in with that learner account and open **Practice**.
-Enter a topic; **Tutor options** controls how much the tutor leads. Choose
-**Start session** to create both the session and its first practice activity. No
+Choose what you would like help with, enter a topic and add any relevant material.
+**Adjust difficulty and guidance** holds optional preferences. Choose
+**Start learning** to create both the session and its first activity. Photo
+references open upload/phone controls inline on this same page. No
 grade level or predefined skill list is required.
 
 To study from homework, paste it or use the reference-photo option. The tutor

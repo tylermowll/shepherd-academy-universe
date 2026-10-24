@@ -1,36 +1,52 @@
 import { expect, test } from "@playwright/test";
-import { createLearner, login, navigate, openAttachments } from "./support";
+import {
+  createLearner,
+  login,
+  navigate,
+  openAttachments,
+  chooseLearningIntent,
+  chooseMaterialInput,
+  openLearningPreferences,
+} from "./support";
 import type { Schema } from "../../apps/web/src/client";
 
 const text =
   "Mira carried a seedling to the shaded corner. Each morning she moved its pot toward the window. After a week, she asked her brother to build a sunny shelf.";
 
-for (const source of ["reading_text", "reading_generated", "reading_photo"]) {
+for (const source of [
+  "reading_text",
+  "reading_generated",
+  "reading_photo",
+] as const) {
   test(`${source} passage survives feedback, harder questions, reload and History`, async ({
     page,
   }) => {
     await login(page);
     await createLearner(page);
     await page
-      .getByLabel("Topic or learning goal", { exact: true })
+      .getByLabel("What are you working on?", { exact: true })
       .fill("Reading comprehension: inference and evidence");
-    await page
-      .getByRole("combobox", { name: "Practice purpose", exact: true })
-      .selectOption("study");
-    await page
-      .getByRole("combobox", { name: "Material input", exact: true })
-      .selectOption(source);
+    await chooseLearningIntent(page, "read");
+    await chooseMaterialInput(page, source);
     if (source === "reading_text") {
       await page.getByLabel("Passage title (optional)").fill("Mira's seedling");
       await page.getByLabel("Reading passage", { exact: true }).fill(text);
     }
     await page
-      .getByRole("button", { name: "Start session", exact: true })
+      .getByRole("button", { name: "Start learning", exact: true })
       .click();
     if (source === "reading_photo") {
       await expect(
         page.getByRole("heading", { name: "Reading passage photograph" }),
       ).toBeVisible();
+      await expect(
+        page.getByRole("region", { name: "Add your photo", exact: true }),
+      ).toBeVisible();
+      await expect(page.locator(".tutor-attachments")).toHaveCount(0);
+      await page.screenshot({
+        path: test.info().outputPath("inline-reading-photo-intake.png"),
+        fullPage: true,
+      });
       await openAttachments(page);
       await page
         .getByLabel("Take or choose a photo")
@@ -116,23 +132,20 @@ test("long science material has independent section pacing, saved navigation and
   await login(page);
   await createLearner(page);
   await page
-    .getByLabel("Topic or learning goal", { exact: true })
+    .getByLabel("What are you working on?", { exact: true })
     .fill("Science: interpreting an investigation of heat transfer");
-  await page
-    .getByRole("combobox", { name: "Practice purpose", exact: true })
-    .selectOption("study");
-  await page
-    .getByRole("combobox", { name: "Material input", exact: true })
-    .selectOption("reading_text");
+  await chooseLearningIntent(page, "read");
+  await chooseMaterialInput(page, "reading_text");
   await page
     .getByLabel("Passage title (optional)")
     .fill("Original science investigation notes");
   await page.getByLabel("Reading passage", { exact: true }).fill(material);
+  await openLearningPreferences(page);
   await page
     .getByRole("combobox", { name: "Section length", exact: true })
     .selectOption("short");
   await page
-    .getByRole("button", { name: "Start session", exact: true })
+    .getByRole("button", { name: "Start learning", exact: true })
     .click();
   const passage = page.locator(
     ".tutor-sidebar > .reading-passage .passage-text",
@@ -241,14 +254,10 @@ test("literal material and Unicode input survive intact with explicit overflow a
   await login(page);
   await createLearner(page);
   await page
-    .getByRole("textbox", { name: "Topic or learning goal", exact: true })
+    .getByRole("textbox", { name: "What are you working on?", exact: true })
     .fill("Reading: compare the stated costs and symbols");
-  await page
-    .getByRole("combobox", { name: "Practice purpose", exact: true })
-    .selectOption("study");
-  await page
-    .getByRole("combobox", { name: "Material input", exact: true })
-    .selectOption("reading_text");
+  await chooseLearningIntent(page, "read");
+  await chooseMaterialInput(page, "reading_text");
   const input = page.getByRole("textbox", {
     name: "Reading passage",
     exact: true,
@@ -262,7 +271,7 @@ test("literal material and Unicode input survive intact with explicit overflow a
     page.getByText(/This material exceeds 50,000 characters/),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Start session", exact: true }),
+    page.getByRole("button", { name: "Start learning", exact: true }),
   ).toBeDisabled();
   await input.fill(material);
   await expect(input).toHaveValue(material);
@@ -273,7 +282,7 @@ test("literal material and Unicode input survive intact with explicit overflow a
     ),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Start session", exact: true })
+    .getByRole("button", { name: "Start learning", exact: true })
     .click();
   const passage = page.locator(
     ".tutor-sidebar > .reading-passage .passage-text",

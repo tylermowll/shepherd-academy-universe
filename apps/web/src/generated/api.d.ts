@@ -1821,6 +1821,19 @@ export interface components {
        * Format: uuid
        */
       learner_id: string;
+      /**
+       * Learning Intent
+       * @default practice
+       * @enum {string}
+       */
+      learning_intent:
+        | "understand"
+        | "practice"
+        | "read"
+        | "write"
+        | "review"
+        | "homework"
+        | "other";
       /** Topic */
       topic: string;
     };
@@ -1851,6 +1864,19 @@ export interface components {
        * Format: uuid
        */
       learner_id: string;
+      /**
+       * Learning Intent
+       * @default practice
+       * @enum {string}
+       */
+      learning_intent:
+        | "understand"
+        | "practice"
+        | "read"
+        | "write"
+        | "review"
+        | "homework"
+        | "other";
       /** Problems */
       problems: components["schemas"]["ProblemPublic"][];
       /** Status */
@@ -1887,6 +1913,19 @@ export interface components {
        * Format: uuid
        */
       learner_id: string;
+      /**
+       * Learning Intent
+       * @default practice
+       * @enum {string}
+       */
+      learning_intent:
+        | "understand"
+        | "practice"
+        | "read"
+        | "write"
+        | "review"
+        | "homework"
+        | "other";
       /** Status */
       status: string;
       /** Topic */

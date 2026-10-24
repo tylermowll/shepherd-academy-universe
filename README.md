@@ -137,10 +137,14 @@ browser's account and clears unsent drafts from the previous account.
 
 ## Practice and reading
 
-As a learner, enter a topic and choose whether to practice a topic, study a
-passage or practice assignment concepts. For passages and assignments, choose
-how to supply the material. **Start session** creates the first activity
-automatically. Use **Send** for work or questions, **Attach photo** for
+As a learner, choose what you would like help with: understand a topic, practice
+a skill, read and discuss a text, work on writing, review for a test, learn from
+homework, or describe something else. Enter what you are working on; the same
+form shows relevant material choices. **Adjust difficulty and guidance** holds
+optional preferences, with Standard difficulty and balanced guidance as defaults.
+**Start learning** saves the session and creates its first activity automatically.
+For photo material, the upload and phone controls open inline on the same page.
+Use **Send** for work or questions, **Attach photo** for
 upload or a phone QR link, **Help** for suggestions and **Next activity options**
 to continue. **Session & material** holds reference material and preferences.
 Activity difficulty and how much the tutor takes the lead are separate controls.
@@ -155,7 +159,7 @@ independently or received help. These AI observations can be wrong; they are
 guidance, not verified grades or mastery scores.
 
 For reading or study in any subject, paste material, photograph a passage, ask
-the tutor to write one, or choose **Published story or news**. Published imports
+the tutor to write one, or choose **Choose a published text**. Published imports
 offer two Aesop stories from a Project Gutenberg mirror and up to five NASA news
 passages. Review the preview and attribution before starting. This picker does
 not retrieve arbitrary URLs or books, and it sends no learner work to those sources.

@@ -281,7 +281,7 @@ describe("linked app areas", () => {
               );
               return screen.getByLabelText("Learner username");
             })()
-          : await screen.findByLabelText("Topic or learning goal");
+          : await screen.findByLabelText("What are you working on?");
       fireEvent.change(draft, {
         target: { value: "Retained cross-role Help draft" },
       });
@@ -694,7 +694,7 @@ describe("linked app areas", () => {
     });
     vi.stubGlobal("fetch", fetcher);
     render(<App />);
-    const topic = await screen.findByLabelText("Topic or learning goal");
+    const topic = await screen.findByLabelText("What are you working on?");
     fireEvent.change(topic, {
       target: { value: "Preserve this unsent learner topic." },
     });
@@ -1151,7 +1151,7 @@ describe("linked app areas", () => {
       fireEvent.click(practiceTopic);
       const practice = screen.getByRole("link", { name: "Practice" });
       assertLink(practice, "practice", undefined, "learner");
-      fireEvent.click(screen.getByText("Why is Start session unavailable?"));
+      fireEvent.click(screen.getByText("Why is Start learning unavailable?"));
       const settings = screen.getByRole("link", { name: "Settings" });
       assertLink(settings, "settings", undefined, "adult");
       const copiedHrefs = [
@@ -1175,7 +1175,7 @@ describe("linked app areas", () => {
       expect(new URLSearchParams(window.location.search).get("signin")).toBe(
         role,
       );
-      fireEvent.click(screen.getByText("Why is Start session unavailable?"));
+      fireEvent.click(screen.getByText("Why is Start learning unavailable?"));
       fireEvent.click(screen.getByRole("link", { name: "Settings" }));
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
         "Administrator sign-in",
@@ -1344,7 +1344,7 @@ describe("linked app areas", () => {
     expect(screen.queryByText(/Old administrator private learner/)).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
     await vi.waitFor(() =>
-      expect(screen.getByLabelText("Topic or learning goal")).toBeEnabled(),
+      expect(screen.getByLabelText("What are you working on?")).toBeEnabled(),
     );
     fireEvent.click(
       screen.getByRole("link", { name: "Administrator sign-in" }),
@@ -1419,7 +1419,7 @@ describe("linked app areas", () => {
       });
       vi.stubGlobal("fetch", fetcher);
       render(<App />);
-      const topic = await screen.findByLabelText("Topic or learning goal");
+      const topic = await screen.findByLabelText("What are you working on?");
       fireEvent.change(topic, {
         target: { value: "Keep my learner's unsent idea." },
       });
@@ -1479,7 +1479,7 @@ describe("linked app areas", () => {
       expect(screen.getByLabelText("Signed in account")).toHaveTextContent(
         "home-learner",
       );
-      expect(screen.getByLabelText("Topic or learning goal")).toBe(topic);
+      expect(screen.getByLabelText("What are you working on?")).toBe(topic);
       expect(topic).toBeVisible();
       expect(topic).toHaveValue("Keep my learner's unsent idea.");
       expect(screen.queryByRole("alert")).toBeNull();
@@ -1684,7 +1684,7 @@ describe("linked app areas", () => {
     });
     vi.stubGlobal("fetch", fetcher);
     render(<App />);
-    await screen.findByLabelText("Topic or learning goal");
+    await screen.findByLabelText("What are you working on?");
     fireEvent.click(
       screen.getByRole("link", { name: "Administrator sign-in" }),
     );
@@ -1748,7 +1748,7 @@ describe("linked app areas", () => {
       }),
     );
     render(<App />);
-    const oldTopic = await screen.findByLabelText("Topic or learning goal");
+    const oldTopic = await screen.findByLabelText("What are you working on?");
     fireEvent.change(oldTopic, {
       target: { value: "Previous account draft." },
     });
@@ -1765,8 +1765,10 @@ describe("linked app areas", () => {
     fireEvent.click(screen.getByRole("link", { name: "Learner sign-in" }));
     await signIn("home-learner");
     await screen.findByRole("heading", { level: 1, name: "Practice" });
-    expect(screen.getByLabelText("Topic or learning goal")).not.toBe(oldTopic);
-    expect(screen.getByLabelText("Topic or learning goal")).toHaveValue("");
+    expect(screen.getByLabelText("What are you working on?")).not.toBe(
+      oldTopic,
+    );
+    expect(screen.getByLabelText("What are you working on?")).toHaveValue("");
     expect(screen.queryByText(/^Signed in as a learner/)).toBeNull();
     expect(screen.queryByRole("link", { name: "Settings" })).toBeNull();
     expect(window.location.search).toBe("?page=practice");
@@ -2076,9 +2078,7 @@ it("rejects a URL session belonging to a different selected learner", async () =
   expect(
     screen.queryByRole("heading", { name: "Current activity" }),
   ).toBeNull();
-  expect(
-    screen.getByRole("heading", { name: "Start a practice session" }),
-  ).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Start learning" })).toBeVisible();
 });
 
 it("does not restore an old learner's URL when its request completes after switching", async () => {
@@ -2177,20 +2177,24 @@ it("allows a corrected request after its first attempt is definitively rejected"
     }
   };
   render(<Tutor learner={learner} offline={false} act={run} />);
-  fireEvent.change(screen.getByLabelText("Topic or learning goal"), {
+  fireEvent.change(screen.getByLabelText("What are you working on?"), {
     target: { value: "Persuasive writing" },
   });
   await vi.waitFor(() =>
-    expect(screen.getByRole("button", { name: "Start session" })).toBeEnabled(),
+    expect(
+      screen.getByRole("button", { name: "Start learning" }),
+    ).toBeEnabled(),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Start session" }));
+  fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
   await vi.waitFor(() => expect(errors).toHaveLength(1));
   expect(
     screen.queryByRole("button", { name: "Retry saved request" }),
   ).toBeNull();
-  expect(screen.getByRole("group", { name: "Tutor style" })).toBeVisible();
-  expect(screen.getByRole("combobox", { name: "Tutor style" })).toBeEnabled();
-  fireEvent.click(screen.getByRole("button", { name: "Start session" }));
+  fireEvent.click(screen.getByText("Adjust difficulty and guidance"));
+  expect(
+    screen.getByRole("combobox", { name: "How much guidance would you like?" }),
+  ).toBeEnabled();
+  fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
   await vi.waitFor(() =>
     expect(
       screen.getByRole("button", { name: "Create practice activity" }),

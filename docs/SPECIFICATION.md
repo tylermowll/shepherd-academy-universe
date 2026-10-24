@@ -202,9 +202,16 @@ success receipt if the subsequent list refresh fails; stale mutation controls
 remain blocked until a read-only refresh succeeds. Reading-section actions keep
 useful keyboard focus when the activity changes.
 
-Choose practice material by purpose (topic practice, passage study or assignment
-concepts), then show the relevant input methods. Keep assignment references
-separate from passages and learner work. Finish session is available with the
+Start learning with visible native radio choices for understanding a topic,
+practicing a skill, reading/discussion, writing, test review, homework concepts
+or another learner-described goal. These are generative teaching intentions,
+not a finite subject or exercise catalog. Follow with a free-text topic and
+reveal relevant material inputs in the same form. Labels wrap at narrow widths;
+keyboard focus and native radio behavior remain usable. Preserve typed drafts
+when goals/material choices change. Keep Standard difficulty and balanced
+guidance as defaults in an optional disclosure, with one short explanation for
+the chosen guidance style. Keep assignment references separate from passages
+and learner work. Finish session is available with the
 activity controls, guarded against pending work and unsent drafts. A finished
 session shows a recap of saved activities and messages and its latest saved
 guidance, without additional inference or a claim of mastery.
@@ -241,12 +248,23 @@ cannot be recalled; new processing must recheck the current eligibility.
 
 ### Tutor preferences
 
-The primary tutor accepts a free-text topic and an adjustable initiative setting:
+The primary tutor accepts a free-text topic, a typed saved `learning_intent`
+(`understand`, `practice`, `read`, `write`, `review`, `homework`, or `other`) and
+an adjustable initiative setting:
 `learner_led`, `balanced`, or `tutor_led`. There is no required level or finite
 subject catalog. The setting affects how proactively the tutor suggests a next
 step and adapts activities; it cannot enable answering the original homework or
 change data/provider permissions. Adjustments apply to subsequent requests while
 prior responses remain recorded as produced.
+
+Intent changes the teaching instructions: explanations introduce a concept with
+different examples; practice requests a skill activity; reading grounds questions
+in the selected text; writing develops the learner's ideas without completing
+their essay; review uses recall/application without certifying test readiness;
+homework creates distinct analogous practice; other follows the free-text goal.
+Material source is independent of intent, so supplied notes do not automatically
+turn explanation or review into a reading-comprehension task. Preserve source
+ownership, selected-section limits and all active-assignment boundaries.
 
 Difficulty and reading pace are independent saved session preferences. Explain
 directly when requested; do not trap the learner in repeated Socratic questions.
@@ -303,11 +321,14 @@ from feedback. Source imports use a fixed reviewed catalog of approved sources
 and public HTTP requests with enforced limits; no arbitrary URLs or autonomous
 model tools.
 
-Practice collects the topic, difficulty, tutor style and optional reference in
-one form. It supplies `initial_activity` with session creation so the session,
+Practice collects the learning intent, topic and relevant material in one form,
+with optional difficulty and guidance settings. It supplies `initial_activity`
+with session creation so the session,
 first activity and pending job are saved in one transaction. A repeated request
 key returns the same session and activity. Photo references create the capture
-step directly. Tutor style explanations are visible beside the selector.
+step directly and open their existing upload/phone controls inline on the same
+Practice route. No extra setup page or photo-approval gate is introduced. The
+current guidance-style explanation is visible beside its control.
 Menus beside the message box are mutually exclusive and close on action, Escape
 and outside clicks.
 

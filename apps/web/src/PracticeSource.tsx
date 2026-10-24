@@ -1,77 +1,39 @@
-import type { Schema } from "./client";
-
-type Source = NonNullable<Schema<"TutorActivityInput">["source"]>;
+import {
+  materialChoices,
+  type LearningIntent,
+  type MaterialSource,
+} from "./practice-options";
 
 export function PracticeSource({
   source,
   onChange,
   disabled,
+  intent,
 }: {
-  source: Source;
-  onChange: (source: Source) => void;
+  source: MaterialSource;
+  onChange: (source: MaterialSource) => void;
   disabled: boolean;
+  intent?: LearningIntent | undefined;
 }) {
-  const purpose = source.startsWith("reference_")
-    ? "assignment"
-    : source.startsWith("reading_") || source === "published"
-      ? "study"
-      : "topic";
+  const choices = materialChoices(intent);
+  if (choices.length === 1) return null;
   return (
-    <>
-      <label>
-        Practice purpose
-        <select
-          value={purpose}
-          disabled={disabled}
-          onChange={(event) =>
-            onChange(
-              event.target.value === "assignment"
-                ? "reference_text"
-                : event.target.value === "study"
-                  ? "reading_text"
-                  : "topic",
-            )
-          }
-        >
-          <option value="topic">Practice a topic</option>
-          <option value="study">Study a passage</option>
-          <option value="assignment">Practice assignment concepts</option>
-        </select>
-      </label>
-      {purpose !== "topic" && (
-        <label>
-          Material input
-          <select
-            value={source}
-            disabled={disabled}
-            onChange={(event) => onChange(event.target.value as Source)}
-          >
-            {purpose === "study" ? (
-              <>
-                <option value="reading_text">
-                  Paste reading or study material
-                </option>
-                <option value="reading_photo">
-                  Photograph a reading passage
-                </option>
-                <option value="reading_generated">
-                  Let the tutor write a passage
-                </option>
-                <option value="published">Published story or news</option>
-              </>
-            ) : (
-              <>
-                <option value="reference_text">
-                  Paste an assignment or reference
-                </option>
-                <option value="reference_photo">
-                  Photograph an assignment or reference
-                </option>
-              </>
-            )}
-          </select>
-        </label>
-      )}
-    </>
+    <fieldset className="material-choices" disabled={disabled}>
+      <legend>What will we use?</legend>
+      <div className="choice-grid">
+        {choices.map((choice) => (
+          <label className="choice-card" key={choice.value}>
+            <input
+              type="radio"
+              name="material-source"
+              value={choice.value}
+              checked={source === choice.value}
+              onChange={() => onChange(choice.value)}
+            />
+            <span>{choice.label}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
   );
 }

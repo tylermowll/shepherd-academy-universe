@@ -225,7 +225,7 @@ class MockProvider:
                     "Name one observation and explain how it supports the comparison."
                 ],
             )
-            if "This is READING COMPREHENSION." in request.system_instruction:
+            if "This activity uses STUDY MATERIAL." in request.system_instruction:
                 payload = ActivityPayload(
                     problem_text="Sample reading activity: choose one detail from the passage. Explain what you think it shows about a character or event, and why. Use your own words.",
                     concept_focus="Synthetic example: textual evidence",

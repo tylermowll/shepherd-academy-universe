@@ -40,6 +40,7 @@ from math_tutor.reading import (
     section_offsets,
 )
 from math_tutor.request_recovery import require_uncancelled
+from math_tutor.tutoring import LearningIntent, session_learning_intent
 
 router = APIRouter(prefix="/api/v1/tutor", tags=["AI tutoring"])
 Initiative = Literal["tutor_led", "balanced", "learner_led"]
@@ -121,6 +122,7 @@ class TutoringSessionInput(BaseModel):
     topic: str = Field(min_length=1, max_length=500)
     initiative: Initiative = "balanced"
     difficulty: Difficulty = "standard"
+    learning_intent: LearningIntent = "practice"
     initial_activity: TutorActivityInput | None = None
 
 
@@ -131,6 +133,7 @@ class TutoringSessionPublic(BaseModel):
     topic: str
     initiative: Initiative
     difficulty: Difficulty
+    learning_intent: LearningIntent = "practice"
     created_at: datetime
     problems: list[ProblemPublic]
 
@@ -142,6 +145,7 @@ class TutoringSessionSummaryPublic(BaseModel):
     topic: str
     initiative: Initiative
     difficulty: Difficulty
+    learning_intent: LearningIntent = "practice"
     created_at: datetime
     activity_count: int
 
@@ -245,6 +249,7 @@ def public_session(db: Session, row: PracticeSession) -> TutoringSessionPublic:
         topic=row.topic,
         initiative=cast(Initiative, row.initiative),
         difficulty=session_difficulty(row),
+        learning_intent=session_learning_intent(row),
         created_at=row.created_at,
         problems=[
             problem_public(db, item)
@@ -283,6 +288,10 @@ def create_session(
     if body.initial_activity and body.initial_activity.source == "same_passage":
         raise HTTPException(422, "Choose a passage before starting questions about it.")
     request_payload = body.model_dump()
+    # Explicit and omitted default practice describe the same request. Keep its
+    # canonical identity stable, as for omitted material section controls.
+    if body.learning_intent == "practice":
+        request_payload.pop("learning_intent")
     if body.initial_activity is not None:
         request_payload["initial_activity"] = activity_request_payload(body.initial_activity)
     key, payload = request_key(request), digest(request_payload)
@@ -302,7 +311,7 @@ def create_session(
         mode="ai_tutor",
         topic=body.topic.strip(),
         initiative=body.initiative,
-        profile_settings={"difficulty": body.difficulty},
+        profile_settings={"difficulty": body.difficulty, "learning_intent": body.learning_intent},
         request_key=key,
         payload_hash=payload,
     )
@@ -333,6 +342,7 @@ def sessions(db: Database, actor: Principal) -> list[TutoringSessionSummaryPubli
             topic=row.topic,
             initiative=cast(Initiative, row.initiative),
             difficulty=session_difficulty(row),
+            learning_intent=session_learning_intent(row),
             created_at=row.created_at,
             activity_count=count,
         )
@@ -467,11 +477,11 @@ def activity(
             "request_digest": payload,
         },
         passage=passage.model_dump(mode="json") if passage else None,
-        problem_text="Photograph the reading passage. The tutor will save its text and ask a question about it."
+        problem_text="Add a clear photo of your reading or study material. The tutor will save its text and use it for your learning goal."
         if body.source == "reading_photo"
         else "Photograph the source material. The tutor will create a different practice activity, not solve the original assignment."
         if photo
-        else "Preparing a new practice activity…",
+        else "Preparing your activity…",
         expected_result={},
         format_constraints=None,
         request_key=key,

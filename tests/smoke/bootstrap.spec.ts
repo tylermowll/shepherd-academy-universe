@@ -2,6 +2,9 @@ import {
   openAttachments,
   openSessionTools,
   openPracticeMaterial,
+  chooseMaterialInput,
+  materialInput,
+  openLearningPreferences,
 } from "./support";
 import { expect, test } from "@playwright/test";
 import {
@@ -184,7 +187,7 @@ test("learner password sign-in on a second browser is isolated and revocable", a
     await login(learner, alias);
     await navigate(page, "Users");
     await expect(
-      learner.getByRole("button", { name: "Start session", exact: true }),
+      learner.getByRole("button", { name: "Start learning", exact: true }),
     ).toBeVisible();
     const navigation = learner.getByRole("navigation", {
       name: "Main navigation",
@@ -225,10 +228,10 @@ test("learner password sign-in on a second browser is isolated and revocable", a
       "Help",
     ]);
     await learner
-      .getByRole("textbox", { name: "Topic or learning goal", exact: true })
+      .getByRole("textbox", { name: "What are you working on?", exact: true })
       .fill("Science: testing a prediction");
     await learner
-      .getByRole("button", { name: "Start session", exact: true })
+      .getByRole("button", { name: "Start learning", exact: true })
       .click();
     await createActivity(learner);
     await page
@@ -278,10 +281,10 @@ test("signing in as another learner clears the previous learner's tutoring and u
   expect(await page.evaluate(() => location.hash)).toBe("");
   await navigate(page, "Practice");
   await page
-    .getByRole("textbox", { name: "Topic or learning goal", exact: true })
+    .getByRole("textbox", { name: "What are you working on?", exact: true })
     .fill("Reading: compare two characters");
   await page
-    .getByRole("button", { name: "Start session", exact: true })
+    .getByRole("button", { name: "Start learning", exact: true })
     .click();
   expect(await page.evaluate(() => location.hash)).not.toBe(previousSession);
 });
@@ -473,22 +476,29 @@ test("lost tutoring session and activity receipts retain their original topic, s
     },
   );
   await page
-    .getByRole("textbox", { name: "Topic or learning goal", exact: true })
+    .getByRole("textbox", { name: "What are you working on?", exact: true })
     .fill("Reading: support an interpretation with evidence");
+  await openLearningPreferences(page);
   await page
-    .getByRole("combobox", { name: "Tutor style", exact: true })
+    .getByRole("combobox", {
+      name: "How much guidance would you like?",
+      exact: true,
+    })
     .selectOption("learner_led");
   await page
-    .getByRole("button", { name: "Start session", exact: true })
+    .getByRole("button", { name: "Start learning", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "Retry saved request", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("textbox", { name: "Topic or learning goal", exact: true }),
+    page.getByRole("textbox", {
+      name: "What are you working on?",
+      exact: true,
+    }),
   ).not.toBeEditable();
   await expect(
-    page.getByRole("button", { name: "Start session", exact: true }),
+    page.getByRole("button", { name: "Start learning", exact: true }),
   ).toBeDisabled();
   await page
     .getByRole("button", { name: "Retry saved request", exact: true })
@@ -502,12 +512,8 @@ test("lost tutoring session and activity receipts retain their original topic, s
   ).toBeEnabled();
   expect(requests).toHaveLength(2);
   expect(requests[1]).toEqual(requests[0]);
-  await page
-    .getByRole("combobox", { name: "Practice purpose", exact: true })
-    .selectOption("assignment");
-  await page
-    .getByRole("combobox", { name: "Material input", exact: true })
-    .selectOption("reference_text");
+
+  await chooseMaterialInput(page, "reference_text");
   await page
     .getByRole("textbox", { name: "Reference material", exact: true })
     .fill(
@@ -519,9 +525,7 @@ test("lost tutoring session and activity receipts retain their original topic, s
   await expect(
     page.getByRole("button", { name: "Retry saved request", exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("combobox", { name: "Material input", exact: true }),
-  ).toBeDisabled();
+  await expect(materialInput(page, "reference_text")).toBeDisabled();
   await page
     .getByRole("button", { name: "Retry saved request", exact: true })
     .click();

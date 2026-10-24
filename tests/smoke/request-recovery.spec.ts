@@ -34,10 +34,10 @@ test("accepted session and submission receipts recover across reload without dup
     await route.abort("connectionreset");
   });
   await page
-    .getByRole("textbox", { name: "Topic or learning goal", exact: true })
+    .getByRole("textbox", { name: "What are you working on?", exact: true })
     .fill("Synthetic reading: support an inference");
   await page
-    .getByRole("button", { name: "Start session", exact: true })
+    .getByRole("button", { name: "Start learning", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "Retry saved request", exact: true }),
@@ -255,10 +255,10 @@ test("an unaccepted interrupted request stays blocked until resolution also reje
     await route.abort("connectionreset");
   });
   await page
-    .getByRole("textbox", { name: "Topic or learning goal", exact: true })
+    .getByRole("textbox", { name: "What are you working on?", exact: true })
     .fill("Synthetic reading request delayed before acceptance");
   await page
-    .getByRole("button", { name: "Start session", exact: true })
+    .getByRole("button", { name: "Start learning", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "Retry saved request", exact: true }),
@@ -271,10 +271,13 @@ test("an unaccepted interrupted request stays blocked until resolution also reje
     ),
   ).toBeVisible();
   await expect(
-    page.getByRole("textbox", { name: "Topic or learning goal", exact: true }),
+    page.getByRole("textbox", {
+      name: "What are you working on?",
+      exact: true,
+    }),
   ).toBeDisabled();
   await expect(
-    page.getByRole("button", { name: "Start session", exact: true }),
+    page.getByRole("button", { name: "Start learning", exact: true }),
   ).toBeDisabled();
   await page
     .getByRole("button", { name: "Resolve interrupted request", exact: true })
@@ -283,7 +286,10 @@ test("an unaccepted interrupted request stays blocked until resolution also reje
     page.getByText(/The server will reject it if it arrives later/),
   ).toBeVisible();
   await expect(
-    page.getByRole("textbox", { name: "Topic or learning goal", exact: true }),
+    page.getByRole("textbox", {
+      name: "What are you working on?",
+      exact: true,
+    }),
   ).toBeEditable();
   const identity = (await (
     await page.request.get("/api/v1/auth/session")
@@ -297,7 +303,7 @@ test("an unaccepted interrupted request stays blocked until resolution also reje
     await (await page.request.get("/api/v1/tutor/sessions")).json(),
   ).toEqual([]);
   await page
-    .getByRole("textbox", { name: "Topic or learning goal", exact: true })
+    .getByRole("textbox", { name: "What are you working on?", exact: true })
     .fill("Unsent synthetic draft discarded by explicit sign out");
   let signOutDialogs = 0;
   page.on("dialog", (dialog) => {

@@ -1,6 +1,267 @@
 import { expect, test } from "@playwright/test";
 import type { Schema } from "../../apps/web/src/client";
-import { createLearner, login, startTutor } from "./support";
+import {
+  createLearner,
+  login,
+  startTutor,
+  chooseLearningIntent,
+  chooseMaterialInput,
+  learningIntentNames,
+  openLearningPreferences,
+} from "./support";
+
+test("one goal-first form keeps all seven choices readable and supports native keyboard selection without creating work", async ({
+  page,
+}) => {
+  await login(page);
+  await createLearner(page);
+  const writes: string[] = [];
+  page.on("request", (request) => {
+    if (
+      ["POST", "PUT", "PATCH", "DELETE"].includes(request.method()) &&
+      request.url().includes("/api/v1/")
+    )
+      writes.push(request.url());
+  });
+  const initialUrl = page.url();
+  const form = page.locator("form").filter({
+    has: page.getByRole("button", { name: "Start learning", exact: true }),
+  });
+  await expect(form).toHaveCount(1);
+  const goals = form.getByRole("group", {
+    name: "What would you like help with?",
+    exact: true,
+  });
+  await expect(goals.getByRole("radio")).toHaveCount(7);
+  const topic = form.getByRole("textbox", {
+    name: "What are you working on?",
+    exact: true,
+  });
+  const goalBounds = await goals.boundingBox();
+  const topicBounds = await topic.boundingBox();
+  expect(goalBounds).not.toBeNull();
+  expect(topicBounds).not.toBeNull();
+  expect(goalBounds!.y + goalBounds!.height).toBeLessThanOrEqual(
+    topicBounds!.y,
+  );
+  for (const width of [1280, 320]) {
+    await page.setViewportSize({ width, height: 800 });
+    for (const label of Object.values(learningIntentNames)) {
+      const radio = goals.getByRole("radio", { name: label, exact: true });
+      await expect(radio).toBeVisible();
+      await radio.scrollIntoViewIfNeeded();
+      await expect(radio).toBeInViewport();
+      const bounds = await radio.evaluate((node) => {
+        if (!(node instanceof HTMLInputElement) || node.type !== "radio")
+          throw new Error("Goals must use native radio inputs.");
+        const labelNode = node.labels?.[0];
+        if (!labelNode) throw new Error("A goal needs a visible text label.");
+        const rect = labelNode.getBoundingClientRect();
+        return {
+          left: rect.left,
+          right: rect.right,
+          width: labelNode.clientWidth,
+          scrollWidth: labelNode.scrollWidth,
+          height: labelNode.clientHeight,
+          scrollHeight: labelNode.scrollHeight,
+        };
+      });
+      expect(bounds.left).toBeGreaterThanOrEqual(0);
+      expect(bounds.right).toBeLessThanOrEqual(width);
+      expect(bounds.scrollWidth).toBeLessThanOrEqual(bounds.width + 1);
+      expect(bounds.scrollHeight).toBeLessThanOrEqual(bounds.height + 1);
+    }
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: test.info().outputPath(`learning-goals-${width}.png`),
+      fullPage: true,
+    });
+  }
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const practice = goals.getByRole("radio", {
+    name: "Practice a skill",
+    exact: true,
+  });
+  const read = goals.getByRole("radio", {
+    name: "Read and discuss a text",
+    exact: true,
+  });
+  await practice.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(read).toBeFocused();
+  await expect(read).toBeChecked();
+  await expect(
+    page.getByRole("textbox", { name: "Reading passage", exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("ArrowLeft");
+  await expect(practice).toBeFocused();
+  await expect(practice).toBeChecked();
+  await page.keyboard.press("Tab");
+  await expect(topic).toBeFocused();
+  await expect(
+    page.getByRole("textbox", { name: "Reading passage", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("combobox", {
+      name: "How challenging should it be?",
+      exact: true,
+    }),
+  ).not.toBeVisible();
+  await openLearningPreferences(page);
+  const difficulty = page.getByRole("combobox", {
+    name: "How challenging should it be?",
+    exact: true,
+  });
+  await difficulty.selectOption("challenge");
+  await page
+    .getByRole("combobox", {
+      name: "How much guidance would you like?",
+      exact: true,
+    })
+    .selectOption("learner_led");
+  await page
+    .getByText("Adjust difficulty and guidance", { exact: true })
+    .click();
+  await expect(difficulty).not.toBeVisible();
+  await openLearningPreferences(page);
+  await expect(difficulty).toHaveValue("challenge");
+  await expect(
+    page.getByRole("combobox", {
+      name: "How much guidance would you like?",
+      exact: true,
+    }),
+  ).toHaveValue("learner_led");
+  await page.screenshot({
+    path: test.info().outputPath("learning-preferences-1280.png"),
+    fullPage: true,
+  });
+  expect(page.url()).toBe(initialUrl);
+  expect(writes).toEqual([]);
+});
+
+test("conditional goal and material choices preserve drafts and submit one activity with the selected intent and settings", async ({
+  page,
+}) => {
+  await login(page);
+  await createLearner(page);
+  const posts: Array<{ path: string; body: unknown }> = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST" && request.url().includes("/api/v1/"))
+      posts.push({
+        path: new URL(request.url()).pathname,
+        body: request.postDataJSON(),
+      });
+  });
+  const topic = page.getByRole("textbox", {
+    name: "What are you working on?",
+    exact: true,
+  });
+  await topic.fill("Synthetic revision: evidence from observation notes");
+  await chooseLearningIntent(page, "read");
+  await chooseMaterialInput(page, "reading_text");
+  const passage = page.getByRole("textbox", {
+    name: "Reading passage",
+    exact: true,
+  });
+  const material =
+    "A class measured three seedlings each morning. Their notebook records height, leaf color, and the position of each pot.";
+  await passage.fill(material);
+  await page
+    .getByLabel("Passage title (optional)", { exact: true })
+    .fill("Synthetic observation notebook");
+  await chooseMaterialInput(page, "reading_photo");
+  await expect(passage).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "Add your photo", exact: true }),
+  ).toHaveCount(0);
+  await chooseMaterialInput(page, "reading_text");
+  await expect(passage).toHaveValue(material);
+  await chooseLearningIntent(page, "homework");
+  await expect(
+    page.getByRole("textbox", { name: "Reference material", exact: true }),
+  ).toHaveValue(material);
+  await chooseLearningIntent(page, "write");
+  await expect(passage).toHaveCount(0);
+  await expect(
+    page.getByRole("textbox", { name: "Reference material", exact: true }),
+  ).toHaveCount(0);
+  await chooseLearningIntent(page, "read");
+  await expect(passage).toHaveValue(material);
+  await expect(
+    page.getByLabel("Passage title (optional)", { exact: true }),
+  ).toHaveValue("Synthetic observation notebook");
+  await chooseMaterialInput(page, "reading_generated");
+  await expect(passage).toHaveCount(0);
+  await chooseMaterialInput(page, "reading_text");
+  await expect(passage).toHaveValue(material);
+  await chooseLearningIntent(page, "review");
+  await chooseMaterialInput(page, "reading_text");
+  await expect(passage).toHaveValue(material);
+  await expect(topic).toHaveValue(
+    "Synthetic revision: evidence from observation notes",
+  );
+  await openLearningPreferences(page);
+  await page
+    .getByRole("combobox", { name: "Section length", exact: true })
+    .selectOption("short");
+  await page
+    .getByRole("combobox", {
+      name: "How challenging should it be?",
+      exact: true,
+    })
+    .selectOption("challenge");
+  await page
+    .getByRole("combobox", {
+      name: "How much guidance would you like?",
+      exact: true,
+    })
+    .selectOption("learner_led");
+  expect(posts).toEqual([]);
+  const started = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/tutor/sessions") &&
+      response.request().method() === "POST",
+  );
+  await page
+    .getByRole("button", { name: "Start learning", exact: true })
+    .click();
+  const response = await started;
+  expect(response.status()).toBe(201);
+  const saved = (await response.json()) as Schema<"TutoringSessionPublic">;
+  expect(saved.learning_intent).toBe("review");
+  expect(saved.problems).toHaveLength(1);
+  expect(posts).toHaveLength(1);
+  expect(posts[0]).toEqual({
+    path: "/api/v1/tutor/sessions",
+    body: {
+      learner_id: saved.learner_id,
+      topic: "Synthetic revision: evidence from observation notes",
+      learning_intent: "review",
+      initiative: "learner_led",
+      difficulty: "challenge",
+      initial_activity: {
+        source: "reading_text",
+        reference_text: material,
+        passage_title: "Synthetic observation notebook",
+        reading_mode: "guided",
+        section_size: "short",
+      },
+    } satisfies Schema<"TutoringSessionInput">,
+  });
+  await expect(
+    page.getByRole("textbox", { name: "Your work or question", exact: true }),
+  ).toBeEditable();
+  const reloaded = await page.request.get(`/api/v1/tutor/sessions/${saved.id}`);
+  expect(reloaded.status()).toBe(200);
+  expect(
+    ((await reloaded.json()) as Schema<"TutoringSessionPublic">)
+      .learning_intent,
+  ).toBe("review");
+});
 
 test("starting with reference text creates exactly one activity without a second prompt", async ({
   page,
@@ -8,14 +269,10 @@ test("starting with reference text creates exactly one activity without a second
   await login(page);
   await createLearner(page);
   await page
-    .getByLabel("Topic or learning goal", { exact: true })
+    .getByLabel("What are you working on?", { exact: true })
     .fill("Synthetic supporting evidence");
-  await page
-    .getByRole("combobox", { name: "Practice purpose", exact: true })
-    .selectOption("assignment");
-  await page
-    .getByRole("combobox", { name: "Material input", exact: true })
-    .selectOption("reference_text");
+  await chooseLearningIntent(page, "homework");
+  await chooseMaterialInput(page, "reference_text");
   await page
     .getByLabel("Reference material", { exact: true })
     .fill("Synthetic assignment: explain why a seedling grew taller.");
@@ -25,7 +282,7 @@ test("starting with reference text creates exactly one activity without a second
       response.request().method() === "POST",
   );
   await page
-    .getByRole("button", { name: "Start session", exact: true })
+    .getByRole("button", { name: "Start learning", exact: true })
     .click();
   const result = await started;
   expect(result.status()).toBe(201);

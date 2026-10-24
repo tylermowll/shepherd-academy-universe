@@ -87,6 +87,7 @@ async def test_history_summaries_do_not_read_or_serialize_retained_work(
     assert len(summaries) == 100
     assert summaries[0]["id"] == str(selected_id)
     assert all(item["activity_count"] == 1 for item in summaries)
+    assert all(item["learning_intent"] == "practice" for item in summaries)
     assert all(
         set(item)
         == {
@@ -96,6 +97,7 @@ async def test_history_summaries_do_not_read_or_serialize_retained_work(
             "topic",
             "initiative",
             "difficulty",
+            "learning_intent",
             "activity_count",
             "created_at",
         }
