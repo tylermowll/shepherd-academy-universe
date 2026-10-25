@@ -16,18 +16,42 @@ sections and distinct homework practice retain their existing boundaries. The
 photo input remains mounted during ambiguous receipt recovery, including when
 historical skipped capture activities exist.
 
-| Learner workflow                                 | Evidence / coverage                                                                                                                                                     |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Choose a goal, switch material and retain drafts | Component checks and four focused desktop/mobile browser cases passed; one exact start request includes selected intent/source/preferences.                             |
-| Read the goal choices and use the keyboard       | Actual 1280px/320px screenshots reviewed; wrapping geometry, native keyboard selection and optional preferences checked in the browser.                                 |
-| Supply a photo without another setup page        | Inline intake screenshot reviewed; desktop reading/photo progression and lost-receipt recovery passed in the ongoing broader run. Physical camera behavior is untested. |
-| Recover or navigate while work is pending        | Existing component/API guards passed; whole-browser completion remains pending.                                                                                         |
+| Learner workflow                                 | Evidence / coverage                                                                                                                                                                                                 |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Choose a goal, switch material and retain drafts | Exercised: components and desktop/mobile Chromium verify seven goals, conditional inputs, retained topic/text/preferences and one exact start request carrying the selected intent/source.                          |
+| Read the choices and use the keyboard            | Exercised: 1280px/320px screenshots inspected; browser geometry checks complete wrapping labels, native keyboard choice and the optional preference disclosure. Actual screen-reader behavior remains untested.     |
+| Supply a photo without another setup page        | Exercised: inline intake and desktop/mobile photo progression, reading-before-feedback, uncertain reports and lost-receipt recovery. Components cover historical skipped captures without losing the active upload. |
+| Recover or navigate while work is pending        | Exercised: component/API guards and desktop/mobile navigation, draft, request-receipt, account-isolation and public-only cache scenarios. Physical camera and installed-PWA behavior remain separate checks.        |
 
-The source gate and all 437 integration cases pass. The final source is published
-to `main`; whole-browser verification and private activation remain in progress.
-[T76](TASKS.md#t76--start-learning-with-one-adaptive-form-publish-and-deploy-2026-10-24)
-owns the final source, publication and deployment evidence. This is a focused
-workflow correction, not a new whole-app accessibility or teaching-quality audit.
+The final project gate passed 333 backend unit, 328 frontend and 11 toolchain
+tests, with all lint/type/build/contract/security checks. All 437 integration
+cases passed. Dependency audit passed. The mock evaluation sets passed 33
+rational, 12 reading, 12 teaching and four adversarial cases; these establish
+software behavior, not model quality.
+
+All **142 unique desktop/mobile browser scenarios** were verified across the
+fresh full-suite run and a focused rerun. The full run passed 140 and failed two
+retained demo-feedback assertions expecting `Synthetic`. The corrected assertions
+require explicit sample/non-assessment text and reject the old revision demand;
+the desktop/mobile rerun passed both in 33.7 seconds. Application source and the
+matching build were unchanged by that test-only correction. This is not a claim
+that one final uninterrupted run passed 142 cases. Earlier stopped-run findings
+and exact commands remain in
+[T76](TASKS.md#t76--start-learning-with-one-adaptive-form-publish-and-deploy-2026-10-24).
+
+Release source `642a5fb036d89eafa194ef089d53c5d8b6436b75` is published to `main`
+and privately deployed. Encrypted WAL-aware backup and isolated restore passed
+before activation. Private HTTPS, a fresh worker, all 66 exact served public
+assets, protected routes/cache boundaries and runtime restrictions passed;
+exactly one API and worker run with zero restarts. The content-free model-selection
+digest matches the backup; no migration, reset or inference was performed.
+
+Hosted package job `40144626370` passed package smoke, its HIGH/CRITICAL
+vulnerability-scan gate and SBOM generation for the same-source package. The
+deployed local image was not separately vulnerability-scanned; the remaining
+hosted checks are still running. This is a focused workflow correction. Live
+teaching quality, physical devices, screen readers and comprehensive
+accessibility acceptance remain unverified.
 
 ## T75 model setup and activation
 

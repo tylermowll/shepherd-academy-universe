@@ -8,15 +8,17 @@ A task is complete only after its requirements and exit checks pass.
 
 ## Current checkpoint
 
-T76 implements the maintainer-approved goal-first learning form, then publishes
-to `main` and privately deploys it. Work is in progress; T75 remains the current
-private release until the new validation/deployment evidence is complete.
+T76 implements the maintainer-approved goal-first learning form, publishes it
+to `main` and privately deploys it. Seven visible goals, conditional material
+fields, inline photo intake and optional preferences replace the clipped
+three-choice setup. Source, browser, package, backup/restore and runtime evidence
+is recorded below; saved model selections are preserved without inference.
 
 T75 implements and privately deploys T74's model-setup and demo-feedback
 corrections at the maintainer's request. The checked source is privately deployed,
 and the maintainer's tested tutor selection is restored. Exact validation,
-backup/restore and runtime evidence is recorded below. Source is committed
-locally; no Git push or new live inference was performed.
+backup/restore and runtime evidence is recorded below. Its source was published
+alongside T76; no new live inference was performed.
 
 T74's investigation established confusing demo feedback and a stale-role
 overwrite defect; T75 implements its corrections. The exact earlier private
@@ -37,21 +39,21 @@ are below; the [current review](UI_UX_REVIEW.md) lists the corrected behavior an
 remaining acceptance work. Earlier task sections preserve dated evidence, not
 additional supported implementations.
 
-The private installation now uses T75 image
-`sha256:daa3b2da47c1a056bf71e64cadef92e3af5dd9bef81486323b6fd95f8a695a9b`,
-built from committed source `359c4f9a0e646ee84983d47b5b734574d641dbee`.
-All 66 served public assets match the tested build. Provider activation and the
-model setup interface are updated; dependency locks and schema remain unchanged
-at `0020_request_recovery`. API and worker read the intended tested tutor, and
-the latest test session passes its route authorization. No inference was sent
-to establish that readback; live teaching quality remains unverified.
+The private installation now uses T76 image
+`sha256:d2aa8d95d867061cd739d4c170ac0ddbe42fd77f49bb5a16b57022477f97e36a`,
+built from published source `642a5fb036d89eafa194ef089d53c5d8b6436b75`.
+All 66 served public assets match the tested build. Dependency locks and schema
+remain unchanged at `0020_request_recovery`. The API and worker are ready with
+zero restarts, and the saved model-selection fingerprint matches the stopped-
+writer backup. No migration, reset or inference was run on retained storage;
+live teaching quality remains unverified.
 [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
 
 ## T76 — Start learning with one adaptive form, publish and deploy (2026-10-24)
 
-**Status:** In progress. The maintainer approved the design review's changes,
-publication to `main`, and deployment to the existing private installation.
+**Status:** Complete; source published to `main` and privately deployed after
+the maintainer approved the design review's changes, publication and deployment.
 The supplied screenshot shows clipped labels in the three-choice Practice
 purpose popup, plus difficulty/guidance controls appearing before the main goal.
 The review recommended visible wrapping choices, conditional material fields,
@@ -111,42 +113,78 @@ supplies it through a reading source.
 `python3 /tmp/shepherd-t76/run.py` allowlist the environment and disable env-file
 loading. All application tests use synthetic fixtures/providers.
 
-| Command / check                                                                                                       | Actual outcome                                                                                                                                                                                                                                                 |
-| --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Backend learning-intent, reading, memory and tutoring selection                                                       | 97 passed in 21.85 seconds; unit/boundary selection 74 passed. Initial retained-request hash failure was corrected with canonical default omission and explicit/omitted default equivalence coverage.                                                          |
-| Final history/intent correction selection                                                                             | 22 passed in 5.32 seconds. History's exact public-field list adds only learning_intent; no-private-work/query/size assertions remain. Worked examples are permitted only with content distinct from the active task.                                           |
-| Frontend Tutor/App/Reading/SessionReview components                                                                   | 148 passed after adding all-goal, conditional draft, preference, retry and historical-photo-capture coverage. An existing lost-photo-receipt test caught component remount loss; recovery ownership was corrected without relaxing assertions.                 |
-| `python3 /tmp/shepherd-t76/run.py make check`                                                                         | Final gate passed: backend unit tests, all frontend tests, 11 toolchain tests, locks, lint, formatting, types, builds, contract drift, credential scan and infrastructure checks. Existing build-system upper-bound and JavaScript chunk-size warnings remain. |
-| `python3 /tmp/shepherd-t76/run.py make test-integration`                                                              | All 437 cases passed in 80.15 seconds on disposable on-disk SQLite. The first full run found one outdated exact public-field expectation (436 passed); updating it for the typed intent retained the original privacy assertions.                              |
-| `python3 /tmp/shepherd-t76/run.py pnpm exec playwright test tests/smoke/practice-start.spec.ts --grep 'one goal-first | conditional' --output /tmp/shepherd-t76/design-browser`                                                                                                                                                                                                        | Four focused desktop/mobile cases passed in 12.7 seconds. Actual screenshots inspected at 1280px and 320px confirm fully wrapping goal labels and optional preferences. Browser interactions verify native keyboard choice, draft retention, no pre-submit writes and one exact start request. |
-| Synthetic backup/state-machine checks                                                                                 | 15 passed after adding a content-free selection digest; restricted container rehearsal preserved a committed uncheckpointed WAL row.                                                                                                                           |
+| Command / check                                                           | Actual outcome                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend learning-intent, reading, memory and tutoring selection           | 97 passed in 21.85 seconds; unit/boundary selection 74 passed. Initial retained-request hash failure was corrected with canonical default omission and explicit/omitted default equivalence coverage.                                                                                          |
+| Final history/intent correction selection                                 | 22 passed in 5.32 seconds. History's exact public-field list adds only learning_intent; no-private-work/query/size assertions remain. Worked examples are permitted only with content distinct from the active task.                                                                           |
+| Frontend Tutor/App/Reading/SessionReview components                       | 148 passed after adding all-goal, conditional draft, preference, retry and historical-photo-capture coverage. An existing lost-photo-receipt test caught component remount loss; recovery ownership was corrected without relaxing assertions.                                                 |
+| `python3 /tmp/shepherd-t76/run.py make check`                             | Final gate passed: backend unit tests, all frontend tests, 11 toolchain tests, locks, lint, formatting, types, builds, contract drift, credential scan and infrastructure checks. Existing build-system upper-bound and JavaScript chunk-size warnings remain.                                 |
+| `python3 /tmp/shepherd-t76/run.py make test-integration`                  | All 437 cases passed in 80.15 seconds on disposable on-disk SQLite. The first full run found one outdated exact public-field expectation (436 passed); updating it for the typed intent retained the original privacy assertions.                                                              |
+| Focused `practice-start.spec.ts` goal-first/conditional browser selection | Four focused desktop/mobile cases passed in 12.7 seconds. Actual screenshots inspected at 1280px and 320px confirm fully wrapping goal labels and optional preferences. Browser interactions verify native keyboard choice, draft retention, no pre-submit writes and one exact start request. |
+| Synthetic backup/state-machine checks                                     | 15 passed after adding a content-free selection digest; restricted container rehearsal preserved a committed uncheckpointed WAL row.                                                                                                                                                           |
 
 The first whole-browser run was stopped after 32 passes, one obsolete help-
 disclosure assertion failure, one interrupted case and 108 unrun cases in 4.8
 minutes. The test now checks the current preferences disclosure's keyboard,
 focus and content behavior while retaining its draft/role/Back assertions.
 A published-text recovery message was also corrected to name the current
-material controls. A fresh matching build and whole-browser run follow these
-changes; no whole-browser completion is claimed yet.
+material controls. The final matching build was frozen before the next full run.
 
 The final rebuilt project gate passed 333 backend unit, 328 frontend and 11
 toolchain cases plus all lint/type/build/contract/security checks. The backend
 is unchanged by the last frontend recovery-copy/browser-test correction; its
 437-case full integration pass remains applicable.
 
-The initial checked source was pushed to `main` as
-`dada9fc4937b1bc68ae89544af913958412e37e0`; hosted workflow `40143415109`
-started. The final correction will be published before deployment, with actual
-remote/runtime evidence recorded below. Package/private deployment completion
-is not claimed yet.
+**Final browser, mock and audit evidence:**
 
-The fresh whole-browser run then exposed a retained T75 assertion expecting
-`Synthetic` in demo feedback. The current non-assessing sample reply is correct;
-the assertion now requires that explicit sample/no-assessment text and rejects
-the old revision demand. All photo order, ownership, progression and privacy
-assertions remain. Application source/build is unchanged by this test-only
-correction. Remaining whole-run cases continue, followed by the corrected tutor
-case on both desktop and mobile; exact final outcomes will be recorded below.
+| Command / check                                                                                                                                                                                                                                        | Actual outcome                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `python3 /tmp/shepherd-t76/run.py pnpm exec playwright test --output /tmp/shepherd-t76/browser-final`                                                                                                                                                  | Fresh full run: 140 passed and two failed in 22.3 minutes, one worker and zero retries. Both failures were the retained T75 assertion expecting `Synthetic` in demo feedback.                                                                                                                                                                                         |
+| `python3 /tmp/shepherd-t76/run.py pnpm exec playwright test tests/smoke/tutor.spec.ts --grep 'the tutor continues from a phone photo through guidance, revision, discussion, and the next activity' --output /tmp/shepherd-t76/tutor-feedback-browser` | Both passed in 33.7 seconds. Assertions now require explicit sample/no-assessment text and reject the old revision demand; photo order, ownership, progression and privacy assertions remain. Application source/build is unchanged by this test-only correction. All 142 unique scenarios are verified across these runs; no single clean 142-case batch is claimed. |
+| Rational, reading, teaching and adversarial mock evaluation commands, reports `/tmp/shepherd-t76/eval-{rational,reading,teaching,adversarial}.json`                                                                                                    | 33 rational, 12 reading, 12 teaching and four adversarial contracts passed. Synthetic contracts do not establish live model quality.                                                                                                                                                                                                                                  |
+| `python3 /tmp/shepherd-t76/run.py make audit`                                                                                                                                                                                                          | Python and pnpm dependency audits passed with no known vulnerabilities reported.                                                                                                                                                                                                                                                                                      |
+| Changed-file pre-commit hooks, read-only skill final-newline checks, credential scan and `git diff --check`                                                                                                                                            | Passed. The already-passed duplicate project gate was skipped only inside commit hooks; no protected skill file was rewritten.                                                                                                                                                                                                                                        |
+
+**Publication and packaging:** The initial source was pushed as
+`dada9fc4937b1bc68ae89544af913958412e37e0`, followed by recovery-copy/navigation
+correction `73cc02cb4922e1756899495d477e9fd4cb76c96e` and the assertion-only
+release commit `642a5fb036d89eafa194ef089d53c5d8b6436b75`. Normal pushes to
+`origin/main` passed and the remote hash was verified. This also publishes the
+previously local T75 source/evidence commits. No force push was used.
+
+| Command / operation                                                                                                                                                                                                                   | Actual outcome                                                                                                                                                                                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `python3 /tmp/shepherd-t76/prepare_source.py`                                                                                                                                                                                         | Archived clean committed source `642a5fb036d89eafa194ef089d53c5d8b6436b75`; build context excludes private settings/data.                                                                                                                                                                                              |
+| `docker build --pull=false --label org.opencontainers.image.revision=642a5fb036d89eafa194ef089d53c5d8b6436b75 -f /tmp/shepherd-t76/source/infra/docker/Dockerfile -t math-practice-tutor:t76-start-learning /tmp/shepherd-t76/source` | Passed; immutable image `sha256:d2aa8d95d867061cd739d4c170ac0ddbe42fd77f49bb5a16b57022477f97e36a`.                                                                                                                                                                                                                     |
+| `python3 /tmp/shepherd-t76/verify_package.py`                                                                                                                                                                                         | Source label, UID/GID 10001 and all 66 packaged public files match the tested build. Manifest SHA-256 `886a96f3b8f84c593a6616fd137350c88b0c038bf84dc6c28903ad96aa4db045`.                                                                                                                                              |
+| `python3 /tmp/shepherd-t76/run.py sh scripts/container-smoke.sh math-practice-tutor:t76-start-learning`                                                                                                                               | Passed: Python/HEIF/cryptography, installer-free/non-root runtime, SQLite WAL/FK/FULL/migration, disabled-provider refusal, API/worker/UI readiness, owner-link renewal/stale rejection and browser account protection. No inference.                                                                                  |
+| Hosted source workflow [40144626370](https://github.com/tylermowll/shepherd-academy-universe/actions/runs/40144626370)                                                                                                                | Package job passed, including container smoke, HIGH/CRITICAL vulnerability scan and CycloneDX SBOM generation. Hosted checks are still running the browser suite at release verification. This scan covers the hosted same-source image; the exact local immutable candidate was not separately vulnerability-scanned. |
+| `python3 /tmp/shepherd-t76/deploy.py preflight --candidate <immutable-image-id>`                                                                                                                                                      | Candidate, prior image, data mounts, loopback publication and runtime restrictions passed.                                                                                                                                                                                                                             |
+| `python3 /tmp/shepherd-t76/deploy.py prepare --candidate <immutable-image-id> --execute`                                                                                                                                              | Both writers stopped; encrypted WAL-aware backup and isolated restore passed. Current deletion records and retained objects preserved; restored sessions revoked and pending work canceled only in the rehearsal.                                                                                                      |
+| `python3 /tmp/shepherd-t76/deploy.py activate --execute`                                                                                                                                                                              | Private HTTPS, fresh worker/schema, all 66 exact served assets/update headers and protected-route/cache boundaries passed. Exactly one API/worker, zero restarts, read-only roots, capabilities dropped and loopback-only API publication.                                                                             |
+| `python3 /tmp/shepherd-t76/verify_selection.py`                                                                                                                                                                                       | Running selection digest exactly matches the stopped-writer backup; saved tutor/photo-reader choices preserved. Read-only verification, no inference.                                                                                                                                                                  |
+
+Encrypted backup:
+`backups/deploy-20261025T000838Z-t76-start-learning-d2aa8d95d867/archive.enc`,
+SHA-256 `33fcc2135da87e7cd5925cc27ddd94a485127f5c1c7d8cb9c335db77a0be31fa`.
+Its generated passphrase is stored separately with permissions 600, never
+printed or copied into evidence. The plaintext restore rehearsal was removed.
+No migration or reset was run on retained storage. Rollback was not needed;
+T75 remains tagged `math-practice-tutor:rollback-20261024-t76-start-learning`.
+Reviewed helper source, manifests and content-free receipts are retained in
+ignored `backups/evidence-20261024-t76-start-learning`. The private address remains
+`https://zoopa-a-boop.taile8325e.ts.net`.
+
+**Changed files and limits:** Backend tutoring API, generation/guidance, reading
+and mock transport; frontend Tutor, LearningGoal, PracticeSource, practice options,
+ReadingSources, Help and styles; regenerated OpenAPI/client; backend, component
+and browser regression suites; README, SPECIFICATION, PHONE_SETUP, UI_UX_REVIEW,
+ACCEPTANCE and this log. No dependency or SQL migration changed. Earlier saved
+activities/replies remain historical; new activities use the saved learning
+intent. No live/paid provider evaluation, model download, physical-device or
+screen-reader test was run. Hosted browser checks remain pending; there is no
+unresolved local functional test or deployment failure. Live teaching-quality
+acceptance remains open.
 
 ## T75 — Unify model setup, protect activation and deploy (2026-10-24)
 
