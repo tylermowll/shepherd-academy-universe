@@ -211,7 +211,12 @@ reveal relevant material inputs in the same form. Labels wrap at narrow widths;
 keyboard focus and native radio behavior remain usable. Preserve typed drafts
 when goals/material choices change. Keep Apply and explain challenge and balanced
 guidance as defaults in an optional disclosure, with one short explanation for
-the chosen guidance style. Keep assignment references separate from passages
+the chosen guidance style. For published texts, show that disclosure only after
+an explicit text selection, below the preview/selection controls and before
+Start learning. Preserve its open state, chosen preferences and subject-level
+drafts while a selection is removed, replaced or reselected; a search/retrieval
+failure that retains the text also retains preference availability.
+Keep assignment references separate from passages
 and learner work. Finish session is available with the
 activity controls, guarded against pending work and unsent drafts. A finished
 session shows a recap of saved activities and messages and its latest saved

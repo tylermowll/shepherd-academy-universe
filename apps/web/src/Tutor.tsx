@@ -1193,7 +1193,10 @@ export function Tutor({
               )}
             </label>
             {sourceFields}
-            <details className="session-preferences">
+            <details
+              className="session-preferences"
+              hidden={source === "published" && !published}
+            >
               <summary>Adjust difficulty and guidance</summary>
               <LearningLevelPicker
                 value={learningLevel}

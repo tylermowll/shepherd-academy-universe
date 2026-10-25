@@ -141,7 +141,9 @@ As a learner, choose what you would like help with: understand a topic, practice
 a skill, read and discuss a text, work on writing, review for a test, learn from
 homework, or describe something else. Enter what you are working on; the same
 form shows relevant material choices. **Adjust difficulty and guidance** holds
-optional preferences. Challenge defaults to **Apply and explain**, with
+optional preferences. For published texts, it appears after you select a text.
+Your choices are preserved if you remove or change the selection.
+Challenge defaults to **Apply and explain**, with
 **Start with the basics** and **Stretch my thinking** as alternatives; guidance
 defaults to balanced. An optional learning level can target a reading grade
 band, a math grade/course, or another course you describe. It guides later

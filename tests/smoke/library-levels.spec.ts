@@ -227,6 +227,10 @@ test("an explicitly chosen local text becomes the immutable first reading snapsh
   page,
 }) => {
   const { library } = await openLibrary(page);
+  const preferences = page.getByText("Adjust difficulty and guidance", {
+    exact: true,
+  });
+  await expect(preferences).toBeHidden();
   const external: string[] = [];
   page.on("request", (request) => {
     if (new URL(request.url()).origin !== "http://127.0.0.1:4173")
@@ -253,7 +257,7 @@ test("an explicitly chosen local text becomes the immutable first reading snapsh
     await importedResponse
   ).json()) as Schema<"SourceImportPublic">;
   expect(imported.passages).toHaveLength(1);
-  const preview = imported.passages[0]!;
+  let preview = imported.passages[0]!;
   const selected = library.getByRole("region", {
     name: "Selected text",
     exact: true,
@@ -266,6 +270,7 @@ test("an explicitly chosen local text becomes the immutable first reading snapsh
   await expect(
     selected.getByRole("heading", { name: "Selected text", exact: true }),
   ).toBeFocused();
+  await expect(preferences).toBeVisible();
   await expect(
     library.getByRole("button", { name: "Search library", exact: true }),
   ).toBeHidden();
@@ -274,6 +279,13 @@ test("an explicitly chosen local text becomes the immutable first reading snapsh
   expect(selectedBox!.y + selectedBox!.height).toBeLessThanOrEqual(
     browseBox!.y,
   );
+  const preferencesBox = await preferences.boundingBox();
+  expect(browseBox!.y + browseBox!.height).toBeLessThanOrEqual(
+    preferencesBox!.y,
+  );
+  await browser.locator(":scope > summary").focus();
+  await page.keyboard.press("Tab");
+  await expect(preferences).toBeFocused();
   const start = page.getByRole("button", {
     name: "Start learning",
     exact: true,
@@ -305,6 +317,55 @@ test("an explicitly chosen local text becomes the immutable first reading snapsh
   await page
     .getByRole("combobox", { name: "Reading level", exact: true })
     .selectOption("grades_6_8");
+  const subject = page.getByRole("combobox", {
+    name: "Subject for this level",
+    exact: true,
+  });
+  await subject.selectOption("other");
+  await page
+    .getByRole("textbox", { name: "Course or level", exact: true })
+    .fill("Synthetic course draft retained while choosing a text");
+  await subject.selectOption("reading");
+  const difficulty = page.getByRole("combobox", {
+    name: "How challenging should it be?",
+    exact: true,
+  });
+  const guidance = page.getByRole("combobox", {
+    name: "How much guidance would you like?",
+    exact: true,
+  });
+  await difficulty.selectOption("challenge");
+  await guidance.selectOption("learner_led");
+  await selected
+    .getByRole("button", { name: "Remove selected text", exact: true })
+    .click();
+  await expect(preferences).toBeHidden();
+  await expect(start).toBeDisabled();
+  await expect(browser.locator(":scope > summary")).toBeFocused();
+  const reselected = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/reading/import") &&
+      response.request().method() === "POST",
+  );
+  await library
+    .getByRole("article", { name: item!.title, exact: true })
+    .getByRole("button", { name: "Use this text", exact: true })
+    .click();
+  preview = ((await (await reselected).json()) as Schema<"SourceImportPublic">)
+    .passages[0]!;
+  await expect(preferences).toBeVisible();
+  await expect(preferences.locator("..")).toHaveAttribute("open");
+  await expect(difficulty).toHaveValue("challenge");
+  await expect(guidance).toHaveValue("learner_led");
+  await expect(subject).toHaveValue("reading");
+  await expect(
+    page.getByRole("combobox", { name: "Reading level", exact: true }),
+  ).toHaveValue("grades_6_8");
+  await subject.selectOption("other");
+  await expect(
+    page.getByRole("textbox", { name: "Course or level", exact: true }),
+  ).toHaveValue("Synthetic course draft retained while choosing a text");
+  await subject.selectOption("reading");
   const started = page.waitForResponse(
     (response) =>
       response.url().endsWith("/tutor/sessions") &&
@@ -317,6 +378,8 @@ test("an explicitly chosen local text becomes the immutable first reading snapsh
   expect(response.status()).toBe(201);
   expect(response.request().postDataJSON()).toMatchObject({
     learning_intent: "read",
+    difficulty: "challenge",
+    initiative: "learner_led",
     learning_level: { subject: "reading", level: "grades_6_8" },
     initial_activity: {
       source: "published",
@@ -524,6 +587,9 @@ test("failed local searches and explicitly requested NASA retrieval preserve the
   await expect(library.getByRole("alert")).toContainText(
     "Your selected text is still here",
   );
+  await expect(
+    page.getByText("Adjust difficulty and guidance", { exact: true }),
+  ).toBeVisible();
   await expect(library.locator(":scope > .library-browser")).toHaveAttribute(
     "open",
   );

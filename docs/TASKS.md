@@ -8,6 +8,10 @@ A task is complete only after its requirements and exit checks pass.
 
 ## Current checkpoint
 
+T78 makes published-text preferences appear after an explicit selection. The
+maintainer requested this follow-up to the deployed T77 reading flow. Work is
+in progress; the verified T77 installation remains the current runtime.
+
 T77 is published and privately deployed. It adds 868 locally stored Project
 Gutenberg selections with search and category/length/approximate-level filters,
 optional reading/math/course levels, clearer challenge choices, and the
@@ -56,6 +60,52 @@ no reset or inference was run on retained storage. Live teaching quality remains
 unverified.
 [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
+
+## T78 — Adjust published-text preferences after selection (2026-10-25)
+
+**Status:** In progress. Apply the maintainer's selected-text workflow correction
+within the existing authorized implementation/publication/private-update work.
+No paid inference or model download is authorized.
+
+**Contracts and plan:** SPECIFICATION section 3 and README Practice and reading.
+Keep the initial form's preference disclosure after material selection and
+before Start learning. When browsing published texts without a selection, hide
+that disclosure; reveal it once a text is selected. Keep its controls mounted
+so level/course drafts, challenge, guidance and disclosure state survive
+removing/reselecting or changing texts. Search/retrieval failures that preserve
+the selected preview must also preserve preference availability. Preserve all
+other source choices and defaults, backend schemas, ownership, request identity
+and provider boundaries. No API, database or dependency change is needed.
+
+**Verification:** Extend the existing library browser workflow to cover hidden
+before selection, visible after selection, visual/keyboard order, preserved
+preferences and subject drafts after remove/reselect, unchanged selection after
+search/NASA failure, and the actual submitted preferences. Run the focused
+library/start browser scenarios on desktop/mobile against a matching build and
+the required `make check` gate. Record actual results and any private-update
+evidence; keep live inference/physical devices as separate checks.
+
+**Implemented and checked:** `Tutor.tsx` keeps the existing disclosure in its
+stable position and hides it only when published material has no selection.
+Controls stay mounted, preserving native open state and `LearningLevelPicker`
+subject drafts. README/SPECIFICATION describe the selection-first flow. The
+existing library browser scenario now checks visibility, visual/tab order,
+remove/reselect focus and draft retention, and the actual submitted
+challenge/guidance/reading level. The failed-search scenario also verifies that
+retained text keeps its preferences available. Independent review found no
+blocking regression.
+
+| Actual command / check | Outcome |
+| --- | --- |
+| `python3 /tmp/shepherd-t77/run.py make check` | Passed: 405 backend unit, 347 frontend and 11 toolchain tests; locks, lint/format, types, build, generated-contract drift, credential scan and infrastructure. Existing build-backend upper-bound and bundle-size warnings remain. |
+| `python3 /tmp/shepherd-t77/run.py pnpm exec playwright test tests/smoke/library-levels.spec.ts tests/smoke/practice-start.spec.ts` | All 16 desktop/mobile cases passed in 3.2 minutes, one worker, zero retries. Includes the new published-text sequence, course-draft retention, selected-text failure handling and other goal/material choices. |
+| Synthetic UI-only deployment helper unit/state suite (`/tmp/shepherd-t78/test_operations.py`) | 18 cases passed in 4.45 seconds. |
+| `python3 /tmp/shepherd-t78/run.py .venv/bin/python /tmp/shepherd-t78/test_backup_container.py` | Restricted old-image synthetic backup/restore passed for schema 0021, all 868 existing public rows and a committed uncheckpointed WAL row. No retained installation access. |
+
+Only UI visibility, focused browser coverage and documentation changed; no
+backend/API/schema/dependency change or live inference. Backend integration,
+full browser-suite and actual-device/model-quality checks were not repeated for
+this bounded UI change. Publication/package/private-update evidence follows.
 
 ## T77 — Expand the published library and subject levels, publish and deploy (2026-10-24)
 
