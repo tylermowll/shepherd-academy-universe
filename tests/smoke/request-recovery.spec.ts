@@ -310,7 +310,10 @@ test("an unaccepted interrupted request stays blocked until resolution also reje
     signOutDialogs += 1;
     void dialog.dismiss();
   });
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await Promise.all([
+    page.waitForEvent("domcontentloaded"),
+    page.getByRole("button", { name: "Sign out", exact: true }).click(),
+  ]);
   await expect(
     page.getByRole("button", { name: "Sign in", exact: true }),
   ).toBeVisible();

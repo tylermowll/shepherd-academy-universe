@@ -248,6 +248,32 @@ rerun with the required host permissions. No assertion, policy or hook was
 weakened. All final local source/browser gates have passed. Publication,
 exact-image and installation evidence follows when those operations complete.
 
+**Publication follow-up:** Source `dfb270a` was committed with every hook passing
+and pushed to `main`. Its clean archive produced 66 public files identical to
+the complete local browser-tested build. The immutable candidate passed
+container smoke, SQLite 3.53.1/WAL/foreign-key settings, all 868 exact offline
+corpus rows, HEIF/crypto/runtime checks and synthetic owner setup. Its image
+scan reported zero HIGH/CRITICAL findings, including unfixed ones, and produced
+a 52-component CycloneDX SBOM.
+
+[Hosted run 40208833948](https://github.com/tylermowll/shepherd-academy-universe/actions/runs/40208833948)
+passed source/integration and every package/security check, but passed only
+149/150 browser cases. The mobile interrupted-request case read sessionStorage
+in the old document while sign-out's `location.replace` was navigating. It now
+waits for the replacement document's `domcontentloaded` event before its existing
+sign-in, no-dialog and cleared-storage assertions. No assertion or production
+behavior changed. The corrected case passed five repetitions per viewport:
+`python3 /tmp/shepherd-t77/run.py pnpm exec playwright test tests/smoke/request-recovery.spec.ts --grep "an unaccepted interrupted request" --repeat-each=5`
+reported 10/10 in 1.1 minutes with zero retries. Prettier also passed. The image
+will be rebuilt from the clean published correction before deployment.
+
+The temporary exact-image scanner initially stopped before scanning because
+Docker's OCI image ID identifies an index rather than the config. Its corrected
+archive verifier passed 19 synthetic classic/OCI/corruption cases and verifies
+the requested index, manifest/config, every referenced blob and selected layer
+diff ID. Only after that proof did the offline scan pass; the initial operational
+failure receipt is retained. No image-identity check was removed.
+
 ## T76 — Start learning with one adaptive form, publish and deploy (2026-10-24)
 
 **Status:** Complete; source published to `main` and privately deployed after
