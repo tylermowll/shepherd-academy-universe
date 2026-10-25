@@ -8,12 +8,11 @@ A task is complete only after its requirements and exit checks pass.
 
 ## Current checkpoint
 
-T77 adds a locally stored Project Gutenberg reading library with search,
-category/length/approximate-level filters, plus optional reading or math levels
-and clearer challenge choices. The maintainer authorized implementation,
-publication to `main` and deployment. Work resumed on October 25 at the
-maintainer's request; T76 remains installed
-until the checked replacement passes backup/restore and runtime verification.
+T77 is published and privately deployed. It adds 868 locally stored Project
+Gutenberg selections with search and category/length/approximate-level filters,
+optional reading/math/course levels, clearer challenge choices, and the
+maintainer's dependency upgrades. Final source/browser, hosted CI, exact-image,
+backup/restore, schema/corpus and runtime evidence is recorded below.
 
 T76 implements the maintainer-approved goal-first learning form, publishes it
 to `main` and privately deploys it. Seven visible goals, conditional material
@@ -40,27 +39,29 @@ credential recovery is retained; these visual updates do not change passwords
 or password policy.
 
 The current product is the multi-subject tutor, with schema head
-`0020_request_recovery`. T69 corrects the seven residual UI/UX findings from T68
+`0021_published_library`. T69 corrects the seven residual UI/UX findings from T68
 and consolidates their documentation. Its implementation and publication evidence
 are below; the [current review](UI_UX_REVIEW.md) lists the corrected behavior and
 remaining acceptance work. Earlier task sections preserve dated evidence, not
 additional supported implementations.
 
-The private installation now uses T76 image
-`sha256:d2aa8d95d867061cd739d4c170ac0ddbe42fd77f49bb5a16b57022477f97e36a`,
-built from published source `642a5fb036d89eafa194ef089d53c5d8b6436b75`.
-All 66 served public assets match the tested build. Dependency locks and schema
-remain unchanged at `0020_request_recovery`. The API and worker are ready with
-zero restarts, and the saved model-selection fingerprint matches the stopped-
-writer backup. No migration, reset or inference was run on retained storage;
-live teaching quality remains unverified.
+The private installation now uses T77 image
+`sha256:fceb98b1d662914781b10a082d97ec5900bce83201fcbe3fbe6e2b1c305c2667`,
+built from published source `65bce0346432e6cfc1cdba34a17b82e2b508c691`.
+All 66 served public assets match the tested build. The additive migration to
+`0021_published_library` and exact 868-text offline import passed. The API and
+worker are ready with zero restarts, and saved model selections match the fresh
+stopped-writer backup. Private schema, accounts and retained work were preserved;
+no reset or inference was run on retained storage. Live teaching quality remains
+unverified.
 [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
 
 ## T77 — Expand the published library and subject levels, publish and deploy (2026-10-24)
 
-**Status:** In progress; resumed October 25 after the maintainer requested
-completion, publication to `main` and deployment. These actions were authorized after the
+**Status:** Complete on October 25: published to `main`, exact image verified,
+backed up/restored, migrated/imported and privately deployed. The corrected
+source's hosted checks and package jobs also passed. These actions were authorized after the
 Gutenberg/library/level design discussion. No paid inference or model download
 is authorized.
 
@@ -273,6 +274,50 @@ archive verifier passed 19 synthetic classic/OCI/corruption cases and verifies
 the requested index, manifest/config, every referenced blob and selected layer
 diff ID. Only after that proof did the offline scan pass; the initial operational
 failure receipt is retained. No image-identity check was removed.
+
+**Final publication and private deployment — October 25, 2026:** The corrected
+source `65bce0346432e6cfc1cdba34a17b82e2b508c691` was committed with all hooks
+passing and pushed to `main`. Its production code and 66 public assets are
+identical to the complete 150-case local browser run; only the test navigation
+synchronization and evidence differ from `dfb270a`.
+[Hosted run 40211659192](https://github.com/tylermowll/shepherd-academy-universe/actions/runs/40211659192)
+completed successfully: source/file/SQLite/integration/browser/mock/audit gates
+and package build/smoke/security/SBOM all passed. The earlier hosted browser
+race is resolved, not waived.
+
+The final candidate is
+`sha256:fceb98b1d662914781b10a082d97ec5900bce83201fcbe3fbe6e2b1c305c2667`
+(the `<candidate>` below). Build context was a clean `git archive` of the
+published correction, with its exact revision label and no private files.
+
+| Actual command / operation | Outcome |
+| --- | --- |
+| `python3 /tmp/shepherd-t77/prepare_source.py` | Required clean committed source; archived `65bce03` and recorded the 66 source-tested public-file hashes. |
+| `python3 /tmp/shepherd-t77/run.py docker build --label org.opencontainers.image.revision=65bce0346432e6cfc1cdba34a17b82e2b508c691 -f /tmp/shepherd-t77/source/infra/docker/Dockerfile -t math-practice-tutor:t77-reading-library /tmp/shepherd-t77/source` | Built the immutable candidate from the clean published archive. Production layers matched the prior checked candidate. |
+| `python3 /tmp/shepherd-t77/run.py python3 /tmp/shepherd-t77/verify_package.py` | Exact source revision, UID/GID 10001:10001 and all 66 tested assets matched. Public manifest SHA256 `2b82abb17b9efe7ee5dbd5973503d9bec68997c040afbc6036a7d336849304a2`. |
+| `python3 /tmp/shepherd-t77/run.py sh /tmp/shepherd-t77/source/scripts/container-smoke.sh <candidate>` | Passed on disposable storage: Python 3.15.1, SQLite 3.53.1/WAL/foreign keys/busy timeout/FULL synchronization, exact 868-row offline corpus, HEIF/crypto, installer-free runtime, restricted provider subprocess refusal, API/worker/UI and owner-setup boundaries. No inference. |
+| `python3 /tmp/shepherd-t77/trivy/scan.py --image-id <candidate> --label candidate` | Verified immutable OCI descriptor/config/layer chain, then zero HIGH/CRITICAL findings including unfixed ones. Fresh official database unchanged during offline scan. CycloneDX has 52 components; SBOM SHA256 `65686dcaab0eba9da3f00fe83471ebc45dad10658742cd5b683e38954c15674b`. |
+| `python3 /tmp/shepherd-t77/deploy.py preflight --candidate <candidate>` | Existing T76 images, retained bind mounts, loopback-only API and privilege restrictions matched. Candidate/corpus/asset identities verified. |
+| Initial `prepare` / `migrate`, followed by `python3 /tmp/shepherd-t77/recover_old.py` | Backup/restore passed, but the schema launcher and its rollback rejected unsupported Compose `run --no-build` before migration. Read-only staged-database proof verified unchanged schema 0020, no public table, integrity/foreign keys and model-role digest. Existing T76 services were restarted and HTTPS/worker/access verified while the helper was corrected. No backup was restored over live work. |
+| Corrected helper unit/migration gate and `python3 /tmp/shepherd-t77/run.py .venv/bin/python /tmp/shepherd-t77/test_schema_container.py --image-id <candidate>` | 27 helper cases passed in 2.70 seconds. Actual isolated Compose upgrade/verify/downgrade passed for all 868 rows and preserved post-activation synthetic work/model changes. It used an existing immutable image, `--pull never`, disabled network and a nonexistent build context proving no implicit build. Candidate container image identity also matched. Fixtures removed. |
+| Fresh `python3 /tmp/shepherd-t77/deploy.py prepare --candidate <candidate> --execute` | Stopped both writers again. New encrypted schema-0020 backup and isolated restore passed; current deletions, object hashes and model selections preserved. Only the rehearsal revoked restored sessions/canceled pending work; plaintext rehearsal removed. |
+| `python3 /tmp/shepherd-t77/deploy.py migrate --execute` | Passed additive migration to 0021, integrity/foreign keys, exact 868-row/manifest/content verification, unchanged private schema/model selections and no inference. |
+| `python3 /tmp/shepherd-t77/deploy.py activate --execute` | API and one worker active on the exact candidate, zero restarts, original retained mount and runtime restrictions. Private HTTPS ready, fresh worker heartbeat, all 66 served assets and PWA cache/scope headers matched, protected routes rejected anonymous access and API documentation remained disabled. |
+| `python3 /tmp/shepherd-t77/run.py python3 /tmp/shepherd-t77/verify_selection.py` | Deployed tutor and photo-reader selections match the fresh stopped-writer snapshot; no inference. |
+| `python3 /tmp/shepherd-t77/save_evidence.py` | Reviewed helpers, recovery/active receipts, exact public hashes, synthetic receipts and scan/SBOM retained in `backups/evidence-20261025T170826Z-t77-reading-library`; no backup key copied. |
+| `gh run view 40211659192 --json status,conclusion,jobs,url` | Corrected published source's checks and package jobs both completed successfully. |
+
+The successful encrypted archive is
+`backups/deploy-20261025T164306Z-t77-reading-library-fceb98b1d662/archive.enc`.
+Its private key remains separately in the operator's protected backup-key
+directory. The earlier failed-launch backup/recovery receipts and previous
+image are retained. Only the public table was added; there was no data reset,
+credential recovery, private configuration inspection, or live model call.
+
+No local or corrected-source hosted failure remains open. Live provider/teaching
+quality, physical phones/camera/HEIC and assistive-technology acceptance were
+not run and remain separate maintainer checks in ACCEPTANCE. The final evidence
+commit changes documentation only; it is not a different installed application.
 
 ## T76 — Start learning with one adaptive form, publish and deploy (2026-10-24)
 
