@@ -140,16 +140,19 @@ browser's account and clears unsent drafts from the previous account.
 As a learner, choose what you would like help with: understand a topic, practice
 a skill, read and discuss a text, work on writing, review for a test, learn from
 homework, or describe something else. Enter what you are working on; the same
-form shows relevant material choices. **Adjust difficulty and guidance** holds
-optional preferences. For published texts, it appears after you select a text.
-Your choices are preserved if you remove or change the selection.
-Challenge defaults to **Apply and explain**, with
+form shows relevant material choices. Start with the defaults, or open
+**Adjust questions and guidance** for reading and **Adjust activities and
+guidance** for other goals. For published texts, these optional settings appear
+after you select a text and review its preview. Your choices are preserved if
+you remove or change the selection. **Question challenge** applies to reading;
+**Activity challenge** applies to other goals. Challenge defaults to **Apply and explain**, with
 **Start with the basics** and **Stretch my thinking** as alternatives; guidance
-defaults to balanced. An optional learning level can target a reading grade
-band, a math grade/course, or another course you describe. It guides later
-activities and feedback; it is not an assessment of your ability. Change or
-clear it in Session settings. Text length, challenge and learning level are
-separate preferences.
+defaults to balanced. **Tutor starting level (optional)** can target a reading
+grade band, a math grade/course, or another course you describe. It guides
+explanations, examples and later activities; it is not an assessment of your
+ability. It remains unset until you choose it. Change or clear it in Session
+settings. Text length, challenge and tutor starting level are separate
+preferences. Supplied texts stay unchanged.
 **Start learning** saves the session and creates its first activity automatically.
 For photo material, the upload and phone controls open inline on the same page.
 Use **Send** for work or questions, **Attach photo** for
@@ -170,7 +173,8 @@ For reading or study in any subject, paste material, photograph a passage, ask
 the tutor to write one, or choose **Choose a published text**. The published
 library stores reviewed Project Gutenberg stories, poems, essays and book
 chapters/excerpts on this app's server. Search titles, authors and text, then
-filter by category, word count or approximate reading band. Select **Use this
+filter by category, word count or **Text reading level (estimate)**. This filter
+describes text complexity and does not set the tutor's starting level. Select **Use this
 text** to open its preview and attribution. Changing a search preserves the
 selected preview. Reading bands are automatic text estimates with a stated
 basis; unrated texts remain available. They do not establish a learner's grade

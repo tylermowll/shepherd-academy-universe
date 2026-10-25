@@ -268,7 +268,7 @@ function PublishedLibrary({ learner, disabled, onChange }: Props) {
               </select>
             </label>
             <label>
-              Approximate reading level
+              Text reading level (estimate)
               <select
                 value={filters.readingLevel}
                 disabled={locked}
@@ -286,6 +286,10 @@ function PublishedLibrary({ learner, disabled, onChange }: Props) {
               </select>
             </label>
           </div>
+          <p className="fine">
+            The estimate describes the text’s complexity. Choose a tutor
+            starting level separately after selecting a text.
+          </p>
           {characterCount(filters.q.trim()) > 120 && (
             <p role="status" className="notice">
               Keep the search to 120 characters. Your search is still here.
@@ -357,14 +361,14 @@ function PublishedLibrary({ learner, disabled, onChange }: Props) {
                     {item.word_count.toLocaleString()} words
                   </p>
                   <p className="fine">
-                    Reading level:{" "}
+                    Text reading level:{" "}
                     {item.reading_level
                       ? `Approximate ${readingLevels.find((level) => level.value === item.reading_level)?.label ?? item.reading_level}`
                       : "Unrated"}
                   </p>
                   {item.level_basis && (
                     <details>
-                      <summary>About the reading level</summary>
+                      <summary>About this estimate</summary>
                       <p className="fine">{item.level_basis}</p>
                     </details>
                   )}

@@ -8,6 +8,11 @@ A task is complete only after its requirements and exit checks pass.
 
 ## Current checkpoint
 
+T79 clarifies the published-text reading flow and distinguishes text complexity
+from the tutor's optional starting level. The maintainer explicitly requested
+the update, publication to `main` and private deployment. Work is in progress;
+the verified T78 image remains installed until cutover checks pass.
+
 T78 makes published-text preferences appear after an explicit selection. The
 maintainer requested this follow-up to the deployed T77 reading flow. Work is
 published and privately deployed with source, focused-browser, package,
@@ -61,6 +66,63 @@ no reset or inference was run on retained storage. Live teaching quality remains
 unverified.
 [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
+
+## T79 — Clarify reading options and tutor starting levels (2026-10-25)
+
+**Status:** In progress; implementation, push to `main` and private deployment
+explicitly authorized. No live inference or model download is authorized.
+
+**Contracts and plan:** SPECIFICATION sections 1, 3 and 4; README Practice and
+reading. Preserve choose-text → preview → Start learning, with collapsed,
+optional settings and existing defaults. Reading intent uses “Adjust questions
+and guidance” and “Question challenge”; other intents use activities, because
+supplied material alone does not turn writing/explanation into reading questions.
+Label library filtering “Text reading level (estimate)” and the teaching
+preference “Tutor starting level (optional),” with a reading grade-band choice.
+Explain that the estimate describes the text while tutor settings guide future
+activities/explanations and preserve the original text. Update Help and session
+settings consistently; do not copy a text estimate into the learner's preference.
+Keep current values, drafts, backend request identities, schemas, ownership and
+provider boundaries unchanged. No migration/dependency/API change is needed.
+
+**Checks:** Update existing component/browser label interactions and verify
+literal reading/non-reading labels, optional unset defaults, unchanged passage,
+settings persistence and failure/reselection preservation. Run focused
+components, `make check`, and relevant desktop/mobile library/start/navigation
+browser cases against the matching build. Commit/push clean checked source,
+verify exact image/assets, smoke/scan/SBOM, complete stopped-writer encrypted
+backup/restore and privately switch images without migration or data reset.
+Record actual evidence and remaining checks.
+
+**Implemented:** `Tutor` and `SessionSettings` share intent-based labels from
+`practice-options`: reading uses questions and other goals use activities.
+`LearningLevelPicker` describes an optional tutor starting point with a reading
+grade band; library filtering/card metadata describes the text estimate.
+Reading setup, Help, README and SPECIFICATION explain defaults, later changes
+and unchanged supplied text. The generated-passage path does not claim that a
+starting level cannot influence a passage yet to be written. All persisted
+values, request payloads and API contracts remain unchanged.
+
+Existing component/browser workflows now check literal labels for all seven
+goals, including review with supplied notes; defaults remain standard/balanced
+with no level field sent. A rated selected text leaves the tutor reading band
+unset until explicitly chosen. Existing snapshot, draft, settings, recovery and
+failure assertions are retained. Shared test helpers recognize only the two
+new exact disclosure labels. Independent source/test review found no blocker.
+
+| Actual command / check | Outcome |
+| --- | --- |
+| `python3 /tmp/shepherd-t79/run.py pnpm --filter @math-tutor/web test tests/Tutor.test.tsx tests/LearningLevelPicker.test.tsx tests/ReadingSources.test.tsx tests/App.test.tsx` | 152 cases across four files passed in 5.35 seconds. |
+| `python3 /tmp/shepherd-t78/run.py make check` | Passed after correcting the new test's parsed JSON variable to `unknown`: 405 backend unit, 347 frontend and 11 toolchain cases; locks, lint/format, types, builds, generated-contract drift, credential scan and infrastructure. No assertion or policy was suppressed. Existing build-backend upper-bound and bundle-size warnings remain. |
+| `python3 /tmp/shepherd-t79/run.py pnpm exec playwright test tests/smoke/library-levels.spec.ts tests/smoke/practice-start.spec.ts tests/smoke/navigation.spec.ts` | All 30 desktop/mobile scenarios passed in 4.2 minutes, one worker, zero failures/retries. Library selection/filtering, unset tutor level versus rated text, unchanged snapshots, defaults and explicit settings, reading/non-reading wording, keyboard/narrow layout, Help/navigation and failure recovery covered. |
+| `python3 /tmp/shepherd-t79/run.py uv run --locked --no-env-file pytest /tmp/shepherd-t79/test_operations.py -q` | 18 synthetic UI-only deployment-helper cases passed in 4.49 seconds. |
+| `python3 /tmp/shepherd-t79/run.py .venv/bin/python /tmp/shepherd-t79/test_backup_container.py` | Restricted old-image synthetic encrypted backup/isolated restore passed for schema 0021, all 868 public rows and a committed uncheckpointed WAL row. No retained installation access. |
+
+All local source and matching-build focused browser gates have passed. Final
+publication/private-update evidence follows when complete. No live inference,
+schema, backend, dependency or permission change is part of this task. Full
+local browser/integration and actual-device/model-quality suites were not
+repeated for this wording-only change.
 
 ## T78 — Adjust published-text preferences after selection (2026-10-25)
 

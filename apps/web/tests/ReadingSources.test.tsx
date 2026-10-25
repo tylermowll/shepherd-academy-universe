@@ -88,7 +88,7 @@ describe("local published library", () => {
     expect(card().getByText(/620 words/)).toBeVisible();
     expect(card().getByText(/Approximate Grades 3–5/)).toBeVisible();
     expect(
-      card(secondItem.title).getByText("Reading level: Unrated"),
+      card(secondItem.title).getByText("Text reading level: Unrated"),
     ).toBeVisible();
     expect(screen.queryByRole("region", { name: "Selected text" })).toBeNull();
     expect(view.onChange).toHaveBeenLastCalledWith(null);
@@ -141,7 +141,7 @@ describe("local published library", () => {
     fireEvent.change(screen.getByLabelText("Length"), {
       target: { value: "medium" },
     });
-    fireEvent.change(screen.getByLabelText("Approximate reading level"), {
+    fireEvent.change(screen.getByLabelText("Text reading level (estimate)"), {
       target: { value: "grades_3_5" },
     });
     expect(view.fetcher).toHaveBeenCalledOnce();
@@ -173,7 +173,9 @@ describe("local published library", () => {
     expect(screen.getByLabelText("Search texts")).toHaveValue("");
     expect(screen.getByLabelText("Category")).toHaveValue("");
     expect(screen.getByLabelText("Length")).toHaveValue("");
-    expect(screen.getByLabelText("Approximate reading level")).toHaveValue("");
+    expect(screen.getByLabelText("Text reading level (estimate)")).toHaveValue(
+      "",
+    );
   });
 
   it("handles Enter inside the library without submitting its enclosing learning form", async () => {

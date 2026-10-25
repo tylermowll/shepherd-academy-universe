@@ -216,6 +216,15 @@ an explicit text selection, below the preview/selection controls and before
 Start learning. Preserve its open state, chosen preferences and subject-level
 drafts while a selection is removed, replaced or reselected; a search/retrieval
 failure that retains the text also retains preference availability.
+Use “Adjust questions and guidance” and “Question challenge” for reading intent,
+and “Adjust activities and guidance” and “Activity challenge” for other intents.
+These labels follow the learning intent, not the presence of supplied material.
+Keep starting with defaults possible without opening optional settings.
+Library filtering is “Text reading level (estimate),” describing the text's
+complexity; it never assigns the learner's preference. Label that separate
+preference “Tutor starting level (optional)” and its reading choice “Reading
+grade band.” It guides explanations/examples and future activities, leaves
+supplied text unchanged, and stays adjustable in Session settings.
 Keep assignment references separate from passages
 and learner work. Finish session is available with the
 activity controls, guarded against pending work and unsent drafts. A finished

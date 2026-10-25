@@ -6,7 +6,11 @@ import {
   normalizeLearningLevel,
   type LearningLevelValue,
 } from "./learning-levels";
-import { challengeOptions, guidanceOptions } from "./practice-options";
+import {
+  challengeOptions,
+  guidanceOptions,
+  preferenceLabels,
+} from "./practice-options";
 
 export function SessionSettings({
   session,
@@ -61,7 +65,7 @@ export function SessionSettings({
           </select>
         </label>
         <label>
-          How challenging should it be?
+          {preferenceLabels(session.learning_intent).challenge}
           <select
             name="difficulty"
             defaultValue={session.difficulty}

@@ -150,7 +150,10 @@ test("the local library searches and filters without imports, paginates, clears 
     .getByRole("combobox", { name: "Length", exact: true })
     .selectOption(length);
   await library
-    .getByRole("combobox", { name: "Approximate reading level", exact: true })
+    .getByRole("combobox", {
+      name: "Text reading level (estimate)",
+      exact: true,
+    })
     .selectOption(example.reading_level ?? "unrated");
   expect(catalogRequests).toHaveLength(beforeFilters);
   const filteredResponse = page.waitForResponse(catalogResponse);
@@ -189,7 +192,7 @@ test("the local library searches and filters without imports, paginates, clears 
   ).json()) as Schema<"SourceCatalogPublic">;
   expect(cleared.total).toBe(catalog.total);
   await expect(query).toHaveValue("");
-  for (const name of ["Category", "Length", "Approximate reading level"])
+  for (const name of ["Category", "Length", "Text reading level (estimate)"])
     await expect(
       library.getByRole("combobox", { name, exact: true }),
     ).toHaveValue("");
@@ -227,7 +230,7 @@ test("an explicitly chosen local text becomes the immutable first reading snapsh
   page,
 }) => {
   const { library } = await openLibrary(page);
-  const preferences = page.getByText("Adjust difficulty and guidance", {
+  const preferences = page.getByText("Adjust questions and guidance", {
     exact: true,
   });
   await expect(preferences).toBeHidden();
@@ -241,6 +244,7 @@ test("an explicitly chosen local text becomes the immutable first reading snapsh
     /Hare and the Tortoise/i.test(choice.title),
   );
   expect(item).toBeDefined();
+  expect(item!.reading_level).not.toBeNull();
   await expect(
     page.getByRole("button", { name: "Start learning", exact: true }),
   ).toBeDisabled();
@@ -312,10 +316,16 @@ test("an explicitly chosen local text becomes the immutable first reading snapsh
   await topic.fill("Reading: compare a character's words with actions");
   await openLearningPreferences(page);
   await expect(
-    page.getByRole("combobox", { name: "Reading level", exact: true }),
+    page.getByRole("group", {
+      name: "Tutor starting level (optional)",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("combobox", { name: "Reading grade band", exact: true }),
   ).toHaveValue("");
   await page
-    .getByRole("combobox", { name: "Reading level", exact: true })
+    .getByRole("combobox", { name: "Reading grade band", exact: true })
     .selectOption("grades_6_8");
   const subject = page.getByRole("combobox", {
     name: "Subject for this level",
@@ -327,13 +337,15 @@ test("an explicitly chosen local text becomes the immutable first reading snapsh
     .fill("Synthetic course draft retained while choosing a text");
   await subject.selectOption("reading");
   const difficulty = page.getByRole("combobox", {
-    name: "How challenging should it be?",
+    name: "Question challenge",
     exact: true,
   });
   const guidance = page.getByRole("combobox", {
     name: "How much guidance would you like?",
     exact: true,
   });
+  await expect(difficulty).toHaveValue("standard");
+  await expect(guidance).toHaveValue("balanced");
   await difficulty.selectOption("challenge");
   await guidance.selectOption("learner_led");
   await selected
@@ -359,7 +371,7 @@ test("an explicitly chosen local text becomes the immutable first reading snapsh
   await expect(guidance).toHaveValue("learner_led");
   await expect(subject).toHaveValue("reading");
   await expect(
-    page.getByRole("combobox", { name: "Reading level", exact: true }),
+    page.getByRole("combobox", { name: "Reading grade band", exact: true }),
   ).toHaveValue("grades_6_8");
   await subject.selectOption("other");
   await expect(
@@ -406,7 +418,13 @@ test("an explicitly chosen local text becomes the immutable first reading snapsh
     .click();
   let settings = await openSettings(page);
   await expect(
-    settings.getByRole("combobox", { name: "Reading level", exact: true }),
+    settings.getByRole("combobox", {
+      name: "Question challenge",
+      exact: true,
+    }),
+  ).toHaveValue("challenge");
+  await expect(
+    settings.getByRole("combobox", { name: "Reading grade band", exact: true }),
   ).toHaveValue("grades_6_8");
   await settings
     .getByRole("combobox", { name: "Subject for this level", exact: true })
@@ -418,7 +436,7 @@ test("an explicitly chosen local text becomes the immutable first reading snapsh
   await page.reload();
   settings = await openSettings(page);
   await expect(
-    settings.getByRole("combobox", { name: "Reading level", exact: true }),
+    settings.getByRole("combobox", { name: "Reading grade band", exact: true }),
   ).toHaveValue("");
   expect(external).toEqual([]);
 });
@@ -443,7 +461,7 @@ test("math and course levels remain optional, retain drafts and persist explicit
     .selectOption("grade_5");
   await subject.selectOption("reading");
   await page
-    .getByRole("combobox", { name: "Reading level", exact: true })
+    .getByRole("combobox", { name: "Reading grade band", exact: true })
     .selectOption("grades_3_5");
   await subject.selectOption("other");
   await page
@@ -455,7 +473,7 @@ test("math and course levels remain optional, retain drafts and persist explicit
   ).toHaveValue("grade_5");
   await page
     .getByRole("combobox", {
-      name: "How challenging should it be?",
+      name: "Activity challenge",
       exact: true,
     })
     .selectOption("introductory");
@@ -588,7 +606,7 @@ test("failed local searches and explicitly requested NASA retrieval preserve the
     "Your selected text is still here",
   );
   await expect(
-    page.getByText("Adjust difficulty and guidance", { exact: true }),
+    page.getByText("Adjust questions and guidance", { exact: true }),
   ).toBeVisible();
   await expect(library.locator(":scope > .library-browser")).toHaveAttribute(
     "open",

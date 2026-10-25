@@ -62,10 +62,10 @@ export function LearningLevelPicker({
   }
   return (
     <fieldset className="learning-level" disabled={disabled}>
-      <legend>Learning level (optional)</legend>
+      <legend>Tutor starting level (optional)</legend>
       <p className="fine">
-        Leave this unset, or give the tutor a starting point. It does not
-        measure your ability.
+        Give the tutor a starting point for explanations and examples, or leave
+        this unset. It does not measure your ability.
       </p>
       <label>
         Subject for this level
@@ -85,7 +85,9 @@ export function LearningLevelPicker({
       </label>
       {(subject === "reading" || subject === "math") && (
         <label>
-          {subject === "reading" ? "Reading level" : "Math grade or course"}
+          {subject === "reading"
+            ? "Reading grade band"
+            : "Math grade or course"}
           <select
             value={drafts[subject]}
             onChange={(event) => {

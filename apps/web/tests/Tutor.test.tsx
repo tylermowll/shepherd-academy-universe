@@ -125,7 +125,9 @@ function selectSource(source: string) {
 }
 
 function openLearningPreferences() {
-  const summary = screen.getByText("Adjust difficulty and guidance");
+  const summary = screen.getByText(
+    /^Adjust (questions|activities) and guidance$/,
+  );
   if (!summary.closest("details")!.open) fireEvent.click(summary);
 }
 
@@ -1022,7 +1024,7 @@ describe("AI learning conversation", () => {
         target: { value: "learner_led" },
       },
     );
-    fireEvent.change(screen.getByLabelText("How challenging should it be?"), {
+    fireEvent.change(screen.getByLabelText("Activity challenge"), {
       target: { value: "challenge" },
     });
     await vi.waitFor(() =>
@@ -1339,7 +1341,7 @@ describe("AI learning conversation", () => {
         target: { value: "tutor_led" },
       },
     );
-    fireEvent.change(screen.getByLabelText("How challenging should it be?"), {
+    fireEvent.change(screen.getByLabelText("Activity challenge"), {
       target: { value: "introductory" },
     });
     fireEvent.click(
@@ -3047,9 +3049,29 @@ describe("goal-first session setup", () => {
       fireEvent.change(topic, {
         target: { value: "An original synthetic learning goal" },
       });
+      const preferences = screen.getByText(
+        intent === "read"
+          ? "Adjust questions and guidance"
+          : "Adjust activities and guidance",
+      );
+      expect(preferences.closest("details")).not.toHaveAttribute("open");
+      openLearningPreferences();
       expect(
-        screen.getByText("Adjust difficulty and guidance").closest("details"),
-      ).not.toHaveAttribute("open");
+        screen.getByLabelText(
+          intent === "read" ? "Question challenge" : "Activity challenge",
+        ),
+      ).toHaveValue("standard");
+      expect(
+        screen.getByLabelText("How much guidance would you like?"),
+      ).toHaveValue("balanced");
+      expect(
+        screen.getByRole("group", { name: "Tutor starting level (optional)" }),
+      ).toBeVisible();
+      expect(screen.getByLabelText("Subject for this level")).toHaveValue(
+        intent === "read" ? "reading" : "",
+      );
+      if (intent === "read")
+        expect(screen.getByLabelText("Reading grade band")).toHaveValue("");
       if (source === "reading_generated")
         fireEvent.click(
           screen.getByRole("radio", { name: "Ask the tutor to write a text" }),
@@ -3078,12 +3100,14 @@ describe("goal-first session setup", () => {
         ([, options]) => options.method === "POST",
       );
       expect(posts).toHaveLength(1);
-      expect(JSON.parse(posts[0]![1].body as string)).toMatchObject({
+      const submitted: unknown = JSON.parse(posts[0]![1].body as string);
+      expect(submitted).toMatchObject({
         learning_intent: intent,
         difficulty: "standard",
         initiative: "balanced",
         initial_activity: { source },
       });
+      expect(submitted).not.toHaveProperty("learning_level");
     },
   );
 
@@ -3122,10 +3146,10 @@ describe("goal-first session setup", () => {
         target: { value: "learner_led" },
       },
     );
-    fireEvent.change(screen.getByLabelText("How challenging should it be?"), {
+    fireEvent.change(screen.getByLabelText("Activity challenge"), {
       target: { value: "challenge" },
     });
-    fireEvent.click(screen.getByText("Adjust difficulty and guidance"));
+    fireEvent.click(screen.getByText("Adjust activities and guidance"));
     fireEvent.click(screen.getByRole("radio", { name: "Review for a test" }));
     fireEvent.click(screen.getByRole("radio", { name: "Paste my notes" }));
     expect(screen.getByLabelText("Reading passage")).toHaveValue(
@@ -3141,7 +3165,7 @@ describe("goal-first session setup", () => {
     expect(
       screen.getByLabelText("How much guidance would you like?"),
     ).toHaveValue("learner_led");
-    expect(screen.getByLabelText("How challenging should it be?")).toHaveValue(
+    expect(screen.getByLabelText("Activity challenge")).toHaveValue(
       "challenge",
     );
     expect(
@@ -3284,7 +3308,7 @@ it.each([
       target: { value: level.subject },
     });
     if (level.subject === "reading")
-      fireEvent.change(screen.getByLabelText("Reading level"), {
+      fireEvent.change(screen.getByLabelText("Reading grade band"), {
         target: { value: level.level },
       });
     else if (level.subject === "math")

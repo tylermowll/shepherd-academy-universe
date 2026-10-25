@@ -353,7 +353,7 @@ test("adult pages isolate each job and browser navigation preserves a new sessio
     exact: true,
   });
   await topic.fill("Synthetic draft: comparing two scientific explanations");
-  const preferences = page.getByText("Adjust difficulty and guidance", {
+  const preferences = page.getByText("Adjust activities and guidance", {
     exact: true,
   });
   const preferenceDetails = preferences.locator("..");
@@ -363,7 +363,7 @@ test("adult pages isolate each job and browser navigation preserves a new sessio
   await expect(preferenceDetails).toHaveAttribute("open", "");
   await expect(
     preferenceDetails.getByRole("combobox", {
-      name: "How challenging should it be?",
+      name: "Activity challenge",
       exact: true,
     }),
   ).toBeVisible();

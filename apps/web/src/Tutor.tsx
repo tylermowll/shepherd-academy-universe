@@ -23,6 +23,7 @@ import {
   challengeOptions,
   guidanceOptions,
   materialChoices,
+  preferenceLabels,
   type LearningIntent,
 } from "./practice-options";
 import { SessionReview } from "./SessionReview";
@@ -1197,7 +1198,16 @@ export function Tutor({
               className="session-preferences"
               hidden={source === "published" && !published}
             >
-              <summary>Adjust difficulty and guidance</summary>
+              <summary>{preferenceLabels(learningIntent).summary}</summary>
+              {learningIntent === "read" && (
+                <p className="fine">
+                  Start with the defaults, or adjust the tutor’s questions and
+                  guidance.{" "}
+                  {source !== "reading_generated" &&
+                    "The original text stays unchanged. "}
+                  You can change these choices later in Session settings.
+                </p>
+              )}
               <LearningLevelPicker
                 value={learningLevel}
                 onChange={setLearningLevel}
@@ -1205,7 +1215,7 @@ export function Tutor({
                 defaultSubject={learningIntent === "read" ? "reading" : ""}
               />
               <label>
-                How challenging should it be?
+                {preferenceLabels(learningIntent).challenge}
                 <select
                   value={difficulty}
                   onChange={(event) =>

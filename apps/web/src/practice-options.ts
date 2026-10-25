@@ -7,6 +7,18 @@ export type MaterialSource = NonNullable<
   Schema<"TutorActivityInput">["source"]
 >;
 
+export function preferenceLabels(intent?: LearningIntent | null) {
+  return intent === "read"
+    ? {
+        summary: "Adjust questions and guidance",
+        challenge: "Question challenge",
+      }
+    : {
+        summary: "Adjust activities and guidance",
+        challenge: "Activity challenge",
+      };
+}
+
 export const learningGoals: Array<{
   value: LearningIntent;
   label: string;

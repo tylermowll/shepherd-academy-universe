@@ -2190,7 +2190,7 @@ it("allows a corrected request after its first attempt is definitively rejected"
   expect(
     screen.queryByRole("button", { name: "Retry saved request" }),
   ).toBeNull();
-  fireEvent.click(screen.getByText("Adjust difficulty and guidance"));
+  fireEvent.click(screen.getByText("Adjust activities and guidance"));
   expect(
     screen.getByRole("combobox", { name: "How much guidance would you like?" }),
   ).toBeEnabled();

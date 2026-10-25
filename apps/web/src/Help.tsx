@@ -92,10 +92,10 @@ export function HelpPage({
                   Choose what you would like help with, then tell the tutor what
                   you are working on. Add a text, notes or homework if that fits
                   your goal. Choose <strong>Start learning</strong> when you are
-                  ready. You can change the defaults under{" "}
-                  <strong>Adjust difficulty and guidance</strong>: choose how
-                  challenging the work should be and how much guidance you would
-                  like.
+                  ready. You can start with the defaults. To make changes, open{" "}
+                  <strong>Adjust questions and guidance</strong> for reading or{" "}
+                  <strong>Adjust activities and guidance</strong> for other
+                  goals.
                 </li>
                 <li>
                   Write your work or question and choose <strong>Send</strong>.
@@ -127,33 +127,44 @@ export function HelpPage({
                 <p>
                   Choose <strong>Read and discuss a text</strong>, then paste or
                   photograph a text, ask the tutor to write one, or choose a
-                  published text. Review the preview and source details before
-                  starting. Next activity options keep using the same text;
-                  choose different practice material to change it. Include the
-                  passage itself; a book title alone does not give the tutor its
-                  text.
+                  published text. Review the preview and source details, then
+                  choose <strong>Start learning</strong>. After selecting a
+                  published text, <strong>Adjust questions and guidance</strong>{" "}
+                  offers optional changes. Next activity options keep using the
+                  same text; choose different practice material to change it.
+                  Include the passage itself; a book title alone does not give
+                  the tutor its text.
                 </p>
               </ContextHelp>
               <ContextHelp topic="How do levels and challenge work?">
                 <p>
-                  You can leave the learning level unset. Reading grade bands, a
-                  math grade or course, or another course name give the tutor a
-                  starting point. These choices do not assess your ability.
-                  Challenge is separate: Start with the basics, Apply and
-                  explain, or Stretch my thinking. Changing session settings
-                  affects future replies.
+                  <strong>Tutor starting level (optional)</strong> gives the
+                  tutor a starting point for explanations and examples. Leave it
+                  unset, or choose a reading grade band, math grade or course,
+                  or another course name. These choices do not assess your
+                  ability. The library’s text reading level is a separate
+                  estimate of the material’s complexity; it does not set your
+                  tutor starting level.
+                </p>
+                <p>
+                  <strong>Question challenge</strong> applies to reading;
+                  <strong> Activity challenge</strong> applies to other goals.
+                  Choose Start with the basics, Apply and explain, or Stretch my
+                  thinking. These preferences leave supplied text unchanged. You
+                  can change them later in Session settings for future
+                  activities and replies.
                 </p>
               </ContextHelp>
               <ContextHelp topic="How do I find a published text?">
                 <p>
                   Choose a published text to search the library saved on this
                   server. Search by title, author or words in the text; filter
-                  by category, word count or approximate reading level, then
-                  choose Use this text. Your selected preview stays while you
-                  search. NASA news is a separate Internet option that loads
-                  only when you request it. Text length, its approximate reading
-                  band and the challenge of the tutor’s questions are different
-                  choices.
+                  by category, word count or{" "}
+                  <strong>Text reading level (estimate)</strong>, then choose
+                  Use this text. Your selected preview stays while you search.
+                  NASA news is a separate Internet option that loads only when
+                  you request it. Text length, its approximate reading band and
+                  the challenge of the tutor’s questions are different choices.
                 </p>
               </ContextHelp>
               <ContextHelp topic="Why is Start learning unavailable?">

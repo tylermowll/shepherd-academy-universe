@@ -107,13 +107,13 @@ test("one goal-first form keeps all seven choices readable and supports native k
   ).toHaveCount(0);
   await expect(
     page.getByRole("combobox", {
-      name: "How challenging should it be?",
+      name: "Activity challenge",
       exact: true,
     }),
   ).not.toBeVisible();
   await openLearningPreferences(page);
   const difficulty = page.getByRole("combobox", {
-    name: "How challenging should it be?",
+    name: "Activity challenge",
     exact: true,
   });
   await difficulty.selectOption("challenge");
@@ -124,7 +124,7 @@ test("one goal-first form keeps all seven choices readable and supports native k
     })
     .selectOption("learner_led");
   await page
-    .getByText("Adjust difficulty and guidance", { exact: true })
+    .getByText("Adjust activities and guidance", { exact: true })
     .click();
   await expect(difficulty).not.toBeVisible();
   await openLearningPreferences(page);
@@ -210,7 +210,7 @@ test("conditional goal and material choices preserve drafts and submit one activ
     .selectOption("short");
   await page
     .getByRole("combobox", {
-      name: "How challenging should it be?",
+      name: "Activity challenge",
       exact: true,
     })
     .selectOption("challenge");

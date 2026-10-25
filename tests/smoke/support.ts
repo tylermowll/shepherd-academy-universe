@@ -31,9 +31,9 @@ export async function chooseMaterialInput(page: Page, source: MaterialSource) {
 }
 
 export async function openLearningPreferences(page: Page) {
-  const trigger = page.getByText("Adjust difficulty and guidance", {
-    exact: true,
-  });
+  const trigger = page.getByText(
+    /^Adjust (questions|activities) and guidance$/,
+  );
   if ((await trigger.locator("..").getAttribute("open")) === null)
     await trigger.click();
 }

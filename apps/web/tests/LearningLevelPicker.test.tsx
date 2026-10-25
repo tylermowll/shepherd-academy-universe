@@ -36,10 +36,13 @@ afterEach(cleanup);
 
 it("defaults to no level and uses reading context without assuming a grade", () => {
   render(<Harness context="reading" />);
+  expect(
+    screen.getByRole("group", { name: "Tutor starting level (optional)" }),
+  ).toBeVisible();
   expect(screen.getByLabelText("Subject for this level")).toHaveValue(
     "reading",
   );
-  expect(screen.getByLabelText("Reading level")).toHaveValue("");
+  expect(screen.getByLabelText("Reading grade band")).toHaveValue("");
   expect(screen.getByLabelText("Selected learning level")).toHaveTextContent(
     "null",
   );
@@ -49,7 +52,7 @@ it("keeps each subject's draft while changing or clearing the selected level", (
   render(<Harness />);
   const subject = screen.getByLabelText("Subject for this level");
   fireEvent.change(subject, { target: { value: "reading" } });
-  fireEvent.change(screen.getByLabelText("Reading level"), {
+  fireEvent.change(screen.getByLabelText("Reading grade band"), {
     target: { value: "grades_3_5" },
   });
   fireEvent.change(subject, { target: { value: "math" } });
@@ -64,7 +67,7 @@ it("keeps each subject's draft while changing or clearing the selected level", (
     JSON.stringify({ subject: "other", level: "introductory biology" }),
   );
   fireEvent.change(subject, { target: { value: "reading" } });
-  expect(screen.getByLabelText("Reading level")).toHaveValue("grades_3_5");
+  expect(screen.getByLabelText("Reading grade band")).toHaveValue("grades_3_5");
   fireEvent.change(subject, { target: { value: "math" } });
   expect(screen.getByLabelText("Math grade or course")).toHaveValue(
     "algebra_1",
@@ -232,7 +235,5 @@ it("keeps session settings open and preserves drafts across identical refreshes 
   expect(screen.getByLabelText("Course or level")).toHaveValue(
     "Keep my biology draft",
   );
-  expect(screen.getByLabelText("How challenging should it be?")).toHaveValue(
-    "challenge",
-  );
+  expect(screen.getByLabelText("Activity challenge")).toHaveValue("challenge");
 });
