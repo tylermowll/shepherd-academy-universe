@@ -10,7 +10,8 @@ A task is complete only after its requirements and exit checks pass.
 
 T78 makes published-text preferences appear after an explicit selection. The
 maintainer requested this follow-up to the deployed T77 reading flow. Work is
-in progress; the verified T77 installation remains the current runtime.
+published and privately deployed with source, focused-browser, package,
+backup/restore and runtime evidence below.
 
 T77 is published and privately deployed. It adds 868 locally stored Project
 Gutenberg selections with search and category/length/approximate-level filters,
@@ -49,11 +50,11 @@ are below; the [current review](UI_UX_REVIEW.md) lists the corrected behavior an
 remaining acceptance work. Earlier task sections preserve dated evidence, not
 additional supported implementations.
 
-The private installation now uses T77 image
-`sha256:fceb98b1d662914781b10a082d97ec5900bce83201fcbe3fbe6e2b1c305c2667`,
-built from published source `65bce0346432e6cfc1cdba34a17b82e2b508c691`.
-All 66 served public assets match the tested build. The additive migration to
-`0021_published_library` and exact 868-text offline import passed. The API and
+The private installation now uses T78 image
+`sha256:855701438b3b4a7011b63da1ff1508766fc44439298e9074ce396b909f493529`,
+built from published source `b818a92852919d7db32a5bcb8e3e92ae9c501640`.
+All 66 served public assets match the tested build. T78 preserves schema
+`0021_published_library` and the exact 868-text corpus installed by T77. The API and
 worker are ready with zero restarts, and saved model selections match the fresh
 stopped-writer backup. Private schema, accounts and retained work were preserved;
 no reset or inference was run on retained storage. Live teaching quality remains
@@ -63,8 +64,9 @@ owns the remaining model, physical-device, accessibility and operational checks.
 
 ## T78 — Adjust published-text preferences after selection (2026-10-25)
 
-**Status:** In progress. Apply the maintainer's selected-text workflow correction
-within the existing authorized implementation/publication/private-update work.
+**Status:** Complete: implemented, published to `main` and privately deployed.
+Applied the maintainer's selected-text workflow correction within the existing
+authorized implementation/publication/private-update work.
 No paid inference or model download is authorized.
 
 **Contracts and plan:** SPECIFICATION section 3 and README Practice and reading.
@@ -105,7 +107,37 @@ blocking regression.
 Only UI visibility, focused browser coverage and documentation changed; no
 backend/API/schema/dependency change or live inference. Backend integration,
 full browser-suite and actual-device/model-quality checks were not repeated for
-this bounded UI change. Publication/package/private-update evidence follows.
+this bounded UI change.
+
+**Publication and private update:** All commit hooks passed, and source
+`b818a92852919d7db32a5bcb8e3e92ae9c501640` was pushed to `main`. Its clean archive
+produced candidate
+`sha256:855701438b3b4a7011b63da1ff1508766fc44439298e9074ce396b909f493529`
+(`<candidate>` below). No private settings or retained data entered the build.
+
+| Actual command / operation | Outcome |
+| --- | --- |
+| `python3 /tmp/shepherd-t78/prepare_source.py` and `python3 /tmp/shepherd-t78/run.py docker build --label org.opencontainers.image.revision=b818a92852919d7db32a5bcb8e3e92ae9c501640 -f /tmp/shepherd-t78/source/infra/docker/Dockerfile -t math-practice-tutor:t78-published-preferences /tmp/shepherd-t78/source` | Built from clean published source. Backend/runtime/dependency layers were unchanged. |
+| `python3 /tmp/shepherd-t78/run.py python3 /tmp/shepherd-t78/verify_package.py` | Exact source revision, UID/GID 10001:10001 and all 66 public files matched the tested build. Public manifest SHA256 `1a26642fa2190bb09c71269c1ab84875bd474118d864d956d9dec51165fcad0d`. |
+| `python3 /tmp/shepherd-t78/run.py sh /tmp/shepherd-t78/source/scripts/container-smoke.sh <candidate>` | Disposable container checks passed: Python/SQLite/HEIF/crypto, restricted subprocess refusal, all 868 offline public texts, API/worker/built UI and synthetic owner-setup protections. No inference. |
+| `python3 /tmp/shepherd-t77/trivy/scan.py --image-id <candidate> --label t78` | Exact immutable OCI/config/layer chain verified; zero HIGH/CRITICAL vulnerabilities including unfixed ones. Official database under eight hours old and unchanged during scan. CycloneDX has 52 components; SBOM SHA256 `298279c71dfdc13dbe7e9e1827a801e24856e7e7add5bf43f72fc81f8d08ad67`. |
+| `python3 /tmp/shepherd-t78/deploy.py preflight --candidate <candidate>` | Existing image, retained data mounts, loopback API publication and runtime restrictions matched. |
+| `python3 /tmp/shepherd-t78/deploy.py prepare --candidate <candidate> --execute` | Both writers stopped. Fresh encrypted schema-0021 backup/isolated restore passed; all 868 public rows, model selections, current deletions and retained object hashes preserved. Only the isolated rehearsal revoked restored sessions/canceled work; plaintext rehearsal removed. |
+| `python3 /tmp/shepherd-t78/deploy.py activate --execute` | Exact candidate active, one API/one worker, zero restarts, private HTTPS ready, fresh heartbeat, unchanged schema and all 66 exact served assets/update headers verified. Protected routes rejected anonymous access; API docs remained disabled. |
+| `python3 /tmp/shepherd-t78/run.py python3 /tmp/shepherd-t78/verify_selection.py` | Existing schema, public-library digest and tutor/photo-reader selection digest all match the stopped-writer backup. No inference. |
+| `python3 /tmp/shepherd-t78/save_evidence.py` | Reviewed helpers, exact assets, focused-browser receipt, active/backup/model/corpus receipts and image scan/SBOM retained in `backups/evidence-20261025T210042Z-t78-published-preferences`; no backup key copied. |
+
+Encrypted backup:
+`backups/deploy-20261025T205901Z-t78-published-preferences-855701438b3b/archive.enc`;
+its key remains separately in the protected operator backup-key directory.
+No migration, corpus import, reset, private configuration inspection or live
+model call was performed against retained storage. Rollback switches only the
+image and preserves current data. No local failure remains open.
+
+[Hosted CI for the source](https://github.com/tylermowll/shepherd-academy-universe/actions/runs/40232827237)
+was in progress when checked and was not awaited; no hosted completion is
+claimed. The final evidence commit changes documentation only. Live provider,
+physical phone/camera and assistive-technology acceptance remain separate.
 
 ## T77 — Expand the published library and subject levels, publish and deploy (2026-10-24)
 
