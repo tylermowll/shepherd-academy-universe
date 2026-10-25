@@ -22,7 +22,7 @@ link private. Existing accounts sign in at the printed app address.
 
 For an existing installation, stop the API and worker and back up saved
 data before upgrading. If startup reports an old database schema, run
-`make migrate start` for a native app. For Docker, follow the
+`make migrate library-import start` for a native app. For Docker, follow the
 [container upgrade instructions](RUNBOOK.md#container-package).
 
 Enter the settings and keys below in your trusted local app. Coding agents must

@@ -37,11 +37,13 @@ with tempfile.TemporaryDirectory(prefix="math-tutor-demo-") as temporary:
     from alembic.config import Config
     from math_tutor.adapters.db.engine import create_default_engine
     from math_tutor.demo import seed
+    from math_tutor.published_library import import_library
 
     configuration = Config()
     configuration.set_main_option("script_location", str(ROOT / "apps/api/migrations"))
     command.upgrade(configuration, "head")
     engine = create_default_engine()
+    import_library(engine)
     seed(engine)
     engine.dispose()
     try:

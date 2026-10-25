@@ -556,7 +556,7 @@ def test_local_password_migration_preserves_existing_accounts_and_refuses_unsafe
         assert auth.verify_password(admin.password_hash, PASSWORD)
         assert (
             db.connection().exec_driver_sql("SELECT version_num FROM alembic_version").scalar()
-            == "0020_request_recovery"
+            == "0021_published_library"
         )
 
 

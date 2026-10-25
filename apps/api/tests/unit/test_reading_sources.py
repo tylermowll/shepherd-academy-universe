@@ -8,18 +8,16 @@ import pytest
 from math_tutor import reading_sources as sources
 
 
-def test_story_extraction_avoids_contents_index_and_neighboring_stories() -> None:
-    book = (
-        "Synthetic table of contents\nThe Fox and the Grapes\nThe Hare and the Tortoise\n\n"
-        "The Fox and the Grapes\n\nA fox noticed a bunch of grapes hanging high above him. "
-        "He tried jumping but could not reach them. He walked away without a grape.\n\n"
-        "The Hare and the Tortoise\n\nThe next synthetic story must not enter this passage.\n\n"
-    )
-    result = sources.story(book.encode(), "The Fox and the Grapes")
-    assert result.text.startswith("A fox noticed")
-    assert "next synthetic" not in result.text
-    assert result.origin == "published" and result.author and result.permission
-    assert result.source_url and result.source_url.host == "www.gutenberg.org"
+def test_live_import_rejects_retired_story_ids_without_fetching(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def no_network(_url: str) -> bytes:
+        pytest.fail("Retired source IDs must not trigger a network request")
+
+    monkeypatch.setattr(sources, "fetch_source", no_network)
+    for source_id in ("aesop_hare", "aesop_grapes"):
+        with pytest.raises(sources.SourceError, match="unsupported_source"):
+            sources.import_source(source_id)
 
 
 def rss(body: str, link: str = "https://www.nasa.gov/news/example/") -> bytes:
@@ -93,7 +91,7 @@ def test_source_dns_must_be_public(monkeypatch: pytest.MonkeyPatch, address: str
         lambda *args, **kwargs: [(socket.AF_INET, socket.SOCK_STREAM, 0, "", (address, 443))],
     )
     with pytest.raises(sources.SourceError, match="unsafe_source"):
-        sources.public_targets(sources.BOOK_URL)
+        sources.public_targets(sources.NEWS_URL)
 
 
 def test_public_dns_targets_are_pinned_and_arbitrary_urls_rejected(
@@ -104,7 +102,7 @@ def test_public_dns_targets_are_pinned_and_arbitrary_urls_rejected(
         "getaddrinfo",
         lambda *args, **kwargs: [(socket.AF_INET, socket.SOCK_STREAM, 0, "", ("8.8.8.8", 443))],
     )
-    assert sources.public_targets(sources.BOOK_URL)[0].host == "8.8.8.8"
+    assert sources.public_targets(sources.NEWS_URL)[0].host == "8.8.8.8"
     with pytest.raises(sources.SourceError, match="unsupported_source"):
         sources.download("https://www.nasa.gov/not-the-approved-feed")
 
@@ -120,7 +118,7 @@ def test_source_request_is_a_credential_free_get_with_bounded_body() -> None:
         httpx.Client(transport=httpx.MockTransport(handler)) as client,
         pytest.raises(sources.SourceError, match="source_too_large"),
     ):
-        sources.download(sources.BOOK_URL, client)
+        sources.download(sources.NEWS_URL, client)
     assert len(calls) == 1 and calls[0].method == "GET" and not calls[0].content
     assert "authorization" not in calls[0].headers and "cookie" not in calls[0].headers
 
@@ -155,7 +153,7 @@ def test_total_fetch_deadline_reaps_a_stalled_child(monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr(sources, "SOURCE_SECONDS", 0.5)
     started = time.monotonic()
     with pytest.raises(sources.SourceError, match="source_timeout"):
-        sources.fetch_source(sources.BOOK_URL)
+        sources.fetch_source(sources.NEWS_URL)
     assert time.monotonic() - started < 3
     assert {child.pid for child in multiprocessing.active_children()} == before
 

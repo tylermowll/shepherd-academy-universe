@@ -236,9 +236,9 @@ async def test_imported_source_tokens_are_owned_untampered_and_expiring(
     requests = install_tutor(monkeypatch)
     first_id, second_id = await learner_ids(adult)
     imported = await adult.post(
-        "/api/v1/reading/import", json={"learner_id": first_id, "source_id": "aesop_hare"}
+        "/api/v1/reading/import", json={"learner_id": first_id, "source_id": "nasa_news"}
     )
-    assert imported.status_code == 200 and calls == ["aesop_hare"]
+    assert imported.status_code == 200 and calls == ["nasa_news"]
     token = imported.json()["passages"][0]["source_token"]
     session = await tutor_session(adult)
     saved = await activity(adult, session, source="published", source_token=token)

@@ -6,14 +6,12 @@ import hmac
 import ipaddress
 import multiprocessing
 import os
-import re
 import socket
 import threading
 import time
 from contextlib import nullcontext
 from html.parser import HTMLParser
 from multiprocessing.connection import Connection
-from typing import Literal
 from uuid import UUID
 from xml.etree import ElementTree
 
@@ -24,25 +22,13 @@ from pydantic import BaseModel, ConfigDict, HttpUrl, ValidationError
 from math_tutor import settings
 from math_tutor.reading import ReadingPassage
 
-BOOK_URL = "https://gutenberg.pglaf.org/2/21/21-0.txt"
 NEWS_URL = "https://www.nasa.gov/news-release/feed/"
 MAX_SOURCE_BYTES = 1_048_576
 SOURCE_SECONDS = 12
-SourceId = Literal["aesop_hare", "aesop_grapes", "nasa_news"]
-SOURCES: dict[str, str] = {
-    "aesop_hare": "Aesop — The Hare and the Tortoise",
-    "aesop_grapes": "Aesop — The Fox and the Grapes",
-    "nasa_news": "NASA — Recent science and space news",
-}
 
 
 class SourceError(Exception):
     pass
-
-
-class SourceChoice(BaseModel):
-    id: SourceId
-    title: str
 
 
 class ImportedPassage(BaseModel):
@@ -90,7 +76,7 @@ def verify_source_token(token: str, learner_id: UUID) -> ReadingPassage:
 
 
 def public_targets(url: str) -> list[httpx.URL]:
-    if url not in {BOOK_URL, NEWS_URL}:
+    if url != NEWS_URL:
         raise SourceError("unsupported_source")
     endpoint = httpx.URL(url)
     rows = socket.getaddrinfo(endpoint.host, 443, type=socket.SOCK_STREAM)
@@ -109,7 +95,7 @@ def public_targets(url: str) -> list[httpx.URL]:
 
 def download(url: str, client: httpx.Client | None = None) -> bytes:
     """Only fixed URLs, pinned public addresses, TLS, no redirects/cookies/proxies."""
-    if url not in {BOOK_URL, NEWS_URL}:
+    if url != NEWS_URL:
         raise SourceError("unsupported_source")
     endpoint = httpx.URL(url)
     targets = [endpoint] if client is not None else public_targets(url)
@@ -163,7 +149,7 @@ def _download_child(url: str, sender: Connection) -> None:
 
 def fetch_source(url: str) -> bytes:
     """A total deadline includes DNS, connection, and slowly arriving content."""
-    if url not in {BOOK_URL, NEWS_URL}:
+    if url != NEWS_URL:
         raise SourceError("unsupported_source")
     context = multiprocessing.get_context("spawn")
     receiver, sender = context.Pipe(duplex=False)
@@ -192,29 +178,6 @@ def fetch_source(url: str) -> bytes:
                 child.kill()
                 child.join(timeout=1)
             child.close()
-
-
-def story(data: bytes, title: str) -> ReadingPassage:
-    text = data.decode("utf-8-sig").replace("\r\n", "\n")
-    match = re.search(r"(?im)^" + re.escape(title) + r"[ \t]*\n[ \t]*\n", text)
-    if match is None:
-        raise SourceError("source_changed")
-    remaining = text[match.end() :]
-    end = re.search(r"\n{2,}[A-Z][A-Za-z’' ,\-]{2,100}\n{2,}", remaining)
-    if end is None:
-        raise SourceError("source_changed")
-    body = remaining[: end.start()].strip()
-    if not 40 <= len(body) <= 50000:
-        raise SourceError("source_changed")
-    return ReadingPassage(
-        title=title,
-        text=body,
-        origin="published",
-        author="Aesop (George Fyler Townsend translation)",
-        source_url=HttpUrl("https://www.gutenberg.org/ebooks/21"),
-        excerpt=True,
-        permission="Project Gutenberg eBook 21; public domain in the United States. Source text imported from the Gutenberg mirror; check local permissions outside the US.",
-    )
 
 
 class TextExtractor(HTMLParser):
@@ -297,15 +260,10 @@ def news(data: bytes) -> list[ReadingPassage]:
     return passages
 
 
-def import_source(source_id: SourceId) -> list[ReadingPassage]:
-    if source_id not in SOURCES:
+def import_source(source_id: str) -> list[ReadingPassage]:
+    if source_id != "nasa_news":
         raise SourceError("unsupported_source")
     try:
-        if source_id == "nasa_news":
-            return news(fetch_source(NEWS_URL))
-        title = (
-            "The Hare and the Tortoise" if source_id == "aesop_hare" else "The Fox and the Grapes"
-        )
-        return [story(fetch_source(BOOK_URL), title)]
+        return news(fetch_source(NEWS_URL))
     except UnicodeError, ValueError, ElementTree.ParseError, httpx.InvalidURL:
         raise SourceError("source_changed") from None

@@ -108,7 +108,9 @@ test("one composer keeps photo problems, follow-ups and subsequent activities in
     .getByRole("button", { name: "Harder next activity", exact: true })
     .click();
   await expect(
-    page.getByText("Saved automatically · Harder difficulty", { exact: true }),
+    page.getByText("Saved automatically · Challenge: Stretch my thinking", {
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(log.locator(".tutor-feedback")).toHaveCount(6);
   await expect(

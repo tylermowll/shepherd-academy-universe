@@ -34,6 +34,22 @@ secret=$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')
 export SESSION_SECRET="$secret"
 export APP_PUBLIC_ORIGIN=http://127.0.0.1:18080
 docker run --rm --mount "type=volume,src=$volume,dst=/app/data" --env SESSION_SECRET --env APP_PUBLIC_ORIGIN "$image" alembic -c alembic.ini upgrade head
+docker run --rm --read-only --network none --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --mount "type=volume,src=$volume,dst=/app/data" "$image" python -m math_tutor.published_library import
+docker run --rm --read-only --network none --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --mount "type=volume,src=$volume,dst=/app/data" "$image" python -c '
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+from math_tutor.adapters.db.engine import create_default_engine
+from math_tutor.adapters.db.models import PublishedText
+from math_tutor.published_library import read_corpus, DEFAULT_MANIFEST
+records=read_corpus(DEFAULT_MANIFEST)
+with Session(create_default_engine()) as db:
+    assert db.scalar(select(func.count()).select_from(PublishedText)) == len(records)
+    assert len(records)>=500
+    for record in records:
+        saved=db.get(PublishedText,record.id)
+        assert saved and saved.text==record.text and saved.content_sha256==record.content_sha256
+print(f"Packaged public corpus: {len(records)} exact selections imported without network or inference.")
+'
 docker run --rm --mount "type=volume,src=$volume,dst=/app/data" "$image" python -m math_tutor.cli db
 docker run -d --name "$api_name" --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --mount "type=volume,src=$volume,dst=/app/data" --env SESSION_SECRET --env APP_PUBLIC_ORIGIN --env SHEPHERD_OWNER_SOCKET=/tmp/shepherd-owner/setup.sock -p 127.0.0.1:18080:8000 "$image" >/dev/null
 docker run -d --name "$worker_name" --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges --mount "type=volume,src=$volume,dst=/app/data" --env SESSION_SECRET --env APP_PUBLIC_ORIGIN "$image" python -m math_tutor.worker >/dev/null

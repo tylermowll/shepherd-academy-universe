@@ -23,8 +23,8 @@ See [TASKS](docs/TASKS.md) for the current checkpoint and
 
 ## Start the app
 
-Use Git, GNU Make, Node **>=26.12.1**, pnpm **>=12.14.0** and uv **>=0.13.4**.
-uv installs Python **3.15.0** into the root `.venv` for the app and development
+Use Git, GNU Make, Node **>=26.12.1**, pnpm **>=12.15.0** and uv **>=0.13.5**.
+uv installs Python **3.15.1** into the root `.venv` for the app and development
 tools, including CloudFormation validation. The root `pyproject.toml` and
 `uv.lock` define all Python dependencies. Minimum requirements allow newer stable
 tools; installer pins and lockfiles record the exact versions used. Compatibility
@@ -36,8 +36,8 @@ the default for new terminals before installing pnpm:
 ```bash
 nvm install "$(cat .node-version)"
 nvm alias default "$(cat .node-version)"
-npm install --global npm@12.2.0
-npm install --global pnpm@12.14.0 --allow-scripts=pnpm
+npm install --global npm@12.2.1
+npm install --global pnpm@12.15.0 --allow-scripts=pnpm
 ```
 
 Use `nvm use default` in terminals that were already open.
@@ -141,7 +141,13 @@ As a learner, choose what you would like help with: understand a topic, practice
 a skill, read and discuss a text, work on writing, review for a test, learn from
 homework, or describe something else. Enter what you are working on; the same
 form shows relevant material choices. **Adjust difficulty and guidance** holds
-optional preferences, with Standard difficulty and balanced guidance as defaults.
+optional preferences. Challenge defaults to **Apply and explain**, with
+**Start with the basics** and **Stretch my thinking** as alternatives; guidance
+defaults to balanced. An optional learning level can target a reading grade
+band, a math grade/course, or another course you describe. It guides later
+activities and feedback; it is not an assessment of your ability. Change or
+clear it in Session settings. Text length, challenge and learning level are
+separate preferences.
 **Start learning** saves the session and creates its first activity automatically.
 For photo material, the upload and phone controls open inline on the same page.
 Use **Send** for work or questions, **Attach photo** for
@@ -159,10 +165,44 @@ independently or received help. These AI observations can be wrong; they are
 guidance, not verified grades or mastery scores.
 
 For reading or study in any subject, paste material, photograph a passage, ask
-the tutor to write one, or choose **Choose a published text**. Published imports
-offer two Aesop stories from a Project Gutenberg mirror and up to five NASA news
-passages. Review the preview and attribution before starting. This picker does
-not retrieve arbitrary URLs or books, and it sends no learner work to those sources.
+the tutor to write one, or choose **Choose a published text**. The published
+library stores reviewed Project Gutenberg stories, poems, essays and book
+chapters/excerpts on this app's server. Search titles, authors and text, then
+filter by category, word count or approximate reading band. Select **Use this
+text** to open its preview and attribution. Changing a search preserves the
+selected preview. Reading bands are automatic text estimates with a stated
+basis; unrated texts remain available. They do not establish a learner's grade
+or whether a text is suitable for every reader.
+
+Local library searches and selections make no Internet or model request. They
+work while the app server is reachable, even without Internet access. Tutoring
+still needs the selected AI connection. **NASA news** is a separate, explicit
+Internet source offering up to five recent passages; it sends no learner work
+to NASA. The app does not fetch arbitrary learner-supplied URLs or retrieve a
+book from its title.
+
+The [packaged manifest](apps/api/src/math_tutor/data/published/manifest.json)
+records the collection and its checksums;
+[collection provenance](apps/api/src/math_tutor/data/published/README.md) describes
+edition, attribution and permission information, with the full
+[Gutenberg terms](apps/api/src/math_tutor/data/published/GUTENBERG-LICENSE.txt).
+Source permissions are
+specific to the included editions and jurisdiction. Learner sessions keep
+their own unchanged passage snapshots: importing more public texts does not
+rewrite saved work, and deleting a learner does not delete the shared library.
+
+Fresh native initialization loads the packaged collection locally. For an
+existing installation, follow the backup and stopped-writer upgrade procedure
+in [RUNBOOK](docs/RUNBOOK.md), run **`make migrate`**, then
+**`make library-import`**. The import verifies manifest-listed file checksums
+and text hashes, is
+atomic and safe to repeat, and refuses to overwrite an existing text ID with
+changed content or metadata. It downloads nothing. A reviewed custom local
+manifest can be imported in the configured application environment with:
+
+```sh
+python -m math_tutor.published_library import --manifest /path/to/manifest.json
+```
 
 Pasted and imported study texts allow **50,000 characters** (counted as Unicode
 code points). Text read from photos, AI-written passages and assignment references
@@ -236,6 +276,7 @@ The [Makefile](Makefile) is authoritative.
 | `make format`, `make lint`, `make typecheck`                             | Focused developer checks                                                                                         |
 | `make start`, `make dev`, `make serve`, `make worker`                    | Start with saved settings, start on this computer only, use a configured HTTPS gateway, or run the worker alone  |
 | `make migrate`                                                           | Upgrade an existing database after stopping the API and worker                                                   |
+| `make library-import`                                                    | Verify and import the packaged public-text collection into local SQLite; no network or inference                 |
 | `make down`                                                              | Stop Compose while retaining data; native processes use Ctrl+C                                                   |
 | `make backup OUTPUT=...`, `make restore INPUT=... OUTPUT=... LEDGER=...` | Native encrypted backup/restore with writes stopped                                                              |
 | `make demo`, `make seed-demo`                                            | Disposable restricted preview, or explicit empty demo database seed                                              |

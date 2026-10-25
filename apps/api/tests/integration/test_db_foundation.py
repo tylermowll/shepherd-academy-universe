@@ -21,7 +21,7 @@ from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
-from sqlalchemy import inspect
+from sqlalchemy import inspect, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError, StatementError
 from sqlalchemy.orm import Session
@@ -36,12 +36,13 @@ from math_tutor.adapters.db.models import (
     Learner,
     PracticeSession,
     ProblemInstance,
+    PublishedText,
     Submission,
     TutorTurn,
 )
 
 MIGRATIONS_DIR = Path(__file__).resolve().parents[2] / "migrations"
-HEAD_REVISION = "0020_request_recovery"
+HEAD_REVISION = "0021_published_library"
 
 
 @pytest.fixture
@@ -148,6 +149,7 @@ def test_empty_file_migration_reaches_head(engine: Engine, db_url: str) -> None:
         "provider_connection",
         "provider_policy",
         "cancelled_tutor_request",
+        "published_text",
     }
     assert columns["practice_session"] >= {"id", "learner_id", "status", "created_at"}
     assert columns["problem_instance"] >= {
@@ -779,3 +781,53 @@ def test_passage_migration_rolls_back_without_losing_other_activity_data(
     with Session(engine) as db:
         restored = db.get(ProblemInstance, uuid.UUID(problem_id))
         assert restored is not None and restored.passage is None
+
+
+def test_library_migration_rolls_back_without_changing_retained_learner_material(
+    engine: Engine, db_url: str
+) -> None:
+    upgrade(db_url)
+    with Session(engine) as db:
+        session = make_session()
+        problem = make_problem(session.id)
+        saved_passage = {
+            "title": "Synthetic retained text",
+            "text": "Keep this text.",
+            "origin": "pasted",
+        }
+        problem.passage = saved_passage
+        db.add(session)
+        db.add(problem)
+        db.add(
+            PublishedText(
+                id="synthetic-library",
+                title="Synthetic public text",
+                text="Original public fixture.",
+                author="Synthetic author",
+                category="Stories",
+                word_count=3,
+                text_kind="story",
+                reading_level=None,
+                level_basis=None,
+                source_url="https://example.invalid/public",
+                permission="Original synthetic test fixture.",
+                excerpt=False,
+                source_book_id="synthetic-book",
+                source_book_title="Synthetic public book",
+                content_sha256="a" * 64,
+                search_text="original public fixture.",
+            )
+        )
+        db.commit()
+        problem_id = problem.id
+    command.downgrade(alembic_config(db_url), "0020_request_recovery")
+    assert "published_text" not in table_columns(engine)
+    with Session(engine) as db:
+        retained = db.get(ProblemInstance, problem_id)
+        assert retained is not None and retained.passage == saved_passage
+    upgrade(db_url)
+    assert "published_text" in table_columns(engine)
+    with Session(engine) as db:
+        retained = db.get(ProblemInstance, problem_id)
+        assert retained is not None and retained.passage == saved_passage
+        assert list(db.scalars(select(PublishedText))) == []

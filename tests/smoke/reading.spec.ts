@@ -96,7 +96,7 @@ for (const source of [
       .getByRole("button", { name: "Harder next activity", exact: true })
       .click();
     await expect(
-      page.getByText("Saved automatically · Harder difficulty", {
+      page.getByText("Saved automatically · Challenge: Stretch my thinking", {
         exact: true,
       }),
     ).toBeVisible();
@@ -190,7 +190,9 @@ test("long science material has independent section pacing, saved navigation and
     .getByRole("button", { name: "Harder next activity", exact: true })
     .click();
   await expect(
-    page.getByText("Saved automatically · Harder difficulty", { exact: true }),
+    page.getByText("Saved automatically · Challenge: Stretch my thinking", {
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(passage).toHaveText(second);
   await expect(position).toHaveText(/Section 2 of \d+/);
@@ -235,7 +237,9 @@ test("long science material has independent section pacing, saved navigation and
     navigation.getByText("Reading pace", { exact: true }),
   ).toBeFocused();
   await expect(
-    page.getByText("Saved automatically · Harder difficulty", { exact: true }),
+    page.getByText("Saved automatically · Challenge: Stretch my thinking", {
+      exact: true,
+    }),
   ).toBeVisible();
   expect(
     await page.evaluate(

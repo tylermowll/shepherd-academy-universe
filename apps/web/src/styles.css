@@ -1304,8 +1304,60 @@ main:has(.tutor-workspace) {
 .source-photo-intake {
   margin-bottom: 20px;
 }
+.library-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.library-filters label,
+.library-filters select {
+  min-width: 0;
+}
+.library-results {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-block: 16px;
+}
+.library-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.library-text h4 {
+  margin-top: 0;
+}
+.library-text details {
+  margin-block: 12px;
+}
+.selected-library-text {
+  margin-top: 20px;
+  border-top: 1px solid #c4cdc1;
+  padding-top: 16px;
+}
+.library-browser {
+  margin-block: 16px;
+}
+.library-browser > summary {
+  overflow-wrap: anywhere;
+}
+.live-reading {
+  margin-block: 20px;
+}
+.learning-level {
+  min-width: 0;
+}
+.tutor-sidebar .library-filters,
+.tutor-sidebar .library-results {
+  grid-template-columns: minmax(0, 1fr);
+}
 @media (max-width: 520px) {
   .choice-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 720px) {
+  .library-filters,
+  .library-results {
     grid-template-columns: minmax(0, 1fr);
   }
 }

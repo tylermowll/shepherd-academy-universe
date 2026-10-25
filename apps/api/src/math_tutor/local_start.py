@@ -171,12 +171,25 @@ def prepare_database(root: Path) -> None:
     if not tables:
         print("Initializing your private database.", flush=True)
         command.upgrade(config, "head")
+        import_published_library()
     elif current != heads:
         raise ValueError(
             "The existing database needs a reviewed migration. Stop all API and worker "
             "processes, back up retained data, run `make migrate`, then `make start`. "
             "Startup has not migrated or deleted your existing data."
         )
+
+
+def import_published_library() -> None:
+    """Install the packaged public corpus without fetching or invoking a model."""
+    from math_tutor.published_library import import_library
+
+    engine = create_engine_for_url(settings.database_url())
+    try:
+        receipt = import_library(engine)
+        print(f"Published library ready: {receipt.total} selections ({receipt.added} added).")
+    finally:
+        engine.dispose()
 
 
 def start_services(root: Path, origin: SplitResult, make: str) -> int:
@@ -231,7 +244,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--make", default="make")
     parser.add_argument(
         "--command",
-        choices=["start", "db", "migrate", "admin", "worker", "backup", "restore"],
+        choices=[
+            "start",
+            "db",
+            "migrate",
+            "library-import",
+            "admin",
+            "worker",
+            "backup",
+            "restore",
+        ],
         default="start",
     )
     parser.add_argument("--input", type=Path)
@@ -279,6 +301,10 @@ def main(argv: list[str] | None = None) -> int:
             with native_lock(settings.database_path()):
                 config = Config(str(root / "apps/api/alembic.ini"))
                 command.upgrade(config, "head")
+            return 0
+        if args.command == "library-import":
+            with native_lock(settings.database_path()):
+                import_published_library()
             return 0
         if args.command == "worker":
             settings.session_secret()

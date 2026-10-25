@@ -169,6 +169,52 @@ class ProblemInstance(Base):
     passage: Mapped[dict[str, Any] | None] = mapped_column(JSON(none_as_null=True), nullable=True)
 
 
+class PublishedText(Base):
+    """Shared immutable public text units, independent of learner history."""
+
+    __tablename__ = "published_text"
+    __table_args__ = (
+        CheckConstraint("length(id) BETWEEN 1 AND 100", name="ck_published_text_id"),
+        CheckConstraint("length(text) BETWEEN 1 AND 50000", name="ck_published_text_length"),
+        CheckConstraint("word_count BETWEEN 1 AND 50000", name="ck_published_text_word_count"),
+        CheckConstraint(
+            "text_kind IN ('story', 'poem', 'essay', 'chapter', 'excerpt')",
+            name="ck_published_text_kind",
+        ),
+        CheckConstraint(
+            "reading_level IS NULL OR reading_level IN "
+            "('grades_k_2', 'grades_3_5', 'grades_6_8', 'grades_9_12', 'adult')",
+            name="ck_published_text_reading_level",
+        ),
+        CheckConstraint(
+            "reading_level IS NULL OR (level_basis IS NOT NULL AND length(trim(level_basis)) > 0)",
+            name="ck_published_text_level_basis",
+        ),
+        CheckConstraint("length(content_sha256) = 64", name="ck_published_text_content_hash"),
+        Index("ix_published_text_category_words", "category", "word_count"),
+        Index("ix_published_text_reading_level", "reading_level"),
+        Index("ix_published_text_title_id", "title", "id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    author: Mapped[str] = mapped_column(String(200), nullable=False)
+    category: Mapped[str] = mapped_column(String(80), nullable=False)
+    word_count: Mapped[int] = mapped_column(nullable=False)
+    text_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    reading_level: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    level_basis: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    source_url: Mapped[str] = mapped_column(String(2048), nullable=False)
+    permission: Mapped[str] = mapped_column(Text, nullable=False)
+    excerpt: Mapped[bool] = mapped_column(nullable=False)
+    source_book_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    source_book_title: Mapped[str] = mapped_column(String(200), nullable=False)
+    content_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    search_text: Mapped[str] = mapped_column(Text, nullable=False)
+    imported_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False, default=utcnow)
+
+
 class Administrator(Base):
     """One adult administrator for the private deployment (T02).
 

@@ -33,7 +33,7 @@ from math_tutor.api.app import create_app
 from math_tutor.api.auth import ANON_CSRF_COOKIE, CSRF_HEADER, SESSION_COOKIE
 
 MIGRATIONS_DIR = Path(__file__).resolve().parents[2] / "migrations"
-HEAD_REVISION = "0020_request_recovery"
+HEAD_REVISION = "0021_published_library"
 
 TEST_SECRET = "t02-synthetic-session-secret-0123456789abcdef"
 TEST_ORIGIN = "http://127.0.0.1:8000"
@@ -181,6 +181,7 @@ def test_auth_tables_migrate_from_empty_file(engine: Engine) -> None:
             "provider_connection",
             "provider_policy",
             "cancelled_tutor_request",
+            "published_text",
         } == set(names)
         admin_columns = {
             column["name"] for column in inspect(connection).get_columns("administrator")

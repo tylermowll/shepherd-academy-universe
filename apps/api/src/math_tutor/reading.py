@@ -19,6 +19,7 @@ ActivitySource = Literal[
 ]
 MaterialMode = Literal["whole", "guided"]
 SectionSize = Literal["short", "standard", "long"]
+ReadingLevel = Literal["grades_k_2", "grades_3_5", "grades_6_8", "grades_9_12", "adult"]
 SECTION_LENGTHS: dict[SectionSize, int] = {"short": 900, "standard": 1800, "long": 3600}
 MAX_PASSAGE_LENGTH = 50000
 

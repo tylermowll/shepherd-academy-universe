@@ -1,7 +1,7 @@
 FROM node:26.12.1-bookworm-slim@sha256:28147155d47dc31abe0a46e0d12b59b2fb3d0a2dcc5dc65fce76a074180b16fe AS web
 WORKDIR /src
-RUN npm install --global npm@12.2.0 \
-    && npm install --global pnpm@12.14.0 --allow-scripts=pnpm
+RUN npm install --global npm@12.2.1 \
+    && npm install --global pnpm@12.15.0 --allow-scripts=pnpm
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json apps/web/package.json
 COPY tools/contracts/package.json tools/contracts/package.json
@@ -12,9 +12,9 @@ COPY scripts/build-pwa.mjs scripts/build-pwa.mjs
 RUN pnpm --filter @math-tutor/web build
 
 # uv supplies the standalone Python 3.15 runtime copied into the final image.
-FROM python:3.15.0-slim-bookworm@sha256:2a41267d9de9d358f77a1de356e0f16ecba8d39827855be0ce9ef4792edce402 AS api
+FROM python:3.15.1-slim-bookworm@sha256:575f8bc12ec26542e0678bc6b60e385218248019d433157ec327264a78c3a853 AS api
 ENV UV_PYTHON_INSTALL_DIR=/opt/python UV_PYTHON_PREFERENCE=only-managed UV_LINK_MODE=copy
-RUN pip install --no-cache-dir uv==0.13.4
+RUN pip install --no-cache-dir uv==0.13.5
 WORKDIR /app
 COPY pyproject.toml uv.lock .python-version ./
 COPY apps/api/src apps/api/src
@@ -33,7 +33,7 @@ for installer in (runtime / "bin").glob("pip*"):
     installer.unlink()
 PYTHON
 
-FROM gcr.io/distroless/cc-debian13:nonroot@sha256:e792ab3d241a468a4fd7519ddbbebe66b49b5f365771716ea688ad40b6c6f1c2
+FROM gcr.io/distroless/cc-debian13:nonroot@sha256:3ee00291cf386ec52a552e6a858d555debd74776eb4bfa53fa3df2cd6677515e
 COPY --from=api /opt/python /opt/python
 COPY --from=api /app/.venv /app/.venv
 COPY --from=api /app/apps/api/src /app/apps/api/src

@@ -53,8 +53,9 @@ the tutor.
 
 There are **no fixed-template problems and no photo approval gate** in the tutor.
 
-Activity difficulty is a learning preference: `introductory` (Easier),
-`standard`, or `challenge` (Harder), defaulting to Standard. Persist it with the
+Activity difficulty is a learning preference: `introductory` (Start with the
+basics), `standard` (Apply and explain), or `challenge` (Stretch my thinking),
+defaulting to Apply and explain. Persist it with the
 session and apply it to activity and feedback instructions. Easier/Harder
 next-activity requests update difficulty and queue the activity in one
 transaction; retrying the same request must not create another activity. This is
@@ -208,7 +209,7 @@ or another learner-described goal. These are generative teaching intentions,
 not a finite subject or exercise catalog. Follow with a free-text topic and
 reveal relevant material inputs in the same form. Labels wrap at narrow widths;
 keyboard focus and native radio behavior remain usable. Preserve typed drafts
-when goals/material choices change. Keep Standard difficulty and balanced
+when goals/material choices change. Keep Apply and explain challenge and balanced
 guidance as defaults in an optional disclosure, with one short explanation for
 the chosen guidance style. Keep assignment references separate from passages
 and learner work. Finish session is available with the
@@ -266,7 +267,20 @@ Material source is independent of intent, so supplied notes do not automatically
 turn explanation or review into a reading-comprehension task. Preserve source
 ownership, selected-section limits and all active-assignment boundaries.
 
-Difficulty and reading pace are independent saved session preferences. Explain
+An optional typed `learning_level` selects a target reading band (`grades_k_2`,
+`grades_3_5`, `grades_6_8`, `grades_9_12`, or `adult`), math grade K–8 or a
+named math course, or a learner-described other course/level of up to 80
+characters. Its `subject` discriminator is `reading`, `math`, or `other`.
+The math courses are pre-algebra, Algebra 1, geometry, Algebra 2, precalculus,
+calculus and college math. These are teaching preferences, not assessed grades,
+age records, curriculum certifications or required account fields. Persist the
+level in session profile JSON; expose it in session details/summaries. Session
+settings omission preserves it, an explicit null clears it, and a supplied
+replacement affects later generation/guidance without rewriting earlier replies.
+Keep free-text course descriptions in untrusted learner context, never system
+instructions. Omitted and null initial levels have one canonical request identity.
+
+Challenge, reading pace and optional learning level are independent saved session preferences. Explain
 directly when requested; do not trap the learner in repeated Socratic questions.
 Examples should be relevant and age-appropriate without collecting personal
 interests or diagnoses by default. Preferences cannot enable network access,
@@ -317,9 +331,40 @@ position across restart. Saved material remains navigable after generation
 failure, including changing an oversized whole-text request to sections.
 Whole-text context is constrained by the model's configured context rather than
 an unrelated message limit. Homework references remain separate and are excluded
-from feedback. Source imports use a fixed reviewed catalog of approved sources
-and public HTTP requests with enforced limits; no arbitrary URLs or autonomous
-model tools.
+from feedback.
+
+The published library is a shared, locally stored collection of reviewed public
+text units, independent of learner history. Offer search across title, author,
+book title and text, with category, inclusive word-count and approximate reading-
+band filters, stable pagination and explicit selection. Word counts use
+whitespace-delimited tokens. Show the stated basis for an approximate band;
+unrated texts remain searchable. A text estimate never assesses learner ability
+or certifies age/grade suitability. Preserve the selected preview across search
+changes and retrieval failures. Each unit includes title/author, category,
+text kind, source-book identity, attribution/permission, original text and a
+content hash. Long works are chapter or explicitly labeled excerpt units within
+the existing 50,000-character limit; do not silently truncate source text.
+
+Operator import reads only local manifest-listed JSON files, with a versioned
+schema, reviewed source policy, file checksums and text hashes. Validate all
+records before one atomic import, retain existing IDs unchanged, and reject
+conflicting content/metadata instead of overwriting it. Imports are bounded to
+2,000 records, 1 MiB per manifest/record file and 128 MiB in aggregate.
+Normalize the reviewed source before packaging, not while selecting or tutoring.
+Fresh native initialization and disposable browser fixtures load packaged data
+without network access; retained installations explicitly migrate/import through
+the operator upgrade flow. Importing, browsing and selecting local texts makes no
+external HTTP or model call. No learner/model text may supply a retrieval URL.
+
+Keep live NASA news separate and explicitly Internet-backed. That action uses
+the approved feed URL, pinned public DNS/TLS, no redirects, cookies, credentials
+or inherited proxies, a 1 MiB response limit and a 12-second total deadline.
+Recheck authentication and learner ownership after network I/O. Local and live
+previews are signed, owned by one learner and expire after one hour; starting an
+activity saves its own immutable passage snapshot. Corpus imports do not change
+existing sessions, and learner deletion does not remove the shared public texts.
+Published material is reference content, never a fixed tutoring-template or
+authored-answer fallback.
 
 Practice collects the learning intent, topic and relevant material in one form,
 with optional difficulty and guidance settings. It supplies `initial_activity`
@@ -686,15 +731,16 @@ The [database models](../apps/api/src/math_tutor/adapters/db/models.py) and
 [migrations](../apps/api/migrations) define exact fields and constraints. The
 primary records are:
 
-| Records                                                     | Purpose                                                                                                       |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Administrator, learner, device session                      | One administrator, unique learner credentials/eligibility and revocable owned access                          |
-| Practice session, problem instance                          | Topic, initiative, difficulty, ordered generated activities, criteria and saved passage/section state         |
-| Submission, interpretation, tutor turn                      | Work/question, durable status, displayed reading and validated guidance with prompt versions and source links |
-| Job, worker heartbeat, model call                           | Lease/retry/call budgets, worker readiness and content-free model diagnostics                                 |
-| Provider connection, policy, route selection, probe/results | Encrypted write-only keys, audience/cloud restrictions, active roles and dated synthetic capability evidence  |
-| Phone upload, canceled request                              | Scoped expiring photo delegation and owned receipt-resolution tombstones                                      |
-| Deletion tombstone, photo deletion, audit event             | Restore-safe deletion, durable opaque cleanup references and content-free audit records                       |
+| Records                                                     | Purpose                                                                                                          |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Administrator, learner, device session                      | One administrator, unique learner credentials/eligibility and revocable owned access                             |
+| Practice session, problem instance                          | Topic, initiative, difficulty, ordered generated activities, criteria and saved passage/section state            |
+| Published text                                              | Shared immutable public units, source/license metadata, content hashes, local search and estimated reading bands |
+| Submission, interpretation, tutor turn                      | Work/question, durable status, displayed reading and validated guidance with prompt versions and source links    |
+| Job, worker heartbeat, model call                           | Lease/retry/call budgets, worker readiness and content-free model diagnostics                                    |
+| Provider connection, policy, route selection, probe/results | Encrypted write-only keys, audience/cloud restrictions, active roles and dated synthetic capability evidence     |
+| Phone upload, canceled request                              | Scoped expiring photo delegation and owned receipt-resolution tombstones                                         |
+| Deletion tombstone, photo deletion, audit event             | Restore-safe deletion, durable opaque cleanup references and content-free audit records                          |
 
 Use schema-validated JSON for bounded teaching/passage metadata, with relational
 ownership and integrity constraints. Optional exact-exercise records preserve
@@ -734,18 +780,32 @@ conversation polling must not download other saved sessions' content.
 [Generated OpenAPI](../contracts/openapi.json) defines exact methods and typed
 schemas. Application route families below use `/api/v1`; health probes do not:
 
-| Route family                                          | Access and behavior                                                                                                    |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `/auth/session`, `/auth/login`, `/auth/logout`        | Minimal session/CSRF bootstrap and rate-limited opaque-cookie account sign-in                                          |
-| `/auth/setup` and `/auth/setup/session`               | One-use owner-link exchange and scoped first-account creation; never public setup-token issuance or account reset      |
-| `/admin/learners`                                     | Administrator-managed credentials, browser revocation, authenticated export and deletion                               |
-| `/tutor/sessions`                                     | Learner-owned topic/initiative/difficulty sessions, atomic initial activity and subsequent generation/settings/history |
-| `/problems/{id}/submissions`, `/problems/{id}/photos` | Owned versioned work/questions and bounded raw photo submission; persist before returning durable operation state      |
-| `/tutor/request-receipts/{key}`                       | Owned acceptance lookup and explicit resolution of interrupted commands without work replay                            |
-| `/operations/{id}`                                    | Owned polling, bounded retry and cancellation; discard late results                                                    |
-| `/admin/providers`                                    | Administrator-only save, policy, synthetic tests and separate active-role selection; credentials remain write-only     |
-| `/phone-upload`                                       | Expiring upload capability; no learner browsing or account access                                                      |
-| `/health/live`, `/health/ready`                       | Content-free readiness, never paid inference                                                                           |
+| Route family                                          | Access and behavior                                                                                                        |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `/auth/session`, `/auth/login`, `/auth/logout`        | Minimal session/CSRF bootstrap and rate-limited opaque-cookie account sign-in                                              |
+| `/auth/setup` and `/auth/setup/session`               | One-use owner-link exchange and scoped first-account creation; never public setup-token issuance or account reset          |
+| `/admin/learners`                                     | Administrator-managed credentials, browser revocation, authenticated export and deletion                                   |
+| `/tutor/sessions`                                     | Learner-owned topic/initiative/difficulty sessions, atomic initial activity and subsequent generation/settings/history     |
+| `/reading/sources`, `/reading/import`                 | Authenticated local library search/filter/pagination and learner-owned signed previews; NASA retrieval explicitly separate |
+| `/problems/{id}/submissions`, `/problems/{id}/photos` | Owned versioned work/questions and bounded raw photo submission; persist before returning durable operation state          |
+| `/tutor/request-receipts/{key}`                       | Owned acceptance lookup and explicit resolution of interrupted commands without work replay                                |
+| `/operations/{id}`                                    | Owned polling, bounded retry and cancellation; discard late results                                                        |
+| `/admin/providers`                                    | Administrator-only save, policy, synthetic tests and separate active-role selection; credentials remain write-only         |
+| `/phone-upload`                                       | Expiring upload capability; no learner browsing or account access                                                          |
+| `/health/live`, `/health/ready`                       | Content-free readiness, never paid inference                                                                               |
+
+`GET /reading/sources` returns `SourceCatalogPublic`: local `items`, matching
+`total`, `offset`, `limit`, all stored `categories`, and separately identified
+`live_sources`. Each local summary includes ID/title/author, category, word
+count, text kind, nullable approximate reading band and its basis; it omits the
+text body. Query limits are 120 characters for `q`, 80 for `category`, nonnegative
+minimum/maximum word counts at most 50,000, and minimum no greater than maximum.
+The reading-band filter also accepts `unrated`. Offset is 0–2,147,483,647;
+page size is 1–50, default 12, ordered stably by title then ID.
+Search terms are literal casefolded text, not SQL patterns or retrieval URLs.
+`POST /reading/import` accepts an owned `learner_id` and a stable source ID of
+at most 100 slug characters. A local ID returns one signed passage preview;
+`nasa_news` explicitly invokes the live-feed path and may offer multiple previews.
 
 Work-creating commands require `Idempotency-Key`. Versioned mutations reject
 stale assignments with `409` and a safe explanation. Serialize conflicting
@@ -991,6 +1051,13 @@ after reopening. Use independent connections/processes for competing claims and
 stale leases even though deployment configures one worker. Fake provider HTTP
 responses are acceptable for transport tests, but mocked SQL or in-memory-only
 databases do not satisfy transaction/concurrency checks.
+
+Library checks cover additive migration/rollback, packaged corpus checksums,
+literal source preservation, atomic/idempotent import and immutable IDs,
+accurate filters/counts/pages, authentication/ownership/CSRF and token expiry,
+zero network calls for local browsing/selection, and retention independence
+between shared public texts and learner snapshots. Optional subject levels need
+validation, persistence, canonical request identity and actual prompt-use checks.
 
 **UI/end-to-end tests:** learner/admin separation, work/discussion/photos, reading
 before feedback, guided navigation, request recovery, updates and deletion. Use Playwright in CI, and record separate manual checks on actual phone Safari/Chrome. Desktop browser emulation is not proof of real-device camera/HEIC behavior. [^S30]

@@ -151,7 +151,7 @@ test("the tutor continues from a phone photo through guidance, revision, discuss
   expect(nextActivity.id).toMatch(/^[a-f0-9-]{36}$/);
   expect(nextActivity.id).not.toBe(firstActivity.id);
   await expect(
-    page.getByText("Saved automatically · Harder difficulty"),
+    page.getByText("Saved automatically · Challenge: Stretch my thinking"),
   ).toBeVisible();
   await expect(page.locator(".tutor-activity")).toHaveCount(1);
   await expect(

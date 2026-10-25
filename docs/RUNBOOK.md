@@ -14,7 +14,7 @@ thirty-minute, one-use setup link; the account is created in the browser, not a
 terminal prompt. Invalid form input does not stop the app. Subsequent starts
 never reset credentials or reopen first-account creation. If the database needs
 a migration, startup stops before building: stop all API/worker writes, back up
-data, then explicitly run `make migrate start`. Ctrl+C stops both services and preserves
+data, then explicitly run `make migrate library-import start`. Ctrl+C stops both services and preserves
 the persistent data. `make demo` is different: its temporary data is deleted when
 it stops. `make start` supports loopback HTTP or a configured private HTTPS
 gateway; `make dev` is loopback-only, and `make serve` requires the gateway.
@@ -107,6 +107,7 @@ sudo chown 10001:10001 data
 sudo chmod 700 data
 docker compose -f infra/docker/compose.yaml build
 docker compose -f infra/docker/compose.yaml run --rm api alembic upgrade head
+docker compose -f infra/docker/compose.yaml run --rm api python -m math_tutor.published_library import
 docker compose -f infra/docker/compose.yaml up -d
 make start
 curl --fail http://127.0.0.1:8000/health/ready
@@ -148,11 +149,26 @@ both services. For a direct Compose build, use:
 ```bash
 docker compose -f infra/docker/compose.yaml build
 docker compose -f infra/docker/compose.yaml run --rm api alembic upgrade head
+docker compose -f infra/docker/compose.yaml run --rm api python -m math_tutor.published_library import
 docker compose -f infra/docker/compose.yaml up -d
 ```
 
 Keep the same data mount and private settings. Verify readiness through the
-configured origin after startup. For an administrator password reset, stop both
+configured origin after startup. The library import installs the reviewed,
+packaged public texts into the shared SQLite corpus without network or model
+calls. It is idempotent and refuses a changed text under an existing ID; it
+does not rewrite learner passage snapshots. For native installations use
+`make library-import` after the reviewed migration. Fresh native initialization
+installs the packaged corpus automatically. The corpus and learner snapshots
+are covered by the same SQLite backup while retaining separate deletion rules.
+See the [corpus provenance and rebuild guide](../apps/api/src/math_tutor/data/published/README.md).
+
+Migration `0021_published_library` adds only the public corpus table. If this
+release must roll back, stop both services, use the candidate image to downgrade
+to `0020_request_recovery`, then start the previous image. This removes the new
+public library; learner/session tables and their saved material are preserved.
+Complete the encrypted backup/restore rehearsal before either direction of a
+retained-data migration. For an administrator password reset, stop both
 services and run
 `docker compose -f infra/docker/compose.yaml run --rm api python -m math_tutor.cli admin`
 with the existing username, then start the services again. The reset revokes
@@ -171,8 +187,9 @@ Internet. No provider config or secrets are baked into the image. Supply cloud
 credentials through workload identity or an explicitly managed short-lived
 mechanism, not committed static keys.
 
-`scripts/container-smoke.sh` migrates a disposable database and checks the
-non-root API, worker readiness and built UI. It creates a synthetic administrator
+`scripts/container-smoke.sh` migrates a disposable database, imports and verifies
+all packaged public selections with network disabled, and checks the non-root
+API, worker readiness and built UI. It creates a synthetic administrator
 through the setup link, checks renewal and stale-link rejection, and verifies
 that account creation closes setup. CI separately scans the image and generates
 a CycloneDX SBOM. See [TASKS](TASKS.md) for current observed results.

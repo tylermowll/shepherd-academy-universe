@@ -134,6 +134,28 @@ export function HelpPage({
                   text.
                 </p>
               </ContextHelp>
+              <ContextHelp topic="How do levels and challenge work?">
+                <p>
+                  You can leave the learning level unset. Reading grade bands, a
+                  math grade or course, or another course name give the tutor a
+                  starting point. These choices do not assess your ability.
+                  Challenge is separate: Start with the basics, Apply and
+                  explain, or Stretch my thinking. Changing session settings
+                  affects future replies.
+                </p>
+              </ContextHelp>
+              <ContextHelp topic="How do I find a published text?">
+                <p>
+                  Choose a published text to search the library saved on this
+                  server. Search by title, author or words in the text; filter
+                  by category, word count or approximate reading level, then
+                  choose Use this text. Your selected preview stays while you
+                  search. NASA news is a separate Internet option that loads
+                  only when you request it. Text length, its approximate reading
+                  band and the challenge of the tutor’s questions are different
+                  choices.
+                </p>
+              </ContextHelp>
               <ContextHelp topic="Why is Start learning unavailable?">
                 <p>
                   The demo cannot accept personal work. A private app and a

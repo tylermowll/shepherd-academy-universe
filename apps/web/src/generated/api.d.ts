@@ -957,6 +957,20 @@ export interface components {
       /** Resolved Points */
       resolved_points: string[];
     };
+    /** LiveSourceChoice */
+    LiveSourceChoice: {
+      /**
+       * Id
+       * @default nasa_news
+       * @constant
+       */
+      id: "nasa_news";
+      /**
+       * Title
+       * @default NASA — Recent science and space news (loads from the Internet)
+       */
+      title: string;
+    };
     /**
      * LoginRequest
      * @description Credentials bound to the administrator or learner sign-in screen.
@@ -1008,6 +1022,39 @@ export interface components {
       start: number;
       /** Text */
       text: string;
+    };
+    /** MathLearningLevel */
+    MathLearningLevel: {
+      /**
+       * Level
+       * @enum {string}
+       */
+      level:
+        | "grade_k"
+        | "grade_1"
+        | "grade_2"
+        | "grade_3"
+        | "grade_4"
+        | "grade_5"
+        | "grade_6"
+        | "grade_7"
+        | "grade_8"
+        | "grade_9"
+        | "grade_10"
+        | "grade_11"
+        | "grade_12"
+        | "pre_algebra"
+        | "algebra_1"
+        | "geometry"
+        | "algebra_2"
+        | "precalculus"
+        | "calculus"
+        | "college";
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      subject: "math";
     };
     /** OperationPublic */
     OperationPublic: {
@@ -1065,6 +1112,16 @@ export interface components {
       verdict?: components["schemas"]["VerdictPublic"] | null;
       /** Work Text */
       work_text: string;
+    };
+    /** OtherLearningLevel */
+    OtherLearningLevel: {
+      /** Level */
+      level: string;
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      subject: "other";
     };
     /**
      * PasswordChangeRequest
@@ -1497,6 +1554,20 @@ export interface components {
       providers: components["schemas"]["ProviderPublic"][];
       routes: components["schemas"]["Routes"];
     };
+    /** ReadingLearningLevel */
+    ReadingLearningLevel: {
+      /**
+       * Level
+       * @enum {string}
+       */
+      level:
+        "grades_k_2" | "grades_3_5" | "grades_6_8" | "grades_9_12" | "adult";
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      subject: "reading";
+    };
     /** ReadingPassage */
     ReadingPassage: {
       /** Author */
@@ -1672,15 +1743,44 @@ export interface components {
        */
       role: "adult" | "learner";
     };
+    /** SourceCatalogPublic */
+    SourceCatalogPublic: {
+      /** Categories */
+      categories: string[];
+      /** Items */
+      items: components["schemas"]["SourceChoice"][];
+      /** Limit */
+      limit: number;
+      /** Live Sources */
+      live_sources: components["schemas"]["LiveSourceChoice"][];
+      /** Offset */
+      offset: number;
+      /** Total */
+      total: number;
+    };
     /** SourceChoice */
     SourceChoice: {
+      /** Author */
+      author: string;
+      /** Category */
+      category: string;
+      /** Id */
+      id: string;
+      /** Level Basis */
+      level_basis?: string | null;
+      /** Reading Level */
+      reading_level?:
+        | ("grades_k_2" | "grades_3_5" | "grades_6_8" | "grades_9_12" | "adult")
+        | null;
       /**
-       * Id
+       * Text Kind
        * @enum {string}
        */
-      id: "aesop_hare" | "aesop_grapes" | "nasa_news";
+      text_kind: "story" | "poem" | "essay" | "chapter" | "excerpt";
       /** Title */
       title: string;
+      /** Word Count */
+      word_count: number;
     };
     /** SourceImportInput */
     SourceImportInput: {
@@ -1689,11 +1789,8 @@ export interface components {
        * Format: uuid
        */
       learner_id: string;
-      /**
-       * Source Id
-       * @enum {string}
-       */
-      source_id: "aesop_hare" | "aesop_grapes" | "nasa_news";
+      /** Source Id */
+      source_id: string;
     };
     /** SourceImportPublic */
     SourceImportPublic: {
@@ -1800,6 +1897,14 @@ export interface components {
        * @enum {string}
        */
       initiative: "tutor_led" | "balanced" | "learner_led";
+      /** Learning Level */
+      learning_level?:
+        | (
+            | components["schemas"]["ReadingLearningLevel"]
+            | components["schemas"]["MathLearningLevel"]
+            | components["schemas"]["OtherLearningLevel"]
+          )
+        | null;
     };
     /** TutoringSessionInput */
     TutoringSessionInput: {
@@ -1834,6 +1939,14 @@ export interface components {
         | "review"
         | "homework"
         | "other";
+      /** Learning Level */
+      learning_level?:
+        | (
+            | components["schemas"]["ReadingLearningLevel"]
+            | components["schemas"]["MathLearningLevel"]
+            | components["schemas"]["OtherLearningLevel"]
+          )
+        | null;
       /** Topic */
       topic: string;
     };
@@ -1877,6 +1990,14 @@ export interface components {
         | "review"
         | "homework"
         | "other";
+      /** Learning Level */
+      learning_level?:
+        | (
+            | components["schemas"]["ReadingLearningLevel"]
+            | components["schemas"]["MathLearningLevel"]
+            | components["schemas"]["OtherLearningLevel"]
+          )
+        | null;
       /** Problems */
       problems: components["schemas"]["ProblemPublic"][];
       /** Status */
@@ -1926,6 +2047,14 @@ export interface components {
         | "review"
         | "homework"
         | "other";
+      /** Learning Level */
+      learning_level?:
+        | (
+            | components["schemas"]["ReadingLearningLevel"]
+            | components["schemas"]["MathLearningLevel"]
+            | components["schemas"]["OtherLearningLevel"]
+          )
+        | null;
       /** Status */
       status: string;
       /** Topic */
@@ -3088,7 +3217,24 @@ export interface operations {
   };
   sources_api_v1_reading_sources_get: {
     parameters: {
-      query?: never;
+      query?: {
+        q?: string;
+        category?: string | null;
+        min_words?: number | null;
+        max_words?: number | null;
+        reading_level?:
+          | (
+              | "grades_k_2"
+              | "grades_3_5"
+              | "grades_6_8"
+              | "grades_9_12"
+              | "adult"
+            )
+          | "unrated"
+          | null;
+        offset?: number;
+        limit?: number;
+      };
       header?: never;
       path?: never;
       cookie?: never;
@@ -3101,7 +3247,16 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["SourceChoice"][];
+          "application/json": components["schemas"]["SourceCatalogPublic"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };

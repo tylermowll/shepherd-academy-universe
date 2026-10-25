@@ -41,6 +41,10 @@ migrate:
 	@echo "Stop API/worker writes before migrating."
 	$(LOCAL_COMMAND) --command migrate
 
+.PHONY: library-import
+library-import:
+	$(LOCAL_COMMAND) --command library-import
+
 admin:
 	$(LOCAL_COMMAND) --command admin
 

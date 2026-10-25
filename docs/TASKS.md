@@ -8,6 +8,13 @@ A task is complete only after its requirements and exit checks pass.
 
 ## Current checkpoint
 
+T77 adds a locally stored Project Gutenberg reading library with search,
+category/length/approximate-level filters, plus optional reading or math levels
+and clearer challenge choices. The maintainer authorized implementation,
+publication to `main` and deployment. Work resumed on October 25 at the
+maintainer's request; T76 remains installed
+until the checked replacement passes backup/restore and runtime verification.
+
 T76 implements the maintainer-approved goal-first learning form, publishes it
 to `main` and privately deploys it. Seven visible goals, conditional material
 fields, inline photo intake and optional preferences replace the clipped
@@ -49,6 +56,197 @@ writer backup. No migration, reset or inference was run on retained storage;
 live teaching quality remains unverified.
 [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
+
+## T77 — Expand the published library and subject levels, publish and deploy (2026-10-24)
+
+**Status:** In progress; resumed October 25 after the maintainer requested
+completion, publication to `main` and deployment. These actions were authorized after the
+Gutenberg/library/level design discussion. No paid inference or model download
+is authorized.
+
+The maintainer subsequently requested uv and related tool/dependency updates in
+this release. Their pasted output shows successful jsonpatch 1.37,
+jsonpointer 3.5 and Starlette 1.10.0 upgrades; the attempted commit stopped on
+an in-progress frontend lint error. Preserve those lock changes and the staged
+implementation, fix the actual lint issue, check current primary release
+metadata, and advance compatible tools/runtime/locks under DEPENDENCIES policy.
+No OS-package upgrade or compatibility-check suppression is authorized.
+
+**Shutdown checkpoint — October 24, 2026:** All current work is saved locally;
+no T77 commit, push, image build, retained-data migration or deployment has run.
+The installed T76 image and its database remain unchanged. The active full
+browser run was stopped with Ctrl-C: 40 passed, zero failed, one interrupted,
+109 unrun (150 total, 6.5 minutes, exit 130). Disposable fixture API/workers
+exited and ports 4173/4174 are clear. The final backend integration gate completed
+467/467 in 89.39 seconds; the final source/contract/security gate completed
+405 backend unit, 347 frontend and 11 toolchain cases successfully. The prior
+matching UI build passed `make check` before the invalid-query-only API guard.
+
+The changed-file hooks passed key/size/conflict/YAML/TOML/newline checks, then
+trimmed trailing whitespace in `data/published/GUTENBERG-LICENSE.txt`; that
+automatic modification is saved but needs staging and a hook rerun. Preserve
+both staged and unstaged changes, including the updated Dockerfile. No hook
+requirement or test was suppressed to conceal a failure.
+
+Durable ignored checkpoint:
+`backups/checkpoint-20261024-t77-reading-library`. It retains the source patch,
+reviewed temporary release helpers, public source cache, audit/mock receipts,
+dependency metadata and stopped browser artifacts. The large Trivy database,
+scanner binary and image archives are not copied; recreate/refresh the verified
+scanner from its retained download helper if `/tmp` is cleared. No backup key
+or private runtime data is included.
+
+**Resume:** Review this checkpoint and git status first. Keep the 868-text
+corpus and all maintainer dependency upgrades. Refresh the credential scan and
+changed-file hooks, finish a fresh complete browser run against a matching
+final build, then commit/push clean source to `main`. Build only that clean
+archive, verify exact UI assets and all corpus rows, run container smoke and
+exact-image scan/SBOM. Before cutover, stop both writers and complete the
+encrypted old-schema backup/restore; run the reviewed schema21/corpus import,
+activate and verify HTTPS/worker/assets/access/model-selection preservation.
+Record actual publication/runtime evidence and remaining limits. Do not claim
+T77 is already deployed.
+
+**Contracts and plan:** SPECIFICATION sections 1, 3, 4, 9–13; README Practice
+and reading; RUNBOOK encrypted-backup/private update procedure. Download a
+reviewed, attributed public-domain Gutenberg collection from its mirror; expose
+500–1,000 independently selectable literal stories, poems, essays and chapter or
+excerpt units, each within the existing 50,000-character material limit. Store
+the shared public corpus separately from learner snapshots in local SQLite;
+include title/author, category, word count, approximate reading band and its
+stated basis, source/edition/permission information and content hashes. Package
+the reviewed public corpus and provide bounded, idempotent operator import;
+do not add arbitrary learner URLs, model tools, services or dependencies.
+
+Replace the three-entry published picker with paginated local search and
+category/word-count/approximate-level filters, empty/error/retry states, explicit
+selection and retained preview. Searches and local selection make no external
+network or inference request; keep any live NASA retrieval explicitly separate.
+Reuse learner-owned signed previews and immutable per-activity snapshots so
+library changes and learner deletion do not corrupt either retention boundary.
+
+Keep challenge independent of text length and optional subject-specific level.
+Use “Start with the basics”, “Apply and explain” and “Stretch my thinking” for
+the existing introductory/standard/challenge values. Add an optional typed
+`learning_level` to session/settings metadata: reading grade bands, math grade
+or course, or another learner-described course/level. No grade is required or
+treated as assessed ability. Persist, expose and apply it to generation and
+guidance, including subsequent changes, without changing earlier replies or
+provider permissions. Preserve canonical request identities and regenerate API
+contracts.
+
+**Acceptance and release checks:** Real SQLite migration/rollback and corpus
+import/integrity/deduplication; accurate filters/counts/pagination; source text
+and license preservation; ownership/CSRF/token expiry; no network for local
+browsing/selection; learner deletion preserves corpus and library updates
+preserve saved material. Cover level validation/persistence/idempotency and
+actual prompt use. Components/browser checks cover search, filters, clear/no
+matches/retry, explicit selection, subject-level changes, drafts, narrow reflow
+and keyboard use. Run focused checks, project/integration/browser gates, audits
+and mock contracts. Push clean checked source, package it, verify image/assets,
+stop both writers for encrypted backup/isolated restore, run the additive
+migration and corpus import, deploy with rollback and verify private HTTPS,
+worker/schema/corpus/assets/access boundaries and unchanged model selections.
+Record exact outcomes; keep live teaching, physical devices and assistive
+technology as separate acceptance work.
+
+**Implemented:** The packaged corpus has 868 unique selections from 21 reviewed
+English-language Gutenberg editions across 12 categories. It contains about
+6.9 MB of selected text; the complete package with compressed originals,
+metadata and notices is about 10.6 MB. Original bytes/metadata hashes, literal
+source matching and all record hashes are checked. Source extraction excludes
+contents/index pages and editorial notes; wrapped Gutenberg headings, prose
+references that resemble lecture headings and legitimate very short chapters
+have dedicated regressions. Poems and texts under 100 alphabetic words remain
+unrated; other bands explicitly identify an automatic Flesch–Kincaid estimate
+with heuristic syllable counts. A band is not an age rating or verified
+curriculum placement. The full Gutenberg terms and original source notices
+are retained; US-public-domain status is stated per edition.
+
+Migration `0021_published_library` adds one shared public table. The bounded
+offline importer validates the complete manifest before its atomic write,
+refuses conflicting existing IDs and is idempotent. Native fresh initialization,
+the disposable browser harness and container smoke install the packaged corpus;
+`make library-import` supports explicit retained-installation updates. Library
+search, filters, pagination and selection use local data; NASA remains a
+separate explicit network action. Session material remains an owned immutable
+snapshot with its existing expiry, retention and assignment boundaries.
+
+Optional typed reading grade bands, math grades K–12/courses and another
+learner-described level are persisted in session profile JSON and consumed as
+bounded teaching context by activity/guidance v6. Omitted settings preserve the
+current level; explicit null clears it. Creation omits absent/null context from
+its canonical request identity. The existing challenge values have clearer
+labels, independent of level and reading length. Generated API contracts are
+regenerated from the backend.
+
+**Initial validation on the updated toolchain:**
+
+| Command / check                                                                                                         | Actual outcome                                                                                                                                                                                                                                                                                                            |
+| ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend library/foundation/reading integration selection                                                                | 81 passed in 10.21 seconds; additive migration downgrade/reupgrade, offline import atomicity and ownership/material boundaries covered.                                                                                                                                                                                   |
+| Updated-toolchain library/builder/NASA unit selection                                                                   | 53 passed in 1.05 seconds, including 868 unique units, all 21 original hashes, literal source matching and synthetic extraction failures. Local-library integration selection passed 18 in 3.52 seconds.                                                                                                                  |
+| Level contract/integration selections                                                                                   | Final 89 contract cases and 41 integration cases passed. The first integration failure was a synthetic photo fixture missing its required idempotency header; corrected without changing application behavior.                                                                                                            |
+| Frontend library, levels and related components                                                                         | 167 passed before final selected-preview handoff refinement. ESLint and TypeScript passed. The initial in-progress load-effect lint error was fixed without a suppression. Saved-settings disclosure remains open; identical polling preserves an unsaved course draft.                                                   |
+| `python3 /tmp/shepherd-t77/run.py make check`                                                                           | Initial full gate passed: 405 backend unit, 347 frontend and 11 toolchain tests, locks, lint, formatting, types, builds, contract drift, credential scan and infrastructure. Existing build-backend upper-bound and JavaScript chunk-size warnings remain. A final matching gate follows the selected-preview refinement. |
+| `python3 /tmp/shepherd-t77/run.py make test-integration`                                                                | Final 463 passed in 87.30 seconds. First full run: 462 passed and one exact table-inventory assertion needed the new `published_text` table; the equality/privacy checks remain strict.                                                                                                                                   |
+| Fresh native initialization/restart against a disposable database                                                       | Imported 868 selections automatically, verified schema 0021/integrity and identical corpus fingerprints after restart. No network or inference.                                                                                                                                                                           |
+| Four new library/level browser scenarios on desktop/mobile                                                              | Initial eight cases passed in 1.2 minutes against the matching updated-toolchain build. 1280px/320px screenshots inspected. This review identified excessive scrolling after choosing a text; the selected preview/browse disclosure handoff is being refined before the final browser run.                               |
+| `python3 /tmp/shepherd-t77/run.py make audit`                                                                           | Python and pnpm reported no known vulnerabilities.                                                                                                                                                                                                                                                                        |
+| Makefile-equivalent rational/reading/teaching/adversarial mock commands with reports in `/tmp/shepherd-t77/eval-*.json` | All passed: 33 rational cases; 12 reading and 12 teaching cases/36 stages each; four adversarial cases/20 stages. No live inference; contract checks do not establish model quality.                                                                                                                                      |
+
+Publication, exact-image security/SBOM, encrypted backup/isolated restore,
+migration/corpus activation, runtime verification and final evidence remain in
+progress. The candidate will be built from clean published source; no completion
+or deployed-source claim is made at this checkpoint.
+
+The selected preview now appears above a native browse disclosure. Explicit
+selection closes the result list and focuses its selected-text heading;
+reopening retains filters, results and the preview, while removing a selection
+reopens browsing. Failures preserve the selection. The final matching frontend
+gate passed again: 405 backend unit, 347 frontend and 11 toolchain cases plus
+all lint/type/build/contract/security checks. A fresh 150-scenario browser run
+is in progress on that frozen UI build with one worker and zero retries.
+
+A final backend review added upper bounds to the new library's minimum-word
+and offset inputs, preventing oversized integers from reaching SQLite. Four
+new HTTP-422 regressions passed; the final library integration selection passed
+22 in 4.26 seconds. These guards change only invalid queries; normal browser
+requests and the tested UI build are unchanged. Contracts were regenerated;
+the final complete backend gate and exact-image checks follow this delta.
+
+Temporary release helpers passed 26 synthetic state-machine/migration tests in
+2.75 seconds. The restricted old-image container rehearsal also preserved a
+committed uncheckpointed WAL row through encryption and isolated restore.
+Separate old/new schema checks require the exact corpus and model-selection
+digest before activation. Candidate rollback removes only the new public table
+and preserves post-activation learner/selection edits; it never restores an old
+backup over newer work. Independent helper review found no blocking issue.
+
+**Resumed release validation — October 25, 2026:** The maintainer requested
+completion, publication to `main`, and private deployment. Preserved the full
+staged implementation, the shutdown checkpoint, license whitespace correction,
+Dockerfile and dependency upgrades. Independent feature and release-helper
+reviews found no blocking defect. Corrected README's missing notices-file link
+to the corpus provenance/actual Gutenberg terms and added the explicit corpus
+import to RUNBOOK's retained-installation upgrade example.
+
+| Actual command / check | Outcome |
+| --- | --- |
+| `python3 /tmp/shepherd-t77/run.py make check` | Passed: 405 backend unit, 347 frontend and 11 toolchain tests; locks, lint, formatting, types, builds, generated-contract drift, credential scan and infrastructure. Existing build-backend upper-bound and large JavaScript chunk warnings remain. |
+| `python3 /tmp/shepherd-t77/run.py env DATABASE_URL=sqlite+pysqlite:////tmp/shepherd-t77-synthetic.sqlite3 AWS_EC2_METADATA_DISABLED=true uv run --locked --no-env-file pytest apps/api/tests/integration` | 467 passed in 87.79 seconds against synthetic on-disk databases. |
+| `python3 /tmp/shepherd-t77/run.py make hooks-files-check` | All repository file checks passed, including license whitespace/newlines; only the Makefile's duplicate project hook was skipped because the full gate passed separately. |
+| `python3 /tmp/shepherd-t77/run.py make audit` | Python and pnpm both reported no known vulnerabilities. |
+| `python3 /tmp/shepherd-t77/run.py make smoke-built` | Complete matching-build run: 150/150 desktop/mobile Chromium cases passed in 23.4 minutes, one worker, zero failures and zero retries. |
+| `python3 /tmp/shepherd-t77/run.py make eval-mock` | Rational, reading, teaching and adversarial mock contracts passed. Fresh synthetic reports retained in `/tmp/shepherd-t77/resume-*.json`; tracked baseline reports restored. No live inference. |
+| `python3 /tmp/shepherd-t77/run.py env DATABASE_URL=sqlite+pysqlite:////tmp/shepherd-t77-helpers.sqlite3 AWS_EC2_METADATA_DISABLED=true uv run --locked --no-env-file pytest /tmp/shepherd-t77/test_operations.py /tmp/shepherd-t77/test_migration.py -q` | 26 passed in 2.76 seconds. |
+| `python3 /tmp/shepherd-t77/run.py .venv/bin/python /tmp/shepherd-t77/test_backup_container.py` | Restricted disposable old-image container preserved a committed uncheckpointed WAL row through encrypted backup and isolated restore. |
+
+Initial sandbox attempts could not run required subprocess/socket checks,
+file-hook write probes, Docker access or registry DNS; affected commands were
+rerun with the required host permissions. No assertion, policy or hook was
+weakened. All final local source/browser gates have passed. Publication,
+exact-image and installation evidence follows when those operations complete.
 
 ## T76 — Start learning with one adaptive form, publish and deploy (2026-10-24)
 

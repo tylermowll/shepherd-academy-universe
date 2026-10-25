@@ -81,3 +81,20 @@ export function materialChoices(intent?: LearningIntent) {
           : choice.label,
     }));
 }
+
+export const challengeOptions: Array<{
+  value: NonNullable<Schema<"TutoringSessionInput">["difficulty"]>;
+  label: string;
+}> = [
+  { value: "introductory", label: "Start with the basics" },
+  { value: "standard", label: "Apply and explain" },
+  { value: "challenge", label: "Stretch my thinking" },
+];
+export const guidanceOptions: Array<{
+  value: Schema<"TutoringSessionInput">["initiative"];
+  label: string;
+}> = [
+  { value: "tutor_led", label: "Suggest what to do next" },
+  { value: "balanced", label: "Decide together" },
+  { value: "learner_led", label: "Follow my questions" },
+];

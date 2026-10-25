@@ -403,6 +403,23 @@
         "title": "LearningObservation",
         "type": "object"
       },
+      "LiveSourceChoice": {
+        "properties": {
+          "id": {
+            "const": "nasa_news",
+            "default": "nasa_news",
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "default": "NASA \u2014 Recent science and space news (loads from the Internet)",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "title": "LiveSourceChoice",
+        "type": "object"
+      },
       "LoginRequest": {
         "description": "Credentials bound to the administrator or learner sign-in screen.",
         "properties": {
@@ -503,6 +520,48 @@
           "text"
         ],
         "title": "MaterialFocus",
+        "type": "object"
+      },
+      "MathLearningLevel": {
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "enum": [
+              "grade_k",
+              "grade_1",
+              "grade_2",
+              "grade_3",
+              "grade_4",
+              "grade_5",
+              "grade_6",
+              "grade_7",
+              "grade_8",
+              "grade_9",
+              "grade_10",
+              "grade_11",
+              "grade_12",
+              "pre_algebra",
+              "algebra_1",
+              "geometry",
+              "algebra_2",
+              "precalculus",
+              "calculus",
+              "college"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "subject": {
+            "const": "math",
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject",
+          "level"
+        ],
+        "title": "MathLearningLevel",
         "type": "object"
       },
       "OperationPublic": {
@@ -685,6 +744,28 @@
           "created_at"
         ],
         "title": "OperationPublic",
+        "type": "object"
+      },
+      "OtherLearningLevel": {
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Level",
+            "type": "string"
+          },
+          "subject": {
+            "const": "other",
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject",
+          "level"
+        ],
+        "title": "OtherLearningLevel",
         "type": "object"
       },
       "PasswordChangeRequest": {
@@ -1621,6 +1702,33 @@
         "title": "ProvidersPublic",
         "type": "object"
       },
+      "ReadingLearningLevel": {
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "enum": [
+              "grades_k_2",
+              "grades_3_5",
+              "grades_6_8",
+              "grades_9_12",
+              "adult"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "subject": {
+            "const": "reading",
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject",
+          "level"
+        ],
+        "title": "ReadingLearningLevel",
+        "type": "object"
+      },
       "ReadingPassage": {
         "additionalProperties": false,
         "properties": {
@@ -2062,25 +2170,123 @@
         "title": "SignInAccount",
         "type": "object"
       },
+      "SourceCatalogPublic": {
+        "properties": {
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SourceChoice"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "live_sources": {
+            "items": {
+              "$ref": "#/components/schemas/LiveSourceChoice"
+            },
+            "title": "Live Sources",
+            "type": "array"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit",
+          "categories",
+          "live_sources"
+        ],
+        "title": "SourceCatalogPublic",
+        "type": "object"
+      },
       "SourceChoice": {
         "properties": {
+          "author": {
+            "title": "Author",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
           "id": {
-            "enum": [
-              "aesop_hare",
-              "aesop_grapes",
-              "nasa_news"
-            ],
             "title": "Id",
+            "type": "string"
+          },
+          "level_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level Basis"
+          },
+          "reading_level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "grades_k_2",
+                  "grades_3_5",
+                  "grades_6_8",
+                  "grades_9_12",
+                  "adult"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reading Level"
+          },
+          "text_kind": {
+            "enum": [
+              "story",
+              "poem",
+              "essay",
+              "chapter",
+              "excerpt"
+            ],
+            "title": "Text Kind",
             "type": "string"
           },
           "title": {
             "title": "Title",
             "type": "string"
+          },
+          "word_count": {
+            "title": "Word Count",
+            "type": "integer"
           }
         },
         "required": [
           "id",
-          "title"
+          "title",
+          "author",
+          "category",
+          "word_count",
+          "text_kind"
         ],
         "title": "SourceChoice",
         "type": "object"
@@ -2094,11 +2300,9 @@
             "type": "string"
           },
           "source_id": {
-            "enum": [
-              "aesop_hare",
-              "aesop_grapes",
-              "nasa_news"
-            ],
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
             "title": "Source Id",
             "type": "string"
           }
@@ -2405,6 +2609,35 @@
             ],
             "title": "Initiative",
             "type": "string"
+          },
+          "learning_level": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "math": "#/components/schemas/MathLearningLevel",
+                    "other": "#/components/schemas/OtherLearningLevel",
+                    "reading": "#/components/schemas/ReadingLearningLevel"
+                  },
+                  "propertyName": "subject"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/ReadingLearningLevel"
+                  },
+                  {
+                    "$ref": "#/components/schemas/MathLearningLevel"
+                  },
+                  {
+                    "$ref": "#/components/schemas/OtherLearningLevel"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Learning Level"
           }
         },
         "required": [
@@ -2464,6 +2697,35 @@
             ],
             "title": "Learning Intent",
             "type": "string"
+          },
+          "learning_level": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "math": "#/components/schemas/MathLearningLevel",
+                    "other": "#/components/schemas/OtherLearningLevel",
+                    "reading": "#/components/schemas/ReadingLearningLevel"
+                  },
+                  "propertyName": "subject"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/ReadingLearningLevel"
+                  },
+                  {
+                    "$ref": "#/components/schemas/MathLearningLevel"
+                  },
+                  {
+                    "$ref": "#/components/schemas/OtherLearningLevel"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Learning Level"
           },
           "topic": {
             "maxLength": 500,
@@ -2527,6 +2789,35 @@
             ],
             "title": "Learning Intent",
             "type": "string"
+          },
+          "learning_level": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "math": "#/components/schemas/MathLearningLevel",
+                    "other": "#/components/schemas/OtherLearningLevel",
+                    "reading": "#/components/schemas/ReadingLearningLevel"
+                  },
+                  "propertyName": "subject"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/ReadingLearningLevel"
+                  },
+                  {
+                    "$ref": "#/components/schemas/MathLearningLevel"
+                  },
+                  {
+                    "$ref": "#/components/schemas/OtherLearningLevel"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Learning Level"
           },
           "problems": {
             "items": {
@@ -2609,6 +2900,35 @@
             ],
             "title": "Learning Intent",
             "type": "string"
+          },
+          "learning_level": {
+            "anyOf": [
+              {
+                "discriminator": {
+                  "mapping": {
+                    "math": "#/components/schemas/MathLearningLevel",
+                    "other": "#/components/schemas/OtherLearningLevel",
+                    "reading": "#/components/schemas/ReadingLearningLevel"
+                  },
+                  "propertyName": "subject"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/ReadingLearningLevel"
+                  },
+                  {
+                    "$ref": "#/components/schemas/MathLearningLevel"
+                  },
+                  {
+                    "$ref": "#/components/schemas/OtherLearningLevel"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Learning Level"
           },
           "status": {
             "title": "Status",
@@ -4235,20 +4555,143 @@
     "/api/v1/reading/sources": {
       "get": {
         "operationId": "sources_api_v1_reading_sources_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 120,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 80,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "min_words",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 50000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Words"
+            }
+          },
+          {
+            "in": "query",
+            "name": "max_words",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 50000,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Max Words"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reading_level",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "grades_k_2",
+                    "grades_3_5",
+                    "grades_6_8",
+                    "grades_9_12",
+                    "adult"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "const": "unrated",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reading Level"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 2147483647,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 12,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/SourceChoice"
-                  },
-                  "title": "Response Sources Api V1 Reading Sources Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/SourceCatalogPublic"
                 }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Sources",

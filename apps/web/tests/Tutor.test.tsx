@@ -42,6 +42,9 @@ const session = (problems: unknown[] = []) => ({
     Schema<"TutoringSessionInput">["learning_intent"]
   >,
   initiative: "balanced",
+  learning_level: null as NonNullable<
+    Schema<"TutoringSessionInput">["learning_level"]
+  > | null,
   difficulty: "standard",
   status: "open",
   created_at: "2026-10-23T12:34:00Z",
@@ -998,7 +1001,7 @@ describe("AI learning conversation", () => {
     ).toBeVisible();
   });
 
-  it("starts a non-math topic with no level, templates, or solution controls", async () => {
+  it("starts a non-math topic without requiring a level or offering solution controls", async () => {
     const fetcher = vi.fn((url: string, options: RequestInit) => {
       if (url.endsWith("/features")) return response(capabilities);
       if (url.endsWith(`/tutor/sessions/${sessionId}`))
@@ -1043,7 +1046,9 @@ describe("AI learning conversation", () => {
       difficulty: "challenge",
       initial_activity: { source: "topic" },
     });
-    expect(screen.queryByLabelText(/level|skill|grade/i)).toBeNull();
+    expect(screen.getByLabelText("Subject for this level")).not.toHaveAttribute(
+      "required",
+    );
     expect(screen.queryByText("Full solution")).toBeNull();
   });
 
@@ -1349,10 +1354,11 @@ describe("AI learning conversation", () => {
     expect(JSON.parse(sent[1].body as string)).toEqual({
       initiative: "tutor_led",
       difficulty: "introductory",
+      learning_level: null,
     });
     expect(
       screen.getByText(
-        /Homework is used to create different practice on the same concepts/,
+        /Homework is used for different practice on the same ideas/,
       ),
     ).toBeVisible();
     expect(screen.queryByRole("button", { name: /Full solution/ })).toBeNull();
@@ -2199,67 +2205,96 @@ it.each(["reading_text", "reading_photo", "reading_generated"])(
   },
 );
 
-it("starts published reading only after a selected preview supplies its source token", async () => {
-  const passage = {
-    title: "Synthetic public story",
-    text: "A seedling moved toward the sunlight.",
-    origin: "published",
-    author: "Synthetic author",
-    permission: "Original test fixture",
-    source_url: "https://www.gutenberg.org/ebooks/21",
-    uncertainties: [],
-  };
-  const fetcher = vi.fn((url: string, options: RequestInit) => {
-    if (url.endsWith("/features")) return response(capabilities);
-    if (url.endsWith("/reading/sources"))
-      return response([{ id: "aesop_hare", title: "Synthetic source" }]);
-    if (url.endsWith("/reading/import"))
-      return response({
-        passages: [{ passage, source_token: "owned-synthetic-preview" }],
-      });
-    if (url.endsWith(`/tutor/sessions/${sessionId}`))
-      return response(session([activity()]));
-    if (url.endsWith("/tutor/sessions"))
-      return response(
-        options.method === "POST" ? session([{ ...activity(), passage }]) : [],
-      );
-    throw new Error(url);
-  });
-  vi.stubGlobal("fetch", fetcher);
-  render(<Tutor learner={learner} offline={false} act={run} />);
-  await screen.findByRole("group", { name: "What would you like help with?" });
-  fireEvent.change(screen.getByLabelText("What are you working on?"), {
-    target: { value: "Reading inference" },
-  });
-  selectSource("published");
-  await screen.findByRole("option", { name: "Synthetic source" });
-  expect(screen.getByRole("button", { name: "Start learning" })).toBeDisabled();
-  expect(
-    fetcher.mock.calls.some(([url]) => url.endsWith("/reading/import")),
-  ).toBe(false);
-  fireEvent.click(screen.getByRole("button", { name: "Load published text" }));
-  await screen.findByText("Synthetic public story");
-  fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
-  await vi.waitFor(() => {
-    const sent = fetcher.mock.calls.find(
-      ([url, options]) =>
-        url.endsWith("/tutor/sessions") && options.method === "POST",
-    );
-    expect(
-      (JSON.parse(sent![1].body as string) as Schema<"TutoringSessionInput">)
-        .initial_activity,
-    ).toEqual({
-      source: "published",
-      source_token: "owned-synthetic-preview",
-      reading_mode: "guided",
-      section_size: "standard",
+it.each([true, false])(
+  "starts published reading from an explicit preview and preserves typed topic=%s",
+  async (typedTopic) => {
+    const passage = {
+      title: "Synthetic public story",
+      text: "A seedling moved toward the sunlight.",
+      origin: "published",
+      author: "Synthetic author",
+      permission: "Original test fixture",
+      source_url: "https://www.gutenberg.org/ebooks/21",
+      uncertainties: [],
+    };
+    const fetcher = vi.fn((url: string, options: RequestInit) => {
+      if (url.endsWith("/features")) return response(capabilities);
+      if (url.includes("/reading/sources?"))
+        return response({
+          items: [
+            {
+              id: "synthetic-local",
+              title: "Synthetic source",
+              author: "Synthetic author",
+              category: "Stories",
+              word_count: 620,
+              text_kind: "story",
+              reading_level: null,
+              level_basis: null,
+            },
+          ],
+          total: 1,
+          offset: 0,
+          limit: 12,
+          categories: ["Stories"],
+          live_sources: [],
+        });
+      if (url.endsWith("/reading/import"))
+        return response({
+          passages: [{ passage, source_token: "owned-synthetic-preview" }],
+        });
+      if (url.endsWith(`/tutor/sessions/${sessionId}`))
+        return response(session([activity()]));
+      if (url.endsWith("/tutor/sessions"))
+        return response(
+          options.method === "POST"
+            ? session([{ ...activity(), passage }])
+            : [],
+        );
+      throw new Error(url);
     });
-  });
-  await screen.findByLabelText("Your work or question");
-  expect(
-    screen.queryByRole("button", { name: "Load published text" }),
-  ).toBeNull();
-});
+    vi.stubGlobal("fetch", fetcher);
+    render(<Tutor learner={learner} offline={false} act={run} />);
+    await screen.findByRole("group", {
+      name: "What would you like help with?",
+    });
+    if (typedTopic)
+      fireEvent.change(screen.getByLabelText("What are you working on?"), {
+        target: { value: "Reading inference" },
+      });
+    selectSource("published");
+    await screen.findByRole("heading", { name: "Synthetic source" });
+    expect(
+      screen.getByRole("button", { name: "Start learning" }),
+    ).toBeDisabled();
+    expect(
+      fetcher.mock.calls.some(([url]) => url.endsWith("/reading/import")),
+    ).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Use this text" }));
+    await screen.findByText("Synthetic public story");
+    expect(screen.getByLabelText("What are you working on?")).toHaveValue(
+      typedTopic ? "Reading inference" : "Synthetic public story",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
+    await vi.waitFor(() => {
+      const sent = fetcher.mock.calls.find(
+        ([url, options]) =>
+          url.endsWith("/tutor/sessions") && options.method === "POST",
+      );
+      expect(
+        (JSON.parse(sent![1].body as string) as Schema<"TutoringSessionInput">)
+          .initial_activity,
+      ).toEqual({
+        source: "published",
+        source_token: "owned-synthetic-preview",
+        reading_mode: "guided",
+        section_size: "standard",
+      });
+    });
+    await screen.findByLabelText("Your work or question");
+    expect(screen.queryByRole("button", { name: "Use this text" })).toBeNull();
+  },
+);
 
 const studyMaterial = {
   title: "Original history source",
@@ -3222,4 +3257,89 @@ describe("goal-first session setup", () => {
       screen.queryByRole("button", { name: "Submit this photograph" }),
     ).toBeNull();
   });
+});
+
+it.each([
+  { subject: "reading", level: "grades_6_8" },
+  { subject: "math", level: "algebra_1" },
+  { subject: "other", level: "  introductory biology  " },
+] as const)(
+  "includes the optional $subject level in the one accepted learning request",
+  async (level) => {
+    const saved = { ...session([activity()]), learning_level: level };
+    const fetcher = vi.fn((url: string, options: RequestInit) => {
+      if (url.endsWith("/features")) return response(capabilities);
+      if (url.endsWith(`/tutor/sessions/${sessionId}`)) return response(saved);
+      if (url.endsWith("/tutor/sessions"))
+        return response(options.method === "POST" ? saved : []);
+      throw new Error(url);
+    });
+    vi.stubGlobal("fetch", fetcher);
+    render(<Tutor learner={learner} offline={false} act={run} />);
+    fireEvent.change(screen.getByLabelText("What are you working on?"), {
+      target: { value: "An original synthetic topic" },
+    });
+    openLearningPreferences();
+    fireEvent.change(screen.getByLabelText("Subject for this level"), {
+      target: { value: level.subject },
+    });
+    if (level.subject === "reading")
+      fireEvent.change(screen.getByLabelText("Reading level"), {
+        target: { value: level.level },
+      });
+    else if (level.subject === "math")
+      fireEvent.change(screen.getByLabelText("Math grade or course"), {
+        target: { value: level.level },
+      });
+    else
+      fireEvent.change(screen.getByLabelText("Course or level"), {
+        target: { value: level.level },
+      });
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Start learning" }),
+      ).toBeEnabled(),
+    );
+    expect(
+      fetcher.mock.calls.filter(([, options]) => options.method === "POST"),
+    ).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: "Start learning" }));
+    await screen.findByLabelText("Your work or question");
+    const posts = fetcher.mock.calls.filter(
+      ([, options]) => options.method === "POST",
+    );
+    expect(posts).toHaveLength(1);
+    expect(JSON.parse(posts[0]![1].body as string)).toMatchObject({
+      learning_level: { ...level, level: level.level.trim() },
+      initial_activity: { source: "topic" },
+    });
+  },
+);
+
+it("keeps an oversized course draft and blocks session submission until it is corrected", async () => {
+  const fetcher = vi.fn((url: string) =>
+    url.endsWith("/features") ? response(capabilities) : response([]),
+  );
+  vi.stubGlobal("fetch", fetcher);
+  render(<Tutor learner={learner} offline={false} act={run} />);
+  fireEvent.change(screen.getByLabelText("What are you working on?"), {
+    target: { value: "Original synthetic course goal" },
+  });
+  openLearningPreferences();
+  fireEvent.change(screen.getByLabelText("Subject for this level"), {
+    target: { value: "other" },
+  });
+  fireEvent.change(screen.getByLabelText("Course or level"), {
+    target: { value: "x".repeat(81) },
+  });
+  await screen.findByText(/Keep the course or level to 80 characters/);
+  const start = screen.getByRole("button", { name: "Start learning" });
+  expect(start).toBeDisabled();
+  fireEvent.submit(start.closest("form")!);
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  expect(screen.getByLabelText("Course or level")).toHaveValue("x".repeat(81));
+  fireEvent.change(screen.getByLabelText("Course or level"), {
+    target: { value: "Introductory biology" },
+  });
+  expect(start).toBeEnabled();
 });

@@ -12,7 +12,19 @@ import { ReadingSources } from "./ReadingSources";
 import { ActivityPurpose } from "./ActivityPurpose";
 import { PracticeSource } from "./PracticeSource";
 import { LearningGoal } from "./LearningGoal";
-import { materialChoices, type LearningIntent } from "./practice-options";
+import { LearningLevelPicker } from "./LearningLevelPicker";
+import { SessionSettings } from "./SessionSettings";
+import {
+  invalidLearningLevel,
+  normalizeLearningLevel,
+  type LearningLevelValue,
+} from "./learning-levels";
+import {
+  challengeOptions,
+  guidanceOptions,
+  materialChoices,
+  type LearningIntent,
+} from "./practice-options";
 import { SessionReview } from "./SessionReview";
 import { RequestRecovery } from "./RequestRecovery";
 import { characterCount } from "./text-limits";
@@ -64,29 +76,30 @@ const activeStatuses = [
 function InitiativeOptions() {
   return (
     <>
-      <option value="tutor_led">Suggest what to do next</option>
-      <option value="balanced">Decide together</option>
-      <option value="learner_led">Follow my questions</option>
+      {guidanceOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
     </>
   );
 }
-
 function DifficultyOptions() {
   return (
     <>
-      <option value="introductory">Easier</option>
-      <option value="standard">Standard</option>
-      <option value="challenge">Harder</option>
+      {challengeOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
     </>
   );
 }
-
 function difficultyLabel(value: Difficulty) {
-  return {
-    introductory: "Easier",
-    standard: "Standard",
-    challenge: "Harder",
-  }[value];
+  return (
+    challengeOptions.find((option) => option.value === value)?.label ??
+    "Apply and explain"
+  );
 }
 
 export function Tutor({
@@ -114,6 +127,9 @@ export function Tutor({
     useState<LearningIntent>("practice");
   const [initiative, setInitiative] = useState<Initiative>("balanced");
   const [difficulty, setDifficulty] = useState<Difficulty>("standard");
+  const [learningLevel, setLearningLevel] = useState<LearningLevelValue | null>(
+    null,
+  );
   const [source, setSource] = useState<Source>("topic");
   const [reference, setReference] = useState("");
   const [passageTitle, setPassageTitle] = useState("");
@@ -225,6 +241,7 @@ export function Tutor({
           status: loaded.status,
           topic: loaded.topic,
           learning_intent: loaded.learning_intent,
+          learning_level: loaded.learning_level ?? null,
           initiative: loaded.initiative,
           difficulty: loaded.difficulty,
           activity_count: loaded.problems.length,
@@ -483,7 +500,11 @@ export function Tutor({
   );
   const hasSetupDraft = Boolean(
     (newSession || !session) &&
-    (topic.trim() || reference.trim() || passageTitle.trim() || published),
+    (topic.trim() ||
+      reference.trim() ||
+      passageTitle.trim() ||
+      published ||
+      learningLevel),
   );
   const hasDraft = hasResponseDraft || hasSetupDraft;
   const changingSessionDisabled = blocked || active || offline || hasDraft;
@@ -689,49 +710,20 @@ export function Tutor({
   };
 
   const sessionSettings = session?.status === "open" && (
-    <details className="session-settings">
-      <summary>Session settings</summary>
-      <form
-        key={`${session.id}-${session.initiative}-${session.difficulty}`}
-        onSubmit={(event) => {
-          event.preventDefault();
-          const data = new FormData(event.currentTarget);
-          void act(() =>
-            command("settings", `/tutor/sessions/${session.id}/settings`, {
-              initiative: data.get("initiative") as Initiative,
-              difficulty: data.get("difficulty") as Difficulty,
-            } satisfies Schema<"TutorSettingsInput">),
-          );
-        }}
-      >
-        <label>
-          How much guidance would you like?
-          <select
-            name="initiative"
-            defaultValue={session.initiative}
-            disabled={disabled}
-          >
-            <InitiativeOptions />
-          </select>
-        </label>
-        <label>
-          How challenging should it be?
-          <select
-            name="difficulty"
-            defaultValue={session.difficulty}
-            disabled={disabled}
-          >
-            <DifficultyOptions />
-          </select>
-        </label>
-        <button disabled={disabled}>Save session settings</button>
-        <p className="fine">
-          These choices change future activities and how often the tutor
-          suggests a next step. Homework is used to create different practice on
-          the same concepts.
-        </p>
-      </form>
-    </details>
+    <SessionSettings
+      key={session.id}
+      session={session}
+      disabled={disabled}
+      onSave={(settings) =>
+        void act(() =>
+          command(
+            "settings",
+            `/tutor/sessions/${session.id}/settings`,
+            settings,
+          ),
+        )
+      }
+    />
   );
   const sourceFields = (
     <>
@@ -817,7 +809,13 @@ export function Tutor({
           key={learner}
           learner={learner}
           disabled={blocked || active || offline}
-          onChange={setPublished}
+          onChange={(selection) => {
+            setPublished(selection);
+            if (selection && (newSession || !session))
+              setTopic((current) =>
+                current.trim() ? current : selection.passage.title,
+              );
+          }}
         />
       )}
       {(source === "reference_text" || source === "reading_text") && (
@@ -1123,11 +1121,15 @@ export function Tutor({
             className="card"
             onSubmit={(event) => {
               event.preventDefault();
+              if (blocked || invalidLearningLevel(learningLevel)) return;
               void act(() =>
                 command("session", "/tutor/sessions", {
                   learner_id: learner,
                   topic,
                   learning_intent: learningIntent,
+                  ...(normalizeLearningLevel(learningLevel)
+                    ? { learning_level: normalizeLearningLevel(learningLevel) }
+                    : {}),
                   initiative,
                   difficulty,
                   initial_activity: {
@@ -1193,6 +1195,12 @@ export function Tutor({
             {sourceFields}
             <details className="session-preferences">
               <summary>Adjust difficulty and guidance</summary>
+              <LearningLevelPicker
+                value={learningLevel}
+                onChange={setLearningLevel}
+                disabled={blocked}
+                defaultSubject={learningIntent === "read" ? "reading" : ""}
+              />
               <label>
                 How challenging should it be?
                 <select
@@ -1249,6 +1257,7 @@ export function Tutor({
                   offline ||
                   !topic.trim() ||
                   topicOverflow ||
+                  invalidLearningLevel(learningLevel) ||
                   materialOverflow ||
                   !features?.tutoring_available ||
                   ((source === "reference_text" || source === "reading_text") &&
@@ -1393,8 +1402,8 @@ export function Tutor({
                     <SafeText text={problem.problem_text} />
                     <ActivityPurpose problem={problem} />
                     <p className="fine">
-                      Saved automatically ·{" "}
-                      {difficultyLabel(session.difficulty)} difficulty
+                      Saved automatically · Challenge:{" "}
+                      {difficultyLabel(session.difficulty)}
                     </p>
                     {problem.concept_focus && !problem.learning_goal && (
                       <p className="fine">Focus: {problem.concept_focus}</p>
