@@ -10,8 +10,9 @@ A task is complete only after its requirements and exit checks pass.
 
 T79 clarifies the published-text reading flow and distinguishes text complexity
 from the tutor's optional starting level. The maintainer explicitly requested
-the update, publication to `main` and private deployment. Work is in progress;
-the verified T78 image remains installed until cutover checks pass.
+the update, publication to `main` and private deployment. It is now published
+and privately deployed; source/focused-browser, hosted CI, exact-image,
+backup/restore and runtime evidence is recorded below.
 
 T78 makes published-text preferences appear after an explicit selection. The
 maintainer requested this follow-up to the deployed T77 reading flow. Work is
@@ -55,10 +56,10 @@ are below; the [current review](UI_UX_REVIEW.md) lists the corrected behavior an
 remaining acceptance work. Earlier task sections preserve dated evidence, not
 additional supported implementations.
 
-The private installation now uses T78 image
-`sha256:855701438b3b4a7011b63da1ff1508766fc44439298e9074ce396b909f493529`,
-built from published source `b818a92852919d7db32a5bcb8e3e92ae9c501640`.
-All 66 served public assets match the tested build. T78 preserves schema
+The private installation now uses T79 image
+`sha256:7b0dda83e03375ad780062a2eb0cdf69e0a8fd4a4375a9a54143c3dbd16eac79`,
+built from published source `14a74a56c847d57adccf382798c5a2d2c521acaf`.
+All 66 served public assets match the tested build. T79 preserves schema
 `0021_published_library` and the exact 868-text corpus installed by T77. The API and
 worker are ready with zero restarts, and saved model selections match the fresh
 stopped-writer backup. Private schema, accounts and retained work were preserved;
@@ -69,8 +70,9 @@ owns the remaining model, physical-device, accessibility and operational checks.
 
 ## T79 — Clarify reading options and tutor starting levels (2026-10-25)
 
-**Status:** In progress; implementation, push to `main` and private deployment
-explicitly authorized. No live inference or model download is authorized.
+**Status:** Complete: implemented, pushed to `main`, exact image checked and
+privately deployed; the deployed source's hosted workflow passed. These actions
+were explicitly authorized. No live inference or model download is authorized.
 
 **Contracts and plan:** SPECIFICATION sections 1, 3 and 4; README Practice and
 reading. Preserve choose-text → preview → Start learning, with collapsed,
@@ -118,11 +120,41 @@ new exact disclosure labels. Independent source/test review found no blocker.
 | `python3 /tmp/shepherd-t79/run.py uv run --locked --no-env-file pytest /tmp/shepherd-t79/test_operations.py -q` | 18 synthetic UI-only deployment-helper cases passed in 4.49 seconds. |
 | `python3 /tmp/shepherd-t79/run.py .venv/bin/python /tmp/shepherd-t79/test_backup_container.py` | Restricted old-image synthetic encrypted backup/isolated restore passed for schema 0021, all 868 public rows and a committed uncheckpointed WAL row. No retained installation access. |
 
-All local source and matching-build focused browser gates have passed. Final
-publication/private-update evidence follows when complete. No live inference,
+All local source and matching-build focused browser gates have passed. No live inference,
 schema, backend, dependency or permission change is part of this task. Full
 local browser/integration and actual-device/model-quality suites were not
 repeated for this wording-only change.
+
+**Publication and private update — October 25, 2026 (local time):** All commit
+hooks passed and source `14a74a56c847d57adccf382798c5a2d2c521acaf` was pushed to
+`main`. Its clean archive produced immutable candidate
+`sha256:7b0dda83e03375ad780062a2eb0cdf69e0a8fd4a4375a9a54143c3dbd16eac79`
+(`<candidate>` below). Build context contained no private settings or data.
+
+| Actual command / operation | Outcome |
+| --- | --- |
+| `python3 /tmp/shepherd-t79/prepare_source.py` and `python3 /tmp/shepherd-t79/run.py docker build --label org.opencontainers.image.revision=14a74a56c847d57adccf382798c5a2d2c521acaf -f /tmp/shepherd-t79/source/infra/docker/Dockerfile -t math-practice-tutor:t79-reading-options /tmp/shepherd-t79/source` | Built only clean published source; backend/runtime/dependency layers unchanged. |
+| `python3 /tmp/shepherd-t79/run.py python3 /tmp/shepherd-t79/verify_package.py` | Exact source revision, UID/GID 10001:10001 and all 66 public files matched the browser-tested build. Public manifest SHA256 `6a6e398d09d6aa73b3dc18255c30a7c063fec34ebceeca6bb7bfa043d76105be`. |
+| `python3 /tmp/shepherd-t79/run.py sh /tmp/shepherd-t79/source/scripts/container-smoke.sh <candidate>` | Disposable container checks passed for Python/SQLite/HEIF/crypto, restricted subprocess failure, all 868 exact offline corpus rows, API/worker/UI and synthetic owner-setup boundaries. No inference. |
+| `python3 /tmp/shepherd-t77/trivy/scan.py --image-id <candidate> --label t79` | Exact immutable OCI/config/layer chain verified, then zero HIGH/CRITICAL findings including unfixed ones. Official DB about 10 hours 49 minutes old and unchanged during offline scan. CycloneDX has 52 components; SBOM SHA256 `1f736f96433bd49c550516ec8ad237dd6246db65695dc9083316127c6cbe90f3`. |
+| `python3 /tmp/shepherd-t79/deploy.py preflight --candidate <candidate>` | Existing T78 image, original retained mounts, loopback API publication and runtime restrictions matched. |
+| `python3 /tmp/shepherd-t79/deploy.py prepare --candidate <candidate> --execute` | Stopped both writers; fresh encrypted schema-0021 backup/isolated restore passed for all 868 public rows, roles, current deletions and retained objects. Only the rehearsal revoked restored sessions/canceled work; plaintext rehearsal removed. |
+| `python3 /tmp/shepherd-t79/deploy.py activate --execute` | Exact candidate active, private HTTPS ready, one API/worker with fresh heartbeat and zero restarts. All 66 exact served assets, update headers and protected-route/cache boundaries verified; API docs remained disabled. Schema unchanged. |
+| `python3 /tmp/shepherd-t79/run.py python3 /tmp/shepherd-t79/verify_selection.py` | Existing schema, public-library digest and tutor/photo-reader selection digest all match the stopped-writer snapshot. No inference. |
+| `python3 /tmp/shepherd-t79/save_evidence.py` | Reviewed helper source, exact public assets, focused-browser receipt, deployment/model/corpus/backup receipts and scan/SBOM retained in `backups/evidence-20261026T001304Z-t79-reading-options`; no backup key copied. |
+| `gh run view 40242786727 --json status,conclusion,jobs,url` | Deployed-source workflow completed successfully; checks and package jobs passed. |
+
+[Hosted run 40242786727](https://github.com/tylermowll/shepherd-academy-universe/actions/runs/40242786727)
+passed for the exact deployed source. Encrypted backup:
+`backups/deploy-20261026T001214Z-t79-reading-options-7b0dda83e033/archive.enc`;
+the key remains separately in the protected operator backup-key directory.
+Receipts use UTC timestamps; the release date above is local time.
+
+No migration, corpus import, data reset, private configuration inspection or
+live model call was performed against retained storage. Rollback switches only
+the image. No local or deployed-source hosted failure remains open. Live
+provider/teaching, physical-device and assistive-technology checks were not run.
+The final evidence commit changes documentation only.
 
 ## T78 — Adjust published-text preferences after selection (2026-10-25)
 
