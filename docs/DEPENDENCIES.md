@@ -80,6 +80,13 @@ root. Application source remains under `apps/api/src`; it does not need a second
 project, lock or virtual environment. [D016](DECISIONS.md#d016--one-python-project-and-runtime-2026-10-17)
 records the consolidation.
 
+The October 28 [T80 lock refresh](TASKS.md#t80--publish-the-staged-python-lock-refresh-2026-10-28)
+updates 15 existing Python resolutions, including the AWS SDK/stubs, cfn-lint,
+Hypothesis, JSON Patch/Pointer and development tools. All 97 package identities,
+dependency declarations and runtime pins are preserved. T80 lists every changed
+version and fresh validation for publication to `main`; private deployment
+evidence remains recorded under T79.
+
 ## Runtime and installer pins
 
 | Tool    | Repository pin                                 | Authority                                                                                         |
@@ -144,12 +151,15 @@ removed.
   validated JSON, YAML and the household template; an invalid template failed
   with E3030. T57 repeats the stock CLI checks for cfn-lint 1.58.0, whose metadata
   retains the same Python upper bound: the household template passes and an
-  unknown synthetic resource type fails with E3006. These checks justify the
-  current shared environment. T77 repeats the unmodified 1.58.0 CLI checks under
+  unknown synthetic resource type fails with E3006. Those checks justified the
+  shared environment at that time. T77 repeats the unmodified 1.58.0 CLI checks under
   Python 3.15.1: the household template and valid synthetic JSON/YAML pass; an
-  unknown synthetic resource type fails with E3006. This does not
-  claim formal upstream 3.15 support. Recheck the metadata and CLI on
-  updates. Its transitive SymPy dependency never evaluates learner text.
+  unknown synthetic resource type fails with E3006. Those dated checks did not
+  establish formal upstream 3.15 support. The October 28 T80 refresh installs
+  unmodified cfn-lint 1.59.0, whose distribution metadata declares
+  `Requires-Python: <3.16,>=3.10`, covering the project's Python 3.15.1. Fresh
+  CLI results are recorded in T80. Recheck metadata and CLI on updates. Its
+  transitive SymPy dependency never evaluates learner text.
 - **TypeScript:** application TypeScript resolves to 6.0.3 within
   typescript-eslint 8.72.0's recorded `>=4.8.4 <6.1.0` peer range. The OpenAPI
   generator is isolated with TypeScript 5.9.3 for openapi-typescript 7.13.0's

@@ -8,6 +8,10 @@ A task is complete only after its requirements and exit checks pass.
 
 ## Current checkpoint
 
+T80 validates and publishes the maintainer's staged Python lock refresh to
+`main`. Source validation has passed; final publication checks are reported at
+completion. Private deployment evidence remains recorded under T79.
+
 T79 clarifies the published-text reading flow and distinguishes text complexity
 from the tutor's optional starting level. The maintainer explicitly requested
 the update, publication to `main` and private deployment. It is now published
@@ -67,6 +71,94 @@ no reset or inference was run on retained storage. Live teaching quality remains
 unverified.
 [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
+
+## T80 — Publish the staged Python lock refresh (2026-10-28)
+
+**Status:** Source validation complete. The maintainer requested publication to
+`main`; final commit-hook, push and remote-equality results are reported with
+task completion.
+
+**Scope and contracts:** SPECIFICATION sections 6, 13 and 16; DEPENDENCIES lock
+ownership and compatibility policy. Preserve the staged `uv.lock` refresh;
+validate locked installation, AWS adapter behavior, updated lint/type/test tools
+and CloudFormation validation. Application code, generated contracts, schema and
+runtime pins are unchanged. Existing success/failure and authorization tests
+provide regression coverage; this publication adds no application behavior.
+
+**Plan:** Compare package identities/declarations and review artifact sources;
+run `make check`, `make test-integration`, `make audit` and repository file hooks.
+Recheck cfn-lint's Python metadata and valid/invalid synthetic templates. Record
+actual evidence, commit with installed hooks, then perform a non-force push and
+verify remote equality. Browser, container and live-provider checks are outside
+this source-only publication; no deployment or inference is requested.
+
+**Documentation discrepancy:** SPECIFICATION section 6 still lists Python 3.15.0
+and pnpm 12.14.0, while the manifests, README and DEPENDENCIES require Python
+3.15.1 and pnpm 12.15.0. Validation follows those stricter current requirements.
+The shell's Node 26.12.0/pnpm 12.14.0 are also below current requirements;
+temporary pinned tools were used without changing the workstation install.
+
+**Lock comparison:** All 97 package identities, sources, dependency declarations
+and top-level metadata are preserved. Changes are limited to these versions and
+their public PyPI distribution artifacts; no credential/private URLs were found.
+
+| Package | Before | After |
+| --- | --- | --- |
+| boto3 | 1.43.118 | 1.43.121 |
+| boto3-stubs | 1.43.118 | 1.43.121 |
+| botocore | 1.43.118 | 1.43.121 |
+| botocore-stubs | 1.43.118 | 1.43.121 |
+| cfn-lint | 1.58.0 | 1.59.0 |
+| hypothesis | 6.170.9 | 6.170.13 |
+| jsonpatch | 1.37 | 1.38 |
+| jsonpointer | 3.5 | 3.6 |
+| msgpack | 1.2.3 | 1.2.4 |
+| mypy | 2.4.0 | 2.4.1 |
+| platformdirs | 4.13.5 | 4.14.0 |
+| pytest | 9.1.1 | 9.2.0 |
+| python-discovery | 1.6.4 | 1.6.7 |
+| ruff | 0.17.2 | 0.17.3 |
+| virtualenv | 21.14.13 | 21.15.1 |
+
+**Validation (2026-10-28):** `/tmp/shepherd-t80-run.py` supplies an explicit
+environment without inherited provider/operator settings, disables env-file
+loading and selects synthetic data. Tools: checksum-verified temporary Node
+26.12.1, registry-integrity-verified pnpm 12.15.0, existing uv 0.13.6 and Python
+3.15.1. The original staged lock blob is preserved exactly:
+`cb9850bfa5758af001e084dc574126fab106f5b9`.
+
+- `python3 /tmp/shepherd-t80-run.py make check test-integration audit`: passed.
+  `make check` passed lock freshness, lint/format, strict Python/TypeScript
+  types (95 Python files), builds, generated-contract drift, credential scan and
+  household CloudFormation validation. **405 backend unit tests** passed in
+  **29.43s**, **11 toolchain tests** passed, and **347 frontend component tests**
+  passed in **25.16s**. Integration: **467 passed in 282.82s**, using synthetic
+  on-disk SQLite. Python and pnpm audits both reported no known vulnerabilities.
+- `python3 /tmp/shepherd-t80-run.py .venv/bin/python /tmp/shepherd-t80-cfn.py`:
+  passed stock cfn-lint 1.59.0 under Python 3.15.1. Installed distribution
+  metadata declares `Requires-Python: <3.16,>=3.10`; valid synthetic JSON/YAML
+  passed and an unknown resource failed with **E3006**, exit 2.
+- Package/dependency comparison, independent lock/publication review and
+  `git diff --check` passed. All artifact URLs are public PyPI hosts; no source,
+  provider-boundary, schema or generated-client edits are included.
+
+Initial temporary-tool attempts used the prior pnpm package layout and an
+unsupported `python -m cfnlint` entry point; the launcher and harness were
+corrected before the successful commands above. A sandbox-blocked pnpm binary
+download was retried with authorized network access. No application code,
+assertions or dependency policies were changed to obtain passing checks.
+Existing unbounded uv_build, bundle-size and jsdom scrollTo warnings remain.
+
+**Publication:** A fresh fetch initially confirmed local `main` and `origin/main`
+at `b80fe8b`. Changed files are `uv.lock`, `docs/DEPENDENCIES.md` and this task
+record. Final publication rechecks the remote baseline, runs repository file
+hooks/credential checks and installed commit hooks, performs a non-force push,
+and verifies remote equality and a clean working tree. The resulting commit and
+actual final outcomes are reported with completion.
+
+No source-validation failures remain. Browser/container, standalone mock and
+live-provider evaluations were not run for this source-only publication;
+hosted CI has not been observed. No deployment or model download was performed.
 
 ## T79 — Clarify reading options and tutor starting levels (2026-10-25)
 
