@@ -8,11 +8,17 @@ A task is complete only after its requirements and exit checks pass.
 
 ## Current checkpoint
 
+T82 privately deploys T81's published toolchain update at the maintainer's
+explicit request. Exact-source/package, hosted CI, synthetic recovery,
+stopped-writer encrypted backup/restore and final runtime checks passed. Both
+services run the verified image with zero restarts; standard `make start`
+container discovery, saved model selections and the 868-text corpus are preserved.
+
 T81 updates Python to 3.15.2, Node to 26.13.0, pnpm to 12.16.1 and uv/uv_build
 to 0.13.6, with reviewed dependency minima and immutable CI/container pins.
 Source, integration, browser, mock, audit and container validation passed.
-The maintainer authorized publication to `main`; final publication results are
-reported with completion. The private deployment remains T79.
+Source `66d451ec8988472948a6119bb3ae1ba69eb35cbf` is published to `main` with
+successful hosted CI and is now privately deployed by T82.
 
 T80 validates and publishes the maintainer's staged Python lock refresh to
 `main`. Source validation has passed; final publication checks are reported at
@@ -66,10 +72,10 @@ are below; the [current review](UI_UX_REVIEW.md) lists the corrected behavior an
 remaining acceptance work. Earlier task sections preserve dated evidence, not
 additional supported implementations.
 
-The private installation now uses T79 image
-`sha256:7b0dda83e03375ad780062a2eb0cdf69e0a8fd4a4375a9a54143c3dbd16eac79`,
-built from published source `14a74a56c847d57adccf382798c5a2d2c521acaf`.
-All 66 served public assets match the tested build. T79 preserves schema
+The private installation now uses T82 image
+`sha256:87f44401062604a6a1895c6e2358b32eca1645860ca42a916bfa6f87346ac8c0`,
+built from published source `66d451ec8988472948a6119bb3ae1ba69eb35cbf`.
+All 66 served public assets match the tested build. T82 preserves schema
 `0021_published_library` and the exact 868-text corpus installed by T77. The API and
 worker are ready with zero restarts, and saved model selections match the fresh
 stopped-writer backup. Private schema, accounts and retained work were preserved;
@@ -78,11 +84,106 @@ unverified.
 [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
 
+## T82 — Deploy the validated toolchain update (2026-10-29)
+
+**Status:** Complete: privately deployed and verified. The maintainer explicitly
+requested deployment after T81 was pushed to `main` as
+`66d451ec8988472948a6119bb3ae1ba69eb35cbf`. This record adds documentation only.
+
+**Contracts and plan:** SPECIFICATION sections 6, 16 and 17; RUNBOOK container
+upgrade and encrypted backup/restore. Preserve one non-root API and worker,
+loopback publication, private settings, the original shared data mount, schema
+`0021_published_library`, all 868 public texts, accounts, retained work and saved
+model selections. Reuse the reviewed T79 same-schema helpers with current image
+and release names. Test synthetic backup/current-deletion/WAL and failure
+recovery paths; verify the exact candidate and scan/SBOM. Stop both writers,
+complete a fresh encrypted backup and isolated restore, then replace only the
+images and verify HTTPS, worker heartbeat, assets and access/cache boundaries.
+No migration, corpus import, reset, model download or live-provider test is needed.
+
+**Pre-deployment evidence:**
+
+- [Hosted CI 40911948956](https://github.com/tylermowll/shepherd-academy-universe/actions/runs/40911948956)
+  completed successfully for source `66d451ec8988472948a6119bb3ae1ba69eb35cbf`;
+  both checks and package jobs passed.
+- The labeled candidate is
+  `sha256:87f44401062604a6a1895c6e2358b32eca1645860ca42a916bfa6f87346ac8c0`.
+  Its source label matches that commit, all 1,053 public inputs match committed
+  blobs, all 947 packaged API/data files and 23 migrations match source, and all
+  66 web files match the browser-tested build. All 28 filesystem layers and
+  runtime configuration match T81's smoke-tested image; only the revision label
+  differs. No private build inputs or retained mounts were used.
+- `python3 /tmp/shepherd-t82/run.py .venv/bin/python
+/tmp/shepherd-t82/verify_package.py`: passed exact image, UID/GID 10001:10001,
+  revision and all 66 public assets; manifest SHA-256
+  `6a6e398d09d6aa73b3dc18255c30a7c063fec34ebceeca6bb7bfa043d76105be`.
+- Exact labeled-image Trivy scan: zero HIGH/CRITICAL findings including unfixed.
+  CycloneDX 1.7 SBOM has 52 components, SHA-256
+  `89849f494c6f30aa4a3b91e9c3e847b863bad505d05d2a0832db7caff9bf8a11`.
+- `python3 /tmp/shepherd-t81/run.py uv run --locked --no-env-file pytest
+/tmp/shepherd-t82/test_operations.py -q`: **18 synthetic cases passed in 4.55s**,
+  including backup/restore, current deletions and objects, invalid candidates,
+  failed-backup service recovery and failed-activation image rollback.
+- `python3 /tmp/shepherd-t81/run.py .venv/bin/python
+/tmp/shepherd-t82/test_backup_container.py`: the actual restricted old-image
+  rehearsal preserved schema 0021, all 868 public rows and a committed
+  uncheckpointed WAL row on disposable synthetic storage. Backup code is unchanged.
+- `python3 /tmp/shepherd-t82/run.py .venv/bin/python
+/tmp/shepherd-t82/deploy.py preflight --candidate <candidate>` and the existing
+  runtime verifier passed: exact T79 services, original mount, loopback-only API,
+  read-only roots, dropped capabilities, HTTPS, fresh worker and protected routes.
+
+**Private deployment and final evidence:**
+
+- `python3 /tmp/shepherd-t82/run.py .venv/bin/python
+/tmp/shepherd-t82/deploy.py prepare --candidate <candidate> --execute`: stopped
+  both writers and completed a fresh encrypted backup plus isolated restore.
+  Integrity/foreign keys, schema 0021, current deletions, object hashes, public
+  library and model-selection digests passed. Sessions were revoked and pending
+  work canceled only in the isolated rehearsal; retained storage stayed read-only
+  during backup and the plaintext rehearsal was removed.
+- `python3 /tmp/shepherd-t82/run.py .venv/bin/python
+/tmp/shepherd-t82/deploy.py activate --execute`: the exact candidate became
+  active; HTTPS readiness, fresh worker heartbeat, all 66 served asset hashes,
+  update/cache headers, anonymous access rejection and disabled API docs passed.
+- Final launcher review found that immutable launch references are not recognized
+  by `container_start.running_api()`. The standard `math-practice-tutor:local`
+  alias was set to the verified candidate, then
+  `python3 /tmp/shepherd-t82/run.py .venv/bin/python
+/tmp/shepherd-t82/align_compose_alias.py` recreated both services through the
+  checked-in Compose configuration with `--no-build --pull never`. The actual
+  immutable image stayed unchanged. All runtime/asset/access checks passed again
+  and `running_api()` identified the correct API. No application patch or schema
+  command was needed. The prior exact T79 image remains tagged
+  `math-practice-tutor:rollback-20261029-t82-runtime`.
+- `python3 /tmp/shepherd-t82/run.py .venv/bin/python
+/tmp/shepherd-t82/verify_selection.py`: saved tutor/photo-reader selections,
+  schema and the complete corpus match the stopped-writer backup. This read-only
+  check initiated no inference. Final selective Docker metadata confirms both
+  services use the exact candidate and standard launch reference, read-only
+  roots, UID/GID 10001:10001 and **zero restarts**, started at approximately
+  **2026-10-29T17:06:29Z**.
+- `python3 /tmp/shepherd-t82/save_evidence.py` and the final allowlisted receipt
+  refresh retained reviewed helper/alignment source, public input/asset hashes,
+  synthetic receipts, deployment/preservation checks and exact-image scan/SBOM
+  under `backups/evidence-20261029T170410Z-t82-runtime`. No backup key or private
+  settings were copied into evidence.
+
+The encrypted archive is
+`backups/deploy-20261029T170140Z-t82-runtime-87f444010626/archive.enc`, SHA-256
+`0a21bf45b9f15e4b569650b83d59ec8bcf63a4b9a56c1e7f234e31a4e4489798`.
+Its generated key remains separately in the operator's protected backup-key
+directory. The original data mount, accounts, credentials and retained work were
+preserved; no migration, reset or live-provider test was run. No deployment
+failure remains open. Physical-device, assistive-technology and live teaching
+quality acceptance remain unverified. This task changes only `docs/TASKS.md`;
+documentation hook/publication results are reported with completion.
+
 ## T81 — Update stable toolchains and dependency baselines (2026-10-29)
 
-**Status:** Implementation and source/package validation complete. The maintainer
-explicitly requested review, latest Python/uv/Node and related tools, and
-publication to `main`; final publication results are reported with completion.
+**Status:** Complete: implemented, validated and published to `main`. The
+maintainer explicitly requested review, latest Python/uv/Node and related tools,
+and publication; T82 subsequently authorizes and records private deployment.
 
 **Contracts and plan:** SPECIFICATION sections 6, 13 and 16; DEPENDENCIES
 minimum-only declarations, exact locks, strict upstream peers, release age and
@@ -195,11 +296,13 @@ contracts and provider policy are unchanged. Live-provider/model-quality,
 physical-device and private deployment checks were not run or authorized.
 
 **Publication:** A fresh fetch confirmed local `main` and `origin/main` at
-`141e6a3`. Only the 12 reviewed files above are staged. The publication uses the
-installed commit hooks and a non-force push. The final commit, actual hook/push
-outcomes, remote-equality check and hosted workflow status are reported with
-completion. No source/package validation failure remains; live-provider and
-physical-device acceptance remain separate from this toolchain publication.
+`141e6a3`. The 12 reviewed files were committed as
+`66d451ec8988472948a6119bb3ae1ba69eb35cbf`; all installed commit hooks passed.
+The non-force push succeeded, remote/local `main` matched that exact commit and
+the working tree was clean. Hosted workflow
+[40911948956](https://github.com/tylermowll/shepherd-academy-universe/actions/runs/40911948956)
+subsequently passed both checks and package jobs. No source/package validation
+failure remains; live-provider and physical-device acceptance remain separate.
 
 ## T80 — Publish the staged Python lock refresh (2026-10-28)
 
