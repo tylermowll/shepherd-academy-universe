@@ -22,7 +22,9 @@ link private. Existing accounts sign in at the printed app address.
 
 For an existing installation, stop the API and worker and back up saved
 data before upgrading. If startup reports an old database schema, run
-`make migrate library-import start` for a native app. For Docker, follow the
+`make migrate`, then `make library-import`, then `make start` for a native app.
+Keep these commands ordered, including when Make is configured for parallel
+execution. The current migration head is `0021_published_library`. For Docker, follow the
 [container upgrade instructions](RUNBOOK.md#container-package).
 
 Enter the settings and keys below in your trusted local app. Coding agents must
@@ -84,7 +86,7 @@ Recreate the containers so they load the changed `.env`, then use `make start`
 to print or renew the private setup/sign-in address:
 
 ```bash
-docker compose -f infra/docker/compose.yaml up -d --force-recreate
+docker compose -f infra/docker/compose.yaml up -d --force-recreate --no-build --pull never
 make start
 ```
 
@@ -129,7 +131,10 @@ The app computer must reach the model server. The iPhone never calls it directly
 Create a learner account under **Users**, record its username and password
 securely, then sign out. Sign in with that learner account and open **Practice**.
 Choose what you would like help with, enter a topic and add any relevant material.
-**Adjust difficulty and guidance** holds optional preferences. Choose
+**Adjust questions and guidance** for reading or **Adjust activities and
+guidance** for other goals holds optional preferences. **Tutor starting level
+(optional)** targets the explanations without assigning or assessing a learner's
+grade. Choose
 **Start learning** to create both the session and its first activity. Photo
 references open upload/phone controls inline on this same page. No
 grade level or predefined skill list is required.
@@ -153,7 +158,7 @@ account sign-in is separate from sending a photo through the QR link.
 
 The in-app **Help → Phone setup** page also explains these workflows.
 
-Return to the computer. The photo's processing status appears in session history
+Return to the computer. The photo's processing status appears in the active conversation
 when the app next checks for updates. The app displays the full reading and any
 necessary readability advice. A usable reading proceeds to guidance
 automatically—do not wait for a confirmation control. If the model reports
@@ -176,7 +181,7 @@ upload is pending; its retry button resends the same photo without creating a
 second operation. If you reload or close it, rescan the original QR to check its
 receipt, or choose **New QR code** on the computer if it expired. A new link cancels
 the previous link. Signing out, revoking access, deleting data, changing
-processing settings, or finishing or changing the problem invalidates unused
+processing settings, or finishing or changing the activity invalidates unused
 links. Links give no access to history, grading or administrator actions. Keep
 the QR private.
 

@@ -44,7 +44,7 @@ disposable synthetic fixture environment.
 
 ## AI settings and privacy
 
-Follow all four Settings sections. Saving, testing and activating are separate
+Follow both Settings sections, **Models** and **Data & privacy**. Saving, testing and activating are separate
 actions. A review does not authorize provider requests, paid inference, policy
 changes or access to private configuration. Use source, synthetic fixtures and
 existing fake-provider tests unless the maintainer explicitly authorizes more.
@@ -86,7 +86,7 @@ existing fake-provider tests unless the maintainer explicitly authorizes more.
   and [Research tests](../../../../apps/web/tests/Research.test.tsx); do not
   download a model during a routine review.
 - **Specification versus UI:** section 3 describes administration/evaluation
-  and redacted usage more broadly than the four Settings sections. Do not infer
+  and redacted usage more broadly than the two Settings sections, Models and Data & privacy. Do not infer
   an implemented dashboard, learner-disable action, research entry point or
   evaluation runner from a specification label. Confirm source/task status
   before adding such a journey to the implemented inventory.

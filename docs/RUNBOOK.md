@@ -2,8 +2,11 @@
 
 Use this guide for installation, upgrades, account recovery, retention and
 encrypted backups. [TASKS](TASKS.md) records the last checked installation
-state. Check the running app for its current status. [ACCEPTANCE](ACCEPTANCE.md)
-tracks the remaining model, device and recovery checks.
+state. T84 records the last verified private deployment on October 29, 2026;
+later source and dependency publication is not an automatic deployment. The
+current migration head is `0021_published_library`. Check the running app locally
+for its actual status. [ACCEPTANCE](ACCEPTANCE.md) tracks the remaining model,
+device and recovery checks.
 
 ## Native local host
 
@@ -14,13 +17,15 @@ thirty-minute, one-use setup link; the account is created in the browser, not a
 terminal prompt. Invalid form input does not stop the app. Subsequent starts
 never reset credentials or reopen first-account creation. If the database needs
 a migration, startup stops before building: stop all API/worker writes, back up
-data, then explicitly run `make migrate library-import start`. Ctrl+C stops both services and preserves
+data, then run `make migrate`, `make library-import` and `make start` in that
+order. Do not combine them as parallel Make goals. Ctrl+C stops both services and preserves
 the persistent data. `make demo` is different: its temporary data is deleted when
 it stops. `make start` supports loopback HTTP or a configured private HTTPS
 gateway; `make dev` is loopback-only, and `make serve` requires the gateway.
 Run native commands from the repository root. `make bootstrap` installs the
 locked root Python dependencies into `.venv`, including development and
-CloudFormation validation tools on the same Python 3.15 runtime.
+CloudFormation validation tools on the same Python 3.15.2 runtime selected by
+`.python-version`.
 `make dev-api` alone is a development API reload process;
 `make dev-web` alone is a frontend development server. Use the combined same-origin
 application for end-to-end practice. `/health/live` reports whether the API process
@@ -143,18 +148,24 @@ host-mounted data before migrating or replacing either service:
 docker compose -f infra/docker/compose.yaml stop
 ```
 
-After the backup succeeds, select the tested candidate image, migrate and start
-both services. For a direct Compose build, use:
+Retain the previous immutable image identity under a rollback tag before
+replacing the standard `math-practice-tutor:local` reference. After the backup
+succeeds, select the exact tested candidate; do not rebuild it during cutover.
+Replace `TESTED_IMAGE_ID` below with the immutable `sha256:...` identity recorded
+by local validation, rather than relying on a mutable candidate tag:
 
 ```bash
-docker compose -f infra/docker/compose.yaml build
+docker tag TESTED_IMAGE_ID math-practice-tutor:local
 docker compose -f infra/docker/compose.yaml run --rm api alembic upgrade head
 docker compose -f infra/docker/compose.yaml run --rm api python -m math_tutor.published_library import
-docker compose -f infra/docker/compose.yaml up -d
+docker compose -f infra/docker/compose.yaml up -d --no-build --pull never
 ```
 
 Keep the same data mount and private settings. Verify readiness through the
-configured origin after startup. The library import installs the reviewed,
+configured origin after startup, a fresh worker heartbeat, protected-route/cache
+behavior and that both services use the tested image. If a release changes
+neither the schema nor packaged corpus, no migration or import is needed; do not
+downgrade the database for a same-schema image rollback. The library import installs the reviewed,
 packaged public texts into the shared SQLite corpus without network or model
 calls. It is idempotent and refuses a changed text under an existing ID; it
 does not rewrite learner passage snapshots. For native installations use
@@ -163,10 +174,12 @@ installs the packaged corpus automatically. The corpus and learner snapshots
 are covered by the same SQLite backup while retaining separate deletion rules.
 See the [corpus provenance and rebuild guide](../apps/api/src/math_tutor/data/published/README.md).
 
-Migration `0021_published_library` adds only the public corpus table. If this
-release must roll back, stop both services, use the candidate image to downgrade
-to `0020_request_recovery`, then start the previous image. This removes the new
-public library; learner/session tables and their saved material are preserved.
+Migration `0021_published_library` adds only the public corpus table. When rolling
+back across that migration to an image expecting `0020_request_recovery`, stop
+both services and use the newer image to downgrade to `0020_request_recovery`
+before starting the compatible previous image. This removes the public library;
+learner/session tables and their saved material are preserved. Later releases
+that keep schema `0021_published_library` need no downgrade merely to change images.
 Complete the encrypted backup/restore rehearsal before either direction of a
 retained-data migration. For an administrator password reset, stop both
 services and run
@@ -198,7 +211,9 @@ See [TASKS](TASKS.md) for current observed results.
 ### Local release validation
 
 Use a clean committed checkout and synthetic fixtures, without operator settings,
-provider credentials or retained data. Install the locked tools with
+provider credentials or retained data. Exclude inherited application/provider
+environment values as well as disabling environment-file loading; the latter
+does not clear already-exported settings. Install the locked tools with
 `make bootstrap` and the test browser with
 `pnpm exec playwright install --with-deps chromium`, then run:
 
@@ -316,7 +331,7 @@ Account for exported downloads and old backups when fulfilling deletion requests
 Optional encrypted S3 transfer is an explicit operator CLI:
 
 ```bash
-uv run --locked python -m math_tutor.cloud_archive put --bucket YOUR_PRIVATE_BUCKET --region YOUR_REGION --key YOUR_BACKUP_UUID --file /private/backup/tutor.enc
+uv run --locked --no-env-file python -m math_tutor.cloud_archive put --bucket YOUR_PRIVATE_BUCKET --region YOUR_REGION --key YOUR_BACKUP_UUID --file /private/backup/tutor.enc
 ```
 
 `get` requires a new output file; `delete` removes the current key. Transfers are

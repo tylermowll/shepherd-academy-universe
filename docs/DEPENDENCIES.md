@@ -6,11 +6,11 @@ Newer stable Node and pnpm versions are allowed, including newer majors, but
 package peer-dependency requirements and Python compatibility restrictions still
 apply.
 
-This guide was checked against repository files and primary release metadata on
-October 29, 2026. It describes the declared configuration and reviewed releases,
-not the packages in
-a running private installation. Dated verification results are in
-[task history](history/TASKS.md#release-publication-2026-10-11).
+The declared configuration was reconciled with checked-in files on October 29, 2026. External release/compatibility checks below retain their recorded dates;
+they are not claims that a version is still the newest. This guide does not
+inspect the packages in a running private installation. [TASKS](TASKS.md) owns
+recent validation/deployment receipts, and
+[task history](history/TASKS.md#release-publication-2026-10-11) retains older checks.
 
 ## Version ownership
 
@@ -26,6 +26,16 @@ second package inventory in prose:
 
 Lockfile updates need fresh validation. See [TASKS](TASKS.md) for changes made
 after the last recorded release checks.
+
+The last recorded private deployment is
+[T84](TASKS.md#t84--publish-and-privately-deploy-the-learning-workbench-2026-10-29),
+which preserves T82's Python/runtime dependency layers while updating the learning
+workbench. The later
+[T86 patch refresh](TASKS.md#t86--publish-the-maintainers-python-patch-updates-2026-10-29)
+changes opentelemetry-api **1.45.1 → 1.45.2**, Pydantic **2.14.1 → 2.14.2** and
+pydantic-core **2.50.1 → 2.50.2**, with all 97 package identities, declarations and
+runtime pins preserved. Its source/integration/mock/audit evidence applies to the
+published lock, not a new private deployment.
 
 The October 18 root lock refresh changes six dependency resolutions while
 preserving Python 3.15.0. [T54](TASKS.md#t54--publish-the-maintainers-python-lock-refresh-2026-10-18)
@@ -84,8 +94,8 @@ The October 28 [T80 lock refresh](TASKS.md#t80--publish-the-staged-python-lock-r
 updates 15 existing Python resolutions, including the AWS SDK/stubs, cfn-lint,
 Hypothesis, JSON Patch/Pointer and development tools. All 97 package identities,
 dependency declarations and runtime pins are preserved. T80 lists every changed
-version and fresh validation for publication to `main`; private deployment
-evidence remains recorded under T79.
+version and fresh validation for publication to `main`; that task did not deploy
+the refresh. Later private deployment receipts are recorded under T82 and T84.
 
 The October 29 [T81 refresh](TASKS.md#t81--update-stable-toolchains-and-dependency-baselines-2026-10-29)
 checks [Python 3.15.2](https://www.python.org/downloads/release/python-3152/),
@@ -97,7 +107,8 @@ checks [Python 3.15.2](https://www.python.org/downloads/release/python-3152/),
 metadata. The table below records the new pins; npm remains 12.2.1. All 97 Python
 lock identities and exact versions are preserved, with seven outdated direct
 minimums reconciled. TypeScript ESLint advances to 8.72.1. T81 owns fresh
-validation and publication evidence; the private deployment remains T79.
+validation and publication evidence; T82 subsequently deployed that baseline,
+and T84 preserved its runtime layers while updating the workbench.
 
 ## Runtime and installer pins
 
@@ -108,28 +119,29 @@ validation and publication evidence; the private deployment remains T79.
 | pnpm    | 12.16.1; requirement `>=12.16.1`               | Root `packageManager` and `engines`                                                               |
 | uv      | 0.13.6 in CI/container; requirement `>=0.13.6` | Root Python manifest, [CI](../.github/workflows/ci.yml), [Dockerfile](../infra/docker/Dockerfile) |
 
-T56's development environment uses an nvm default of Node 26.12.0 with npm
+T56's development environment used an nvm default of Node 26.12.0 with npm
 12.2.0 and pnpm 12.14.0 installed in its global prefix. T57's maintainer
-workstation uses the same versions in `~/.local/share/shepherd-toolchain`, with
+workstation used the same versions in `~/.local/share/shepherd-toolchain`, with
 links in the existing `~/.local/bin` PATH entry. npm is an installation tool;
 project commands use pnpm. Those installations used managed Python 3.15.0.
 Neither installation replaces the operating system's Python or upgrades OS
 packages.
 
-T58 advances the persistent nvm default to Node 26.12.1, retaining npm 12.2.0
-and pnpm 12.14.0. Existing terminals can select it with `nvm use default`.
+T58 advanced the persistent nvm default to Node 26.12.1, retaining npm 12.2.0
+and pnpm 12.14.0 at that checkpoint.
 
-T77 retains that Node/nvm default and updates npm and pnpm in its existing
+T77 retained that Node/nvm default and updated npm and pnpm in its existing
 user-local prefix to 12.2.1 and 12.15.0. uv 0.13.5 was already installed; the
-repository now matches it. The root `.venv` uses managed Python 3.15.1. The older
-managed runtime and previously built rollback image are retained.
+repository matched it. The root `.venv` used managed Python 3.15.1 at that
+checkpoint. The older managed runtime and previously built rollback image were retained.
 
-T81 installs Node 26.13.0, npm 12.2.1 and pnpm 12.16.1 in the existing nvm
-user-local installation and sets its persistent default to Node 26.13.0.
-Existing terminals can select it with `nvm use default`. uv already reports
-0.13.6; the root `.venv` now uses the available managed Python 3.15.2 runtime.
-System Python and older managed runtimes are retained. The official Node archive
-checksum and both container index digests are independently verified.
+T81 recorded installing Node 26.13.0, npm 12.2.1 and pnpm 12.16.1 in the existing
+nvm user-local installation and setting its persistent default to Node 26.13.0.
+Existing terminals can select that default with `nvm use default`. It recorded
+uv 0.13.6 and the root `.venv` using managed Python 3.15.2, without replacing
+system Python or removing older managed runtimes. That task independently
+verified the Node archive checksum and both container index digests; this guide
+does not recheck the workstation installation.
 
 [The toolchain checker](../scripts/check-toolchain.mjs) enforces stable
 Node/pnpm versions at or above the declared minimums.
@@ -188,8 +200,9 @@ removed.
   typescript-eslint 8.72.1's recorded `>=4.8.4 <6.1.0` peer range. The OpenAPI
   generator is isolated with TypeScript 5.9.3 for openapi-typescript 7.13.0's
   `^5.x` peer requirement. T56 retried TypeScript 7.0.2 and reproduced both
-  strict peer conflicts; 6.0.3 and 5.9.3 remain the newest compatible versions.
-  T77's current registry metadata still offers TypeScript 7.0.2 with those same
+  strict peer conflicts; 6.0.3 and 5.9.3 are the compatible resolutions retained
+  by those dated checks.
+  T77's registry metadata check still offered TypeScript 7.0.2 with those same
   incompatible peer ranges, so these compatible resolutions are retained.
 - **Vitest:** T56 advances the compatible maintenance line to 4.1.12. Retrying
   Vitest 5.0.5 with jest-dom 7.0.1 still fails strict checking with TS2428
@@ -207,9 +220,10 @@ removed.
   pnpm's default release-age, strict peer and install-script policies remain
   unchanged; no exclusions are added.
 - **October 29 release age:** @types/node 26.6.6 was published October 28 at
-  18:36 UTC and is younger than 24 hours at the 15:59 UTC review. Retain
-  26.6.5 until it is eligible; no release-age bypass is added. pnpm 12.16.1
-  and typescript-eslint 8.72.1 are eligible.
+  18:36 UTC and was younger than 24 hours at T81's 15:59 UTC review. That refresh
+  retained 26.6.5 without a release-age bypass; a later refresh must recheck
+  eligibility rather than treating this dated observation as a permanent pin.
+  pnpm 12.16.1 and typescript-eslint 8.72.1 were eligible at that review.
 - **HEIF:** the app requires at least pillow-heif 1.8.1 and locks that version.
   The October 11 release passed a Python 3.15 HEIF conversion and container
   smoke check. Earlier temporary 1.8.0 results remain historical evidence.
@@ -228,18 +242,22 @@ the root Python lock and pnpm dependencies. The common Python environment
 includes cfn-lint for `make infra-check`. Audits must be repeated for a release.
 A past clean result is not a permanent security claim.
 
-[CI](../.github/workflows/ci.yml) pins third-party actions by commit and defines
-the source, browser, mock-evaluation, audit and container checks. It scans
-images for HIGH/CRITICAL vulnerabilities, including those without a fix, and
-retains a CycloneDX software bill of materials (SBOM) as `release-sbom` for 14
-days. Hook commands use the project's locked tools, without separately resolved
-hook environments. Image bases and installer pins are maintained in the
-Dockerfile rather than duplicated here.
+[CI](../.github/workflows/ci.yml) pins third-party actions by commit. Automatic
+push/pull-request runs perform file hygiene, source gates, a SQLite runtime probe
+and dependency audits. Hosted integration/browser/mock-evaluation and container
+jobs require an explicit manual `full_validation` opt-in. The container job scans
+HIGH/CRITICAL vulnerabilities, including those without a fix, and retains a
+CycloneDX software bill of materials (SBOM) as `release-sbom` for 14 days.
+Full application release checks normally run locally with `make verify-local`
+and the [exact-candidate image procedure](RUNBOOK.md#local-release-validation).
+A green automatic run covers only its listed scope. Hook commands use locked
+tools, without separately resolved hook environments; existing commit gates still
+apply. Image bases and installer pins live in the Dockerfile.
 
-T77 checks official release tags and each action's source metadata, then updates
-the following compatible Node 24 actions. Existing workflow events, permissions,
-inputs and disabled caches remain unchanged; GitHub-hosted execution is verified
-by the resulting CI run, separately from local checks.
+T77 checked official release tags and each action's source metadata, then updated
+the following compatible Node 24 actions. This table is dated action-pin history;
+the current workflow is authoritative. Hosted execution evidence remains separate
+from local checks.
 
 | Action            | Reviewed release                                                      | Pinned commit                              |
 | ----------------- | --------------------------------------------------------------------- | ------------------------------------------ |
@@ -250,10 +268,11 @@ by the resulting CI run, separately from local checks.
 
 T81 updates setup-uv to [v10.3.3](https://github.com/astral-sh/setup-uv/releases/tag/v10.3.3),
 commit `68559e99cc807c1eb7e9238fd43a15bba460eec2`, after verifying its Node 24
-source metadata. The other action pins remain current at the October 29 check.
+source metadata. The other action pins were retained at that October 29 check.
 
-The existing Trivy v0.36.0 and upload-artifact v7.0.2 pins already match their
-latest stable releases and are retained.
+T81's metadata review retained Trivy v0.36.0 and upload-artifact v7.0.2 as the
+stable releases observed at that checkpoint. Current pins remain in CI; this
+documentation refresh does not claim a new upstream release check.
 
 The optional browser-model [manifest](../apps/web/src/research-manifest.json) contains public
 repository revisions and artifact hashes; model weights are not bundled.

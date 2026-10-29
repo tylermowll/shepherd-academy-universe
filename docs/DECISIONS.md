@@ -6,6 +6,10 @@ owns outstanding work; [implementation history](history/TASKS.md) preserves date
 validation. Historical authorizations below apply to their recorded execution,
 not future inference, deployment, downloads or pushes.
 
+Read later entries and explicit amendments before applying older details.
+Runtime/package manifests and [DEPENDENCIES](DEPENDENCIES.md) own current
+toolchain pins; versions inside dated decisions preserve their historical baseline.
+
 ## D001 — Supported toolchain baseline (2026-09-06)
 
 **Policy superseded by the October 11 refresh below.** The original choice was

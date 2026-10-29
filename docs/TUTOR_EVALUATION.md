@@ -2,10 +2,14 @@
 
 Automated tests and mock responses check software behavior. They do not
 establish handwriting accuracy, useful teaching, prevention of answer disclosure
-or learning gains. The current tutor uses `activity-v4` and `guidance-v4`; historical
-Muse CLI reports used earlier prompts and a different way of calling the model. See
+or learning gains. At this October 29 documentation review, the tutor uses
+`activity-v6` and `guidance-v6`, defined in
+[tutoring.py](../apps/api/src/math_tutor/tutoring.py). Each report must retain the
+identifiers actually used. Historical Muse CLI reports used earlier prompts and
+a different way of calling the model. See
 [PROVIDER_STATUS](PROVIDER_STATUS.md) for connection status and model selection requirements,
-[task history](history/TASKS.md) for recorded commands and outcomes, and
+[TASKS](TASKS.md) for recent evidence and [implementation history](history/TASKS.md)
+for older commands and outcomes, and
 [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer) for outstanding release checks.
 
 Use original or licensed synthetic material. Live calls require explicit
@@ -39,6 +43,15 @@ quality judgments pending. The command fails if communication fails or a respons
 violates the required format or passage rules. Passing these checks does not
 establish teaching quality. Fixture sources are recorded in
 [the manifest](../evals/MANIFEST.md).
+
+Committed reports are dated snapshots, not a claim that the current source was
+just evaluated. `make eval-mock` overwrites the named report files; review the
+diff before staging them, or retain fresh output separately when preserving
+historical evidence. T86 retained its new reports under `/tmp` and records the
+actual suite results in TASKS. The full local application gate,
+`make verify-local`, includes these mock suites after build, integration and
+browser checks. Ordinary hosted push checks do not run model evaluations; the
+full hosted path is an explicit manual opt-in.
 
 ## Authorized live commands
 

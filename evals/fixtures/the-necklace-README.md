@@ -1,8 +1,8 @@
 # The Necklace reading rehearsal
 
-Use [the paste-ready excerpt](the-necklace-excerpt.txt) in the web app's
-**Paste reading or study material** mode. The excerpt contains 5,347 characters
-plus a trailing newline, within the 50,000-character supplied-text limit.
+Choose **Read and discuss a text**, then **Paste a text** in Practice and use
+[the paste-ready excerpt](the-necklace-excerpt.txt). The excerpt contains 5,347
+characters plus a trailing newline, within the 50,000-character supplied-text limit.
 Choose a topic such as “Reading comprehension:
 The Necklace — character, evidence, and irony” and start a session. The app
 generates a question. Choose **Read in sections** for guided practice or **Use the

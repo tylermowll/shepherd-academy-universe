@@ -4,6 +4,12 @@ This guide describes adapter support, connection setup and test limits. Check
 current selections in the installation's **Settings**; [TASKS](TASKS.md) records
 the last observed deployment.
 
+Documentation/source review on October 29, 2026 does not refresh live connection
+tests or provider agreements. T84 records the last private application release;
+T86's later Python lock update was published without deploying it. Historical
+model selections and test results do not establish current eligibility, probe
+freshness or teaching quality for a chosen installation.
+
 Every live adapter is implemented and tested against its request and response
 contracts. Live verification is still pending for the exact model, runtime and
 account the operator chooses. A passing connection test shows that the server
@@ -59,6 +65,8 @@ example does not verify an endpoint or model.
    may still be billed. A matching test lasts seven days and becomes stale after
    connection, capability, key or applicable test-version changes. Current
    versions are tutor v4 and photo reader v2; pre-T44 tutor tests are stale.
+   These probe versions are separate from the activity/guidance prompt versions
+   used during practice and evaluation.
 4. On the tested connection, choose **Use as tutor** or **Use as photo reader**
    and acknowledge where it will process data. The current-model summary shows
    the saved connection/model for each role. Each action changes only that role;

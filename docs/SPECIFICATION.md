@@ -733,7 +733,11 @@ The supported variables are documented in [`.env.example`](../.env.example).
 `make setup` generates private settings; bootstrap only installs dependencies
 (D006). Fixed image and inference budgets are enforced by the backend.
 
-`APP_AUDIENCE` is `adult_only`, `mixed`, or `unknown`; unknown receives the stricter routing policy. The adult assigns a coarse eligibility category where needed—do not collect dates of birth. `APP_MODE=demo` prohibits real uploads, custom free-text learner data, and external model calls; it uses supplied synthetic interactions and photos only.
+Use `adult_only` or `mixed` for `APP_AUDIENCE`; any other value receives the
+stricter `mixed` policy. The adult assigns a coarse learner eligibility category
+where needed—do not collect dates of birth. `APP_MODE=demo` is a restricted
+synthetic preview with tutoring and uploads unavailable and external model calls
+prohibited. Synthetic tutoring checks use private mode with the mock provider.
 
 Native and container configuration use absolute data paths. Native setup generates an absolute path under the repository's ignored `data/` directory; all commands and processes must resolve the same file regardless of working directory. Protect the directory, database, and sidecars with restrictive permissions; SQLite has no database password. Setup generates the session secret, and startup rejects its placeholder. Localhost development may use an explicitly named development cookie configuration. Non-loopback private deployments require HTTPS, authenticated access, and production cookie settings. `.env` is a convenience for local operation, not the production secret-management design.
 
@@ -1091,7 +1095,11 @@ between shared public texts and learner snapshots. Optional subject levels need
 validation, persistence, canonical request identity and actual prompt-use checks.
 
 **UI/end-to-end tests:** learner/admin separation, work/discussion/photos, reading
-before feedback, guided navigation, request recovery, updates and deletion. Use Playwright in CI, and record separate manual checks on actual phone Safari/Chrome. Desktop browser emulation is not proof of real-device camera/HEIC behavior. [^S30]
+before feedback, guided navigation, request recovery, updates and deletion. Run
+the existing Playwright harness locally for release validation; section 16 defines
+the separately enabled hosted CI checks. Record separate manual checks on actual
+phone Safari/Chrome. Desktop browser emulation is not proof of real-device
+camera/HEIC behavior. [^S30]
 
 **Model evaluations:** original or licensed cross-subject activities, source
 passages, student misconceptions/revisions and handwritten fixtures with known
@@ -1149,11 +1157,19 @@ task workflow. Prefer one current implementation; do not add legacy
 compatibility shims or development-schema bridges without a maintainer request
 (D005).
 
-Agents read root and applicable nested instructions, the current task and its
-referenced contracts before editing. Canonical repository skills live under
+Agents apply root and applicable nested instructions, loading task context and
+referenced contracts as the requested change needs them. Persistent instructions
+hold durable project constraints; skills hold scoped workflows and load supporting
+references only when relevant. Canonical repository skills live under
 `.agents/skills`; clients without automatic discovery must be directed to the
 relevant file. Keep one instruction source rather than competing copies. These
 files do not create runtime agents or grant application permissions.
+
+Scale planning and verification to affected behavior. Documentation-only changes
+use document/skill checks rather than adding application tests. Existing Make,
+commit-hook and release gates remain authoritative. Authorized local work with
+disposable synthetic fixtures needs no additional approval; authorization for
+publication, deployment or live inference remains specific to the requested task.
 
 Record commands actually run, failures and provider tests not run. Never remove
 assertions, weaken policy or rewrite requirements to conceal a failure. Assign

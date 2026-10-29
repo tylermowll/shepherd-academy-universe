@@ -14,12 +14,17 @@ the assignment.
 
 ## Current status
 
-The application is implemented through **T44**. Model selection and teaching
-quality, checks on real phones, accessibility and backup recovery still need
-[release review](docs/ACCEPTANCE.md). Passing automated tests or a connection
-test does not establish teaching quality or production readiness.
-See [TASKS](docs/TASKS.md) for the current checkpoint and
-[HANDOFF](docs/HANDOFF.md) for the documentation guide.
+The current application includes the learning workbench, published-text library,
+account and model management, and private-host operation. The last recorded
+private deployment is [T84](docs/TASKS.md#t84--publish-and-privately-deploy-the-learning-workbench-2026-10-29),
+on October 29, 2026. Later source, dependency and documentation changes have their
+own evidence; a push does not update the running installation.
+
+Live teaching quality, real phones, assistive technology and complete operational
+recovery remain separate [acceptance checks](docs/ACCEPTANCE.md). Passing
+automated tests or a connection test does not establish teaching quality or
+production readiness. See [TASKS](docs/TASKS.md) for current work and dated results,
+and [HANDOFF](docs/HANDOFF.md) for the source/deployment distinction and document map.
 
 ## Start the app
 
@@ -214,10 +219,12 @@ in [RUNBOOK](docs/RUNBOOK.md), run **`make migrate`**, then
 and text hashes, is
 atomic and safe to repeat, and refuses to overwrite an existing text ID with
 changed content or metadata. It downloads nothing. A reviewed custom local
-manifest can be imported in the configured application environment with:
+manifest can be imported from the repository root with the reviewed application
+settings already exported in a trusted operator terminal. This direct command
+does not load the private `.env` file:
 
 ```sh
-python -m math_tutor.published_library import --manifest /path/to/manifest.json
+uv run --locked --no-env-file python -m math_tutor.published_library import --manifest /path/to/manifest.json
 ```
 
 Pasted and imported study texts allow **50,000 characters** (counted as Unicode
@@ -309,7 +316,9 @@ run `make verify-local` before a release and record its results against the exac
 source revision. It runs the existing checks in order, including the complete
 desktop/mobile suite with no retries. Container release checks are separate;
 follow the [local image checks](docs/RUNBOOK.md#local-release-validation) before
-deploying a candidate.
+deploying a candidate. Keep builds sequential with integration/browser runs that
+use the generated web assets. For documentation-only changes, use relevant
+document/skill validation; existing commit hooks and release gates still apply.
 
 Automatic GitHub push/pull-request checks run file hygiene, `make check`, the
 SQLite runtime probe and dependency audits. They do not run integration/browser
@@ -326,9 +335,10 @@ not evidence that a revision passed.
 
 ## Contributing and license
 
-Read [AGENTS](AGENTS.md), [SPECIFICATION](docs/SPECIFICATION.md) and
-[HANDOFF](docs/HANDOFF.md). Use original synthetic fixtures and record actual
-outcomes. [THREAT_MODEL](docs/THREAT_MODEL.md) describes boundaries and
+Apply [AGENTS](AGENTS.md) and relevant nested instructions, then load the task and
+contract sections needed for the change. [HANDOFF](docs/HANDOFF.md) maps the
+documents; [SPECIFICATION](docs/SPECIFICATION.md) owns product requirements.
+Use original synthetic fixtures and record actual outcomes. [THREAT_MODEL](docs/THREAT_MODEL.md) describes boundaries and
 [evals/MANIFEST](evals/MANIFEST.md) records fixture provenance. Review public staged
 files individually; never blanket-add local configuration or data.
 

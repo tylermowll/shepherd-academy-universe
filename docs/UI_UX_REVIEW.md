@@ -1,5 +1,18 @@
 # UI/UX review — current status
 
+The latest interface review is T83 below. T84 subsequently published and privately
+deployed that application, with a complete 154-case hosted browser pass and
+exact-image/served-asset checks. Its hosted aggregate still hit the old cleanup
+time limit; [T84](TASKS.md#t84--publish-and-privately-deploy-the-learning-workbench-2026-10-29)
+distinguishes passing executed steps from that cancelled job result. T85 then made
+expensive validation local-first. T86 verified a later Python lock refresh without
+another UI/browser review or private deployment.
+
+This page preserves dated review evidence. Older sections describe behavior and
+coverage at their recorded revisions; the T83 workbench supersedes earlier action
+placement. No new rendered, physical-device or assistive-technology review is
+claimed by the documentation refresh.
+
 ## T83 active learning workbench (2026-10-29)
 
 This focused redesign covers the learner journey from the current activity
@@ -48,7 +61,7 @@ Exact command chronology and screenshot paths are recorded in
 [T83](TASKS.md#t83--redesign-the-active-learning-experience-2026-10-29).
 The review is not a whole-app accessibility or release-readiness assessment.
 
-## T76 adaptive learning setup
+## T76 adaptive learning setup (historical)
 
 The maintainer's screenshot shows the first letters clipped in the open
 three-choice Practice purpose menu. The form also put difficulty and tutor
@@ -96,12 +109,13 @@ digest matches the backup; no migration, reset or inference was performed.
 
 Hosted package job `40144626370` passed package smoke, its HIGH/CRITICAL
 vulnerability-scan gate and SBOM generation for the same-source package. The
-deployed local image was not separately vulnerability-scanned; the remaining
-hosted checks are still running. This is a focused workflow correction. Live
+deployed local image was not separately vulnerability-scanned at that checkpoint;
+the remaining hosted checks were still running when T76 was recorded. Later T84
+evidence supersedes that deployment status. This was a focused workflow correction. Live
 teaching quality, physical devices, screen readers and comprehensive
 accessibility acceptance remain unverified.
 
-## T75 model setup and activation
+## T75 model setup and activation (historical)
 
 The maintainer's reading-session report exposed two problems: a tested model
 was not the active tutor, and the demo presented fixed revision advice as if it
@@ -126,7 +140,7 @@ tutor selection was restored and verified without inference.
 records exact commands and remaining evidence. No live teaching-quality,
 physical-device or screen-reader acceptance is claimed.
 
-## T73 account-management naming
+## T73 account-management naming (historical)
 
 The maintainer identified a misleading page title missed by the previous review:
 Learners included the administrator account. The shared tab, heading and document
@@ -141,13 +155,14 @@ and 11 toolchain cases), plus all 26 affected desktop/mobile browser cases in
 learner management, correct password editors and Help/recovery/navigation labels.
 The source-tested image is privately deployed behind the existing address;
 encrypted backup/restore, HTTPS/worker readiness and all 66 exact public assets
-passed. Hosted CI is pending; no new whole-app or physical-device review is claimed.
+passed. Hosted CI was pending at that checkpoint; no whole-app or physical-device
+review was claimed.
 
 [T73](TASKS.md#t73--name-the-shared-account-management-page-users-2026-10-24)
 records the focused correction's validation and deployment evidence. This does
 not claim a new whole-application audit.
 
-## T72 control sizing and action placement
+## T72 control sizing and action placement (historical)
 
 The maintainer's focused visual review identified bulky controls and competing
 actions. Desktop buttons now use a tighter line height, smaller padding and
@@ -155,7 +170,7 @@ lighter secondary styling; coarse-pointer buttons and navigation retain at least
 44px height. Secondary mobile actions keep natural widths. The sign-in form is
 centered and capped at 480px, and header/navigation spacing is reduced.
 
-Practice now keeps Next activity and Finish session in an Activity controls
+At T72, Practice kept Next activity and Finish session in an Activity controls
 group beside the current activity, outside its collapsible details and the
 message form. Attach photo, Help and Send stay beside message entry. Finish
 remains available for idle reference/generation steps; unsent drafts and pending
@@ -181,7 +196,7 @@ The prior T71 sign-in corrections below are preserved in this publication.
 This is a focused control/layout refinement. Existing physical-device,
 assistive-technology and teaching-quality acceptance work remains open.
 
-## T71 sign-in correction
+## T71 sign-in correction (historical)
 
 The maintainer's landing-page report identified gaps missed by the previous
 reviews: a credential error offered Reconnect, the account chooser competed with
@@ -222,19 +237,19 @@ both existing accounts were verified. No full browser-suite result is claimed.
 Physical password-manager/autofill behavior, screen readers and real phones have
 not been exercised by this correction. Existing acceptance work below remains.
 
-## T69 correction record
+## T69 correction record (historical)
 
 T69 implements the seven findings from the October 24 review and the small
 activity-generation copy suggestion. All required validation gates passed; the
 implementation was published to `main` as `775e6eb`. This file keeps
-the current correction record; dated commands, review limits and publication
+the earlier correction record; dated commands, review limits and publication
 evidence live in [TASKS](TASKS.md#t69--correct-the-uiux-findings-and-publish-2026-10-24).
 Earlier committed reviews remain in Git history; T68's dated findings and commands
 are retained in TASKS rather than duplicated here.
 
 ## Corrections
 
-| Finding                                         | Current behavior                                                                                                                                                                                                             | Regression coverage                                                                                                    |
+| Finding                                         | Behavior corrected in T69                                                                                                                                                                                                    | Regression coverage                                                                                                    |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | Interrupted request traps the current tab       | Text and owned-photo requests share receipt lookup and explicit server resolution. Accepted work is opened without replay; an absent request is blocked against late acceptance before its retained draft/photo is released. | Tutor and PhotoInput component cases; real stale-version/late-original browser flow; existing receipt API integration. |
 | Successful administrator change appears to fail | Account creation, credentials, age, deletion and connection actions retain their confirmed receipt. Stale writes stay blocked until GET-only refresh succeeds.                                                               | LearnerAccounts/ProviderConnections components and deletion/refresh browser flow.                                      |
@@ -286,5 +301,5 @@ state; that does not establish every browser/device/accessibility state.
 
 Existing History pagination/large-conversation and administrator-authorship
 follow-ups remain separate. Synthetic results do not establish WCAG conformance,
-teaching quality or release readiness. [T70](TASKS.md#t70--deploy-the-uiux-corrections-2026-10-24)
-records the subsequent private deployment; live inference acceptance remains open.
+teaching quality or release readiness. [T84](TASKS.md#t84--publish-and-privately-deploy-the-learning-workbench-2026-10-29)
+records the latest private application deployment; live inference acceptance remains open.

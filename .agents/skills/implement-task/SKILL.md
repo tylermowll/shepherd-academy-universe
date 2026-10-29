@@ -1,21 +1,31 @@
 ---
 name: implement-task
-description: Implement one approved Shepherd Academy Universe task with bounded scope, contract checks, tests, and evidence. Use when starting or continuing a task from docs/TASKS.md.
+description: Deliver a Shepherd Academy task from docs/TASKS.md. Use when implementing or continuing tracked work.
 ---
 
-# Implement one task
+# Deliver the tracked outcome
 
-1. Read root/nested AGENTS.md, the task, and only relevant README sections.
-2. Inspect existing code and git status. Do not discard unrelated work.
-3. Confirm dependencies and identify public contracts, security boundaries,
-   migrations, and acceptance cases touched by this task.
-4. Write a brief implementation/test plan, then implement the smallest working slice.
-5. Add tests for the main path and at least the relevant failure/authorization path.
-6. Run targeted checks, then the task's required gate. Fix implementation defects;
-   never delete assertions or disable policy to make a test pass.
-7. Inspect the diff for secrets, hidden-answer leaks, unsafe parsing, silent cloud
-   fallback, generated-file drift, and unrequested infrastructure changes.
-8. Update docs/TASKS.md with exact evidence. Report commands not run and why.
+Use the requested task's scope, affected SPECIFICATION contracts and exit checks.
+Read those sections as needed rather than loading task history or the whole spec.
+The maintainer's request authorizes the work; the task record is context, not an
+additional approval gate. Keep later user corrections in the active scope.
 
-If blocked, preserve useful work, record the actual blocker, and stop at a clean
-boundary. Do not start unrelated future phases or claim the application is complete.
+Before editing, identify the affected behavior and useful evidence. Scale the
+plan to uncertainty: a small correction may need no written itinerary; a change
+across API, worker and UI needs a coherent slice with explicit acceptance cases.
+Keep unrelated backlog work separate.
+
+For behavior changes, cover the changed outcome and relevant failure, ownership
+or policy boundaries. Regenerate public API contracts when schemas change. Use
+real migrations and on-disk SQLite checks for persistence changes; D005 permits
+correcting initial migrations for disposable development data, not resetting a
+retained installation.
+
+Choose checks from [verification guidance](references/verification.md). The
+Makefile and the task's required gates define completion; the skill does not add
+new dependencies, mandatory test counts or a plan-approval checkpoint.
+
+Record actual changes, commands/results and remaining limits in
+[TASKS](../../../docs/TASKS.md). If something blocks completion, finish independent
+authorized work and identify the precise blocker and next bounded action. Do not
+present a partial result as a completed task.

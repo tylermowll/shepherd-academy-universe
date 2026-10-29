@@ -21,5 +21,6 @@ upload formats to accommodate a candidate.
 Prefer newly authored synthetic work for public handwriting, organization and
 ambiguity cases. Follow [TUTOR_EVALUATION](../../docs/TUTOR_EVALUATION.md) for
 authorized live review and [ACCEPTANCE](../../docs/ACCEPTANCE.md) for physical-device
-checks. Uncertain readings receive specific clarification advice; there is no
-photo approval gate.
+checks. Clear task-relevant readings continue automatically. Give specific
+clarification advice when uncertainty prevents useful feedback; incidental
+uncertainty does not block readable work. There is no photo approval gate.

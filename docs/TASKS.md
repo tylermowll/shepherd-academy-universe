@@ -6,6 +6,161 @@ This file owns the current work queue and completion evidence. The
 dependency refresh. Superseded workflows in that archive are historical evidence.
 A task is complete only after its requirements and exit checks pass.
 
+## T88 — Reconcile all repository documentation (2026-10-29)
+
+**Status:** Complete. Documentation is reconciled and validated for the
+maintainer-authorized publication to `main`, together with T87.
+
+**Scope and contracts:** Current Markdown guides, instruction references,
+requirements, operational/acceptance guidance and public evaluation documentation;
+SPECIFICATION sections 14 and 16 and the current implemented product contracts.
+Audit every tracked documentation file, correct current claims against public
+source/manifests and recorded evidence, and preserve dated history, fixtures and
+third-party license text. This changes documentation, not runtime behavior,
+dependencies, product policy or the private installation.
+
+**Reviewed inventory:** All **31 Markdown files**, including the new verification
+reference: all 11 AGENTS/skill/reference files; root README; all 12 top-level
+`docs/*.md` guides; `docs/history/TASKS.md`; the packaged corpus README;
+`evals/MANIFEST.md`, incoming README and Necklace fixture guide; and both dated
+Muse Markdown reports. Also reviewed the root MIT `LICENSE`, packaged
+`GUTENBERG-LICENSE.txt` and `the-necklace-excerpt.txt`: **34 documentation/text
+files** in total. Historical reports, archived tasks, corpus data and license
+bytes are preserved rather than recast as current results.
+
+**Implemented:** Current summaries now identify T84's last recorded private
+deployment and schema `0021_published_library`, while distinguishing T86's
+published but undeployed Python resolutions. Handoff, acceptance, dependency,
+provider and UI/UX guides separate current source facts, dated test/deployment
+receipts and remaining model/device/accessibility/recovery acceptance.
+
+Operational examples keep migration/import/start ordered, activate an already
+tested image without rebuilding/pulling, and distinguish same-schema rollback
+from a schema downgrade. Guides match current preference/source controls,
+Models/Data & privacy sections, v6 practice prompts, separate v4/v2 provider
+probes, local-first release checks and manual hosted full validation. The
+specification describes the actual strict audience fallback and restricted public
+demo; evaluation guides preserve assignment and photo-uncertainty boundaries and
+correct the adversarial suite's Necklace attribution. Historical ADRs have a
+current-manifest pointer without rewriting their recorded decisions.
+
+**Actual checks:**
+
+- `python3 /tmp/shepherd-t87/check_all_docs.py`: **31 Markdown files, 394 local
+  links and 89 heading links**, all resolving.
+- `python3 /tmp/shepherd-t87/check_instructions.py`: **146 relative instruction
+  destinations and 10 Make targets**, all resolving.
+- Prettier checks passed current changed guides and all skill/reference files;
+  new TASKS entries are formatted separately to preserve historical formatting.
+  `git diff --check` passed. Independent cross-review found no actionable blocker.
+- Static source checks confirmed the unique migration head, declared tool pins,
+  97-package lock, 868 corpus records and 21 originals; fixture excerpts, hashes,
+  word counts and bounds match their documented sources. The packaged Gutenberg
+  license differs from the normalized edition footer only by 18 spaces on blank
+  lines; normalized text matches, and existing license bytes were not changed.
+- The configured application commit gate already passed in T87 on unchanged
+  runtime/dependency source: **405 backend, 365 frontend/component and 11
+  toolchain tests**. Editorial changes do not require another runtime suite.
+- Final `make hooks-files-check secret-check` passed every applicable file hook
+  and the public tracked-file credential scan. The duplicate project hook was
+  skipped after the successful T87 gate. Log:
+  `/tmp/shepherd-t87/publication-checks.log`.
+- The reviewed publication candidate contains **23 Markdown files**. A fresh
+  `git fetch origin main` confirmed no remote divergence before commit.
+
+No runtime, image, provider or private-host revalidation is claimed. Live model
+quality, actual devices, assistive technology and full restored-host acceptance
+remain open in ACCEPTANCE. No private settings/data were inspected, and no live
+inference, model download, provisioning or deployment was performed.
+
+## T87 — Refresh repository agent guidance from current sources (2026-10-29)
+
+**Status:** Complete. Rewritten and validated for publication with the
+subsequently requested T88 documentation refresh. The maintainer authorized
+reviewing/revising `AGENTS.md` and `.agents` against current OpenAI, Anthropic and
+other guidance, then pushing to `main`.
+
+**Scope and contracts:** SPECIFICATION sections 14 and 16; root/nested agent
+instructions, task implementation and UI/UX review skills. Preserve product,
+privacy, authorization, migration and release requirements. Review the existing
+references and callers, remove obsolete/duplicated procedures, correct current
+API/PWA facts and validate actual workflow decisions. No runtime, dependencies,
+model settings, hooks, CI gates or deployment change.
+
+**Research checked on October 29, 2026:** These are retrieval dates, not claims
+that every page was published today. Live documentation was opened in addition
+to dated articles; search snippets alone were not treated as evidence.
+
+- OpenAI's current [AGENTS.md discovery](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
+  and [skill documentation](https://learn.chatgpt.com/docs/build-skills): scoped
+  instruction inheritance, concise triggers and selective loading.
+- OpenAI's September 11 [instruction review](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)
+  recommends removing accumulated procedural scaffolding and unnecessary context.
+  Its model-specific observations are not made universal repository policy.
+  The October 14 [maintenance article](https://developers.openai.com/blog/maintaining-software-with-the-gpt-6-family)
+  was also reviewed; it does not supersede this project's authorization rules.
+- Anthropic's live [Claude Code practices](https://code.claude.com/docs/en/best-practices)
+  and [skill authoring guidance](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices):
+  retain non-obvious project knowledge, match detail to risk, and keep procedures
+  in selectively loaded skills. Prose does not replace actual access controls.
+- Google's [Gemini CLI context hierarchy](https://geminicli.com/docs/cli/gemini-md/)
+  and [extension guidance](https://geminicli.com/docs/extensions/best-practices/):
+  scope context and describe goals concisely rather than copying full manuals.
+- The [Agent Skills specification](https://agentskills.io/specification):
+  required metadata, meaningful descriptions and linked supporting resources.
+
+The shared recommendation is task-relevant context and explicit outcomes with
+detail reserved for real constraints. Older workflow examples and model-specific
+advice do not justify universal reading/testing recipes. Harness discovery differs:
+no new `CLAUDE.md`, `GEMINI.md`, configuration or compatibility wrappers were added.
+
+**Implemented:** Root instructions now route to relevant documents instead of
+requiring a reading itinerary for every edit. They retain the original product
+and data boundaries, recognize existing task authorization and distinguish
+disposable test work from external actions. Nested API/frontend guidance describes
+the established generated-client workflow and existing public-asset-only service
+worker, replacing obsolete first-feature/future-PWA instructions.
+
+`implement-task` now describes the tracked outcome with proportionate planning
+and behavioral coverage. Its new verification reference maps change types to
+existing checks and records settings isolation and build/integration ordering.
+`ui-ux-review` has a shorter entrypoint with focused reference routing; all five
+domain/evidence references remain available. Whole-app coverage, source-versus-
+rendered evidence and review-versus-fix scope remain explicit. SPECIFICATION
+section 14 matches this structure; section 16 and every actual gate are unchanged.
+
+**Actual validation:**
+
+- Both edited skills passed `quick_validate.py` using the existing isolated
+  `python3 /tmp/shepherd-t83/run.py uv run --locked --no-env-file python` runner.
+- `pnpm exec prettier --check` passed all 11 instruction/reference files and
+  SPECIFICATION. The new TASKS entry was formatted separately to preserve history.
+- `python3 /tmp/shepherd-t87/check_instructions.py`: all **146 relative
+  destinations across 11 instruction files** resolve and all **10 referenced
+  Make targets** exist. `git diff --check` passed.
+- Independent invariant review found no lost boundary or contradictory gate.
+  A fresh read-only scenario review exercised decisions for a README typo, owned
+  API field, photo ordering, focused source-only copy review, whole-app review
+  and an already-authorized implementation/push. Focus and authority were kept.
+- That review identified inherited owner-channel settings as a conditional risk
+  in fixture-server launches. Both skills now require sanitized environments for
+  every harness launch, explicitly excluding `SHEPHERD_OWNER_SOCKET` and
+  `SHEPARD_SETUP_TOKEN`. A second review confirmed the correction. This remains
+  procedural isolation; the unchanged launcher does not enforce it itself.
+- `python3 /tmp/shepherd-t83/run.py make pre-commit-check`: passed the configured
+  commit gate, including **405 backend, 365 frontend/component and 11 toolchain
+  tests**, locks, lint/format and strict types. Log:
+  `/tmp/shepherd-t87/pre-commit-check.log`.
+
+No application tests were added. Integration/browser/container suites and live
+providers were not rerun for these instruction changes; T86's prior results are
+separate evidence. No private settings/data, operator resources, model downloads,
+inference, provisioning or deployment were accessed by the scenario reviews.
+
+**Changed files:** `AGENTS.md`, `apps/api/AGENTS.md`, `apps/web/AGENTS.md`,
+`.agents/skills/implement-task/SKILL.md`, its new `references/verification.md`,
+`.agents/skills/ui-ux-review/SKILL.md`, `docs/SPECIFICATION.md` and `docs/TASKS.md`.
+
 ## T86 — Publish the maintainer's Python patch updates (2026-10-29)
 
 **Status:** Complete. The maintainer explicitly requested publishing their

@@ -1,16 +1,17 @@
 # Frontend instructions
 
-Read the root AGENTS.md and current task first. Keep this a client-rendered
-React/TypeScript/Vite app. Use semantic HTML and local assets; add libraries only
-when a working feature needs them.
+Apply the root instructions. Keep the client-rendered React/TypeScript/Vite app,
+semantic HTML and local assets.
 
-- Backend schemas and services own validation, authorization, and grading.
-- Before the first API-consuming feature, generate frontend types from FastAPI
-  OpenAPI and add a regeneration drift check. Do not hand-maintain API schemas.
-- No provider keys, answer keys, private endpoints, or administrator data in the
-  frontend bundle. Never put session tokens in localStorage.
-- No service worker or sensitive response caching until its explicit task.
-- Add accessible labels, keyboard behavior, honest errors, and relevant component
-  tests. Use browser tests for workflows and connection/retry behavior.
-- Run root Make targets; `make check` includes frontend checks. `make smoke`
-  builds and launches isolated loopback servers, then runs browser tests.
+- Backend schemas and services own validation, authorization and verified grading.
+  Use generated API types; public schema changes go through `make contracts` and
+  `make contracts-check`.
+- Keep provider keys, answer keys, private endpoints and administrator data out
+  of learner bundles. Never store session tokens or private learner drafts in
+  localStorage.
+- The existing service worker caches public assets only. Preserve private-response
+  exclusions, explicit update handling and pending-work/unsent-draft guards.
+- Preserve accessible labels, keyboard behavior, focus and honest error/recovery
+  states. Match component/browser coverage to the interaction being changed.
+- `make smoke` builds and runs isolated browser workflows; `make smoke-built`
+  reuses a matching build. Do not rebuild while tests are using the shared output.
