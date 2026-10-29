@@ -6,6 +6,57 @@ This file owns the current work queue and completion evidence. The
 dependency refresh. Superseded workflows in that archive are historical evidence.
 A task is complete only after its requirements and exit checks pass.
 
+## T86 — Publish the maintainer's Python patch updates (2026-10-29)
+
+**Status:** Complete. The maintainer explicitly requested publishing their
+validated lock refresh to `main`.
+
+**Scope and contracts:** SPECIFICATION sections 6 and 16; locked dependency
+installation, Pydantic validation/serialization and existing API contracts.
+Preserve the maintainer's `uv.lock` changes. Independent parsed comparison
+confirmed all 97 package identities, dependency declarations, sources, Python
+requirements and other lock metadata are unchanged. Only these versions and
+their distribution artifacts change:
+
+- `opentelemetry-api`: **1.45.1 → 1.45.2**.
+- `pydantic`: **2.14.1 → 2.14.2**.
+- `pydantic-core`: **2.50.1 → 2.50.2**.
+
+**Actual validation:** Commands use the existing allowlisted
+`python3 /tmp/shepherd-t83/run.py` runner, with Node 26.13.0, pnpm 12.16.1,
+uv 0.13.6 and Python 3.15.2. Environment-file loading is disabled and private
+operator/provider settings are excluded.
+
+- `uv lock --check --offline`: passed for all 97 packages.
+- `make check`: passed **405 backend unit, 365 frontend/component and 11
+  toolchain tests**, locks, lint/format, Python/TypeScript types, both builds,
+  generated-contract drift, public credential scan and infrastructure validation.
+  Log: `/tmp/shepherd-t86-check.log`.
+- Final `make test-integration`: **467 passed in 88.88 seconds** after the
+  build completed. Log: `/tmp/shepherd-t86-integration-final.log`.
+- `make audit`: Python and pnpm reported **no known vulnerabilities**.
+  Log: `/tmp/shepherd-t86-audit.log`.
+- `make eval-mock`: passed all **33 deterministic, 12 reading, 12 teaching and
+  4 adversarial** synthetic cases. Generated reports were retained under
+  `/tmp/shepherd-t86-evaluation`; tracked historical reports were restored.
+- `make hooks-files-check`: all applicable file hooks passed; the duplicate
+  project hook was skipped because `make check` passed separately.
+- `git diff --check`: passed. Independent lock review found no blocker.
+
+The first sandboxed attempts could not complete Node subprocess checks or seven
+loopback-dependent backend unit setups; the complete source gate then passed
+outside that restriction. The first integration attempt had **466 passes and
+one setup error** because the concurrent frontend build temporarily removed
+`dist/assets` while `create_app` mounted static files. No assertion failed in
+that case; the complete serial rerun passed without source or test changes.
+The existing bundle-size and unbounded-build-backend warnings remain.
+This task publishes a dependency lock refresh, without a private
+application deployment. Browser/container release checks and live-provider tests
+are outside this publication scope; no live inference, model download or
+provisioning was performed.
+
+**Changed files:** `uv.lock` and `docs/TASKS.md`.
+
 ## T85 — Make expensive validation local-first (2026-10-29)
 
 **Status:** Implemented and validated locally. The maintainer wants to conserve
