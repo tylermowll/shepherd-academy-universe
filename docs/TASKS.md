@@ -8,6 +8,12 @@ A task is complete only after its requirements and exit checks pass.
 
 ## Current checkpoint
 
+T81 updates Python to 3.15.2, Node to 26.13.0, pnpm to 12.16.1 and uv/uv_build
+to 0.13.6, with reviewed dependency minima and immutable CI/container pins.
+Source, integration, browser, mock, audit and container validation passed.
+The maintainer authorized publication to `main`; final publication results are
+reported with completion. The private deployment remains T79.
+
 T80 validates and publishes the maintainer's staged Python lock refresh to
 `main`. Source validation has passed; final publication checks are reported at
 completion. Private deployment evidence remains recorded under T79.
@@ -71,6 +77,129 @@ no reset or inference was run on retained storage. Live teaching quality remains
 unverified.
 [ACCEPTANCE](ACCEPTANCE.md#items-requiring-the-maintainer)
 owns the remaining model, physical-device, accessibility and operational checks.
+
+## T81 — Update stable toolchains and dependency baselines (2026-10-29)
+
+**Status:** Implementation and source/package validation complete. The maintainer
+explicitly requested review, latest Python/uv/Node and related tools, and
+publication to `main`; final publication results are reported with completion.
+
+**Contracts and plan:** SPECIFICATION sections 6, 13 and 16; DEPENDENCIES
+minimum-only declarations, exact locks, strict upstream peers, release age and
+install-script policy. Review official stable release metadata and artifacts,
+update the persistent user-local JavaScript tools and managed project Python,
+align native/CI/container pins and documentation, regenerate locks, then run
+locked bootstrap, `make check`, integration/browser/mock suites, audits and
+repository hooks. Existing success/failure, authorization and migration tests
+provide regression coverage; no application/API/schema behavior is added.
+Validate the local container against synthetic data before a non-force push and
+remote-equality check. No private configuration, retained data, inference, model
+download, provisioning or deployment is needed.
+
+**Review and choices:** Python 3.15.2, Node 26.13.0 LTS, npm 12.2.1, pnpm
+12.16.1 and uv/uv_build 0.13.6 match current stable official metadata. The Python
+managed artifact and both official build-image tags are available. Independent
+SHA-256 checks match the immutable Node/Python registry index digests. The
+Distroless digest and other GitHub Actions remain current; setup-uv advances to
+v10.3.3 at its verified full commit, retaining its Node 24 runtime.
+All 97 Python lock package identities and exact versions remain unchanged;
+seven direct minimums now match the already validated latest resolutions.
+
+The JavaScript application lock preserves all 309 package identities, updating
+only the 11 TypeScript ESLint-family packages from 8.72.0 to 8.72.1; the separate
+15-package manager document moves from pnpm 12.14.0 to 12.16.1. Every direct
+npm dependency was reviewed. TypeScript 7.0.2 still conflicts with the current
+TypeScript ESLint `<6.1` and OpenAPI generator `^5.x` peers; retain application
+6.0.3 and generator 5.9.3. A transient Vitest 5.0.5 installation reproduced
+TS2428 `Assertion` conflicts with jest-dom 7.0.1, so the final lock and install
+retain compatible Vitest 4.1.12. No type suppression or policy change is added.
+Latest @types/node 26.6.6 was published October 28 at 18:36:36 UTC and is younger
+than pnpm's unchanged 24-hour minimum at review; retain 26.6.5 until eligible.
+
+**Documentation conflict:** SPECIFICATION section 6 still required Python
+3.15.0 and pnpm 12.14.0 while current manifests required 3.15.1 and 12.15.0.
+This update reconciles the specification with the new runtime requirements.
+
+**Validation (2026-10-29):** The checksum-verified
+Node archive is installed under the existing nvm tree, with the persistent
+nvm default set to 26.13.0; npm/pnpm are installed in that prefix with isolated
+empty npm configuration. uv was already 0.13.6. Managed Python 3.15.2 was already
+available and recreates the root `.venv` using `uv sync --locked`. System Python
+is preserved. Python 3.15.2 embeds SQLite 3.53.1; synthetic HEIF normalization
+and cryptography checks pass. cfn-lint 1.59.0 declares Python `<3.16,>=3.10`.
+`/tmp/shepherd-t81/run.py` supplies a fixed environment without inherited
+provider/operator settings and disables env-file loading for all validation.
+
+**Completed checks (2026-10-29):**
+
+- `python3 /tmp/shepherd-t81/run.py make bootstrap check`: passed locked/frozen
+  installation, **405 backend unit tests in 11.55s**, **11 toolchain tests**,
+  **347 component tests in 6.17s**, lint/format, strict Python/TypeScript types,
+  builds, generated-contract drift, credential scan and household IaC lint.
+- `python3 /tmp/shepherd-t81/run.py make eval-mock audit`: passed **33 exact and
+  30 mock-vision cases**, reading **12 cases/36 stages**, teaching **12/36** and
+  adversarial teaching **4/20**. Mock contracts passed; teaching/model quality
+  remains unmeasured. Python and pnpm audits report no known vulnerabilities.
+  Generated timestamped reports are retained under `/tmp/shepherd-t81`, without
+  adding report churn to the publication.
+- `python3 /tmp/shepherd-t81/run.py make hooks-files-check`: passed all applicable
+  repository file checks; the separately successful project gate is skipped only
+  by this target's documented duplicate-hook setting.
+- Stock cfn-lint 1.59.0 under Python 3.15.2 accepts valid synthetic JSON/YAML
+  and rejects an unknown resource with **E3006**, exit **2**.
+- `python3 /tmp/shepherd-t81/run.py make test-integration`: final run passed
+  **467 tests in 87.79s**, including on-disk SQLite migrations, rollback,
+  ownership, authorization, request recovery and worker/provider contracts.
+- `python3 /tmp/shepherd-t81/run.py make smoke-built`: **150 desktop/mobile
+  Chromium scenarios passed in 23.4 minutes**, one worker, zero failures/retries.
+- A clean no-profile shell sourcing only nvm and selecting `nvm use default`
+  reports Node **26.13.0**, npm **12.2.1** and pnpm **12.16.1**.
+- Direct pin-consistency and Python-lock identity/version comparisons pass.
+  All local file links in the four changed documentation files exist.
+  Independent implementation/lock reviews and `git diff --check` pass.
+  Prettier passes README, DEPENDENCIES, SPECIFICATION and the new task entry.
+  Whole-file TASKS formatting still reports historical table layout, reproduced
+  against the unchanged HEAD baseline; historical entries are preserved.
+
+**Container:** `docker --config /tmp/shepherd-t81-docker-config build -f
+/tmp/shepherd-t81-container/infra/docker/Dockerfile -t shepherd-toolchain:t81
+/tmp/shepherd-t81-container` passed using **1,053 explicitly allowed tracked public
+inputs**, whose hashes still match the working tree. Image ID:
+`sha256:3a17d7ba4d647b9e31eb4593ca35c3aba7f33f3a23133914a439be53c3d97d22`.
+`env -i PATH=/usr/bin:/bin DOCKER_CONFIG=/tmp/shepherd-t81-docker-config sh
+scripts/container-smoke.sh shepherd-toolchain:t81` passed Python 3.15.2,
+SQLite 3.53.1/WAL/foreign keys/FULL synchronization, HEIF/cryptography,
+installer removal, restricted-provider typed rejection, offline import of all
+**868 exact public texts**, migrations, non-root API/worker/UI readiness and
+owner-setup renewal/stale-link/account protections. Checksum-verified Trivy
+0.76.1 with a fresh database and `--scanners vuln --severity HIGH,CRITICAL
+--ignore-unfixed=false --exit-code 1` reports **zero HIGH/CRITICAL findings**.
+CycloneDX **1.7**, **52-component** SBOM:
+`/tmp/shepherd-t81-container-sbom.json`, SHA-256
+`c49c40c4da050f301e2925958056a8eccac2c25c4bd71202fbf21c90e4e5354b`.
+
+**Initial failure and correction:** The first integration run overlapped the
+frontend build, which replaced `dist/assets` while one test created the ASGI app.
+It finished **466 passed, one setup error** for the missing directory. The complete
+suite then passed after the build finished; no application/test change or assertion
+relaxation was needed. An initial Node installer move crossed filesystems; copying
+the verified archive into the nvm prefix completed installation. Sandbox DNS/Git
+metadata restrictions were handled with authorized access or read-only Git output.
+Existing unbounded uv_build, bundle-size and jsdom scrollTo warnings remain.
+
+**Changed files:** `.python-version`, `.node-version`, `pyproject.toml`, `uv.lock`,
+`package.json`, `pnpm-lock.yaml`, `.github/workflows/ci.yml`,
+`infra/docker/Dockerfile`, `README.md`, `docs/SPECIFICATION.md`,
+`docs/DEPENDENCIES.md` and this task record. Application code, schema, generated
+contracts and provider policy are unchanged. Live-provider/model-quality,
+physical-device and private deployment checks were not run or authorized.
+
+**Publication:** A fresh fetch confirmed local `main` and `origin/main` at
+`141e6a3`. Only the 12 reviewed files above are staged. The publication uses the
+installed commit hooks and a non-force push. The final commit, actual hook/push
+outcomes, remote-equality check and hosted workflow status are reported with
+completion. No source/package validation failure remains; live-provider and
+physical-device acceptance remain separate from this toolchain publication.
 
 ## T80 — Publish the staged Python lock refresh (2026-10-28)
 

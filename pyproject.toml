@@ -3,11 +3,11 @@ name = "math-practice-tutor"
 version = "0.1.0"
 description = "Backend for the self-hosted Shepherd Academy Universe"
 license = "MIT"
-requires-python = ">=3.15.1"
+requires-python = ">=3.15.2"
 dependencies = [
     "alembic>=1.20.1",
     "argon2-cffi>=25.1.0",
-    "boto3>=1.43.118",
+    "boto3>=1.43.121",
     "cryptography>=50.0.2",
     "fastapi>=0.162.0",
     "httpx2>=2.16.0",
@@ -21,25 +21,25 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "boto3-stubs[bedrock-runtime,s3]>=1.43.118",
-    "cfn-lint>=1.58.0",
+    "boto3-stubs[bedrock-runtime,s3]>=1.43.121",
+    "cfn-lint>=1.59.0",
     "httpx2>=2.16.0",
-    "hypothesis>=6.170.9",
-    "mypy>=2.4.0",
+    "hypothesis>=6.170.13",
+    "mypy>=2.4.1",
     "pip-audit>=2.10.1",
     "pre-commit>=4.7.0",
     "pre-commit-hooks>=6.0.0",
-    "pytest>=9.1.1",
-    "ruff>=0.17.2",
+    "pytest>=9.2.0",
+    "ruff>=0.17.3",
     "types-pyyaml>=6.0.12.20260906",
 ]
 
 [build-system]
-requires = ["uv_build>=0.13.5"]
+requires = ["uv_build>=0.13.6"]
 build-backend = "uv_build"
 
 [tool.uv]
-required-version = ">=0.13.5"
+required-version = ">=0.13.6"
 
 [tool.uv.build-backend]
 module-name = "math_tutor"

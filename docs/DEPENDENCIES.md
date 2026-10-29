@@ -7,7 +7,7 @@ package peer-dependency requirements and Python compatibility restrictions still
 apply.
 
 This guide was checked against repository files and primary release metadata on
-October 24, 2026. It describes the declared configuration and reviewed releases,
+October 29, 2026. It describes the declared configuration and reviewed releases,
 not the packages in
 a running private installation. Dated verification results are in
 [task history](history/TASKS.md#release-publication-2026-10-11).
@@ -87,14 +87,26 @@ dependency declarations and runtime pins are preserved. T80 lists every changed
 version and fresh validation for publication to `main`; private deployment
 evidence remains recorded under T79.
 
+The October 29 [T81 refresh](TASKS.md#t81--update-stable-toolchains-and-dependency-baselines-2026-10-29)
+checks [Python 3.15.2](https://www.python.org/downloads/release/python-3152/),
+[Node archive metadata](https://nodejs.org/dist/index.json),
+[npm](https://registry.npmjs.org/npm/latest),
+[pnpm](https://registry.npmjs.org/pnpm/latest),
+[uv](https://pypi.org/pypi/uv/0.13.6/json) and
+[uv_build](https://pypi.org/pypi/uv-build/0.13.6/json), plus direct dependency
+metadata. The table below records the new pins; npm remains 12.2.1. All 97 Python
+lock identities and exact versions are preserved, with seven outdated direct
+minimums reconciled. TypeScript ESLint advances to 8.72.1. T81 owns fresh
+validation and publication evidence; the private deployment remains T79.
+
 ## Runtime and installer pins
 
 | Tool    | Repository pin                                 | Authority                                                                                         |
 | ------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Python  | 3.15.1; requirement `>=3.15.1`                 | [.python-version](../.python-version), root Python manifest                                       |
-| Node.js | 26.12.1; requirement `>=26.12.1`               | [.node-version](../.node-version), root manifest                                                  |
-| pnpm    | 12.15.0; requirement `>=12.15.0`               | Root `packageManager` and `engines`                                                               |
-| uv      | 0.13.5 in CI/container; requirement `>=0.13.5` | Root Python manifest, [CI](../.github/workflows/ci.yml), [Dockerfile](../infra/docker/Dockerfile) |
+| Python  | 3.15.2; requirement `>=3.15.2`                 | [.python-version](../.python-version), root Python manifest                                       |
+| Node.js | 26.13.0; requirement `>=26.13.0`               | [.node-version](../.node-version), root manifest                                                  |
+| pnpm    | 12.16.1; requirement `>=12.16.1`               | Root `packageManager` and `engines`                                                               |
+| uv      | 0.13.6 in CI/container; requirement `>=0.13.6` | Root Python manifest, [CI](../.github/workflows/ci.yml), [Dockerfile](../infra/docker/Dockerfile) |
 
 T56's development environment uses an nvm default of Node 26.12.0 with npm
 12.2.0 and pnpm 12.14.0 installed in its global prefix. T57's maintainer
@@ -112,6 +124,13 @@ user-local prefix to 12.2.1 and 12.15.0. uv 0.13.5 was already installed; the
 repository now matches it. The root `.venv` uses managed Python 3.15.1. The older
 managed runtime and previously built rollback image are retained.
 
+T81 installs Node 26.13.0, npm 12.2.1 and pnpm 12.16.1 in the existing nvm
+user-local installation and sets its persistent default to Node 26.13.0.
+Existing terminals can select it with `nvm use default`. uv already reports
+0.13.6; the root `.venv` now uses the available managed Python 3.15.2 runtime.
+System Python and older managed runtimes are retained. The official Node archive
+checksum and both container index digests are independently verified.
+
 [The toolchain checker](../scripts/check-toolchain.mjs) enforces stable
 Node/pnpm versions at or above the declared minimums.
 [pnpm-workspace.yaml](../pnpm-workspace.yaml) enforces strict peer checks and
@@ -119,7 +138,7 @@ blocks unreviewed install scripts. Its `pmOnFail: ignore` setting allows an
 installed compatible pnpm instead of automatically switching it to the installer
 pin.
 
-The container uses Python 3.15.1 for its build host and uv-managed application
+The container uses Python 3.15.2 for its build host and uv-managed application
 runtime. The final image copies the locked runtime environment into the
 digest-pinned Distroless Debian 13 non-root image. Build-only installer code is
 removed.
@@ -140,6 +159,9 @@ removed.
   advancing native/container pins. An isolated runtime check passes the SQLite
   minimum; the shared virtual environment is then recreated from the locked
   dependencies. No operating-system Python or packages are replaced.
+- **Python 3.15.2:** the October 29 check confirms the managed Linux artifact
+  and official build image are available. The root environment passes the
+  SQLite 3.53.1 minimum, HEIF conversion and cryptography checks.
 - **CloudFormation validator:** cfn-lint 1.57.2's
   [published metadata](https://pypi.org/pypi/cfn-lint/1.57.2/json) still
   declares Python `<3.15`, although its
@@ -158,10 +180,12 @@ removed.
   establish formal upstream 3.15 support. The October 28 T80 refresh installs
   unmodified cfn-lint 1.59.0, whose distribution metadata declares
   `Requires-Python: <3.16,>=3.10`, covering the project's Python 3.15.1. Fresh
-  CLI results are recorded in T80. Recheck metadata and CLI on updates. Its
+  CLI results are recorded in T80. T81 repeats valid/invalid synthetic CLI
+  checks under Python 3.15.2 successfully with the same supported metadata.
+  Recheck metadata and CLI on updates. Its
   transitive SymPy dependency never evaluates learner text.
 - **TypeScript:** application TypeScript resolves to 6.0.3 within
-  typescript-eslint 8.72.0's recorded `>=4.8.4 <6.1.0` peer range. The OpenAPI
+  typescript-eslint 8.72.1's recorded `>=4.8.4 <6.1.0` peer range. The OpenAPI
   generator is isolated with TypeScript 5.9.3 for openapi-typescript 7.13.0's
   `^5.x` peer requirement. T56 retried TypeScript 7.0.2 and reproduced both
   strict peer conflicts; 6.0.3 and 5.9.3 remain the newest compatible versions.
@@ -171,9 +195,9 @@ removed.
   Vitest 5.0.5 with jest-dom 7.0.1 still fails strict checking with TS2428
   (`Assertion` declaration conflict). No `skipLibCheck`, declaration patch or
   suppressed type error was introduced.
-  T77's registry check still reports the same Vitest 5.0.5/jest-dom 7.0.1 pair;
-  the recorded incompatibility remains, and the compatible Vitest 4.1.12 line
-  is retained.
+  T77's registry check still reports the same Vitest 5.0.5/jest-dom 7.0.1 pair.
+  T81 repeats installation and actual app type checking, reproducing TS2428;
+  the final lock retains compatible Vitest 4.1.12 without type suppression.
 - **Release age:** typescript-eslint 8.72.0 was published on October 19 and
   required pnpm to add release-age exclusions. T56 retains eligible 8.71.2
   without those exclusions; existing workspace supply-chain policies are
@@ -182,6 +206,10 @@ removed.
   KaTeX 0.19.1 (published October 23 at 20:41 UTC) after both become eligible.
   pnpm's default release-age, strict peer and install-script policies remain
   unchanged; no exclusions are added.
+- **October 29 release age:** @types/node 26.6.6 was published October 28 at
+  18:36 UTC and is younger than 24 hours at the 15:59 UTC review. Retain
+  26.6.5 until it is eligible; no release-age bypass is added. pnpm 12.16.1
+  and typescript-eslint 8.72.1 are eligible.
 - **HEIF:** the app requires at least pillow-heif 1.8.1 and locks that version.
   The October 11 release passed a Python 3.15 HEIF conversion and container
   smoke check. Earlier temporary 1.8.0 results remain historical evidence.
@@ -219,6 +247,10 @@ by the resulting CI run, separately from local checks.
 | setup-node        | [v7.1.0](https://github.com/actions/setup-node/releases/tag/v7.1.0)   | `949feb2413d6458794dcd2491c4babbbce0c15c1` |
 | pnpm/action-setup | [v6.1.0](https://github.com/pnpm/action-setup/releases/tag/v6.1.0)    | `ea17c68df8912ef543352723c149a84f56e3d413` |
 | setup-uv          | [v10.3.2](https://github.com/astral-sh/setup-uv/releases/tag/v10.3.2) | `07a047e608db84b3d8c06cd9a7c7dcc9c355c18e` |
+
+T81 updates setup-uv to [v10.3.3](https://github.com/astral-sh/setup-uv/releases/tag/v10.3.3),
+commit `68559e99cc807c1eb7e9238fd43a15bba460eec2`, after verifying its Node 24
+source metadata. The other action pins remain current at the October 29 check.
 
 The existing Trivy v0.36.0 and upload-artifact v7.0.2 pins already match their
 latest stable releases and are retained.
