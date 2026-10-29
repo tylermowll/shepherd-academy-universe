@@ -8,8 +8,10 @@ A task is complete only after its requirements and exit checks pass.
 
 ## T84 — Publish and privately deploy the learning workbench (2026-10-29)
 
-**Status:** In progress. The maintainer authorized publication of all T83 changes
-to `main`, followed by deployment to the existing private installation.
+**Status:** Published to `main` and privately deployed. The maintainer authorized
+publication of all T83 changes followed by deployment to the existing private
+installation. All release-check steps passed; the aggregate hosted result and
+pending workflow timing correction are distinguished below.
 
 **Contracts and plan:** SPECIFICATION sections 6, 16 and 17; RUNBOOK container
 upgrade and encrypted backup/restore. Publish the validated T83 source, observe
@@ -35,11 +37,98 @@ zero-retry browser behavior remain intact. A fresh workflow will validate the
 timing correction. The release image contains the verified T83 application;
 this correction changes only CI scheduling and documentation.
 
+**Exact candidate and operational checks:**
+
+- `python3 /tmp/shepherd-t84/prepare_source.py` selected **1,054 public committed
+  inputs**, excluding private/untracked material. The labeled image was built
+  with `python3 /tmp/shepherd-t84/run.py docker build --label
+  org.opencontainers.image.revision=051e4e05957d0ed97d3498661d840007f9bb4a11
+  -f /tmp/shepherd-t84/source/infra/docker/Dockerfile
+  -t math-practice-tutor:t84-workbench /tmp/shepherd-t84/source`.
+- `python3 /tmp/shepherd-t84/run.py .venv/bin/python
+  /tmp/shepherd-t84/verify_package.py` passed: exact source label,
+  UID/GID **10001:10001**, all **947 packaged API/data files**, **23 migration
+  files** and **66 browser-tested web assets** match. Only the web filesystem
+  layer changed; backend/runtime layers and runtime configuration are unchanged.
+  Asset-manifest SHA-256:
+  `74b897aed5a2be0069f8229c3c020428c5f4c4e865b8daee0903165ca218b3f4`.
+- Exact-image `scripts/container-smoke.sh` passed on disposable synthetic storage:
+  runtime/HEIF/cryptography, schema/corpus, non-root API/worker, owner-link renewal,
+  stale-link rejection and browser account creation. No retained mounts or live
+  provider calls were used.
+- Exact-image Trivy scan using the October 29 cached database: **zero
+  HIGH/CRITICAL findings, including unfixed**. CycloneDX 1.7 SBOM: **52
+  components**, SHA-256
+  `b199693b5b55bf2d9d4581ae653112d7b1b4f4a850d48927eb731c69528dc64f`.
+- `python3 /tmp/shepherd-t83/run.py uv run --locked --no-env-file pytest
+  /tmp/shepherd-t84/test_operations.py -q`: **23 passed in 4.66 seconds**.
+  Reused same-schema helpers with the current T82 rollback image and fresh T84
+  destinations. Activation and rollback now verify the immutable image through
+  the standard `math-practice-tutor:local` reference before standard Compose
+  launch. Tests cover failed backup/service recovery, failed activation/image
+  rollback, tag resolution, mutable-image rejection and backup/deletion safety.
+- `python3 /tmp/shepherd-t84/run.py .venv/bin/python
+  /tmp/shepherd-t84/test_backup_container.py`: actual restricted old-image
+  rehearsal preserved schema 0021, all **868 public texts** and a committed,
+  uncheckpointed SQLite WAL row on disposable synthetic storage.
+- `deploy.py preflight --candidate <candidate>` and the prior-runtime verifier
+  passed against the expected T82 services: original mount, loopback-only API,
+  read-only roots, dropped capabilities, private HTTPS and fresh worker.
+
+**Private cutover and preservation:**
+
+- `python3 /tmp/shepherd-t84/run.py .venv/bin/python
+  /tmp/shepherd-t84/deploy.py prepare --candidate <candidate> --execute` stopped
+  both writers and completed a fresh encrypted backup and isolated restore.
+  Integrity/foreign keys, schema, current deletions, retained object hashes,
+  complete corpus and saved model selections passed. Session revocation and
+  pending-work cancellation occurred only in the isolated restore; retained
+  storage was mounted read-only during backup. The plaintext rehearsal was removed.
+- The same runner's `deploy.py activate --execute` activated the exact candidate
+  through standard Compose, without build/pull, migration, import or reset.
+  `verify_final.py` then passed HTTPS readiness, fresh worker heartbeat, all
+  **66 exact served assets**, update/cache headers, protected-route rejection,
+  disabled API documentation and `make start` container discovery. One API and
+  one worker run as **10001:10001**, with read-only roots, original data mount and
+  **zero restarts**, started at approximately **2026-10-29T18:43:39Z**.
+- `verify_selection.py` confirmed that model selections, schema and the complete
+  corpus match the fresh stopped-writer snapshot, without inference. Existing
+  accounts, credentials, signed-in sessions and saved work remain on the original
+  retained mount. The previous image remains tagged
+  `math-practice-tutor:rollback-20261029-t84-workbench`.
+- `save_evidence.py` retained reviewed helper source, public-input/asset hashes,
+  exact-image scan/SBOM, synthetic results, hosted step/timeout receipts, runtime
+  and preservation checks, plus all nine T83 synthetic screenshots, under
+  `backups/evidence-20261029T184401Z-t84-workbench`. No backup key or private
+  settings were copied into evidence.
+
+The active image is
+`sha256:7d49ef6073a7f6bdaedd84a047b9ad60f4154a81e614f89dcb08373af8fa839c`,
+built from published T83 application source
+`051e4e05957d0ed97d3498661d840007f9bb4a11`. The subsequent commits change only CI
+timing and this evidence record; the deployed application matches `main`.
+Encrypted archive:
+`backups/deploy-20261029T184300Z-t84-workbench-7d49ef6073a7/archive.enc`, SHA-256
+`83876f69f6f1828cd7a5c6bb3cd6520a84fd4ebf7454ae1d5d80e09d9d704393`.
+The generated key remains separately in the operator's protected backup-key
+directory.
+
+**Remaining limits:** No deployment failure or failed test remains open. The
+first hosted aggregate was cancelled at its 30-minute execution limit despite
+every step succeeding. The timing correction passed repository hooks and YAML
+validation; its new hosted workflow is pending at handoff, so this record does
+not claim an aggregate green result. No live/paid inference, model download or
+provisioning was run. The existing bundle-size warning and T83's physical-device,
+assistive-technology and teaching-quality acceptance limits remain. This follow-up
+changes only `.github/workflows/ci.yml` and `docs/TASKS.md`; the T83 file manifest
+records the published implementation.
+
 ## T83 — Redesign the active learning experience (2026-10-29)
 
-**Status:** Complete locally. Final source/build and affected-flow checks passed;
-browser coverage combines a full run and a final targeted rerun. No publication
-or deployment requested or performed.
+**Status:** Complete. Final local source/build and affected-flow checks passed;
+the local browser evidence combines a full run and a final targeted rerun. T84
+subsequently records publication, the complete hosted browser pass and private
+deployment.
 
 **Scope:** Replace the active learner workspace and refine its setup, guidance,
 photo, progression and recap transitions. Use disposable synthetic sessions and
@@ -139,21 +228,24 @@ stress states use explicitly labeled rendering fixtures extending a real saved
 synthetic session; the phone/photo and finish flows use the real mock worker.
 
 **Remaining limits:** No unresolved failure in the final affected-flow checks.
-The full browser suite was not repeated after the final UI refinements; its
-coverage and the final rerun are distinguished above. The existing >500 kB
-JavaScript chunk warning remains. No live/paid inference, model download,
-private-data inspection, Git publication or deployment. Mock responses do not
+At local handoff, the full browser suite had not been repeated after the final
+UI refinements; T84 subsequently verified all 154 cases on the published source.
+The existing >500 kB JavaScript chunk warning remains. Local validation used no
+live/paid inference, model download or private-data inspection. Mock responses do not
 establish teaching quality. Physical phones/cameras, Safari, screen readers and
 actual browser zoom remain untested; Chromium mobile emulation and root-font
 resizing do not establish those behaviors or WCAG conformance.
 
 ## Current checkpoint
 
-T83 implements and locally validates the active learning workbench. Current
+T84 publishes and privately deploys T83's active learning workbench. Current
 activity/source, guidance, response, revision, progression and saved recap share
-one coherent learner journey. Source checks and the final affected-flow browser
-run passed; full-run/rerun evidence and manual limits are recorded above. This
-change has not been published or deployed. Existing private deployment remains T82.
+one coherent learner journey. All published-source check steps, including all 154
+desktop/mobile browser cases, passed. The hosted aggregate hit its old 30-minute
+cap at final cleanup; the corrected 45-minute workflow is pending. Exact image,
+encrypted backup/restore and private runtime/preservation checks passed. The
+release retains existing accounts, saved work, model selections and all 868 texts.
+
 T82 privately deploys T81's published toolchain update at the maintainer's
 explicit request. Exact-source/package, hosted CI, synthetic recovery,
 stopped-writer encrypted backup/restore and final runtime checks passed. Both
@@ -218,10 +310,10 @@ are below; the [current review](UI_UX_REVIEW.md) lists the corrected behavior an
 remaining acceptance work. Earlier task sections preserve dated evidence, not
 additional supported implementations.
 
-The private installation now uses T82 image
-`sha256:87f44401062604a6a1895c6e2358b32eca1645860ca42a916bfa6f87346ac8c0`,
-built from published source `66d451ec8988472948a6119bb3ae1ba69eb35cbf`.
-All 66 served public assets match the tested build. T82 preserves schema
+The private installation now uses T84 image
+`sha256:7d49ef6073a7f6bdaedd84a047b9ad60f4154a81e614f89dcb08373af8fa839c`,
+built from published application source `051e4e05957d0ed97d3498661d840007f9bb4a11`.
+All 66 served public assets match the tested build. T84 preserves schema
 `0021_published_library` and the exact 868-text corpus installed by T77. The API and
 worker are ready with zero restarts, and saved model selections match the fresh
 stopped-writer backup. Private schema, accounts and retained work were preserved;
