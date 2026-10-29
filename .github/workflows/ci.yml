@@ -3,6 +3,12 @@ name: Project checks
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      full_validation:
+        description: Opt in to full hosted validation and packaging (uses GitHub Actions minutes)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -14,7 +20,7 @@ concurrency:
 jobs:
   checks:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 10
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,6 +48,35 @@ jobs:
         run: make db
         env:
           DATABASE_URL: sqlite+pysqlite:///${{ runner.temp }}/math-tutor-ci/test.sqlite3
+      - name: Audit locked dependencies
+        run: make audit
+
+  full-validation:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_validation == true }}
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install tested Node baseline
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Install pinned pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          enable-cache: false
+      - name: Install locked development dependencies
+        run: make bootstrap
+      - name: Build the application once for the full checks
+        run: make build
       - name: Run on-disk SQLite integration tests
         run: make test-integration
       - name: Install smoke-test browser
@@ -59,10 +94,10 @@ jobs:
           PYTHON
       - name: Evaluate original synthetic fixtures
         run: make eval-mock
-      - name: Audit locked dependencies
-        run: make audit
 
   package:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_validation == true }}
+    needs: checks
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:

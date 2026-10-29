@@ -278,24 +278,25 @@ HTTPS, encrypted backups and restoration.
 
 The [Makefile](Makefile) is authoritative.
 
-| Command                                                                  | Purpose                                                                                                          |
-| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `make bootstrap`, `make hooks-install`                                   | Locked installation and local commit checks                                                                      |
-| `make check`                                                             | Locks, lint, format, types, unit/component tests, builds, API consistency, secret scan and infrastructure checks |
-| `make test-integration`                                                  | On-disk migration, ownership, recovery, policy and retention checks                                              |
-| `make smoke` / `make test-e2e`                                           | Build and run isolated desktop/mobile Chromium workflows                                                         |
-| `make smoke-built`                                                       | Run browser workflows against an already-built app                                                               |
-| `make eval-mock`                                                         | Synthetic math, photo, reading, teaching and adversarial test cases                                              |
-| `make audit`, `make hooks-check`                                         | Locked dependency audit and repository checks                                                                    |
-| `make hooks-files-check`                                                 | Repository file checks; pair with `make check` for all project checks                                            |
-| `make contracts` / `make contracts-check`                                | Regenerate API definitions and TypeScript types, or check that they match the source                             |
-| `make format`, `make lint`, `make typecheck`                             | Focused developer checks                                                                                         |
-| `make start`, `make dev`, `make serve`, `make worker`                    | Start with saved settings, start on this computer only, use a configured HTTPS gateway, or run the worker alone  |
-| `make migrate`                                                           | Upgrade an existing database after stopping the API and worker                                                   |
-| `make library-import`                                                    | Verify and import the packaged public-text collection into local SQLite; no network or inference                 |
-| `make down`                                                              | Stop Compose while retaining data; native processes use Ctrl+C                                                   |
-| `make backup OUTPUT=...`, `make restore INPUT=... OUTPUT=... LEDGER=...` | Native encrypted backup/restore with writes stopped                                                              |
-| `make demo`, `make seed-demo`                                            | Disposable restricted preview, or explicit empty demo database seed                                              |
+| Command                                                                  | Purpose                                                                                                                              |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `make bootstrap`, `make hooks-install`                                   | Locked installation and local commit checks                                                                                          |
+| `make check`                                                             | Locks, lint, format, types, unit/component tests, builds, API consistency, secret scan and infrastructure checks                     |
+| `make verify-local`                                                      | All application release checks locally: file hygiene, source gates, integration, desktop/mobile browsers, mock evaluation and audits |
+| `make test-integration`                                                  | On-disk migration, ownership, recovery, policy and retention checks                                                                  |
+| `make smoke` / `make test-e2e`                                           | Build and run isolated desktop/mobile Chromium workflows                                                                             |
+| `make smoke-built`                                                       | Run browser workflows against an already-built app                                                                                   |
+| `make eval-mock`                                                         | Synthetic math, photo, reading, teaching and adversarial test cases                                                                  |
+| `make audit`, `make hooks-check`                                         | Locked dependency audit and repository checks                                                                                        |
+| `make hooks-files-check`                                                 | Repository file checks; pair with `make check` for all project checks                                                                |
+| `make contracts` / `make contracts-check`                                | Regenerate API definitions and TypeScript types, or check that they match the source                                                 |
+| `make format`, `make lint`, `make typecheck`                             | Focused developer checks                                                                                                             |
+| `make start`, `make dev`, `make serve`, `make worker`                    | Start with saved settings, start on this computer only, use a configured HTTPS gateway, or run the worker alone                      |
+| `make migrate`                                                           | Upgrade an existing database after stopping the API and worker                                                                       |
+| `make library-import`                                                    | Verify and import the packaged public-text collection into local SQLite; no network or inference                                     |
+| `make down`                                                              | Stop Compose while retaining data; native processes use Ctrl+C                                                                       |
+| `make backup OUTPUT=...`, `make restore INPUT=... OUTPUT=... LEDGER=...` | Native encrypted backup/restore with writes stopped                                                                                  |
+| `make demo`, `make seed-demo`                                            | Disposable restricted preview, or explicit empty demo database seed                                                                  |
 
 `make demo` uses public synthetic credentials `demo` /
 `synthetic-demo-password-only` and blocks tutoring and personal uploads.
@@ -303,11 +304,25 @@ Install the test browser with `pnpm exec playwright install --with-deps chromium
 or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to installed Chrome. Mobile emulation
 does not verify Safari or Chrome on a real phone.
 
+Validation is local-first. After `make bootstrap` and installing the test browser,
+run `make verify-local` before a release and record its results against the exact
+source revision. It runs the existing checks in order, including the complete
+desktop/mobile suite with no retries. Container release checks are separate;
+follow the [local image checks](docs/RUNBOOK.md#local-release-validation) before
+deploying a candidate.
+
+Automatic GitHub push/pull-request checks run file hygiene, `make check`, the
+SQLite runtime probe and dependency audits. They do not run integration/browser
+suites or container packaging. Those remain available under **Actions → Project
+checks → Run workflow** by enabling `full_validation`, an explicit hosted-run opt-in.
+The default is off. A successful automatic run covers only its listed checks;
+it does not replace the full local release evidence. No self-hosted runner is
+required.
+
 Live evaluations are opt-in and may be billed; follow
 [TUTOR_EVALUATION](docs/TUTOR_EVALUATION.md) for commands, call limits and human
-review. CI also builds and smoke-tests the non-root image, scans HIGH/CRITICAL
-vulnerabilities and retains an SBOM. [TASKS](docs/TASKS.md) links recorded outcomes;
-a configured workflow is not evidence that a revision passed.
+review. [TASKS](docs/TASKS.md) links recorded outcomes; a configured workflow is
+not evidence that a revision passed.
 
 ## Contributing and license
 

@@ -6,6 +6,72 @@ This file owns the current work queue and completion evidence. The
 dependency refresh. Superseded workflows in that archive are historical evidence.
 A task is complete only after its requirements and exit checks pass.
 
+## T85 — Make expensive validation local-first (2026-10-29)
+
+**Status:** Implemented and validated locally. The maintainer wants to conserve
+GitHub runner minutes and run most validation locally. Publication and the short
+automatic hosted run are reported with completion.
+
+**Contracts and plan:** SPECIFICATION section 16; Makefile validation commands;
+README/RUNBOOK release procedure and `.github/workflows/ci.yml` event/job gates.
+Keep automatic source checks, unit/component tests, builds, contract/credential
+checks, SQLite runtime probe and audits. Move hosted integration, browser,
+evaluation and container jobs behind an explicit manual boolean opt-in. Add an
+ordered local application gate and document exact local image smoke/scan/SBOM
+commands. Preserve every test and the full release requirements; no application,
+provider, schema or deployed-image change. Validate workflow YAML/event gates,
+Make ordering and changed guides, then run the source gate locally.
+
+**Observed context:** The measured T84 run spent 24.5 minutes on its serial
+154-case browser suite, 2.9 minutes on integration and 1.5 minutes on source
+checks. Shared synthetic-login throttling accounts for some long browser waits.
+Parallel hosted shards would reduce elapsed time while still using hosted
+compute, so they are outside this cost-focused change. The repository is PUBLIC
+and uses standard Ubuntu runners; [GitHub's current billing rules](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+make those runs free. No billing limit, plan or spending settings were changed. The
+redundant full run `40933866388` was cancelled at the maintainer's request to
+avoid further unnecessary hosted work; its already-passing source-release
+evidence remains in T84.
+
+**Implemented:** The existing `checks` job keeps its name and fast source/runtime
+checks plus audits, with a 10-minute safety limit. Hosted integration/browser/
+evaluation and packaging require `workflow_dispatch` with boolean
+`full_validation: true` (default false), after successful source checks.
+All pinned actions, minimal permissions, concurrency cancellation, package
+assertions, scan/SBOM, test coverage and zero-retry browser behavior remain.
+`make verify-local` invokes file checks, `check`, integration, `smoke-built`, mock
+evaluation and audits in order, including with `make -j`. README, SPECIFICATION
+section 16 and RUNBOOK distinguish automatic source coverage from mandatory full
+release evidence and document local image smoke/scan/SBOM commands.
+
+**Actual validation:**
+
+- `python3 /tmp/shepherd-t83/run.py make check`: passed locally, **405 backend
+  unit, 365 frontend/component and 11 toolchain tests**, locks, lint/format,
+  Python/TypeScript types, both builds, generated-contract drift, credential scan
+  and infrastructure validation. Log: `/tmp/shepherd-t85/check.log`.
+- Existing `check-yaml .github/workflows/ci.yml` passed through the allowlisted
+  runner. Manual condition review: push, pull request and manual false execute
+  only `checks`; manual true admits both full jobs after source success.
+  Failed source checks block those dependent jobs. Independent final source
+  review confirmed job gating, unchanged package assertions and Make ordering.
+- `make -n verify-local` and `make -n -j4 verify-local` passed. Both show the
+  real underlying gates and build-before-browser ordering. This is wiring
+  verification, not a claim that the new aggregate command ran the full suite.
+- Prettier passed README, SPECIFICATION, RUNBOOK and the workflow;
+  `git diff --check` passed. Historical task formatting was preserved.
+
+The application and browser/package tests are unchanged. Their full T84
+154-case browser, 467-case integration and exact-image results remain recorded
+below; those expensive suites were not repeated for this workflow/Make/docs-only
+change. The manual hosted full path was deliberately not dispatched. There is
+no new hosted timing claim at this checkpoint. The existing bundle-size warning
+remains; no live inference, model download, provisioning or retained-data access
+was performed. No application redeployment is required.
+
+**Changed files:** `.github/workflows/ci.yml`, `Makefile`, `README.md`,
+`docs/SPECIFICATION.md`, `docs/RUNBOOK.md` and `docs/TASKS.md`.
+
 ## T84 — Publish and privately deploy the learning workbench (2026-10-29)
 
 **Status:** Published to `main` and privately deployed. The maintainer authorized
@@ -238,11 +304,17 @@ resizing do not establish those behaviors or WCAG conformance.
 
 ## Current checkpoint
 
+T85 makes expensive validation local-first: automatic GitHub runs keep the source
+gate and audits, while integration/browser/evaluation and packaging require an
+explicit manual opt-in. `make verify-local` runs the complete application gate
+locally; RUNBOOK documents the separate release-image smoke/scan/SBOM steps.
+
 T84 publishes and privately deploys T83's active learning workbench. Current
 activity/source, guidance, response, revision, progression and saved recap share
 one coherent learner journey. All published-source check steps, including all 154
 desktop/mobile browser cases, passed. The hosted aggregate hit its old 30-minute
-cap at final cleanup; the corrected 45-minute workflow is pending. Exact image,
+cap at final cleanup; T85 cancels the redundant full rerun and replaces that
+automatic policy with local-first validation. Exact image,
 encrypted backup/restore and private runtime/preservation checks passed. The
 release retains existing accounts, saved work, model selections and all 868 texts.
 

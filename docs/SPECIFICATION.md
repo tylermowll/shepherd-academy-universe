@@ -1192,11 +1192,36 @@ explicit opt-in actions.
 
 ### CI requirements
 
-Run locked installs (`pnpm install --frozen-lockfile`, `uv sync --locked`), Ruff, mypy, frontend type checks/lint/tests/build, backend tests, on-disk SQLite integration tests, Playwright, generated-contract checks, secret scanning, and dependency vulnerability checks. Check the embedded SQLite runtime without a database service container. Make scan failures actionable and any temporary exception documented with an owner and expiration.
+Validation is local-first to avoid repeating expensive work on GitHub runners.
+Automatic push/pull-request CI runs locked installation, repository file hygiene,
+`make check` (locks, lint/format, types, unit/component tests, builds, generated
+contracts, credential scan and infrastructure validation), the SQLite runtime
+probe and dependency audits. Its success attests only to that scope.
+
+Full application release validation remains required: `make verify-local` runs
+file hygiene, source gates, on-disk SQLite integration tests, the complete
+desktop/mobile Playwright suite, mock evaluations and dependency audits locally.
+Record actual outcomes for the candidate revision in TASKS. Keep every ownership,
+authentication, retention, photo and recovery assertion; local execution does not
+waive coverage. Check the embedded SQLite runtime without a database service
+container. Make scan failures actionable and any temporary exception documented
+with an owner and expiration.
+
+GitHub's integration/browser/evaluation and container jobs run only after an
+explicit `workflow_dispatch` with the boolean `full_validation` input enabled;
+its default is false. They remain available for an independent hosted check,
+without running on ordinary pushes or pull requests. No self-hosted runner is
+required.
 
 GitHub Actions should have minimal permissions, pinned verified full commit SHAs for third-party actions, bounded artifact retention, and no provider secrets in fork pull-request jobs. Do not execute untrusted pull-request code with a privileged `pull_request_target` workflow. GitHub's security guidance explains the immutable action-pinning requirement. [^S35]
 
-Release builds additionally generate a software bill of materials, scan container images, record image digests, and publish only after authorization. CI uses synthetic fixtures and mock providers; live evaluations are separate opt-in jobs and never the default for arbitrary pull requests. No fake badges, placeholder success scripts, or CI commands that swallow errors with `|| true`.
+Release builds additionally generate a software bill of materials, scan container
+images, record image digests, and publish only after authorization. These checks
+can run locally against the exact candidate image; the manually enabled hosted
+package job offers the same independent verification. Local and hosted tests use
+synthetic fixtures and mock providers; live evaluations remain separate opt-in
+actions. No fake badges, placeholder success scripts, or CI commands that swallow
+errors with `|| true`.
 
 ## 17. Hosting runbooks
 

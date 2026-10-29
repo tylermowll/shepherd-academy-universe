@@ -191,8 +191,40 @@ mechanism, not committed static keys.
 all packaged public selections with network disabled, and checks the non-root
 API, worker readiness and built UI. It creates a synthetic administrator
 through the setup link, checks renewal and stale-link rejection, and verifies
-that account creation closes setup. CI separately scans the image and generates
-a CycloneDX SBOM. See [TASKS](TASKS.md) for current observed results.
+that account creation closes setup. Complete the local image scan and CycloneDX
+SBOM steps below; the optional full hosted workflow also performs them.
+See [TASKS](TASKS.md) for current observed results.
+
+### Local release validation
+
+Use a clean committed checkout and synthetic fixtures, without operator settings,
+provider credentials or retained data. Install the locked tools with
+`make bootstrap` and the test browser with
+`pnpm exec playwright install --with-deps chromium`, then run:
+
+```bash
+make verify-local
+docker build -f infra/docker/Dockerfile -t math-practice-tutor:ci .
+sh scripts/container-smoke.sh math-practice-tutor:ci
+trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 math-practice-tutor:ci
+trivy image --format cyclonedx --output /tmp/shepherd-sbom.json math-practice-tutor:ci
+docker image inspect --format '{{.Id}}' math-practice-tutor:ci
+```
+
+Docker and Trivy must be installed locally. The checked-in `.dockerignore` admits
+only public build inputs. The smoke script uses disposable storage and mock
+behavior; it does not mount the installation's retained data. Scan unfixed
+HIGH/CRITICAL vulnerabilities too; do not add `--ignore-unfixed`. Keep the exact
+tested image identity, scan/SBOM and source/test receipts with release evidence.
+These commands validate a candidate; follow the stopped-writer encrypted backup
+and upgrade procedure above before deployment.
+
+Ordinary GitHub runs perform only the automatic source checks described in
+[SPECIFICATION section 16](SPECIFICATION.md#16-development-and-release-commands).
+For independent full hosted validation, explicitly enable `full_validation`
+when manually running **Project checks**. The default is off. Its integration,
+browser and package checks remain intact; no self-hosted runner or machine access
+is needed. A green automatic source check does not claim full release validation.
 
 ## Retention, export and deletion
 

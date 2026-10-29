@@ -6,7 +6,7 @@ LOCAL_COMMAND = $(UV) run --locked --no-env-file python -m math_tutor.local_star
 
 .PHONY: bootstrap setup toolchain-check lock lock-check db migrate admin dev-api dev-web test \
 	test-integration lint format format-check typecheck build check hooks-install \
-	hooks-check hooks-files-check pre-commit-check smoke smoke-built
+	hooks-check hooks-files-check pre-commit-check smoke smoke-built verify-local
 
 bootstrap: toolchain-check
 	$(UV) sync --locked
@@ -87,6 +87,16 @@ build:
 pre-commit-check: toolchain-check lock-check lint format-check typecheck test
 
 check: pre-commit-check build contracts-check secret-check infra-check
+
+# Keep the application release gate local by default. Recursive invocations
+# preserve build-before-browser ordering even when the caller passes -j.
+verify-local:
+	$(MAKE) hooks-files-check
+	$(MAKE) check
+	$(MAKE) test-integration
+	$(MAKE) smoke-built
+	$(MAKE) eval-mock
+	$(MAKE) audit
 
 smoke: build
 
