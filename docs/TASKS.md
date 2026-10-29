@@ -22,6 +22,19 @@ schema `0021_published_library`, all 868 public texts, original data mounts,
 accounts, saved work, settings and model selections. No migration, reset, corpus
 import or live-provider inference is needed. Record actual results at completion.
 
+**Publication and release checks:** T83 was pushed to `main` as
+`051e4e05957d0ed97d3498661d840007f9bb4a11`. Hosted run
+[40928213879](https://github.com/tylermowll/shepherd-academy-universe/actions/runs/40928213879)
+passed every executed step: source gates (405 backend, 365 frontend and 11
+toolchain tests), 467 integration tests, **154/154 browser cases in 24.5 minutes**,
+mock evaluation, both dependency audits and the complete package job. The checks
+job nevertheless ended **cancelled**, with the annotation "The job has exceeded
+the maximum execution time of 30m0s" at final cleanup. `.github/workflows/ci.yml`
+raises only that job's execution limit to 45 minutes; all checks, assertions and
+zero-retry browser behavior remain intact. A fresh workflow will validate the
+timing correction. The release image contains the verified T83 application;
+this correction changes only CI scheduling and documentation.
+
 ## T83 — Redesign the active learning experience (2026-10-29)
 
 **Status:** Complete locally. Final source/build and affected-flow checks passed;
