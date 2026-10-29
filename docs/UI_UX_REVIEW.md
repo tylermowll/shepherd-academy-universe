@@ -1,5 +1,53 @@
 # UI/UX review — current status
 
+## T83 active learning workbench (2026-10-29)
+
+This focused redesign covers the learner journey from the current activity
+through response, guidance, revision, progression and finish. Administration
+screens and live teaching quality are outside scope.
+
+**Observed in the rendered baseline:** the activity goal and response criteria
+extended beyond a small scrolling activity header on desktop and mobile. The
+mobile reply box followed a large empty conversation area. After changing material,
+the full material form remained expanded beside the activity. Source and activity
+instructions used different constrained reading regions. Existing protections for
+photo ordering, draft retention and saved-request recovery were present.
+
+**Design judgments:** equally styled feedback paragraphs obscured their different
+purposes; progression above the dialogue was distant from the decision after
+reading guidance. A task-centered workbench was selected over a blank-page
+chronological notebook (task/source become distant in long dialogue) and a series
+of step screens (questions, photo clarification and revision require freer movement).
+
+The implementation gives the current task and source a dedicated reading area,
+keeps conversation and entry together, distinguishes feedback sections and places
+Next/challenge/Finish after message entry. Native disclosures retain long material
+and earlier activities. Explicit response/activity jumps preserve the session URL.
+Saved errors, uncertain photo reports and safe retry controls remain in context;
+completion gives a saved-work recap without another model call or mastery claim.
+
+| Workflow / learner goal and entry                        | States and evidence                                                                                                                                                                                                                         | Coverage                                                                       |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Start and understand an activity, Practice               | Goal/material defaults and draft retention; full task/criteria; source unavailable and new-activity response cue. Full browser + final focused checks, desktop/mobile, keyboard and 320px.                                                  | Exercised                                                                      |
+| Respond, receive guidance, revise and continue, Practice | Typed work, hints/questions, structured guidance, long dialogue and source, latest navigation, draft guards/Clear draft, next/challenge/finish. Final 20 browser cases, component tests and 200% root-font checks.                          | Exercised                                                                      |
+| Read supplied/published material, Practice               | Local selection, literal/Unicode limits, faithful selection help, whole/section pacing, saved position and failure recovery. Full desktop/mobile suite; final long-source rendering check.                                                  | Exercised                                                                      |
+| Work from a photo, Practice and phone companion          | Clear reading before automatic feedback; rejected readings remain uncertain; source discussion, typed repair, phone upload and revision. Final desktop/mobile mock-worker flows; physical camera excluded.                                  | Exercised                                                                      |
+| Wait, stop, retry and recover, Practice                  | Pending/error presentation and keyboard retry through rendering fixtures; real lost receipts, stale-request resolution and duplicate protection in full browser/integration checks. Stop/empty/preparation copy also covered by components. | Exercised (browser, component and API; not every stop transition in a browser) |
+| Finish and reopen saved work, Practice → History         | Draft protection, recap, full-width finished conversation, no empty composer, History headings, saved work and failed-list reload. Final desktop/mobile navigation and recap cases; full integration checks.                                | Exercised                                                                      |
+| Preserve access and saved-work boundaries                | Account switch/revocation, ownership, public-only cache and pending-update regression checks in the full synthetic suite. This is regression coverage, not an administrator design audit.                                                   | Exercised within scope                                                         |
+| Physical devices, screen readers and actual browser zoom | No physical camera/Safari or assistive-technology run. Chromium emulation and root-font resizing have explicit limits.                                                                                                                      | Not reviewed; requires device/manual acceptance                                |
+
+The final source gate passed 405 backend, 365 frontend and 11 toolchain tests;
+all 467 integration cases passed. Full browser run: 151/154; final rebuilt affected
+flows: 20/20, including the three earlier failures. All 154 unique scenarios were
+verified across runs, not in one final uninterrupted suite. Final-source scrolling
+reveals typed guidance/errors, preserves photo-reading priority and earlier reading
+positions, and marks new activities separately from old guidance.
+
+Exact command chronology and screenshot paths are recorded in
+[T83](TASKS.md#t83--redesign-the-active-learning-experience-2026-10-29).
+The review is not a whole-app accessibility or release-readiness assessment.
+
 ## T76 adaptive learning setup
 
 The maintainer's screenshot shows the first letters clipped in the open

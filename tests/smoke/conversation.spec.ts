@@ -73,17 +73,29 @@ test("one composer keeps photo problems, follow-ups and subsequent activities in
   expect(
     await log.evaluate((node) => node.scrollHeight > node.clientHeight),
   ).toBe(true);
-  const latestExchangeOffset = () =>
+  const latestGuidanceOffset = () =>
     log.evaluate((node) => {
-      const exchanges = node.querySelectorAll<HTMLElement>(".tutor-operation");
-      const latest = exchanges.item(exchanges.length - 1);
+      const replies = node.querySelectorAll<HTMLElement>(".tutor-feedback");
+      const latest = replies.item(replies.length - 1);
       if (!latest) return Number.POSITIVE_INFINITY;
       return (
         latest.getBoundingClientRect().top - node.getBoundingClientRect().top
       );
     });
-  await expect.poll(latestExchangeOffset).toBeGreaterThanOrEqual(0);
-  await expect.poll(latestExchangeOffset).toBeLessThan(48);
+  await expect.poll(latestGuidanceOffset).toBeGreaterThanOrEqual(0);
+  // Short guidance can sit above the log’s bottom padding; a long response must
+  // start near the top. In either case its beginning remains visible.
+  const guidanceStartLimit = await log.evaluate((node) => {
+    const replies = node.querySelectorAll<HTMLElement>(".tutor-feedback");
+    const latest = replies.item(replies.length - 1);
+    return Math.max(
+      48,
+      node.clientHeight - latest.getBoundingClientRect().height,
+    );
+  });
+  await expect
+    .poll(latestGuidanceOffset)
+    .toBeLessThanOrEqual(guidanceStartLimit);
   expect(await log.evaluate((node) => node.clientHeight)).toBeGreaterThan(240);
   expect(
     await page.evaluate(
@@ -113,6 +125,9 @@ test("one composer keeps photo problems, follow-ups and subsequent activities in
     }),
   ).toBeVisible();
   await expect(log.locator(".tutor-feedback")).toHaveCount(6);
+  await expect(
+    log.getByRole("region", { name: "Current activity start", exact: true }),
+  ).toContainText("Ready for your response");
   await expect(
     log.getByText("Earlier activity 1", { exact: true }),
   ).toBeVisible();

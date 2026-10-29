@@ -193,8 +193,25 @@ Use compact desktop controls and comfortable touch targets. Primary actions have
 clear visual priority; secondary actions keep natural widths rather than expanding
 indiscriminately on phones. Bound the desktop sign-in form to a readable width
 and keep the shared header compact. Message entry groups Attach photo, Help and
-Send; Next activity and Finish session belong with the current activity, outside
-the message form. Preserve keyboard dismissal, visible focus and all unsent-draft
+Send. The active workspace separates readable activity instructions and source
+material from the chronological work/guidance conversation. Do not clip activity
+goals or response criteria inside a small scroll area. On narrow screens, stack
+the task/source before the conversation and provide keyboard-accessible controls
+to move between the activity and response without changing the saved-session URL.
+Show strengths, guidance and a suggested next step as distinct parts of feedback
+when present, with a visible AI uncertainty disclosure. Keep message entry stable
+as the conversation grows; a latest-message action reveals the beginning of the
+latest exchange so a long reading or reply is not skipped. Automatic following
+reveals new guidance for typed work and the interpretation first for a photo.
+Reading earlier messages must not be interrupted; unseen exchanges remain reachable
+through the latest-message action. A fresh activity with earlier dialogue shows
+an explicit response cue so previous guidance is not mistaken for guidance on
+the new task; earlier work remains available.
+Next activity, challenge options and Finish session form a separate continuation
+row after the composer, outside the message form. Clear draft explicitly clears
+only the unsent response and returns focus to message entry. Session/material
+controls remain available above the workspace and completed material forms close
+after saving. Preserve keyboard dismissal, visible focus and all unsent-draft
 and pending-work guards when actions move.
 
 History distinguishes loading and retrieval failure from a successfully empty

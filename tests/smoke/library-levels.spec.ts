@@ -408,7 +408,7 @@ test("an explicitly chosen local text becomes the immutable first reading snapsh
     level: "grades_6_8",
   });
   expect(saved.problems[0]?.passage).toEqual(preview.passage);
-  const text = page.locator(".tutor-sidebar > .reading-passage .passage-text");
+  const text = page.locator(".activity-panel > .reading-passage .passage-text");
   await expect(text).toHaveText(saved.problems[0]!.material_focus!.text);
   await page.reload();
   await expect(text).toHaveText(saved.problems[0]!.material_focus!.text);

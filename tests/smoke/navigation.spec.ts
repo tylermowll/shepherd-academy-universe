@@ -446,8 +446,12 @@ test("Help and History preserve unsent work and saved sessions reopen through Hi
     .getByRole("group", { name: "Activity controls", exact: true })
     .boundingBox())!;
   const composerBounds = (await page.locator(".tutor-response").boundingBox())!;
-  expect(attachmentBounds.y).toBeGreaterThanOrEqual(
-    controlBounds.y + controlBounds.height,
+  const conversationBounds = (await page
+    .getByRole("log", { name: "Learning conversation" })
+    .boundingBox())!;
+  expect(attachmentBounds.y).toBeGreaterThanOrEqual(conversationBounds.y);
+  expect(controlBounds.y).toBeGreaterThanOrEqual(
+    composerBounds.y + composerBounds.height,
   );
   expect(attachmentBounds.y + attachmentBounds.height).toBeLessThanOrEqual(
     composerBounds.y,
@@ -474,6 +478,19 @@ test("Help and History preserve unsent work and saved sessions reopen through Hi
   ).toBeInViewport();
   await expect(response).not.toBeVisible();
   await navigate(page, "History");
+  const historyHeading = page.getByRole("heading", {
+    level: 1,
+    name: "History",
+    exact: true,
+  });
+  expect(
+    await historyHeading.evaluate((node) =>
+      parseFloat(getComputedStyle(node).fontSize),
+    ),
+  ).toBeGreaterThanOrEqual(28);
+  await expect(
+    page.getByText("Review or continue a saved session.", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: topic, exact: true }),
   ).toBeVisible();
@@ -504,6 +521,7 @@ test("Help and History preserve unsent work and saved sessions reopen through Hi
     .click();
   await expect(page.locator(".tutor-feedback")).toHaveCount(1);
   await expect(response).toHaveCount(0);
+  await expect(page.locator(".tutor-response")).toBeHidden();
 });
 
 test("an adult practices through a distinct learner account and browser Back restores the selected saved session", async ({

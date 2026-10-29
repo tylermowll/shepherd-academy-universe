@@ -140,6 +140,7 @@ export function Tutor({
       section_size: "standard",
     });
   const composer = useRef<HTMLTextAreaElement>(null);
+  const activityBrief = useRef<HTMLDetailsElement>(null);
   const attachmentsPanel = useRef<HTMLDivElement>(null);
   const focusAttachmentsOnOpen = useRef(false);
   const materialComposer = useRef<HTMLTextAreaElement>(null);
@@ -195,6 +196,13 @@ export function Tutor({
     )
       setText("");
     if (request.kind === "activity") {
+      const restoreFocus = materialTools.current?.contains(
+        document.activeElement,
+      );
+      if (sourceTools.current) sourceTools.current.open = false;
+      if (materialTools.current) materialTools.current.open = false;
+      if (restoreFocus)
+        materialTools.current?.querySelector("summary")?.focus();
       const source = (request.body as Schema<"TutorActivityInput">).source;
       if (source === "reference_text" || source === "reading_text")
         setReference("");
@@ -1087,7 +1095,7 @@ export function Tutor({
         {!features && <p role="status">Checking tutor availability…</p>}
         {features?.tutoring_available &&
           (features.text_processing === "mock" ? (
-            <div className="notice" role="status">
+            <div className="notice tutor-disclosure" role="status">
               <strong>Demo tutor — sample responses only</strong>
               <p>
                 An actual AI model is needed for tutoring. Ask the adult who
@@ -1330,7 +1338,7 @@ export function Tutor({
           </div>
         )}
         {session && (
-          <div hidden={newSession}>
+          <div className="active-session" hidden={newSession}>
             {hasResponseDraft && (
               <p className="fine">
                 Send or clear your draft before starting a different activity or
@@ -1338,28 +1346,81 @@ export function Tutor({
               </p>
             )}
             {session.status !== "open" && <SessionReview session={session} />}
-            {sourcePhotoFlow && problem && session.status === "open" && (
-              <section
-                className="card source-photo-intake"
-                aria-label="Add your photo"
-              >
-                <h3>Add your photo</h3>
-                <p>
-                  {problem.reference_source === "reading_photo"
-                    ? "Upload the text you want to read, or use your phone."
-                    : "Upload your homework, or use your phone. We’ll make different practice from its ideas."}
-                </p>
-                {photoTools}
-              </section>
-            )}
-            <div
-              className={`tutor-workspace${problem?.passage ? " reading-workspace" : ""}`}
-            >
+            <div className="session-toolbar">
+              {session.status === "open" && (
+                <details ref={materialTools} open={!problem || undefined}>
+                  <summary>Session &amp; material</summary>
+                  {sessionControls}
+                </details>
+              )}
+            </div>
+            <div className="tutor-workspace tutor-activity">
               {(session.status === "open" || problem?.passage) && (
                 <aside
-                  className="tutor-sidebar"
-                  aria-label="Passage and session tools"
+                  className="activity-panel"
+                  aria-label="Activity and source"
                 >
+                  {problem && (
+                    <details
+                      ref={activityBrief}
+                      className="activity-brief"
+                      open
+                    >
+                      <summary>
+                        <h3>
+                          {problem.activity_state === "reference_capture"
+                            ? problem.reference_source === "reading_photo"
+                              ? "Reading passage photograph"
+                              : "Reference material"
+                            : "Current activity"}
+                        </h3>
+                      </summary>
+                      <p className="eyebrow">
+                        Activity {session.problems.indexOf(problem) + 1} ·{" "}
+                        {problem.activity_state === "ready"
+                          ? "Explore and respond"
+                          : "Getting ready"}
+                      </p>
+                      <SafeText text={problem.problem_text} />
+                      <ActivityPurpose problem={problem} />
+                      <p className="fine">
+                        Saved automatically · Challenge:{" "}
+                        {difficultyLabel(session.difficulty)}
+                      </p>
+                      {problem.concept_focus && !problem.learning_goal && (
+                        <p className="fine">Focus: {problem.concept_focus}</p>
+                      )}
+                    </details>
+                  )}
+                  {problem?.activity_state === "ready" &&
+                    session.status === "open" && (
+                      <div className="activity-start">
+                        <p className="fine">
+                          Type your thinking, or work on paper and attach a
+                          photo.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => composer.current?.focus()}
+                        >
+                          Respond to this activity ↓
+                        </button>
+                      </div>
+                    )}
+                  {sourcePhotoFlow && problem && session.status === "open" && (
+                    <section
+                      className="card source-photo-intake"
+                      aria-label="Add your photo"
+                    >
+                      <h3>Add your photo</h3>
+                      <p>
+                        {problem.reference_source === "reading_photo"
+                          ? "Upload the text you want to read, or use your phone."
+                          : "Upload your homework, or use your phone. We’ll make different practice from its ideas."}
+                      </p>
+                      {photoTools}
+                    </section>
+                  )}
                   {problem?.passage && (
                     <ReadingPassage
                       key={problem.id}
@@ -1392,113 +1453,31 @@ export function Tutor({
                       }
                     />
                   )}
-                  {session.status === "open" && (
-                    <details ref={materialTools} open={!problem || undefined}>
-                      <summary>Session &amp; material</summary>
-                      {sessionControls}
-                    </details>
-                  )}
                 </aside>
               )}
-              <article className="tutor-activity chat-column">
-                {problem && (
-                  <details className="activity-brief" open>
-                    <summary>
-                      <h3>
-                        {problem.activity_state === "reference_capture"
-                          ? problem.reference_source === "reading_photo"
-                            ? "Reading passage photograph"
-                            : "Reference material"
-                          : "Current activity"}
-                      </h3>
-                    </summary>
-                    <SafeText text={problem.problem_text} />
-                    <ActivityPurpose problem={problem} />
-                    <p className="fine">
-                      Saved automatically · Challenge:{" "}
-                      {difficultyLabel(session.difficulty)}
-                    </p>
-                    {problem.concept_focus && !problem.learning_goal && (
-                      <p className="fine">Focus: {problem.concept_focus}</p>
-                    )}
-                  </details>
-                )}
-                {session.status === "open" && (
-                  <div
-                    className="activity-controls"
-                    role="group"
-                    aria-label="Activity controls"
-                  >
-                    {problem?.activity_state === "ready" && (
-                      <ComposerMenu
-                        title="Next activity options"
-                        className="next-menu activity-menu"
-                        disabled={blocked}
-                        onOpen={() => setAttachmentsOpen(false)}
-                      >
-                        <div className="composer-options">
-                          <button
-                            type="button"
-                            disabled={disabled || hasResponseDraft}
-                            onClick={() =>
-                              void act(() =>
-                                activity(
-                                  problem.passage ? "same_passage" : "topic",
-                                ),
-                              )
-                            }
-                          >
-                            Next activity
-                          </button>
-                          <button
-                            type="button"
-                            disabled={disabled || hasResponseDraft}
-                            onClick={() =>
-                              void act(() =>
-                                activity(
-                                  problem.passage ? "same_passage" : "topic",
-                                  "introductory",
-                                ),
-                              )
-                            }
-                          >
-                            Easier next activity
-                          </button>
-                          <button
-                            type="button"
-                            disabled={disabled || hasResponseDraft}
-                            onClick={() =>
-                              void act(() =>
-                                activity(
-                                  problem.passage ? "same_passage" : "topic",
-                                  "challenge",
-                                ),
-                              )
-                            }
-                          >
-                            Harder next activity
-                          </button>
-                        </div>
-                      </ComposerMenu>
-                    )}
-                    <button
-                      type="button"
-                      className="quiet"
-                      disabled={disabled || hasResponseDraft}
-                      onClick={() =>
-                        void act(() =>
-                          command(
-                            "finish",
-                            `/sessions/${session.id}/finish`,
-                            {},
-                          ),
-                        )
-                      }
-                    >
-                      Finish session
-                    </button>
+              <article className="chat-column" aria-label="Work and guidance">
+                <header className="conversation-heading">
+                  <div>
+                    <p className="eyebrow">Think it through</p>
+                    <h3>Your work &amp; tutor guidance</h3>
                   </div>
-                )}
+                  {problem &&
+                    (session.status === "open" || problem.passage) && (
+                      <button
+                        type="button"
+                        className="quiet response-link"
+                        onClick={() => {
+                          if (!activityBrief.current) return;
+                          activityBrief.current.open = true;
+                          activityBrief.current
+                            .querySelector("summary")
+                            ?.focus();
+                        }}
+                      >
+                        Read activity ↑
+                      </button>
+                    )}
+                </header>
                 <div className="conversation-stack">
                   <TutorConversation
                     session={session}
@@ -1522,7 +1501,7 @@ export function Tutor({
                     </div>
                   )}
                 </div>
-                <div className="tutor-response">
+                <div className="tutor-response" id="response-composer">
                   {active && (
                     <BusyStatus
                       message={
@@ -1536,8 +1515,9 @@ export function Tutor({
                   )}
                   {problem?.activity_state === "generating" && !active && (
                     <p role="status">
-                      No activity is ready yet. Retry the failed request above,
-                      or choose new practice material.
+                      No activity is ready yet. Use a retry in the conversation
+                      if one is available, or open Session &amp; material to
+                      create another activity.
                     </p>
                   )}
                   {problem?.activity_state === "reference_capture" && (
@@ -1585,6 +1565,11 @@ export function Tutor({
                           );
                         }}
                       >
+                        <p className="fine">
+                          {rejectedCapture
+                            ? "Ask what needs clarification, or explain the unclear part."
+                            : "Share your thinking. You can revise your work or ask a question at any time."}
+                        </p>
                         <label>
                           {rejectedCapture
                             ? "Your question or clarification"
@@ -1614,6 +1599,19 @@ export function Tutor({
                           </p>
                         )}
                         <div className="composer-actions">
+                          {text && (
+                            <button
+                              type="button"
+                              className="quiet"
+                              disabled={disabled}
+                              onClick={() => {
+                                setText("");
+                                composer.current?.focus();
+                              }}
+                            >
+                              Clear draft
+                            </button>
+                          )}
                           {!rejectedCapture && (
                             <button
                               type="button"
@@ -1682,6 +1680,84 @@ export function Tutor({
                       </form>
                     )}
                 </div>
+                {session.status === "open" && (
+                  <div
+                    className="activity-controls"
+                    role="group"
+                    aria-label="Activity controls"
+                  >
+                    <span className="continue-label">Ready to move on?</span>
+                    {problem?.activity_state === "ready" && (
+                      <>
+                        <button
+                          type="button"
+                          disabled={disabled || hasResponseDraft}
+                          onClick={() =>
+                            void act(() =>
+                              activity(
+                                problem.passage ? "same_passage" : "topic",
+                              ),
+                            )
+                          }
+                        >
+                          Next activity
+                        </button>
+                        <ComposerMenu
+                          title="Next activity options"
+                          disabled={blocked}
+                          onOpen={() => setAttachmentsOpen(false)}
+                        >
+                          <div className="composer-options">
+                            <button
+                              type="button"
+                              disabled={disabled || hasResponseDraft}
+                              onClick={() =>
+                                void act(() =>
+                                  activity(
+                                    problem.passage ? "same_passage" : "topic",
+                                    "introductory",
+                                  ),
+                                )
+                              }
+                            >
+                              Easier next activity
+                            </button>
+                            <button
+                              type="button"
+                              disabled={disabled || hasResponseDraft}
+                              onClick={() =>
+                                void act(() =>
+                                  activity(
+                                    problem.passage ? "same_passage" : "topic",
+                                    "challenge",
+                                  ),
+                                )
+                              }
+                            >
+                              Harder next activity
+                            </button>
+                          </div>
+                        </ComposerMenu>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      className="quiet"
+                      disabled={disabled || hasResponseDraft}
+                      onClick={() =>
+                        void act(() =>
+                          command(
+                            "finish",
+                            `/sessions/${session.id}/finish`,
+                            {},
+                          ),
+                        )
+                      }
+                    >
+                      Finish session
+                    </button>
+                  </div>
+                )}
               </article>
             </div>
           </div>

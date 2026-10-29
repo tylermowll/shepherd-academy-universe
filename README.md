@@ -155,16 +155,26 @@ settings. Text length, challenge and tutor starting level are separate
 preferences. Supplied texts stay unchanged.
 **Start learning** saves the session and creates its first activity automatically.
 For photo material, the upload and phone controls open inline on the same page.
-Use **Send** for work or questions, **Attach photo** for
-upload or a phone QR link, **Help** for suggestions and **Next activity options**
-to continue. **Session & material** holds reference material and preferences.
-Activity difficulty and how much the tutor takes the lead are separate controls.
-Students choose when to move on. **Finish session** is available alongside the
-activity controls and opens a recap of saved work and the latest tutor guidance.
-The recap is a record of the session, not a grade or mastery assessment.
+The active workspace keeps the current activity and its source material beside
+your conversation on desktop, and above it on narrow screens. The **Session &
+material** toolbar holds material choices and session preferences. Read the task,
+type your thinking or a question, then use **Send**. **Attach photo** opens upload
+or a phone QR link; **Help** offers a hint, a concept explanation or a different
+example. Revise in the same response area and send again. **Clear draft** lets
+you discard an unsent response before moving on.
+
+At the bottom of the workspace, **Next activity** continues directly;
+**Next activity options** offers an easier or harder activity. **Finish session**
+opens a recap of saved work and the latest tutor guidance. Students choose when
+to move on or finish; no passing grade is required. Session recaps stay available
+in **History**. The recap is a record of the session, not a grade or mastery
+assessment. Activity difficulty and how much the tutor takes the lead are separate
+controls.
 
 Activities show their learning goal and what a complete response should include.
-Feedback explains what went well, what needs attention and what to try next.
+Feedback separates what went well, the tutor's guidance and what to try next,
+when those parts are present. Replies, revisions and photo readings stay together
+in the conversation, including earlier activities.
 When suggesting practice, the tutor considers whether the learner worked
 independently or received help. These AI observations can be wrong; they are
 guidance, not verified grades or mastery scores.

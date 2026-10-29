@@ -375,14 +375,9 @@ test("activity and message controls stay separate while menus fit and dismiss pr
     expect(optionsBounds!.y + optionsBounds!.height).toBeLessThanOrEqual(
       chatBounds!.y + chatBounds!.height,
     );
-    if (kind === "activity")
-      expect(optionsBounds!.y).toBeGreaterThanOrEqual(
-        triggerBounds!.y + triggerBounds!.height,
-      );
-    else
-      expect(optionsBounds!.y + optionsBounds!.height).toBeLessThanOrEqual(
-        triggerBounds!.y,
-      );
+    expect(optionsBounds!.y + optionsBounds!.height).toBeLessThanOrEqual(
+      triggerBounds!.y,
+    );
   };
   for (const width of [320, 375, 412]) {
     await page.setViewportSize({ width, height: 700 });

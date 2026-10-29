@@ -118,6 +118,9 @@ test("the tutor continues from a phone photo through guidance, revision, discuss
       ).status(),
     ).toBe(401);
     expect(external).toEqual([]);
+    await page
+      .locator(".chat-column")
+      .screenshot({ path: test.info().outputPath("photo-reading.png") });
   } finally {
     await mobile.close();
   }
@@ -386,5 +389,14 @@ for (const source of ["reference_photo", "reading_photo"] as const) {
     await expect(recap).toContainText(
       "not a verified grade or mastery assessment",
     );
+    const workspace = await page.locator(".tutor-workspace").boundingBox();
+    const conversation = await page.locator(".chat-column").boundingBox();
+    expect(workspace).not.toBeNull();
+    expect(conversation).not.toBeNull();
+    expect(Math.abs(workspace!.width - conversation!.width)).toBeLessThan(2);
+    await page.screenshot({
+      path: test.info().outputPath("session-recap.png"),
+      fullPage: true,
+    });
   });
 }

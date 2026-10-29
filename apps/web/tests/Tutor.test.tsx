@@ -860,7 +860,7 @@ describe("AI learning conversation", () => {
       within(messageForm).queryByRole("button", { name: "Finish session" }),
     ).toBeNull();
     expect(
-      activityControls.compareDocumentPosition(reply) &
+      reply.compareDocumentPosition(activityControls) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
@@ -1070,14 +1070,22 @@ describe("AI learning conversation", () => {
         value: "Homework: argue whether a historical decision was justified.",
       },
     });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Create practice activity" }),
-    );
+    const create = screen.getByRole("button", {
+      name: "Create practice activity",
+    });
+    create.focus();
+    fireEvent.click(create);
     await vi.waitFor(() =>
       expect(
         fetcher.mock.calls.some(([url]) => url.endsWith("/activities")),
       ).toBe(true),
     );
+    await vi.waitFor(() =>
+      expect(screen.getByText("Session & material")).toHaveFocus(),
+    );
+    expect(
+      screen.getByText("Session & material").closest("details"),
+    ).not.toHaveAttribute("open");
     const sent = fetcher.mock.calls.find(([url]) =>
       url.endsWith("/activities"),
     )!;

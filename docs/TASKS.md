@@ -6,8 +6,141 @@ This file owns the current work queue and completion evidence. The
 dependency refresh. Superseded workflows in that archive are historical evidence.
 A task is complete only after its requirements and exit checks pass.
 
+## T84 — Publish and privately deploy the learning workbench (2026-10-29)
+
+**Status:** In progress. The maintainer authorized publication of all T83 changes
+to `main`, followed by deployment to the existing private installation.
+
+**Contracts and plan:** SPECIFICATION sections 6, 16 and 17; RUNBOOK container
+upgrade and encrypted backup/restore. Publish the validated T83 source, observe
+hosted CI, and build/verify its exact non-root release image from a clean archive.
+Reuse the same-schema deployment helpers with current identities and synthetic
+recovery checks. Stop both writers, complete a fresh encrypted backup and isolated
+restore, replace the services and verify private HTTPS, fresh worker heartbeat,
+exact public assets, protected routes and standard launcher discovery. Preserve
+schema `0021_published_library`, all 868 public texts, original data mounts,
+accounts, saved work, settings and model selections. No migration, reset, corpus
+import or live-provider inference is needed. Record actual results at completion.
+
+## T83 — Redesign the active learning experience (2026-10-29)
+
+**Status:** Complete locally. Final source/build and affected-flow checks passed;
+browser coverage combines a full run and a final targeted rerun. No publication
+or deployment requested or performed.
+
+**Scope:** Replace the active learner workspace and refine its setup, guidance,
+photo, progression and recap transitions. Use disposable synthetic sessions and
+mock providers. Preserve authentication/ownership, teaching policy, saved work,
+photo interpretation ordering, request receipts/recovery and draft safeguards.
+
+**Affected contracts:** SPECIFICATION sections 3–4 and 10–12; React learner
+workspace, passage display, conversation, feedback, progression and recap. Public
+API, generated types, database and provider policies remain unchanged.
+
+**Validation plan:** Inspect the current rendered desktop/mobile flows; exercise
+typed work, guidance, revision, help, photo reading/clarification, long passages
+and conversations, pending/error/recovery, keyboard controls and finish/history.
+Update behavioral tests for the chosen design. Run targeted checks followed by
+`make check`, `make test-integration` and the full isolated browser suite. Capture
+representative synthetic screenshots and record actual outcomes and limits.
+
+**Implemented:** `Tutor.tsx` / `styles.css` replace the clipped task-in-chat
+layout with a dedicated activity/source area and a conversation with stable
+message entry. Full criteria remain readable. Activity/response controls restore
+keyboard focus without changing the saved-session URL. Session/material forms
+close after successful activity requests. Clear draft releases existing response
+guards. Direct Next, challenge options and Finish sit after the composer, outside
+its form. `TutorConversation.tsx` separates strengths, guidance and next steps;
+keeps AI uncertainty visible; explains pending, failed, stopped and empty states;
+automatically reveals new typed guidance/errors or a photo’s reading first,
+keeps an explicit latest-exchange action without disturbing earlier reading, and
+marks fresh activities separately from old guidance. `SessionReview.tsx` clarifies
+finished records, saved counts and History without an inference or grade claim.
+Obsolete sidebar/frame rules were removed. README, specification and review record
+now describe this single implementation. API, schemas and provider rules did not change.
+
+**Review observations versus judgments:** The rendered baseline clipped goal and
+criteria inside the activity scroller; mobile entry followed a large empty region;
+completed material forms stayed expanded. Preferring a dedicated workbench over a
+chronological notebook or step screens, separating feedback sections, and placing
+progression after entry are design judgments. The rationale and scoped workflow
+coverage are in `docs/UI_UX_REVIEW.md`.
+
+**Validation environment:** allowlisted `/tmp/shepherd-t83/run.py`, Node 26.13.0,
+pnpm 12.16.1, uv 0.13.6 and Chrome 156.0.8078.73. Environment-file loading disabled;
+operator/provider settings excluded. Browser harness uses a temporary SQLite
+installation and mock provider on loopback. Desktop is 1280×720, Pixel 7 emulation
+412×839, with explicit 320px and 200% root-font text-resize checks. Root-font
+resizing is not a claim of real browser zoom or assistive-technology coverage.
+
+**Changed files:** `apps/web/src/Tutor.tsx`, `TutorConversation.tsx`,
+`SessionReview.tsx`, `styles.css`; component tests `Tutor.test.tsx`,
+`TutorConversation.test.tsx`, `SessionReview.test.tsx`; smoke tests
+`conversation.spec.ts`, `learning-workspace.spec.ts`, `library-levels.spec.ts`,
+`navigation.spec.ts`, `practice-start.spec.ts`, `reading.spec.ts`, `tutor.spec.ts`;
+`README.md`, `docs/SPECIFICATION.md`, `docs/UI_UX_REVIEW.md` and this record.
+
+**Actual validation:**
+
+- `make check`: final delivery run passed toolchain/locks, lint/format, Python and
+  TypeScript types, **405 backend unit, 365 frontend and 11 toolchain tests**, both
+  builds, generated-contract drift, credential scan and infrastructure validation.
+  Final log: `/tmp/shepherd-t83/check-delivery.log`. Earlier source gates passed;
+  a restricted-runner subprocess failure was resolved by using the allowlisted
+  isolated runner outside the sandbox, without changing the checker.
+- `make test-integration`: **467 passed in 90.26 seconds**, including ownership,
+  migrations, retention, policy and interrupted-request recovery. Backend source
+  and contracts were unchanged throughout this UI task.
+- `make smoke-built`: full desktop/mobile run **151 passed, 3 failed in 24.4
+  minutes**. Two failures encoded the old attachment/toolbar geometry. The third
+  exposed mobile conversation positioning. Corrected the layout assertions,
+  preserved meaningful overlay boundaries, disabled competing scroll anchoring,
+  and refined automatic following, unseen-message navigation and fresh-activity
+  cues. This full run preceded those final UI refinements.
+- `pnpm exec playwright test conversation learning-workspace tutor navigation practice-start --grep 'one composer|long activity|saved pending|Help and History|the tutor continues|an uncertain photographed|a source photograph|an unclear|activity and message'`:
+  **20/20 passed in 4.0 minutes on the final delivery build**, including all three
+  earlier failures. Covers desktop/mobile long conversations, full criteria,
+  long source/feedback, 320px reflow, 200% root-font resizing, keyboard menus and
+  task/composer focus, structured guidance, pending/error/retry, photo ordering,
+  uncertain reference discussion and repair, revision, progression, finish and
+  saved History. New heading and empty-entry assertions also protect History and
+  finished-session presentation. All **154 unique browser scenarios** were
+  verified across the full run and this final affected-flow run; this is not a
+  claim of one final uninterrupted 154-case pass. Logs are
+  `/tmp/shepherd-t83/browser-full.log` and `browser-delivery.log`.
+- Earlier focused layout runs passed **6/6** and **8/8** cases. The final 17-case
+  conversation component set includes photo-first positioning, long typed/error
+  positioning, unseen-exchange navigation without scroll loss, and fresh-activity
+  markers that preserve earlier work. These are included in the final 365 total.
+- Final changed-guide file-link check passed **73 targets**. Prettier passed
+  changed guides and the isolated T83 task entry; `git diff --check` passed after
+  the final evidence update. Historical task formatting was preserved.
+
+**Screenshots:** Nine final-build synthetic states are preserved in
+`/tmp/shepherd-t83/screenshots/`: `desktop-guidance.png`, `mobile-guidance.png`,
+`mobile-320-long.png`, `long-content.png`, `pending.png`, `error-recovery.png`,
+`photo-reading.png`, `fresh-activity.png` and `finished-recap.png`. Desktop/mobile
+rendered screenshots were inspected; behavioral assertions, rather than the
+images, establish the exercised transitions. Rich guidance and pending/error
+stress states use explicitly labeled rendering fixtures extending a real saved
+synthetic session; the phone/photo and finish flows use the real mock worker.
+
+**Remaining limits:** No unresolved failure in the final affected-flow checks.
+The full browser suite was not repeated after the final UI refinements; its
+coverage and the final rerun are distinguished above. The existing >500 kB
+JavaScript chunk warning remains. No live/paid inference, model download,
+private-data inspection, Git publication or deployment. Mock responses do not
+establish teaching quality. Physical phones/cameras, Safari, screen readers and
+actual browser zoom remain untested; Chromium mobile emulation and root-font
+resizing do not establish those behaviors or WCAG conformance.
+
 ## Current checkpoint
 
+T83 implements and locally validates the active learning workbench. Current
+activity/source, guidance, response, revision, progression and saved recap share
+one coherent learner journey. Source checks and the final affected-flow browser
+run passed; full-run/rerun evidence and manual limits are recorded above. This
+change has not been published or deployed. Existing private deployment remains T82.
 T82 privately deploys T81's published toolchain update at the maintainer's
 explicit request. Exact-source/package, hosted CI, synthetic recovery,
 stopped-writer encrypted backup/restore and final runtime checks passed. Both

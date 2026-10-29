@@ -59,19 +59,19 @@ for (const source of [
       ).toContainText("2/5");
     }
     const passage = page.locator(
-      ".tutor-sidebar > .reading-passage .passage-text",
+      ".activity-panel > .reading-passage .passage-text",
     );
     await expect(passage).toBeVisible();
     const savedText = await passage.innerText();
     if (source === "reading_text") expect(savedText).toBe(text);
     else if (source === "reading_generated")
-      await expect(page.locator(".tutor-sidebar")).toContainText(
+      await expect(page.locator(".activity-panel")).toContainText(
         "AI-written passage",
       );
     else {
       // The synthetic reader recognizes this fixture; it does not measure OCR quality.
       expect(savedText).toBe("2/5");
-      await expect(page.locator(".tutor-sidebar")).toContainText(
+      await expect(page.locator(".activity-panel")).toContainText(
         "Read from your photo",
       );
     }
@@ -148,10 +148,10 @@ test("long science material has independent section pacing, saved navigation and
     .getByRole("button", { name: "Start learning", exact: true })
     .click();
   const passage = page.locator(
-    ".tutor-sidebar > .reading-passage .passage-text",
+    ".activity-panel > .reading-passage .passage-text",
   );
   const position = page.locator(
-    ".tutor-sidebar > .reading-passage .material-position",
+    ".activity-panel > .reading-passage .material-position",
   );
   await expect(position).toHaveText(/Section 1 of \d+/);
   await expect(
@@ -289,7 +289,7 @@ test("literal material and Unicode input survive intact with explicit overflow a
     .getByRole("button", { name: "Start learning", exact: true })
     .click();
   const passage = page.locator(
-    ".tutor-sidebar > .reading-passage .passage-text",
+    ".activity-panel > .reading-passage .passage-text",
   );
   await expect(passage).toContainText(prefix.trim());
   expect(await passage.locator("math, strong, code").count()).toBe(0);

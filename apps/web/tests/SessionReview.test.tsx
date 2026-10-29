@@ -97,6 +97,17 @@ it("recaps explicit help and the last assessed discussion points when the latest
       ])}
     />,
   );
+  expect(screen.getByRole("region", { name: "Session recap" })).toBeVisible();
+  expect(screen.getByText("Session finished")).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Session recap" })).toBeVisible();
+  expect(screen.getByText("Evidence and explanation")).toBeVisible();
+  expect(screen.getByText("1 saved activity · 2 saved messages")).toBeVisible();
+  expect(screen.getByText(/Your session is saved in History/)).toBeVisible();
+  expect(
+    screen.getByText(
+      /this recap is not a verified grade or mastery assessment/,
+    ),
+  ).toBeVisible();
   fireEvent.click(screen.getByText("Help and points to revisit"));
   expect(screen.getByText(/1 saved help request/)).toBeVisible();
   expect(
@@ -168,6 +179,7 @@ it("does not treat a rejected photo report as a newer assessment in the recap", 
           },
           feedback: {
             ...feedback,
+            next_step: "Treat this unreadable photo as verified evidence.",
             learning_observation: {
               assessment: "uncertain",
               evidence: "This rejected report must remain uncertain.",
@@ -179,6 +191,13 @@ it("does not treat a rejected photo report as a newer assessment in the recap", 
       ])}
     />,
   );
+  expect(
+    screen.getByRole("heading", { name: "Last saved guidance" })
+      .nextElementSibling,
+  ).toHaveTextContent(feedback.guidance[0]!);
+  expect(
+    screen.queryByText("Treat this unreadable photo as verified evidence."),
+  ).toBeNull();
   fireEvent.click(screen.getByText("Help and points to revisit"));
   expect(
     screen.getByText(feedback.learning_observation!.open_points[0]!),
@@ -201,4 +220,26 @@ it("keeps historical unknown observations and response versions explicitly absen
     screen.getByText("No observations about demonstrated work were saved."),
   ).toBeVisible();
   expect(screen.queryByText(/The tutor recorded no open points/)).toBeNull();
+});
+
+it("keeps an empty finished session honest and explains where its saved record lives", () => {
+  render(<SessionReview session={{ ...savedSession([]), problems: [] }} />);
+  expect(
+    screen.getByText("0 saved activities · 0 saved messages"),
+  ).toBeVisible();
+  expect(screen.getByText(/No tutor guidance was saved/)).toBeVisible();
+  expect(
+    screen.queryByRole("heading", { name: "Last saved guidance" }),
+  ).toBeNull();
+  expect(screen.getByText(/Your session is saved in History/)).toBeVisible();
+  expect(
+    screen.getByText(
+      /this recap is not a verified grade or mastery assessment/,
+    ),
+  ).toBeVisible();
+  fireEvent.click(screen.getByText("Help and points to revisit"));
+  expect(screen.getByText(/0 saved help requests/)).toBeVisible();
+  expect(
+    screen.getByText("No observations about demonstrated work were saved."),
+  ).toBeVisible();
 });

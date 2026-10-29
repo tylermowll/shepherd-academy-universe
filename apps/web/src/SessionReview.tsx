@@ -38,10 +38,11 @@ export function SessionReview({
         operation.feedback.learning_observation.assessment !== "not_assessed",
     )?.feedback?.learning_observation;
   return (
-    <section className="card" aria-label="Session recap">
+    <section className="card session-recap" aria-label="Session recap">
+      <p className="eyebrow">Session finished</p>
       <h3>Session recap</h3>
-      <p>{session.topic}</p>
-      <p>
+      <p className="recap-topic">{session.topic}</p>
+      <p className="recap-counts">
         {activities.length} saved{" "}
         {activities.length === 1 ? "activity" : "activities"} ·{" "}
         {messages.length} saved {messages.length === 1 ? "message" : "messages"}
@@ -50,10 +51,6 @@ export function SessionReview({
         <>
           <h4>Last saved guidance</h4>
           <SafeText text={latestGuidance} />
-          <p className="fine">
-            AI guidance can be mistaken; this recap is not a verified grade or
-            mastery assessment.
-          </p>
         </>
       ) : (
         <p>
@@ -61,7 +58,14 @@ export function SessionReview({
           uncertain readings in the conversation below.
         </p>
       )}
-      <p>Your saved work, readings and responses are available below.</p>
+      <p className="fine">
+        AI guidance can be mistaken; this recap is not a verified grade or
+        mastery assessment.
+      </p>
+      <p>
+        Your session is saved in History. Review your work, readings and
+        responses below, or choose New session to explore something else.
+      </p>
       <details>
         <summary>Help and points to revisit</summary>
         <p>

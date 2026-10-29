@@ -3,6 +3,41 @@ import { api, type Schema } from "./client";
 import { SafeText } from "./SafeText";
 import { ReadingPassage } from "./ReadingPassage";
 import { ActivityPurpose } from "./ActivityPurpose";
+import { BusyStatus } from "./BusyStatus";
+
+/** Auto-follow new guidance; explicit latest navigation opens the whole exchange. */
+function revealLatest(viewport: HTMLDivElement, response = false) {
+  const messages = viewport.querySelectorAll<HTMLElement>(
+    ".tutor-operation, .conversation-start",
+  );
+  const latest = messages.item(messages.length - 1);
+  if (latest) {
+    const destination = response
+      ? (latest.querySelector<HTMLElement>(
+          ".photo-reading, .tutor-feedback, .error",
+        ) ?? latest)
+      : latest;
+    viewport.scrollTop +=
+      destination.getBoundingClientRect().top -
+      viewport.getBoundingClientRect().top -
+      8;
+  } else {
+    viewport.scrollTop = viewport.scrollHeight;
+  }
+}
+
+function latestVisible(viewport: HTMLDivElement) {
+  if (viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 72)
+    return true;
+  const messages = viewport.querySelectorAll<HTMLElement>(
+    ".tutor-operation, .conversation-start",
+  );
+  const latest = messages.item(messages.length - 1);
+  if (!latest) return true;
+  const frame = viewport.getBoundingClientRect();
+  const last = latest.getBoundingClientRect();
+  return last.top < frame.bottom && last.bottom > frame.top;
+}
 
 type Props = {
   session: Schema<"TutoringSessionPublic">;
@@ -20,30 +55,44 @@ export function TutorConversation(props: Props) {
   const positioning = useRef(false);
   const previousSession = useRef("");
   const [atBottom, setAtBottom] = useState(true);
+  const currentProblem = session.problems.find(
+    (problem) => problem.status === "assigned",
+  );
+  const currentNeedsResponse =
+    session.status === "open" &&
+    currentProblem &&
+    currentProblem.activity_state !== "generating" &&
+    !currentProblem.operations.some(
+      (operation) =>
+        operation.kind !== "generation" || operation.status !== "completed",
+    ) &&
+    session.problems.some(
+      (problem) =>
+        problem.id !== currentProblem.id &&
+        problem.operations.some((operation) => operation.kind !== "generation"),
+    );
   const revision = session.problems
-    .flatMap((problem) =>
-      problem.operations.map((item) => `${item.id}:${item.status}`),
+    .map(
+      (problem) =>
+        `${problem.id}:${problem.status}:${problem.activity_state}:${problem.operations.map((item) => `${item.id}:${item.status}`).join(",")}`,
     )
     .join("|");
   useEffect(() => {
-    if (!active || !viewport.current) return;
+    const node = viewport.current;
+    if (!active || !node) return;
     if (follow.current || previousSession.current !== session.id) {
-      const messages =
-        viewport.current.querySelectorAll<HTMLElement>(".tutor-operation");
-      const latest = messages.item(messages.length - 1);
+      if (previousSession.current !== session.id) follow.current = true;
       positioning.current = true;
-      if (latest) {
-        const viewportTop = viewport.current.getBoundingClientRect().top;
-        const messageTop = latest.getBoundingClientRect().top;
-        viewport.current.scrollTop += messageTop - viewportTop - 8;
-      } else {
-        viewport.current.scrollTop = viewport.current.scrollHeight;
-      }
-      window.requestAnimationFrame(() => {
-        positioning.current = false;
-      });
+      revealLatest(node, true);
     }
+    // Appending an exchange need not trigger a scroll event. Recheck the jump
+    // control after layout while leaving an earlier reading position untouched.
+    const frame = window.requestAnimationFrame(() => {
+      positioning.current = false;
+      setAtBottom(latestVisible(node));
+    });
     previousSession.current = session.id;
+    return () => window.cancelAnimationFrame(frame);
   }, [active, revision, session.id]);
 
   return (
@@ -61,7 +110,7 @@ export function TutorConversation(props: Props) {
           const bottom =
             node.scrollHeight - node.scrollTop - node.clientHeight < 72;
           if (!positioning.current) follow.current = bottom;
-          setAtBottom(bottom);
+          setAtBottom(latestVisible(node));
         }}
       >
         {session.problems.map((problem, index) => (
@@ -97,12 +146,38 @@ export function TutorConversation(props: Props) {
             ))}
           </section>
         ))}
+        {currentNeedsResponse && (
+          <section
+            className="conversation-start conversation-empty"
+            aria-label="Current activity start"
+          >
+            <p className="eyebrow">
+              {currentProblem.activity_state === "reference_capture"
+                ? "Current activity · Add your photo"
+                : "Current activity · Ready for your response"}
+            </p>
+            <p>
+              {currentProblem.activity_state === "reference_capture"
+                ? "Add a photo in the activity area. Its reading will appear here before we continue."
+                : "Start with your own thinking. Type a response, attach your work, or ask for help."}
+            </p>
+          </section>
+        )}
         {!session.problems.some((problem) =>
-          problem.operations.some((item) => item.kind !== "generation"),
+          problem.operations.some(
+            (item) => item.kind !== "generation" || item.status !== "completed",
+          ),
         ) && (
           <p className="conversation-empty">
-            Send your work or ask a question. Photos and replies stay together
-            here.
+            {session.status !== "open"
+              ? "No responses were saved. You can review the activity above."
+              : session.problems.some(
+                    (problem) =>
+                      problem.status === "assigned" &&
+                      problem.activity_state === "reference_capture",
+                  )
+                ? "Add a photo in the activity area. Its reading will appear here before we continue."
+                : "Start with your own thinking. Type a response, attach your work, or ask for help."}
           </p>
         )}
       </div>
@@ -111,8 +186,7 @@ export function TutorConversation(props: Props) {
           className="conversation-latest"
           onClick={() => {
             follow.current = true;
-            if (viewport.current)
-              viewport.current.scrollTop = viewport.current.scrollHeight;
+            if (viewport.current) revealLatest(viewport.current);
             setAtBottom(true);
           }}
         >
@@ -149,6 +223,13 @@ function TutorMessage({
   // The backend owns whether a reading may advance. Localized uncertainty can
   // coexist with usable evidence; do not reconstruct a stricter frontend gate.
   const rejected = Boolean(reading && !reading.can_continue);
+  const pending = [
+    "queued",
+    "generating",
+    "interpreting",
+    "tutoring",
+    "checking",
+  ].includes(operation.status);
   if (operation.kind === "generation" && operation.status === "completed")
     return null;
   return (
@@ -229,13 +310,31 @@ function TutorMessage({
       {feedback && !rejected ? (
         <section className="tutor-feedback" aria-label="Tutor response">
           <p className="eyebrow">Tutor</p>
-          {feedback.strengths.map((item, index) => (
-            <SafeText key={`strength-${index}`} text={item} />
-          ))}
-          {feedback.guidance.map((item, index) => (
-            <SafeText key={`guidance-${index}`} text={item} />
-          ))}
-          {feedback.next_step && <SafeText text={feedback.next_step} />}
+          <p className="fine feedback-disclosure">
+            AI guidance · Can be mistaken
+          </p>
+          {feedback.strengths.length > 0 && (
+            <div className="feedback-strengths">
+              <h4>What’s working</h4>
+              {feedback.strengths.map((item, index) => (
+                <SafeText key={`strength-${index}`} text={item} />
+              ))}
+            </div>
+          )}
+          {feedback.guidance.length > 0 && (
+            <div className="feedback-guidance">
+              <h4>Guidance</h4>
+              {feedback.guidance.map((item, index) => (
+                <SafeText key={`guidance-${index}`} text={item} />
+              ))}
+            </div>
+          )}
+          {feedback.next_step && (
+            <div className="feedback-next">
+              <h4>Try next</h4>
+              <SafeText text={feedback.next_step} />
+            </div>
+          )}
           {feedback.uncertainty_note && (
             <p className="notice">{feedback.uncertainty_note}</p>
           )}
@@ -279,12 +378,29 @@ function TutorMessage({
             )}
           </details>
         </section>
-      ) : !rejected && operation.message ? (
+      ) : !rejected && !pending && operation.message ? (
         <SafeText text={operation.message} />
       ) : null}
+      {pending && (
+        <BusyStatus
+          message={
+            operation.status === "interpreting"
+              ? "Reading your photo… Feedback will follow if the work is readable."
+              : operation.kind === "generation" ||
+                  operation.status === "generating"
+                ? "Preparing your activity…"
+                : operation.status === "queued"
+                  ? "Request saved. Waiting for the tutor…"
+                  : "Preparing guidance on your work…"
+          }
+        />
+      )}
       {operation.safe_error && !rejected && (
         <div role="status" className="error">
           <p>{operation.safe_error}</p>
+          {(operation.text || operation.work_text || reading) && (
+            <p>Your submitted work is still saved in this conversation.</p>
+          )}
           {operation.error_code && (
             <p className="fine">Diagnostic code: {operation.error_code}</p>
           )}
@@ -303,9 +419,7 @@ function TutorMessage({
           Retry tutor response
         </button>
       )}
-      {["queued", "interpreting", "tutoring", "checking"].includes(
-        operation.status,
-      ) && (
+      {pending && (
         <button
           disabled={disabled || offline}
           onClick={() =>
@@ -318,8 +432,17 @@ function TutorMessage({
           Stop response
         </button>
       )}
-      {operation.status === "canceled" && !reading && (
-        <p className="fine">Response stopped.</p>
+      {operation.status === "canceled" && (
+        <p className="fine">
+          Response stopped.{" "}
+          {operation.kind === "generation"
+            ? "Open Session & material to create another activity."
+            : reading
+              ? "Your photo reading remains saved."
+              : referencePhoto
+                ? "Add another photo in the activity area to continue."
+                : "You can send another response or continue when you’re ready."}
+        </p>
       )}
     </article>
   );
